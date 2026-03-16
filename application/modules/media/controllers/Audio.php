@@ -63,6 +63,7 @@ class Audio extends MY_Controller {
         $chunk_size = 5 * 1024 * 1024; // 5 Mo
         
         if (empty($file_name) || $file_size <= 0) {
+            log_message('error', 'initUpload: paramètres invalides');
             echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
             return;
         }
@@ -72,7 +73,7 @@ class Audio extends MY_Controller {
         $temp_dir = $this->upload_dir . $upload_id . '/';
 
         if (!mkdir($temp_dir, 0777, TRUE)) {
-            log_message('error', 'Échec création dossier temporaire: ' . $temp_dir);
+            log_message('error', 'initUpload: échec création dossier temporaire: ' . $temp_dir);
             echo json_encode(['success' => false, 'message' => 'Erreur création dossier temporaire']);
             return;
         }
@@ -102,25 +103,29 @@ class Audio extends MY_Controller {
     public function uploadChunk()
     {
         header('Content-Type: application/json');
-        log_message('debug', 'uploadChunk appelé');
+        log_message('debug', 'uploadChunk appelé avec upload_id=' . $this->input->post('upload_id'));
 
         $upload_id = $this->input->post('upload_id');
         $chunk_index = $this->input->post('chunk_index');
 
         if (empty($upload_id) || !is_numeric($chunk_index)) {
+            log_message('error', 'uploadChunk: paramètres invalides');
             echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
             return;
         }
 
         $chunk_index = (int)$chunk_index;
         $temp_dir = $this->upload_dir . $upload_id . '/';
+        log_message('debug', 'uploadChunk: temp_dir = ' . $temp_dir);
 
         if (!is_dir($temp_dir)) {
+            log_message('error', 'uploadChunk: dossier temporaire introuvable : ' . $temp_dir);
             echo json_encode(['success' => false, 'message' => 'Session invalide']);
             return;
         }
 
         if (empty($_FILES['chunk'])) {
+            log_message('error', 'uploadChunk: aucun fichier chunk reçu');
             echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
             return;
         }
@@ -136,14 +141,26 @@ class Audio extends MY_Controller {
                 UPLOAD_ERR_EXTENSION => 'Extension bloquée'
             ];
             $msg = $errors[$_FILES['chunk']['error']] ?? 'Erreur ' . $_FILES['chunk']['error'];
+            log_message('error', 'uploadChunk: erreur upload PHP - ' . $msg);
             echo json_encode(['success' => false, 'message' => $msg]);
             return;
         }
 
+        $tmp_size = $_FILES['chunk']['size'];
+        log_message('debug', "uploadChunk: chunk reçu taille = $tmp_size");
+
         $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
         
         if (!move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
+            $error = error_get_last();
+            log_message('error', 'uploadChunk: move_uploaded_file a échoué - ' . ($error['message'] ?? 'erreur inconnue'));
             echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde chunk']);
+            return;
+        }
+
+        if (!file_exists($chunk_path)) {
+            log_message('error', 'uploadChunk: le fichier chunk n\'existe pas après déplacement');
+            echo json_encode(['success' => false, 'message' => 'Erreur écriture chunk']);
             return;
         }
 
@@ -224,6 +241,7 @@ class Audio extends MY_Controller {
         $metadata_path = $temp_dir . 'metadata.json';
         
         if (!file_exists($metadata_path)) {
+            log_message('error', 'completeUpload: metadata non trouvé');
             echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
             return;
         }
@@ -238,6 +256,7 @@ class Audio extends MY_Controller {
         }
 
         if (!empty($missing)) {
+            log_message('error', 'completeUpload: chunks manquants: ' . implode(',', $missing));
             echo json_encode([
                 'success' => false,
                 'message' => 'Chunks manquants',
@@ -253,13 +272,28 @@ class Audio extends MY_Controller {
 
         $out = fopen($final_path, 'wb');
         if (!$out) {
+            log_message('error', 'completeUpload: impossible de créer ' . $final_path);
             echo json_encode(['success' => false, 'message' => 'Impossible de créer fichier final']);
             return;
         }
 
         for ($i = 0; $i < $metadata['total_chunks']; $i++) {
             $chunk_file = $temp_dir . 'chunk_' . $i;
-            fwrite($out, file_get_contents($chunk_file));
+            $chunk_data = file_get_contents($chunk_file);
+            if ($chunk_data === false) {
+                log_message('error', 'completeUpload: impossible de lire chunk ' . $i);
+                fclose($out);
+                unlink($final_path);
+                echo json_encode(['success' => false, 'message' => 'Erreur lecture chunk']);
+                return;
+            }
+            if (fwrite($out, $chunk_data) === false) {
+                log_message('error', 'completeUpload: erreur écriture chunk ' . $i);
+                fclose($out);
+                unlink($final_path);
+                echo json_encode(['success' => false, 'message' => 'Erreur écriture fichier']);
+                return;
+            }
             unlink($chunk_file);
         }
         fclose($out);
@@ -268,10 +302,12 @@ class Audio extends MY_Controller {
         rmdir($temp_dir);
 
         if (!file_exists($final_path)) {
+            log_message('error', 'completeUpload: fichier final non trouvé après assemblage');
             echo json_encode(['success' => false, 'message' => 'Erreur création fichier final']);
             return;
         }
 
+        // Générer waveform/miniature
         $waveform = $this->generate_audio_waveform($relative_path);
 
         echo json_encode([
@@ -324,7 +360,8 @@ class Audio extends MY_Controller {
         }
 
         $allowed_types = [
-            'audio/webm', 'audio/ogg', 'audio/wav', 'audio/mp4', 'audio/mpeg', 'video/webm'
+            'audio/webm', 'audio/ogg', 'audio/wav', 'audio/mp4', 'audio/mpeg', 'video/webm',
+            'audio/opus' // ajout du support opus
         ];
         
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -346,6 +383,7 @@ class Audio extends MY_Controller {
         $relative_path = 'attachments/Audio/' . $final_name;
 
         if (!move_uploaded_file($_FILES['audio']['tmp_name'], $final_path)) {
+            log_message('error', 'saveRecording: move_uploaded_file failed');
             echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde fichier']);
             return;
         }
@@ -401,7 +439,7 @@ class Audio extends MY_Controller {
             'categorie' => $this->input->post('categorie') ?: NULL,
             'date_media' => $this->input->post('date_media') ?: NULL,
             'credits' => $this->input->post('credits') ?: NULL,
-            'est_actif' => 1, // par défaut actif
+            'est_actif' => 1,
             'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
             'message_reseaux' => $this->input->post('message_reseaux') ?: NULL,
             'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
@@ -437,7 +475,7 @@ class Audio extends MY_Controller {
             // Type 'link'
             $data['lien'] = $this->input->post('lien');
             $data['miniature'] = $this->extract_audio_thumbnail($data['lien']);
-            $data['duree'] = 0; // durée inconnue pour un lien externe
+            $data['duree'] = 0;
         }
         
         $rsp = $this->Model->create('galerie_medias', $data);
@@ -545,14 +583,12 @@ class Audio extends MY_Controller {
         $id = $this->input->post('id');
         $audio = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
         
-        // On passe l'audio en inactif plutôt que de le supprimer définitivement
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
             'est_actif' => 0,
             'updated_at' => date('Y-m-d H:i:s')
         ]);
 
         if ($rsp) {
-            // Optionnel : supprimer les fichiers physiques
             if ($audio && !empty($audio['fichier']) && file_exists(FCPATH . $audio['fichier'])) {
                 @unlink(FCPATH . $audio['fichier']);
             }
@@ -592,7 +628,6 @@ class Audio extends MY_Controller {
     {
         header('Content-Type: application/json');
         
-        // Note : on a supprimé la vérification is_ajax_request() pour éviter le rejet
         $id = $this->input->post('id');
         $field = $this->input->post('field');
         $value = $this->input->post('value');
