@@ -1,3 +1,4 @@
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 <?php include VIEWPATH.'includes/backend/Header.php'; ?>
 <?php include VIEWPATH.'includes/backend/Sidebar.php'; ?>
 <?php include VIEWPATH.'includes/backend/Topheader.php'; ?>
@@ -863,12 +864,34 @@ class ChunkedUploadManager {
     }
 
     init() {
-        // Click to browse
+        // Click to browse - amélioré pour capturer tous les clics dans la zone
         this.dropZone.addEventListener('click', (e) => {
-            if (e.target !== this.fileInput && !e.target.closest('.progress') && !e.target.closest('button')) {
-                this.fileInput.click();
+            // Empêcher la propagation si on clique sur des éléments interactifs
+            if (e.target.closest('.progress') || e.target.closest('button') || e.target.closest('.upload-progress')) {
+                return;
             }
+
+            // Ne pas déclencher si on clique déjà sur l'input file
+            if (e.target === this.fileInput) {
+                return;
+            }
+
+            // Déclencher le clic sur le file input
+            e.preventDefault();
+            e.stopPropagation();
+            this.fileInput.click();
         });
+
+        // Ajouter un gestionnaire spécifique pour le texte "cliquez pour parcourir"
+        const browseText = this.dropZone.querySelector('.cursor-pointer, [style*="cursor:pointer"]');
+        if (browseText) {
+            browseText.style.cursor = 'pointer';
+            browseText.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.fileInput.click();
+            });
+        }
 
         // File selection
         this.fileInput.addEventListener('change', (e) => {
@@ -1345,7 +1368,7 @@ class AudioRecorder {
             if (this.micError) this.micError.classList.add('d-none');
 
             if (!navigator.mediaDevices || !window.MediaRecorder) {
-                throw new Error('Votre navigateur ne supporte pas l'enregistrement audio');
+                throw new Error('Votre navigateur ne supporte pas l\'enregistrement audio');
             }
 
             this.stream = await navigator.mediaDevices.getUserMedia({
@@ -1410,7 +1433,7 @@ class AudioRecorder {
 
             this.mediaRecorder.onerror = (e) => {
                 console.error('MediaRecorder error:', e);
-                Utils.showToast('error', 'Erreur lors de l'enregistrement');
+                Utils.showToast('error', 'Erreur lors de l\'enregistrement');
                 this.resetRecorder();
             };
 
@@ -1821,7 +1844,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const filePath = this.querySelector('[name="uploaded_file_path"]')?.value;
                     if (!filePath && mode === 'create') {
                         e.preventDefault();
-                        Utils.showToast('warning', 'Attention', 'Veuillez d'abord uploader un fichier audio');
+                        Utils.showToast('warning', 'Attention', 'Veuillez d\'abord uploader un fichier audio');
                         return false;
                     }
                 }
