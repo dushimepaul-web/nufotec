@@ -687,7 +687,7 @@ class Audio extends MY_Controller {
         $ffmpeg = $this->check_ffmpeg();
         if (!$ffmpeg) return 0;
 
-        $cmd = sprintf('%s -i %s 2>&1 | grep "Duration" | cut -d ' ' -f 4 | sed s/,//',
+        $cmd = sprintf("%s -i %s 2>&1 | grep 'Duration' | cut -d ' ' -f 4 | sed s/,//",
             escapeshellarg($ffmpeg),
             escapeshellarg($file_path)
         );
