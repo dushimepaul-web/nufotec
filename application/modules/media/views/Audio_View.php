@@ -460,8 +460,7 @@
                         </div>
 
                     <?php endforeach; else: ?>
-                        <tr>
-                            <td colspan="10" class="text-center py-5">
+                        
                                 <i class="bx bx-music fs-1 text-muted mb-3"></i>
                                 <p class="text-muted">Aucun audio trouvé</p>
                                 <a href="javascript:;" class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#create_audio">
@@ -470,8 +469,7 @@
                                 <a href="javascript:;" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#record_audio">
                                     <i class="bx bx-microphone me-1"></i>Enregistrer
                                 </a>
-                            </td>
-                        </tr>
+                            
                     <?php endif; ?>
                     </tbody>
                 </table>
