@@ -1,38 +1,42 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/**
- * Audio Controller
- * Gestion des médias audio avec upload chunked et enregistrement WebRTC
- */
 class Audio extends MY_Controller {
 
     private $upload_dir;
     private $final_dir;
 
-    public function __construct()
+    function __construct()
     {
         parent::__construct();
-
-        // Vérifier que l'utilisateur est admin
-        if (!is_admin()) {
-            redirect('login');
-        }
-
-        // Définir les chemins
+        is_admin();
+        
+        // Définir les chemins absolus (FCPATH est la racine du projet)
         $this->upload_dir = FCPATH . 'uploads/temp/audio/';
         $this->final_dir = FCPATH . 'attachments/Audio/';
+        
+        // Créer les dossiers avec vérification des droits
+        $this->ensure_directory($this->upload_dir);
+        $this->ensure_directory($this->final_dir);
+    }
 
-        // Créer les dossiers si inexistant
-        if (!is_dir($this->upload_dir)) {
-            @mkdir($this->upload_dir, 0777, TRUE);
+    /**
+     * Vérifie et crée un dossier avec les bonnes permissions
+     */
+    private function ensure_directory($dir)
+    {
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 0777, TRUE)) {
+                $error = error_get_last();
+                log_message('error', 'Échec création dossier: ' . $dir . ' - ' . ($error['message'] ?? ''));
+                show_error("Erreur de configuration : le dossier $dir n'a pas pu être créé.");
+            }
         }
-        if (!is_dir($this->final_dir)) {
-            @mkdir($this->final_dir, 0777, TRUE);
+        // Vérifier les droits d'écriture
+        if (!is_writable($dir)) {
+            log_message('error', 'Dossier non accessible en écriture: ' . $dir);
+            show_error("Erreur de configuration : le dossier $dir n'est pas accessible en écriture.");
         }
-
-        // Charger les modèles nécessaires
-        $this->load->model('Model');
     }
 
     /**
@@ -40,12 +44,7 @@ class Audio extends MY_Controller {
      */
     public function index()
     {
-        $data['audios'] = $this->Model->read('galerie_medias', 
-            ['type' => 'audio'], 
-            'id_media', 
-            'DESC'
-        );
-
+        $data['audios'] = $this->Model->read('galerie_medias', ['type' => 'audio'], 'id_media', 'DESC');
         $this->load->view('Audio_View', $data);
     }
 
@@ -57,11 +56,12 @@ class Audio extends MY_Controller {
     public function initUpload()
     {
         header('Content-Type: application/json');
+        log_message('debug', 'initUpload appelé');
 
         $file_name = $this->input->post('file_name');
         $file_size = (int)$this->input->post('file_size');
-        $chunk_size = 5 * 1024 * 1024; // 5MB
-
+        $chunk_size = 5 * 1024 * 1024; // 5 Mo
+        
         if (empty($file_name) || $file_size <= 0) {
             echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
             return;
@@ -71,7 +71,8 @@ class Audio extends MY_Controller {
         $upload_id = uniqid('audio_upload_', true);
         $temp_dir = $this->upload_dir . $upload_id . '/';
 
-        if (!@mkdir($temp_dir, 0777, TRUE)) {
+        if (!mkdir($temp_dir, 0777, TRUE)) {
+            log_message('error', 'Échec création dossier temporaire: ' . $temp_dir);
             echo json_encode(['success' => false, 'message' => 'Erreur création dossier temporaire']);
             return;
         }
@@ -101,10 +102,7 @@ class Audio extends MY_Controller {
     public function uploadChunk()
     {
         header('Content-Type: application/json');
-
-        // Désactiver le cache pour les requêtes AJAX
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+        log_message('debug', 'uploadChunk appelé');
 
         $upload_id = $this->input->post('upload_id');
         $chunk_index = $this->input->post('chunk_index');
@@ -118,74 +116,40 @@ class Audio extends MY_Controller {
         $temp_dir = $this->upload_dir . $upload_id . '/';
 
         if (!is_dir($temp_dir)) {
-            echo json_encode(['success' => false, 'message' => 'Session invalide ou expirée']);
-            return;
-        }
-
-        // Vérifier si $_FILES est vide (problème de taille)
-        if (empty($_FILES)) {
-            $post_max = ini_get('post_max_size');
-            $upload_max = ini_get('upload_max_filesize');
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Aucun fichier reçu. Vérifiez post_max_size ('.$post_max.') et upload_max_filesize ('.$upload_max.')'
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Session invalide']);
             return;
         }
 
         if (empty($_FILES['chunk'])) {
-            echo json_encode(['success' => false, 'message' => 'Chunk non reçu']);
+            echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
             return;
         }
 
         if ($_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
             $errors = [
-                UPLOAD_ERR_INI_SIZE => 'Chunk trop grand pour php.ini',
-                UPLOAD_ERR_FORM_SIZE => 'Chunk trop grand pour le formulaire',
-                UPLOAD_ERR_PARTIAL => 'Upload partiel - réessayez',
-                UPLOAD_ERR_NO_FILE => 'Aucun fichier envoyé',
-                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant',
-                UPLOAD_ERR_CANT_WRITE => 'Erreur écriture disque',
-                UPLOAD_ERR_EXTENSION => 'Extension PHP bloquante'
+                UPLOAD_ERR_INI_SIZE => 'Fichier trop grand (php.ini)',
+                UPLOAD_ERR_FORM_SIZE => 'Fichier trop grand (formulaire)',
+                UPLOAD_ERR_PARTIAL => 'Upload partiel',
+                UPLOAD_ERR_NO_FILE => 'Aucun fichier',
+                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temp manquant',
+                UPLOAD_ERR_CANT_WRITE => 'Erreur écriture',
+                UPLOAD_ERR_EXTENSION => 'Extension bloquée'
             ];
-            $msg = isset($errors[$_FILES['chunk']['error']]) ? $errors[$_FILES['chunk']['error']] : 'Erreur #'.$_FILES['chunk']['error'];
-            error_log('Upload chunk error: ' . $msg . ' for upload_id: ' . $upload_id);
+            $msg = $errors[$_FILES['chunk']['error']] ?? 'Erreur ' . $_FILES['chunk']['error'];
             echo json_encode(['success' => false, 'message' => $msg]);
             return;
         }
 
         $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
-
-        // Utiliser copy si move_uploaded_file échoue (parfois sur certains serveurs)
+        
         if (!move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
-            // Essayer avec copy comme fallback
-            if (!copy($_FILES['chunk']['tmp_name'], $chunk_path)) {
-                error_log('Failed to save chunk ' . $chunk_index . ' for upload_id: ' . $upload_id);
-                echo json_encode(['success' => false, 'message' => 'Impossible de sauvegarder le chunk']);
-                return;
-            }
-            // Supprimer le fichier temporaire après copy
-            @unlink($_FILES['chunk']['tmp_name']);
-        }
-
-        // Vérifier que le fichier a bien été créé
-        if (!file_exists($chunk_path)) {
-            echo json_encode(['success' => false, 'message' => 'Chunk non sauvegardé']);
+            echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde chunk']);
             return;
         }
 
         $metadata_path = $temp_dir . 'metadata.json';
-        if (!file_exists($metadata_path)) {
-            echo json_encode(['success' => false, 'message' => 'Métadonnées non trouvées']);
-            return;
-        }
-
         $metadata = json_decode(file_get_contents($metadata_path), true);
-        if (!$metadata) {
-            echo json_encode(['success' => false, 'message' => 'Erreur lecture métadonnées']);
-            return;
-        }
-
+        
         if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
             $metadata['uploaded_chunks'][] = $chunk_index;
             sort($metadata['uploaded_chunks']);
@@ -205,23 +169,24 @@ class Audio extends MY_Controller {
     }
 
     /**
-     * Étape 3: Vérifier le statut
+     * Étape 3: Vérifier le statut (optionnel, utilisé pour la reprise)
      */
     public function checkStatus()
     {
         header('Content-Type: application/json');
+        log_message('debug', 'checkStatus appelé');
 
         $upload_id = $this->input->post('upload_id');
         $temp_dir = $this->upload_dir . $upload_id . '/';
         $metadata_path = $temp_dir . 'metadata.json';
-
+        
         if (!file_exists($metadata_path)) {
             echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
             return;
         }
 
         $metadata = json_decode(file_get_contents($metadata_path), true);
-
+        
         $actual_chunks = [];
         for ($i = 0; $i < $metadata['total_chunks']; $i++) {
             if (file_exists($temp_dir . 'chunk_' . $i)) {
@@ -252,18 +217,19 @@ class Audio extends MY_Controller {
     public function completeUpload()
     {
         header('Content-Type: application/json');
+        log_message('debug', 'completeUpload appelé');
 
         $upload_id = $this->input->post('upload_id');
         $temp_dir = $this->upload_dir . $upload_id . '/';
         $metadata_path = $temp_dir . 'metadata.json';
-
+        
         if (!file_exists($metadata_path)) {
             echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
             return;
         }
 
         $metadata = json_decode(file_get_contents($metadata_path), true);
-
+        
         $missing = [];
         for ($i = 0; $i < $metadata['total_chunks']; $i++) {
             if (!file_exists($temp_dir . 'chunk_' . $i)) {
@@ -306,9 +272,7 @@ class Audio extends MY_Controller {
             return;
         }
 
-        // Générer waveform/miniature
         $waveform = $this->generate_audio_waveform($relative_path);
-        $duration = $this->get_audio_duration($final_path);
 
         echo json_encode([
             'success' => true,
@@ -318,36 +282,36 @@ class Audio extends MY_Controller {
             'file_size_formatted' => $this->formatFileSize(filesize($final_path)),
             'waveform' => $waveform,
             'mime_type' => mime_content_type($final_path),
-            'duration' => $duration
+            'duration' => $this->get_audio_duration($final_path)
         ]);
     }
 
     /**
-     * Annuler upload
+     * Annuler l'upload (supprimer les fichiers temporaires)
      */
     public function cancelUpload()
     {
         header('Content-Type: application/json');
-
         $upload_id = $this->input->post('upload_id');
         $temp_dir = $this->upload_dir . $upload_id . '/';
-
+        
         if (is_dir($temp_dir)) {
             array_map('unlink', glob($temp_dir . '*'));
-            @rmdir($temp_dir);
+            rmdir($temp_dir);
         }
 
         echo json_encode(['success' => true]);
     }
 
-    // ==================== ENREGISTREMENT AUDIO ====================
+    // ==================== ENREGISTREMENT AUDIO (WEBCAM) ====================
 
     /**
-     * Sauvegarder un audio enregistré (WebRTC)
+     * Sauvegarder un enregistrement audio (WebRTC)
      */
     public function saveRecording()
     {
         header('Content-Type: application/json');
+        log_message('debug', 'saveRecording appelé');
 
         if (empty($_FILES['audio'])) {
             echo json_encode(['success' => false, 'message' => 'Aucun audio reçu']);
@@ -359,16 +323,10 @@ class Audio extends MY_Controller {
             return;
         }
 
-        // Types MIME acceptés
         $allowed_types = [
-            'audio/webm', 
-            'audio/ogg', 
-            'audio/wav', 
-            'audio/mp4', 
-            'audio/mpeg',
-            'video/webm'  // Chrome envoie parfois video/webm
+            'audio/webm', 'audio/ogg', 'audio/wav', 'audio/mp4', 'audio/mpeg', 'video/webm'
         ];
-
+        
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime_type = finfo_file($finfo, $_FILES['audio']['tmp_name']);
         finfo_close($finfo);
@@ -378,13 +336,11 @@ class Audio extends MY_Controller {
             return;
         }
 
-        // Récupérer la durée envoyée par JS
         $duration = $this->input->post('duration');
         if (empty($duration) || !is_numeric($duration)) {
             $duration = 0;
         }
 
-        // Générer nom fichier
         $final_name = date("YmdHis") . '_recording_' . uniqid() . '.webm';
         $final_path = $this->final_dir . $final_name;
         $relative_path = 'attachments/Audio/' . $final_name;
@@ -394,7 +350,7 @@ class Audio extends MY_Controller {
             return;
         }
 
-        // Convertir en MP3 si FFmpeg disponible
+        // Tentative de conversion en MP3 (si FFmpeg disponible)
         $mp3_path = $this->convert_to_mp3($final_path);
         if ($mp3_path) {
             unlink($final_path);
@@ -403,7 +359,6 @@ class Audio extends MY_Controller {
             $final_name = basename($mp3_path);
         }
 
-        // Générer waveform
         $waveform = $this->generate_audio_waveform($relative_path);
 
         echo json_encode([
@@ -426,11 +381,9 @@ class Audio extends MY_Controller {
      */
     public function Create()
     {
-        $this->load->library('form_validation');
-
         $this->form_validation->set_rules('titre', 'Titre', 'required|max_length[255]');
         $type_source = $this->input->post('type_source');
-
+        
         if ($type_source == 'link') {
             $this->form_validation->set_rules('lien', 'Lien audio', 'required|valid_url');
         }
@@ -448,7 +401,7 @@ class Audio extends MY_Controller {
             'categorie' => $this->input->post('categorie') ?: NULL,
             'date_media' => $this->input->post('date_media') ?: NULL,
             'credits' => $this->input->post('credits') ?: NULL,
-            'est_actif' => 1,
+            'est_actif' => 1, // par défaut actif
             'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
             'message_reseaux' => $this->input->post('message_reseaux') ?: NULL,
             'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
@@ -460,20 +413,19 @@ class Audio extends MY_Controller {
 
         if ($type_source == 'upload' || $type_source == 'recording') {
             $file_path = $this->input->post('uploaded_file_path');
-
+            
             if (!empty($file_path) && file_exists(FCPATH . $file_path)) {
                 $full_path = FCPATH . $file_path;
                 $data['fichier'] = $file_path;
                 $data['taille'] = filesize($full_path);
                 $data['mime_type'] = mime_content_type($full_path);
-
-                // Récupérer la durée - d'abord depuis le champ caché, sinon calculer
+                
                 $duration = $this->input->post('duration');
                 if (empty($duration) || $duration == 0) {
                     $duration = $this->get_audio_duration($full_path);
                 }
                 $data['duree'] = $duration ?: 0;
-
+                
                 $data['miniature'] = $this->input->post('waveform') ?: $this->generate_audio_waveform($file_path);
                 $data['is_recording'] = ($type_source == 'recording') ? 1 : 0;
             } else {
@@ -482,11 +434,12 @@ class Audio extends MY_Controller {
                 return;
             }
         } else {
+            // Type 'link'
             $data['lien'] = $this->input->post('lien');
             $data['miniature'] = $this->extract_audio_thumbnail($data['lien']);
-            $data['duree'] = 0;
+            $data['duree'] = 0; // durée inconnue pour un lien externe
         }
-
+        
         $rsp = $this->Model->create('galerie_medias', $data);
 
         if ($rsp) {
@@ -502,13 +455,11 @@ class Audio extends MY_Controller {
      */
     public function Update()
     {
-        $this->load->library('form_validation');
-
         $id = $this->input->post('id');
-
+        
         $this->form_validation->set_rules('titre', 'Titre', 'required|max_length[255]');
         $type_source = $this->input->post('type_source');
-
+        
         if ($type_source == 'link') {
             $this->form_validation->set_rules('lien', 'Lien audio', 'required|valid_url');
         }
@@ -538,14 +489,16 @@ class Audio extends MY_Controller {
 
         if ($type_source == 'upload') {
             $new_path = $this->input->post('uploaded_file_path');
-
+            
             if (!empty($new_path) && file_exists(FCPATH . $new_path)) {
-                // Supprimer ancien fichier
+                // Supprimer l'ancien fichier s'il existe
                 if ($old && !empty($old['fichier']) && file_exists(FCPATH . $old['fichier'])) {
                     @unlink(FCPATH . $old['fichier']);
-                    if (!empty($old['miniature'])) @unlink(FCPATH . $old['miniature']);
+                    if (!empty($old['miniature']) && file_exists(FCPATH . $old['miniature'])) {
+                        @unlink(FCPATH . $old['miniature']);
+                    }
                 }
-
+                
                 $data['fichier'] = $new_path;
                 $data['taille'] = filesize(FCPATH . $new_path);
                 $data['mime_type'] = mime_content_type(FCPATH . $new_path);
@@ -556,13 +509,15 @@ class Audio extends MY_Controller {
             }
         } elseif ($type_source == 'link') {
             $new_lien = $this->input->post('lien');
-
-            // Supprimer ancien fichier
+            
+            // Supprimer l'ancien fichier s'il existe
             if ($old && !empty($old['fichier']) && file_exists(FCPATH . $old['fichier'])) {
                 @unlink(FCPATH . $old['fichier']);
-                if (!empty($old['miniature'])) @unlink(FCPATH . $old['miniature']);
+                if (!empty($old['miniature']) && file_exists(FCPATH . $old['miniature'])) {
+                    @unlink(FCPATH . $old['miniature']);
+                }
             }
-
+            
             $data['lien'] = $new_lien;
             $data['fichier'] = NULL;
             $data['taille'] = NULL;
@@ -583,24 +538,27 @@ class Audio extends MY_Controller {
     }
 
     /**
-     * Supprimer un audio
+     * Supprimer (désactiver) un audio
      */
     public function Delete()
     {
         $id = $this->input->post('id');
         $audio = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
-
-        // Soft delete - marquer comme inactif
+        
+        // On passe l'audio en inactif plutôt que de le supprimer définitivement
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
             'est_actif' => 0,
             'updated_at' => date('Y-m-d H:i:s')
         ]);
 
         if ($rsp) {
-            // Supprimer les fichiers physiques
-            if ($audio && !empty($audio['fichier'])) @unlink(FCPATH . $audio['fichier']);
-            if ($audio && !empty($audio['miniature'])) @unlink(FCPATH . $audio['miniature']);
-
+            // Optionnel : supprimer les fichiers physiques
+            if ($audio && !empty($audio['fichier']) && file_exists(FCPATH . $audio['fichier'])) {
+                @unlink(FCPATH . $audio['fichier']);
+            }
+            if ($audio && !empty($audio['miniature']) && file_exists(FCPATH . $audio['miniature'])) {
+                @unlink(FCPATH . $audio['miniature']);
+            }
             $this->session->set_flashdata('success', 'Audio supprimé avec succès.');
         } else {
             $this->session->set_flashdata('error', 'Erreur lors de la suppression.');
@@ -609,14 +567,14 @@ class Audio extends MY_Controller {
     }
 
     /**
-     * Changer le statut (Actif/Inactif)
+     * Changer le statut (actif/inactif)
      */
     public function ChangeStatus()
     {
         $id = $this->input->post('id');
         $est_actif = $this->input->post('est_actif');
         $status = ($est_actif == 1) ? 0 : 1;
-
+        
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => $status]);
 
         if ($rsp) {
@@ -628,34 +586,35 @@ class Audio extends MY_Controller {
     }
 
     /**
-     * Toggle AJAX pour WhatsApp et Site Web
+     * Toggle AJAX pour les champs binaires (WhatsApp, Site Web)
      */
     public function toggleField()
     {
         header('Content-Type: application/json');
-
+        
+        // Note : on a supprimé la vérification is_ajax_request() pour éviter le rejet
         $id = $this->input->post('id');
         $field = $this->input->post('field');
         $value = $this->input->post('value');
-
+        
         $allowed = ['is_for_whatsapp', 'is_for_website'];
         if (!in_array($field, $allowed)) {
             echo json_encode(['success' => false, 'message' => 'Champ non autorisé']);
             return;
         }
-
+        
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
             $field => $value,
             'updated_at' => date('Y-m-d H:i:s')
         ]);
-
+        
         echo json_encode(['success' => (bool)$rsp]);
     }
 
     // ==================== HELPERS ====================
 
     /**
-     * Formater la taille de fichier
+     * Formater la taille en Ko/Mo/Go
      */
     private function formatFileSize($bytes)
     {
@@ -666,19 +625,20 @@ class Audio extends MY_Controller {
     }
 
     /**
-     * Générer une waveform/miniature pour audio
+     * Générer une image de waveform avec FFmpeg
      */
     private function generate_audio_waveform($audio_path)
     {
-        // Utiliser FFmpeg pour générer une image de waveform
         $ffmpeg = $this->check_ffmpeg();
-        if (!$ffmpeg) return 'assets/images/audio-default.png';
+        if (!$ffmpeg) {
+            log_message('error', 'FFmpeg non disponible, waveform par défaut utilisée');
+            return 'assets/images/audio-default.png';
+        }
 
         $folder = FCPATH . 'attachments/Audio/';
         $name = pathinfo($audio_path, PATHINFO_FILENAME) . '_waveform.png';
         $path = $folder . $name;
 
-        // Générer waveform avec FFmpeg
         $cmd = sprintf('%s -i %s -filter_complex "showwavespic=s=800x200:colors=blue" -frames:v 1 %s 2>&1',
             escapeshellarg($ffmpeg),
             escapeshellarg(FCPATH . $audio_path),
@@ -686,75 +646,74 @@ class Audio extends MY_Controller {
         );
 
         exec($cmd, $output, $code);
-
+        
         if ($code === 0 && file_exists($path)) {
             return 'attachments/Audio/' . $name;
         }
 
+        log_message('error', 'Échec génération waveform, code: ' . $code . ' sortie: ' . implode("\n", $output));
         return 'assets/images/audio-default.png';
     }
 
     /**
-     * Extraire miniature depuis URL (SoundCloud, Spotify, etc.)
+     * Extraire une miniature pour un lien externe (YouTube, SoundCloud, Spotify)
      */
     private function extract_audio_thumbnail($url)
     {
-        // SoundCloud (nécessite API)
-        if (preg_match('/soundcloud\.com/', $url)) {
-            return 'assets/images/soundcloud-default.png';
-        }
-
-        // Spotify (nécessite API)
-        if (preg_match('/spotify\.com/', $url)) {
-            return 'assets/images/spotify-default.png';
-        }
-
-        // YouTube Audio
+        // YouTube
         if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
             return "https://img.youtube.com/vi/{$m[1]}/mqdefault.jpg";
         }
-
+        
+        // SoundCloud / Spotify : on pourrait utiliser une API, mais on renvoie une image par défaut
+        if (preg_match('/soundcloud\.com/', $url)) {
+            return 'assets/images/soundcloud-default.png';
+        }
+        if (preg_match('/spotify\.com/', $url)) {
+            return 'assets/images/spotify-default.png';
+        }
+        
         return 'assets/images/audio-default.png';
     }
 
     /**
-     * Obtenir la durée d'un fichier audio
+     * Obtenir la durée d'un fichier audio via FFmpeg
      */
     private function get_audio_duration($file_path)
     {
         $ffmpeg = $this->check_ffmpeg();
         if (!$ffmpeg) return 0;
 
-        $cmd = sprintf("%s -i %s 2>&1 | grep 'Duration' | cut -d ' ' -f 4 | sed s/,//",
+        $cmd = sprintf('%s -i %s 2>&1 | grep "Duration" | cut -d \' \' -f 4 | sed s/,//',
             escapeshellarg($ffmpeg),
             escapeshellarg($file_path)
         );
 
         exec($cmd, $output, $code);
-
+        
         if (!empty($output[0])) {
-            // Convertir HH:MM:SS.ms en secondes
             $parts = explode(':', $output[0]);
             if (count($parts) === 3) {
                 $hours = (int)$parts[0];
                 $minutes = (int)$parts[1];
                 $seconds = (float)$parts[2];
-                return (int)(($hours * 3600) + ($minutes * 60) + $seconds);
+                return ($hours * 3600) + ($minutes * 60) + $seconds;
             }
         }
-
         return 0;
     }
 
     /**
-     * Convertir audio en MP3
+     * Convertir un fichier audio en MP3 (si FFmpeg disponible)
      */
     private function convert_to_mp3($input_path)
     {
         $ffmpeg = $this->check_ffmpeg();
         if (!$ffmpeg) return NULL;
 
-        $output_path = str_replace(['.webm', '.ogg', '.wav'], '.mp3', $input_path);
+        $output_path = str_replace('.webm', '.mp3', $input_path);
+        $output_path = str_replace('.ogg', '.mp3', $output_path);
+        $output_path = str_replace('.wav', '.mp3', $output_path);
 
         $cmd = sprintf('%s -i %s -codec:a libmp3lame -qscale:a 2 %s 2>&1',
             escapeshellarg($ffmpeg),
@@ -763,18 +722,21 @@ class Audio extends MY_Controller {
         );
 
         exec($cmd, $output, $code);
-
-        return ($code === 0 && file_exists($output_path)) ? $output_path : NULL;
+        
+        if ($code === 0 && file_exists($output_path)) {
+            return $output_path;
+        }
+        return NULL;
     }
 
     /**
-     * Vérifier si FFmpeg est installé
+     * Vérifier si FFmpeg est installé et retourner son chemin
      */
     private function check_ffmpeg()
     {
         $paths = ['ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'C:\\ffmpeg\\bin\\ffmpeg.exe'];
         foreach ($paths as $p) {
-            exec($p . ' -version 2>&1', $out, $code);
+            @exec($p . ' -version 2>&1', $out, $code);
             if ($code === 0) return $p;
         }
         return FALSE;

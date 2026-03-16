@@ -791,20 +791,18 @@
 
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-
 /**
- * Audio Management System
- * Chunked Upload + WebRTC Recording + AJAX Toggles
+ * Audio Management System - Version serveur corrigée
  */
 
 // ==================== CONFIGURATION ====================
 const CONFIG = {
-    CHUNK_SIZE: 5 * 1024 * 1024, // 5MB chunks
+    CHUNK_SIZE: 5 * 1024 * 1024,
     MAX_RETRIES: 3,
     RETRY_DELAY: 1000,
-    ALLOWED_TYPES: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/mp4', 'audio/x-m4a', 'audio/flac'],
     ALLOWED_EXTENSIONS: ['mp3', 'wav', 'ogg', 'webm', 'm4a', 'flac', 'aac']
 };
 
@@ -817,13 +815,13 @@ const Utils = {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     },
-
+    
     formatDuration: (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
-
+    
     showToast: (icon, title, text = '') => {
         Swal.fire({
             icon: icon,
@@ -843,140 +841,113 @@ class ChunkedUploadManager {
     constructor(uploadId, dropZoneId) {
         this.uploadId = uploadId;
         this.dropZone = document.getElementById(dropZoneId);
+        if (!this.dropZone) {
+            console.error('DropZone introuvable:', dropZoneId);
+            return;
+        }
         this.fileInput = this.dropZone.querySelector('.file-input');
+        if (!this.fileInput) {
+            console.error('fileInput introuvable dans', dropZoneId);
+            return;
+        }
+        console.log(`Manager ${uploadId} initialisé, fileInput:`, this.fileInput);
+
         this.progressBar = this.dropZone.querySelector('.progress-bar');
         this.progressContainer = this.dropZone.querySelector('.upload-progress');
         this.statusText = this.dropZone.querySelector('.upload-status') || document.getElementById(`${uploadId}_upload_status`);
         this.percentText = this.dropZone.querySelector('.upload-percent') || document.getElementById(`${uploadId}_upload_percent`);
         this.chunksInfo = this.dropZone.querySelector('.upload-chunks') || document.getElementById(`${uploadId}_chunks_info`);
         this.sizeInfo = document.getElementById(`${uploadId}_size_info`);
-
+        
         this.currentFile = null;
         this.uploadSessionId = null;
         this.isPaused = false;
         this.isUploading = false;
-        this.chunksQueue = [];
         this.uploadedChunks = [];
         this.totalChunks = 0;
         this.abortController = null;
-
+        
         this.init();
     }
-
+    
     init() {
-        // Click to browse - amélioré pour capturer tous les clics dans la zone
+        // Gestionnaire de clic sur la zone de drop
         this.dropZone.addEventListener('click', (e) => {
-            // Empêcher la propagation si on clique sur des éléments interactifs
-            if (e.target.closest('.progress') || e.target.closest('button') || e.target.closest('.upload-progress')) {
-                return;
+            if (e.target !== this.fileInput && !e.target.closest('.progress') && !e.target.closest('button')) {
+                if (this.fileInput) {
+                    console.log('Clic sur dropZone, déclenchement input file');
+                    this.fileInput.click();
+                }
             }
-
-            // Ne pas déclencher si on clique déjà sur l'input file
-            if (e.target === this.fileInput) {
-                return;
-            }
-
-            // Déclencher le clic sur le file input
-            e.preventDefault();
-            e.stopPropagation();
-            this.fileInput.click();
         });
-
-        // Ajouter un gestionnaire spécifique pour le texte "cliquez pour parcourir"
-        const browseText = this.dropZone.querySelector('.cursor-pointer, [style*="cursor:pointer"]');
-        if (browseText) {
-            browseText.style.cursor = 'pointer';
-            browseText.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.fileInput.click();
-            });
-        }
-
-        // File selection
+        
         this.fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 this.handleFile(e.target.files[0]);
             }
         });
-
-        // Drag and drop
+        
         this.dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             this.dropZone.classList.add('border-primary', 'bg-light');
         });
-
+        
         this.dropZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
             this.dropZone.classList.remove('border-primary', 'bg-light');
         });
-
+        
         this.dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             this.dropZone.classList.remove('border-primary', 'bg-light');
-
             const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.handleFile(files[0]);
-            }
+            if (files.length > 0) this.handleFile(files[0]);
         });
-
-        // Control buttons
+        
+        // Boutons de contrôle (annuler, pause, reprendre)
         const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
         const cancelBtn = parent.querySelector('.cancel-upload');
         const pauseBtn = parent.querySelector('.pause-upload');
         const resumeBtn = parent.querySelector('.resume-upload');
-
+        
         if (cancelBtn) {
-            cancelBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.cancelUpload();
-            });
+            cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); this.cancelUpload(); });
         }
         if (pauseBtn) {
-            pauseBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.pauseUpload();
-            });
+            pauseBtn.addEventListener('click', (e) => { e.stopPropagation(); this.pauseUpload(); });
         }
         if (resumeBtn) {
-            resumeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.resumeUpload();
-            });
+            resumeBtn.addEventListener('click', (e) => { e.stopPropagation(); this.resumeUpload(); });
         }
     }
-
+    
     handleFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
         if (!CONFIG.ALLOWED_EXTENSIONS.includes(ext)) {
             Utils.showToast('error', 'Format non supporté', 'Formats acceptés: MP3, WAV, OGG, WEBM, M4A, FLAC');
             return;
         }
-
         this.currentFile = file;
-
-        // Show file info
+        
         const fileInfo = document.getElementById(`${this.uploadId}_file_info`);
         const fileName = document.getElementById(`${this.uploadId}_file_name`);
         const fileSize = document.getElementById(`${this.uploadId}_file_size`);
-
+        
         if (fileInfo && fileName && fileSize) {
             fileName.textContent = file.name;
             fileSize.textContent = Utils.formatBytes(file.size);
             fileInfo.classList.remove('d-none');
         }
-
+        
         this.startUpload();
     }
-
+    
     async startUpload() {
         if (!this.currentFile) return;
-
         this.isUploading = true;
         this.isPaused = false;
         this.abortController = new AbortController();
-
+        
         try {
             await this.initUpload();
             await this.uploadChunks();
@@ -988,64 +959,48 @@ class ChunkedUploadManager {
             }
         }
     }
-
+    
     async initUpload() {
         const formData = new FormData();
         formData.append('file_name', this.currentFile.name);
         formData.append('file_size', this.currentFile.size);
-
+        
         const response = await fetch('<?= base_url("audio/initUpload") ?>', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-
+        
         const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.message || 'Erreur initialisation');
-        }
-
+        if (!data.success) throw new Error(data.message || 'Erreur initialisation');
+        
         this.uploadSessionId = data.upload_id;
         this.totalChunks = data.total_chunks;
-        this.chunksQueue = [];
-        for (let i = 0; i < this.totalChunks; i++) {
-            this.chunksQueue.push(i);
-        }
-
-        if (this.progressContainer) {
-            this.progressContainer.classList.remove('d-none');
-        }
-
+        
+        if (this.progressContainer) this.progressContainer.classList.remove('d-none');
+        
         const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
         const cancelBtn = parent.querySelector('.cancel-upload');
         const pauseBtn = parent.querySelector('.pause-upload');
         if (cancelBtn) cancelBtn.classList.remove('d-none');
         if (pauseBtn) pauseBtn.classList.remove('d-none');
-
+        
         this.updateProgress(0);
     }
-
+    
     async uploadChunks() {
         const chunkSize = CONFIG.CHUNK_SIZE;
-
         for (let i = 0; i < this.totalChunks; i++) {
             if (!this.isUploading) break;
-
-            while (this.isPaused) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-
+            while (this.isPaused) await new Promise(r => setTimeout(r, 100));
             if (!this.isUploading) break;
             if (this.uploadedChunks.includes(i)) continue;
-
+            
             const start = i * chunkSize;
             const end = Math.min(start + chunkSize, this.currentFile.size);
             const chunk = this.currentFile.slice(start, end);
-
-            let retries = 0;
-            let success = false;
-
+            
+            let retries = 0, success = false;
             while (retries < CONFIG.MAX_RETRIES && !success) {
                 try {
                     await this.uploadChunk(i, chunk);
@@ -1053,74 +1008,59 @@ class ChunkedUploadManager {
                     this.uploadedChunks.push(i);
                     this.updateProgress((this.uploadedChunks.length / this.totalChunks) * 100);
                 } catch (error) {
-                    retries++;
-                    if (retries >= CONFIG.MAX_RETRIES) {
-                        throw new Error(`Échec chunk ${i} après ${CONFIG.MAX_RETRIES} tentatives`);
-                    }
-                    await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
+                    if (++retries >= CONFIG.MAX_RETRIES) throw new Error(`Échec chunk ${i} après ${CONFIG.MAX_RETRIES} tentatives`);
+                    await new Promise(r => setTimeout(r, CONFIG.RETRY_DELAY));
                 }
             }
         }
     }
-
+    
     async uploadChunk(index, chunk) {
         const formData = new FormData();
         formData.append('upload_id', this.uploadSessionId);
         formData.append('chunk_index', index);
         formData.append('chunk', chunk);
-
+        
         const response = await fetch('<?= base_url("audio/uploadChunk") ?>', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             signal: this.abortController.signal
         });
-
+        
         const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.message || 'Erreur chunk');
-        }
-
+        if (!data.success) throw new Error(data.message || 'Erreur chunk');
         return data;
     }
-
+    
     async completeUpload() {
         if (!this.isUploading) return;
-
+        
         const formData = new FormData();
         formData.append('upload_id', this.uploadSessionId);
-
+        
         const response = await fetch('<?= base_url("audio/completeUpload") ?>', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-
+        
         const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.message || 'Erreur finalisation');
-        }
-
-        // Update hidden fields
+        if (!data.success) throw new Error(data.message || 'Erreur finalisation');
+        
         const uploadedPath = this.dropZone.querySelector('.uploaded-path') || document.getElementById(`${this.uploadId}_uploaded_path`);
         const waveformPath = this.dropZone.querySelector('.waveform-path') || document.getElementById(`${this.uploadId}_waveform_path`);
         const durationField = this.dropZone.querySelector('.duration-field') || document.getElementById(`${this.uploadId}_duration`);
-
+        
         if (uploadedPath) uploadedPath.value = data.file_path;
         if (waveformPath) waveformPath.value = data.waveform || '';
         if (durationField) durationField.value = data.duration || 0;
-
-        // Show success
+        
         const successDiv = document.getElementById(`${this.uploadId}_upload_success`);
-        if (successDiv) {
-            successDiv.classList.remove('d-none');
-        }
-
+        if (successDiv) successDiv.classList.remove('d-none');
+        
         Utils.showToast('success', 'Upload terminé!', `${data.file_size_formatted} uploadé avec succès`);
-
-        // Hide controls
+        
         const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
         const cancelBtn = parent.querySelector('.cancel-upload');
         const pauseBtn = parent.querySelector('.pause-upload');
@@ -1128,10 +1068,10 @@ class ChunkedUploadManager {
         if (cancelBtn) cancelBtn.classList.add('d-none');
         if (pauseBtn) pauseBtn.classList.add('d-none');
         if (resumeBtn) resumeBtn.classList.add('d-none');
-
+        
         this.isUploading = false;
     }
-
+    
     pauseUpload() {
         this.isPaused = true;
         const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
@@ -1141,7 +1081,7 @@ class ChunkedUploadManager {
         if (resumeBtn) resumeBtn.classList.remove('d-none');
         if (this.statusText) this.statusText.textContent = 'En pause...';
     }
-
+    
     resumeUpload() {
         this.isPaused = false;
         const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
@@ -1151,38 +1091,27 @@ class ChunkedUploadManager {
         if (resumeBtn) resumeBtn.classList.add('d-none');
         if (this.statusText) this.statusText.textContent = 'Upload en cours...';
     }
-
+    
     async cancelUpload() {
         this.isUploading = false;
-        if (this.abortController) {
-            this.abortController.abort();
-        }
-
+        if (this.abortController) this.abortController.abort();
+        
         if (this.uploadSessionId) {
             const formData = new FormData();
             formData.append('upload_id', this.uploadSessionId);
-
             try {
                 await fetch('<?= base_url("audio/cancelUpload") ?>', {
                     method: 'POST',
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-            } catch (e) {
-                console.error('Erreur annulation:', e);
-            }
+            } catch (e) {}
         }
-
-        if (this.progressContainer) {
-            this.progressContainer.classList.add('d-none');
-        }
-
-        const fileInfo = document.getElementById(`${this.uploadId}_file_info`);
-        if (fileInfo) fileInfo.classList.add('d-none');
-
-        const successDiv = document.getElementById(`${this.uploadId}_upload_success`);
-        if (successDiv) successDiv.classList.add('d-none');
-
+        
+        if (this.progressContainer) this.progressContainer.classList.add('d-none');
+        document.getElementById(`${this.uploadId}_file_info`)?.classList.add('d-none');
+        document.getElementById(`${this.uploadId}_upload_success`)?.classList.add('d-none');
+        
         const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
         const cancelBtn = parent.querySelector('.cancel-upload');
         const pauseBtn = parent.querySelector('.pause-upload');
@@ -1190,29 +1119,23 @@ class ChunkedUploadManager {
         if (cancelBtn) cancelBtn.classList.add('d-none');
         if (pauseBtn) pauseBtn.classList.add('d-none');
         if (resumeBtn) resumeBtn.classList.add('d-none');
-
+        
         this.fileInput.value = '';
         this.currentFile = null;
         this.uploadSessionId = null;
         this.uploadedChunks = [];
-
+        
         Utils.showToast('info', 'Upload annulé');
     }
-
+    
     updateProgress(percent) {
         if (this.progressBar) {
             this.progressBar.style.width = percent + '%';
             this.progressBar.setAttribute('aria-valuenow', percent);
         }
-        if (this.percentText) {
-            this.percentText.textContent = Math.round(percent) + '%';
-        }
-        if (this.statusText) {
-            this.statusText.textContent = percent >= 100 ? 'Finalisation...' : 'Upload en cours...';
-        }
-        if (this.chunksInfo) {
-            this.chunksInfo.textContent = `Chunk ${this.uploadedChunks.length}/${this.totalChunks}`;
-        }
+        if (this.percentText) this.percentText.textContent = Math.round(percent) + '%';
+        if (this.statusText) this.statusText.textContent = percent >= 100 ? 'Finalisation...' : 'Upload en cours...';
+        if (this.chunksInfo) this.chunksInfo.textContent = `Chunk ${this.uploadedChunks.length}/${this.totalChunks}`;
         if (this.sizeInfo && this.currentFile) {
             const uploaded = (this.uploadedChunks.length / this.totalChunks) * this.currentFile.size;
             this.sizeInfo.textContent = `${Utils.formatBytes(uploaded)} / ${Utils.formatBytes(this.currentFile.size)}`;
@@ -1734,23 +1657,20 @@ class AudioRecorder {
     }
 }
 
-// ==================== INITIALISATION ====================
+// ==================== INITIALISATION ROBUSTE ====================
 document.addEventListener('DOMContentLoaded', function() {
-
     // ---- Upload Managers ----
     try {
-        // For creation
+        // Pour la création
         if (document.getElementById('drop_zone_create')) {
             window.createUpload = new ChunkedUploadManager('create', 'drop_zone_create');
         }
-
-        // For edit modals
+        
+        // Pour les modals d'édition
         document.querySelectorAll('.upload-zone[id^="drop_zone_"]').forEach(zone => {
             const id = zone.id.replace('drop_zone_', '');
-            if (id !== 'create') {
-                if (!window['upload_' + id]) {
-                    window['upload_' + id] = new ChunkedUploadManager(id, zone.id);
-                }
+            if (id !== 'create' && !window['upload_' + id]) {
+                window['upload_' + id] = new ChunkedUploadManager(id, zone.id);
             }
         });
     } catch (e) {
@@ -1760,7 +1680,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ---- Audio Recorder ----
     try {
         if (document.getElementById('record_audio')) {
-            window.audioRecorder = new AudioRecorder();
+            window.audioRecorder = new AudioRecorder(); // assurez-vous que cette classe est définie
         }
     } catch (e) {
         console.error('AudioRecorder error:', e);
@@ -1786,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Source type selector error:', e);
     }
 
-    // ---- Share toggle (social networks) ----
+    // ---- Share toggle (réseaux sociaux) ----
     try {
         document.querySelectorAll('.share-toggle').forEach(toggle => {
             toggle.addEventListener('change', function() {
@@ -1834,7 +1754,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Toggle fields error:', e);
     }
 
-    // ---- Form validation ----
+    // ---- Vérification formulaire audio ----
     try {
         document.querySelectorAll('.audio-form').forEach(form => {
             form.addEventListener('submit', function(e) {
@@ -1855,3 +1775,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+
