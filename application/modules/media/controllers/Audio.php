@@ -46,10 +46,10 @@ class Audio extends MY_Controller {
     {
         header('Content-Type: application/json');
         
-        if (!$this->input->is_ajax_request()) {
-            echo json_encode(['success' => false, 'message' => 'Not AJAX']);
-            return;
-        }
+        //if (!$this->input->is_ajax_request()) {
+        //    echo json_encode(['success' => false, 'message' => 'Not AJAX']);
+        //    return;
+       // }
 
         $file_name = $this->input->post('file_name');
         $file_size = (int)$this->input->post('file_size');

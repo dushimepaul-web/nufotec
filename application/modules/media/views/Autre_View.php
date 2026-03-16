@@ -493,15 +493,13 @@
                         </div>
 
                     <?php endforeach; else: ?>
-                        <tr>
-                            <td colspan="10" class="text-center py-5">
+                        
                                 <i class="bx bx-collection fs-1 text-muted mb-3"></i>
                                 <p class="text-muted">Aucun élément trouvé</p>
                                 <a href="javascript:;" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#create_autre">
                                     <i class="bx bx-plus me-1"></i>Ajouter un élément
                                 </a>
-                            </td>
-                        </tr>
+                            
                     <?php endif; ?>
                     </tbody>
                 </table>
