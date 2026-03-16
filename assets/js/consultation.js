@@ -1,4 +1,4 @@
-// consultation.js - Version robuste v2
+// consultation.js - Version robuste v2 (corrigée pour nufotec.com)
 
 let localStream;
 let peerConnection;
@@ -33,8 +33,8 @@ let audioEnabled = true;
 let videoEnabled = true;
 let connectionEstablished = false;
 
-// Connexion Socket.io
-const socket = io(SIGNALING_SERVER);
+// Connexion Socket.io – utilise automatiquement l'origine de la page (https://nufotec.com)
+const socket = io();
 
 // ========== Fonctions utilitaires ==========
 function showToast(message, type = 'info', duration = 4000) {
@@ -88,7 +88,7 @@ async function createPeerConnection() {
   peerConnection.ontrack = (event) => {
     remoteVideo.srcObject = event.streams[0];
     connectionEstablished = true;
-    closeWaitingOverlay();   // ← Ajout
+    closeWaitingOverlay();
     updateOtherStatus(true);
   };
 
@@ -103,7 +103,6 @@ async function createPeerConnection() {
 function setupDataChannel() {
   if (!dataChannel) return;
 
-  // Vérifier si déjà ouvert
   if (dataChannel.readyState === 'open') {
     console.log('Data channel déjà ouvert');
     closeWaitingOverlay();
@@ -131,7 +130,11 @@ function setupDataChannel() {
 // ========== Signalisation Socket ==========
 socket.on('connect', () => {
   console.log('Connecté au serveur de signalisation');
-  socket.emit('join-room', roomId);
+  if (typeof roomId !== 'undefined') {
+    socket.emit('join-room', roomId);
+  } else {
+    console.error('❌ roomId n\'est pas défini');
+  }
 });
 
 socket.on('room-full', (msg) => {
@@ -143,7 +146,8 @@ socket.on('user-connected', async (socketId) => {
   console.log('Autre utilisateur connecté:', socketId);
   otherSocketId = socketId;
   updateOtherStatus(true);
-  showToast(`${otherUser.name} a rejoint la consultation.`, 'success');
+  const otherName = (typeof otherUser !== 'undefined' && otherUser.name) ? otherUser.name : 'L\'autre utilisateur';
+  showToast(`${otherName} a rejoint la consultation.`, 'success');
 
   if (!peerConnection) {
     isInitiator = true;
@@ -204,7 +208,8 @@ socket.on('user-disconnected', (socketId) => {
   if (socketId === otherSocketId) {
     otherSocketId = null;
     updateOtherStatus(false);
-    showToast(`${otherUser.name} a quitté la consultation.`, 'warning');
+    const otherName = (typeof otherUser !== 'undefined' && otherUser.name) ? otherUser.name : 'L\'autre utilisateur';
+    showToast(`${otherName} a quitté la consultation.`, 'warning');
     remoteVideo.srcObject = null;
     connectionEstablished = false;
     waitingOverlay.style.display = 'flex'; // Réafficher l'attente
@@ -213,13 +218,16 @@ socket.on('user-disconnected', (socketId) => {
 
 // ========== Gestion du chat ==========
 function displayMessage(text, senderId, timestamp, file = null) {
-  const isOwn = senderId === currentUser.id;
-  const sender = isOwn ? currentUser : otherUser;
+  // Vérifier que currentUser et otherUser existent, sinon utiliser des valeurs par défaut
+  const currentUserId = (typeof currentUser !== 'undefined' && currentUser.id) ? currentUser.id : 'me';
+  const isOwn = senderId === currentUserId;
+  const sender = isOwn ? (currentUser || { name: 'Moi', avatar: '' }) : (otherUser || { name: 'Autre', avatar: '' });
+
   const messageDiv = document.createElement('div');
   messageDiv.classList.add('message', isOwn ? 'own' : 'other');
 
   const avatar = document.createElement('img');
-  avatar.src = sender.avatar;
+  avatar.src = sender.avatar || 'default-avatar.png';
   avatar.alt = '';
   avatar.classList.add('avatar');
 
@@ -229,7 +237,7 @@ function displayMessage(text, senderId, timestamp, file = null) {
   if (!isOwn) {
     const senderName = document.createElement('div');
     senderName.classList.add('sender');
-    senderName.textContent = sender.name;
+    senderName.textContent = sender.name || 'Inconnu';
     bubble.appendChild(senderName);
   }
 
@@ -237,12 +245,12 @@ function displayMessage(text, senderId, timestamp, file = null) {
     const fileDiv = document.createElement('div');
     fileDiv.classList.add('file');
     const icon = document.createElement('i');
-    icon.className = file.type.startsWith('image/') ? 'fas fa-image' : 'fas fa-file-pdf';
+    icon.className = file.type && file.type.startsWith('image/') ? 'fas fa-image' : 'fas fa-file-pdf';
     fileDiv.appendChild(icon);
     const link = document.createElement('a');
-    link.href = file.url;
+    link.href = file.url || '#';
     link.target = '_blank';
-    link.textContent = file.name;
+    link.textContent = file.name || 'Fichier';
     link.style.color = 'white';
     fileDiv.appendChild(link);
     bubble.appendChild(fileDiv);
@@ -275,15 +283,16 @@ function sendMessage(text, file = null) {
     showToast('La connexion chat n\'est pas encore établie.', 'warning');
     return;
   }
+  const currentUserId = (typeof currentUser !== 'undefined' && currentUser.id) ? currentUser.id : 'me';
   const message = {
     type: file ? 'file' : 'chat',
-    sender: currentUser.id,
+    sender: currentUserId,
     timestamp: Date.now(),
     message: text,
     file: file
   };
   dataChannel.send(JSON.stringify(message));
-  displayMessage(text, currentUser.id, Date.now(), file);
+  displayMessage(text, currentUserId, Date.now(), file);
 }
 
 chatSend.addEventListener('click', () => {
@@ -331,7 +340,7 @@ leaveBtn.addEventListener('click', () => {
   if (peerConnection) peerConnection.close();
   localStream.getTracks().forEach(track => track.stop());
   socket.disconnect();
-  window.location.href = '/'; // À adapter
+  window.location.href = '/';
 });
 
 // ========== Gestion du chat mobile ==========

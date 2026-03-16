@@ -1,32 +1,157 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Contrôleur de gestion des médias divers (Autre)
+ * Support: Liens, Livres/PDF, Textes, Photos, Fichiers divers
+ * Architecture: Chunked upload, Génération miniatures, OCR, Preview
+ */
 class Autre extends MY_Controller {
 
     private $upload_dir;
     private $final_dir;
+    private $thumbs_dir;
+    private $chunk_size;
+    private $max_file_size;
+    private $allowed_extensions;
+    private $session_timeout;
 
     function __construct()
     {
         parent::__construct();
         is_admin();
         
-        // Définir les chemins
+        // Configuration des chemins
         $this->upload_dir = FCPATH . 'uploads/temp/autre/';
         $this->final_dir = FCPATH . 'attachments/Autre/';
+        $this->thumbs_dir = FCPATH . 'attachments/Autre/thumbs/';
         
-        // Créer les dossiers si inexistant
-        if (!is_dir($this->upload_dir)) {
-            @mkdir($this->upload_dir, 0777, TRUE);
+        // Configuration technique (2MB chunks pour compatibilité)
+        $this->chunk_size = 2 * 1024 * 1024;
+        $this->max_file_size = 10 * 1024 * 1024 * 1024; // 10GB
+        $this->session_timeout = 3600; // 1 heure
+        
+        // Types supportés avec leurs configurations
+        $this->type_configs = [
+            'link' => [
+                'label' => 'Lien / URL',
+                'icon' => 'bx-link',
+                'color' => 'info',
+                'accept' => null,
+                'max_size' => 0
+            ],
+            'book' => [
+                'label' => 'Livre / PDF',
+                'icon' => 'bx-book',
+                'color' => 'warning',
+                'accept' => ['pdf', 'epub', 'mobi', 'azw', 'azw3'],
+                'max_size' => 500 * 1024 * 1024, // 500MB
+                'mime_types' => ['application/pdf', 'application/epub+zip']
+            ],
+            'texte' => [
+                'label' => 'Texte',
+                'icon' => 'bx-text',
+                'color' => 'success',
+                'accept' => null,
+                'max_size' => 0
+            ],
+            'photo' => [
+                'label' => 'Photo / Image',
+                'icon' => 'bx-image',
+                'color' => 'danger',
+                'accept' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff'],
+                'max_size' => 50 * 1024 * 1024, // 50MB
+                'mime_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+            ],
+            'other' => [
+                'label' => 'Autre fichier',
+                'icon' => 'bx-file',
+                'color' => 'secondary',
+                'accept' => '*',
+                'max_size' => 2 * 1024 * 1024 * 1024, // 2GB
+                'mime_types' => '*'
+            ]
+        ];
+        
+        // Création des dossiers
+        $this->ensureDirectoryExists($this->upload_dir);
+        $this->ensureDirectoryExists($this->final_dir);
+        $this->ensureDirectoryExists($this->thumbs_dir);
+        
+        // Configuration PHP
+        $this->configurePHP();
+        
+        // Nettoyage sessions
+        $this->cleanupExpiredSessions();
+    }
+
+    // ==================== CONFIGURATION ====================
+
+    private function configurePHP()
+    {
+        @ini_set('memory_limit', '512M');
+        @ini_set('max_execution_time', '0');
+        @ini_set('max_input_time', '0');
+        @ini_set('upload_max_filesize', '10M');
+        @ini_set('post_max_size', '10M');
+        @ini_set('max_file_uploads', '20');
+        
+        if (function_exists('apache_setenv')) {
+            @apache_setenv('no-gzip', '1');
         }
-        if (!is_dir($this->final_dir)) {
-            @mkdir($this->final_dir, 0777, TRUE);
+        @ini_set('zlib.output_compression', 'Off');
+        @ini_set('session.gc_maxlifetime', $this->session_timeout);
+    }
+
+    private function ensureDirectoryExists($path)
+    {
+        if (!is_dir($path)) {
+            @mkdir($path, 0777, TRUE);
+            @chmod($path, 0777);
         }
     }
-    
-    /**
-     * Page principale - Liste des médias "Autre"
-     */
+
+    private function cleanupExpiredSessions()
+    {
+        if (!is_dir($this->upload_dir)) return;
+        
+        $dirs = glob($this->upload_dir . 'autre_*', GLOB_ONLYDIR);
+        $now = time();
+        
+        foreach ($dirs as $dir) {
+            $metadata_file = $dir . '/metadata.json';
+            if (!file_exists($metadata_file)) {
+                $this->recursiveDelete($dir);
+                continue;
+            }
+            
+            $metadata = json_decode(file_get_contents($metadata_file), true);
+            if (!$metadata || ($now - $metadata['created_at']) > $this->session_timeout) {
+                $this->recursiveDelete($dir);
+            }
+        }
+    }
+
+    private function recursiveDelete($dir)
+    {
+        if (is_dir($dir)) {
+            $objects = scandir($dir);
+            foreach ($objects as $object) {
+                if ($object != "." && $object != "..") {
+                    $path = $dir . DIRECTORY_SEPARATOR . $object;
+                    if (is_dir($path)) {
+                        $this->recursiveDelete($path);
+                    } else {
+                        @unlink($path);
+                    }
+                }
+            }
+            @rmdir($dir);
+        }
+    }
+
+    // ==================== INTERFACE PUBLIQUE ====================
+
     public function index()
     {
         $data['items'] = $this->Model->read('galerie_medias', 
@@ -34,262 +159,315 @@ class Autre extends MY_Controller {
             'id_media', 
             'DESC'
         );
+        
+        $data['categories'] = $this->getExistingCategories();
+        $data['stats'] = $this->calculateStats();
+        $data['type_configs'] = $this->type_configs;
+        
         $this->load->view('Autre_View', $data);
     }
 
-    // ==================== UPLOAD CHUNKED ====================
+    public function diagnostics()
+    {
+        $this->setJSONHeaders();
+        
+        $info = [
+            'php_version' => PHP_VERSION,
+            'tools' => [
+                'ffmpeg' => $this->findFFmpeg() ? 'Disponible' : 'Non disponible',
+                'imagemagick' => $this->findImageMagick() ? 'Disponible' : 'Non disponible',
+                'gd' => extension_loaded('gd') ? 'Disponible' : 'Non disponible',
+                'tesseract' => $this->findTesseract() ? 'Disponible (OCR)' : 'Non disponible'
+            ],
+            'limits' => [
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+                'post_max_size' => ini_get('post_max_size'),
+                'memory_limit' => ini_get('memory_limit'),
+                'max_execution_time' => ini_get('max_execution_time'),
+            ],
+            'configured' => [
+                'chunk_size' => $this->formatBytes($this->chunk_size),
+                'max_file_size' => $this->formatBytes($this->max_file_size),
+                'types' => $this->type_configs
+            ],
+            'directories' => [
+                'upload_dir_writable' => is_writable($this->upload_dir),
+                'final_dir_writable' => is_writable($this->final_dir),
+                'thumbs_dir_writable' => is_writable($this->thumbs_dir),
+                'disk_free' => $this->formatBytes(@disk_free_space($this->final_dir))
+            ],
+            'timestamp' => time()
+        ];
+        
+        echo json_encode($info);
+    }
 
-    /**
-     * Étape 1: Initialiser l'upload chunked
-     */
+    // ==================== API UPLOAD CHUNKED ====================
+
     public function initUpload()
     {
-        header('Content-Type: application/json');
+        $this->setJSONHeaders();
         
-        if (!$this->input->is_ajax_request()) {
-            echo json_encode(['success' => false, 'message' => 'Not AJAX']);
-            return;
-        }
-
         $file_name = $this->input->post('file_name');
         $file_size = (int)$this->input->post('file_size');
-        $chunk_size = 5 * 1024 * 1024; // 5MB
-        
-        if (empty($file_name) || $file_size <= 0) {
-            echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
+        $file_hash = $this->input->post('file_hash') ?: null;
+        $sous_type = $this->input->post('sous_type') ?: 'other';
+
+        // Validation
+        $validation = $this->validateInitUpload($file_name, $file_size, $sous_type);
+        if (!$validation['success']) {
+            $this->jsonResponse(false, $validation['message']);
             return;
         }
 
-        $total_chunks = ceil($file_size / $chunk_size);
-        $upload_id = uniqid('autre_upload_', true);
+        $upload_id = $this->generateUploadId();
         $temp_dir = $this->upload_dir . $upload_id . '/';
-
+        
         if (!@mkdir($temp_dir, 0777, TRUE)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur création dossier temporaire']);
+            $this->jsonResponse(false, 'Erreur création dossier temporaire');
             return;
         }
 
+        $total_chunks = (int)ceil($file_size / $this->chunk_size);
+        
         $metadata = [
+            'upload_id' => $upload_id,
             'file_name' => $file_name,
             'file_size' => $file_size,
-            'chunk_size' => $chunk_size,
+            'file_hash' => $file_hash,
+            'sous_type' => $sous_type,
+            'chunk_size' => $this->chunk_size,
             'total_chunks' => $total_chunks,
             'uploaded_chunks' => [],
-            'created_at' => time()
+            'failed_chunks' => [],
+            'created_at' => time(),
+            'last_activity' => time(),
+            'status' => 'active'
         ];
 
-        file_put_contents($temp_dir . 'metadata.json', json_encode($metadata));
+        $this->saveMetadata($upload_id, $metadata);
 
-        echo json_encode([
-            'success' => true,
+        $this->jsonResponse(true, 'Session initialisée', [
             'upload_id' => $upload_id,
-            'chunk_size' => $chunk_size,
-            'total_chunks' => $total_chunks
+            'chunk_size' => $this->chunk_size,
+            'total_chunks' => $total_chunks,
+            'max_retries' => 3,
+            'sous_type' => $sous_type
         ]);
     }
 
-    /**
-     * Étape 2: Uploader un chunk
-     */
     public function uploadChunk()
     {
-        header('Content-Type: application/json');
+        $this->setJSONHeaders();
         
-        if (!$this->input->is_ajax_request()) {
-            echo json_encode(['success' => false, 'message' => 'Not AJAX']);
-            return;
-        }
-
         $upload_id = $this->input->post('upload_id');
-        $chunk_index = $this->input->post('chunk_index');
+        $chunk_index = (int)$this->input->post('chunk_index');
+        $chunk_hash = $this->input->post('chunk_hash') ?: null;
 
-        if (empty($upload_id) || !is_numeric($chunk_index)) {
-            echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
+        if (empty($upload_id)) {
+            $this->jsonResponse(false, 'ID upload manquant');
             return;
         }
 
-        $chunk_index = (int)$chunk_index;
-        $temp_dir = $this->upload_dir . $upload_id . '/';
+        $metadata = $this->loadMetadata($upload_id);
+        if (!$metadata) {
+            $this->jsonResponse(false, 'Session invalide ou expirée');
+            return;
+        }
 
-        if (!is_dir($temp_dir)) {
-            echo json_encode(['success' => false, 'message' => 'Session invalide']);
+        if ($metadata['status'] !== 'active') {
+            $this->jsonResponse(false, 'Session non active');
+            return;
+        }
+
+        // Vérifier si chunk déjà présent (idempotence)
+        $chunk_path = $this->getChunkPath($upload_id, $chunk_index);
+        if (file_exists($chunk_path)) {
+            $this->markChunkUploaded($upload_id, $chunk_index);
+            $progress = $this->calculateProgress($upload_id);
+            $this->jsonResponse(true, 'Chunk déjà présent', $progress);
             return;
         }
 
         if (empty($_FILES['chunk'])) {
-            echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
+            $this->jsonResponse(false, 'Aucun chunk reçu');
             return;
         }
 
-        if ($_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-            $errors = [
-                UPLOAD_ERR_INI_SIZE => 'Fichier trop grand',
-                UPLOAD_ERR_FORM_SIZE => 'Fichier trop grand',
-                UPLOAD_ERR_PARTIAL => 'Upload partiel',
-                UPLOAD_ERR_NO_FILE => 'Aucun fichier',
-                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temp manquant',
-                UPLOAD_ERR_CANT_WRITE => 'Erreur écriture',
-                UPLOAD_ERR_EXTENSION => 'Extension bloquée'
-            ];
-            $msg = isset($errors[$_FILES['chunk']['error']]) ? $errors[$_FILES['chunk']['error']] : 'Erreur '.$_FILES['chunk']['error'];
-            echo json_encode(['success' => false, 'message' => $msg]);
-            return;
-        }
-
-        $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
+        $file = $_FILES['chunk'];
         
-        if (!move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde chunk']);
-            return;
-        }
-
-        $metadata_path = $temp_dir . 'metadata.json';
-        $metadata = json_decode(file_get_contents($metadata_path), true);
-        
-        if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
-            $metadata['uploaded_chunks'][] = $chunk_index;
-            sort($metadata['uploaded_chunks']);
-            file_put_contents($metadata_path, json_encode($metadata));
-        }
-
-        $progress = (count($metadata['uploaded_chunks']) / $metadata['total_chunks']) * 100;
-
-        echo json_encode([
-            'success' => true,
-            'chunk_index' => $chunk_index,
-            'received' => filesize($chunk_path),
-            'progress' => round($progress, 2),
-            'uploaded_chunks' => count($metadata['uploaded_chunks']),
-            'total_chunks' => $metadata['total_chunks']
-        ]);
-    }
-
-    /**
-     * Étape 3: Finaliser l'upload
-     */
-    public function completeUpload()
-    {
-        header('Content-Type: application/json');
-        
-        if (!$this->input->is_ajax_request()) {
-            echo json_encode(['success' => false, 'message' => 'Not AJAX']);
-            return;
-        }
-
-        $upload_id = $this->input->post('upload_id');
-        $temp_dir = $this->upload_dir . $upload_id . '/';
-        $metadata_path = $temp_dir . 'metadata.json';
-        
-        if (!file_exists($metadata_path)) {
-            echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
-            return;
-        }
-
-        $metadata = json_decode(file_get_contents($metadata_path), true);
-        
-        $missing = [];
-        for ($i = 0; $i < $metadata['total_chunks']; $i++) {
-            if (!file_exists($temp_dir . 'chunk_' . $i)) {
-                $missing[] = $i;
-            }
-        }
-
-        if (!empty($missing)) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Chunks manquants',
-                'missing_chunks' => $missing
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $error_detail = $this->getDetailedUploadError($file['error']);
+            $this->logError("Upload error chunk $chunk_index", $error_detail);
+            $this->jsonResponse(false, $error_detail['message'], [
+                'error_code' => $file['error'],
+                'error_type' => $error_detail['type']
             ]);
             return;
         }
 
-        $ext = pathinfo($metadata['file_name'], PATHINFO_EXTENSION);
-        $final_name = date("YmdHis") . '_' . uniqid() . '.' . strtolower($ext);
+        if ($file['size'] === 0) {
+            $this->jsonResponse(false, 'Chunk vide reçu');
+            return;
+        }
+
+        // Vérifier hash si fourni
+        if ($chunk_hash && function_exists('hash_file')) {
+            $calculated_hash = hash_file('crc32b', $file['tmp_name']);
+            if ($calculated_hash !== $chunk_hash) {
+                $this->jsonResponse(false, 'Corruption détectée');
+                return;
+            }
+        }
+
+        // Déplacer le chunk
+        if (!@move_uploaded_file($file['tmp_name'], $chunk_path)) {
+            if (!@copy($file['tmp_name'], $chunk_path)) {
+                $this->jsonResponse(false, 'Erreur écriture disque');
+                return;
+            }
+            @unlink($file['tmp_name']);
+        }
+
+        if (!file_exists($chunk_path) || filesize($chunk_path) !== $file['size']) {
+            @unlink($chunk_path);
+            $this->jsonResponse(false, 'Erreur vérification écriture');
+            return;
+        }
+
+        $this->markChunkUploaded($upload_id, $chunk_index);
+        $this->updateLastActivity($upload_id);
+        
+        $progress = $this->calculateProgress($upload_id);
+
+        $this->jsonResponse(true, 'Chunk reçu', array_merge($progress, [
+            'received_size' => $file['size']
+        ]));
+    }
+
+    public function checkStatus()
+    {
+        $this->setJSONHeaders();
+        
+        $upload_id = $this->input->post('upload_id');
+        $metadata = $this->loadMetadata($upload_id);
+        
+        if (!$metadata) {
+            $this->jsonResponse(false, 'Session non trouvée');
+            return;
+        }
+
+        $actual_chunks = $this->getActualUploadedChunks($upload_id);
+        
+        if ($actual_chunks !== $metadata['uploaded_chunks']) {
+            $metadata['uploaded_chunks'] = $actual_chunks;
+            $this->saveMetadata($upload_id, $metadata);
+        }
+
+        $missing = array_diff(
+            range(0, $metadata['total_chunks'] - 1),
+            $actual_chunks
+        );
+
+        $this->jsonResponse(true, 'Statut récupéré', [
+            'upload_id' => $upload_id,
+            'status' => $metadata['status'],
+            'progress' => $this->calculateProgress($upload_id),
+            'missing_chunks' => array_values($missing),
+            'can_resume' => count($actual_chunks) > 0 && count($missing) > 0
+        ]);
+    }
+
+    public function completeUpload()
+    {
+        $this->setJSONHeaders();
+        
+        $upload_id = $this->input->post('upload_id');
+        $metadata = $this->loadMetadata($upload_id);
+        
+        if (!$metadata) {
+            $this->jsonResponse(false, 'Session non trouvée');
+            return;
+        }
+
+        $missing = array_diff(
+            range(0, $metadata['total_chunks'] - 1),
+            $metadata['uploaded_chunks']
+        );
+
+        if (!empty($missing)) {
+            $this->jsonResponse(false, 'Chunks manquants', [
+                'missing_chunks' => array_values($missing)
+            ]);
+            return;
+        }
+
+        // Générer nom final
+        $final_name = $this->generateFinalName($metadata['file_name']);
         $final_path = $this->final_dir . $final_name;
         $relative_path = 'attachments/Autre/' . $final_name;
 
-        $out = fopen($final_path, 'wb');
-        if (!$out) {
-            echo json_encode(['success' => false, 'message' => 'Impossible de créer fichier final']);
+        // Assembler les chunks
+        $assembled = $this->assembleChunks($upload_id, $final_path, $metadata);
+        
+        if (!$assembled['success']) {
+            $this->jsonResponse(false, 'Erreur assemblage: ' . $assembled['message']);
             return;
         }
 
-        for ($i = 0; $i < $metadata['total_chunks']; $i++) {
-            $chunk_file = $temp_dir . 'chunk_' . $i;
-            fwrite($out, file_get_contents($chunk_file));
-            unlink($chunk_file);
-        }
-        fclose($out);
-
-        unlink($metadata_path);
-        rmdir($temp_dir);
-
-        if (!file_exists($final_path)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur création fichier final']);
+        // Vérifier taille finale
+        $final_size = filesize($final_path);
+        if ($final_size !== $metadata['file_size']) {
+            @unlink($final_path);
+            $this->jsonResponse(false, 'Taille finale incorrecte');
             return;
         }
 
-        // Générer miniature selon type
-        $sous_type = $this->input->post('sous_type') ?: 'other';
-        $miniature = $this->generate_thumbnail($relative_path, $sous_type);
+        // Traitement selon le type
+        $sous_type = $metadata['sous_type'];
+        $processing_result = $this->processFile($final_path, $final_name, $sous_type);
 
-        echo json_encode([
-            'success' => true,
+        // Nettoyer session
+        $this->cleanupUploadSession($upload_id);
+
+        $this->jsonResponse(true, 'Upload complété', [
             'file_path' => $relative_path,
             'file_name' => $final_name,
-            'file_size' => filesize($final_path),
-            'file_size_formatted' => $this->formatFileSize(filesize($final_path)),
-            'miniature' => $miniature,
+            'file_size' => $final_size,
+            'file_size_formatted' => $this->formatBytes($final_size),
+            'sous_type' => $sous_type,
+            'miniature' => $processing_result['thumbnail'] ?? null,
+            'preview_data' => $processing_result['preview'] ?? null,
+            'dimensions' => $processing_result['dimensions'] ?? null,
             'mime_type' => mime_content_type($final_path)
         ]);
     }
 
-    /**
-     * Annuler upload
-     */
     public function cancelUpload()
     {
-        header('Content-Type: application/json');
+        $this->setJSONHeaders();
         
-        if (!$this->input->is_ajax_request()) {
-            echo json_encode(['success' => false, 'message' => 'Not AJAX']);
-            return;
-        }
-
         $upload_id = $this->input->post('upload_id');
-        $temp_dir = $this->upload_dir . $upload_id . '/';
         
-        if (is_dir($temp_dir)) {
-            array_map('unlink', glob($temp_dir . '*'));
-            @rmdir($temp_dir);
+        if ($upload_id) {
+            $this->cleanupUploadSession($upload_id);
         }
 
-        echo json_encode(['success' => true]);
+        $this->jsonResponse(true, 'Upload annulé');
     }
 
-    // ==================== CRUD OPERATIONS ====================
+    // ==================== CRUD OPÉRATIONS ====================
 
-    /**
-     * Créer un nouvel item
-     */
     public function Create()
     {
         $this->form_validation->set_rules('titre', 'Titre', 'required|max_length[255]');
-        $this->form_validation->set_rules('sous_type', 'Type', 'required|in_list[link,book,texte,photo,other]');
+        $this->form_validation->set_rules('sous_type', 'Type', 'required');
         
         $sous_type = $this->input->post('sous_type');
         
         // Validation selon le type
         if ($sous_type === 'link') {
             $this->form_validation->set_rules('lien', 'Lien', 'required|valid_url');
-        } elseif (in_array($sous_type, ['book', 'photo'])) {
-            // Fichier requis pour book et photo
-            $file_path = $this->input->post('uploaded_file_path');
-            if (empty($file_path)) {
-                $this->session->set_flashdata('error', 'Un fichier est requis pour ce type de contenu.');
-                redirect(base_url('autre'));
-                return;
-            }
         }
 
         if ($this->form_validation->run() == FALSE) {
@@ -298,69 +476,33 @@ class Autre extends MY_Controller {
             return;
         }
 
-        $data = [
-            'titre' => $this->input->post('titre'),
-            'type' => 'autre',
-            'sous_type' => $sous_type,
-            'description' => $this->input->post('description') ?: NULL,
-            'categorie' => $this->input->post('categorie') ?: NULL,
-            'date_media' => $this->input->post('date_media') ?: NULL,
-            'credits' => $this->input->post('credits') ?: NULL,
-            'est_actif' => 1,
-            'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
-            'message_reseaux' => $this->input->post('message_reseaux') ?: NULL,
-            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website' => $this->input->post('is_for_website') ? 1 : 0,
-            'id_page_associee' => $this->input->post('id_page_associee') ?: NULL,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ];
-
-        // Gestion selon le sous-type
-        switch ($sous_type) {
-            case 'link':
-                $data['lien'] = $this->input->post('lien');
-                $data['miniature'] = $this->extract_thumbnail_from_url($data['lien']);
-                break;
-                
-            case 'texte':
-                $data['contenu_texte'] = $this->input->post('contenu_texte') ?: NULL;
-                $data['miniature'] = 'assets/images/text-default.png';
-                break;
-                
-            case 'book':
-            case 'photo':
-            case 'other':
-                $file_path = $this->input->post('uploaded_file_path');
-                if (!empty($file_path) && file_exists(FCPATH . $file_path)) {
-                    $full_path = FCPATH . $file_path;
-                    $data['fichier'] = $file_path;
-                    $data['taille'] = filesize($full_path);
-                    $data['mime_type'] = mime_content_type($full_path);
-                    $data['miniature'] = $this->input->post('miniature') ?: $this->generate_thumbnail($file_path, $sous_type);
-                }
-                break;
-        }
+        $data = $this->prepareItemData($sous_type, 'create');
         
+        if (!$data) {
+            redirect(base_url('autre'));
+            return;
+        }
+
         $rsp = $this->Model->create('galerie_medias', $data);
 
-        if ($rsp) {
-            $this->session->set_flashdata('success', 'Élément créé avec succès.');
-        } else {
-            $this->session->set_flashdata('error', 'Erreur lors de la création.');
-        }
+        $this->setFlashMessage($rsp, 'Élément créé avec succès.', 'Erreur lors de la création.');
         redirect(base_url('autre'));
     }
 
-    /**
-     * Mettre à jour un item
-     */
     public function Update()
     {
         $id = $this->input->post('id');
+        $old = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
         
+        if (!$old) {
+            $this->session->set_flashdata('error', 'Élément non trouvé.');
+            redirect(base_url('autre'));
+            return;
+        }
+
         $this->form_validation->set_rules('titre', 'Titre', 'required|max_length[255]');
-        $sous_type = $this->input->post('sous_type');
+        
+        $sous_type = $old['sous_type']; // On garde le même type
         
         if ($sous_type === 'link') {
             $this->form_validation->set_rules('lien', 'Lien', 'required|valid_url');
@@ -372,76 +514,19 @@ class Autre extends MY_Controller {
             return;
         }
 
-        $data = [
-            'titre' => $this->input->post('titre'),
-            'description' => $this->input->post('description') ?: NULL,
-            'categorie' => $this->input->post('categorie') ?: NULL,
-            'date_media' => $this->input->post('date_media') ?: NULL,
-            'credits' => $this->input->post('credits') ?: NULL,
-            'est_actif' => $this->input->post('est_actif') ? 1 : 0,
-            'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
-            'message_reseaux' => $this->input->post('message_reseaux') ?: NULL,
-            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website' => $this->input->post('is_for_website') ? 1 : 0,
-            'id_page_associee' => $this->input->post('id_page_associee') ?: NULL,
-            'updated_at' => date('Y-m-d H:i:s')
-        ];
-
-        $old = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
-
-        // Gestion selon le sous-type
-        switch ($sous_type) {
-            case 'link':
-                $new_lien = $this->input->post('lien');
-                // Supprimer ancien fichier si existait
-                if ($old && !empty($old['fichier']) && file_exists(FCPATH . $old['fichier'])) {
-                    @unlink(FCPATH . $old['fichier']);
-                    if (!empty($old['miniature'])) @unlink(FCPATH . $old['miniature']);
-                }
-                $data['lien'] = $new_lien;
-                $data['fichier'] = NULL;
-                $data['taille'] = NULL;
-                $data['mime_type'] = NULL;
-                $data['miniature'] = $this->extract_thumbnail_from_url($new_lien);
-                break;
-                
-            case 'texte':
-                $data['contenu_texte'] = $this->input->post('contenu_texte') ?: NULL;
-                break;
-                
-            case 'book':
-            case 'photo':
-            case 'other':
-                $new_path = $this->input->post('uploaded_file_path');
-                if (!empty($new_path) && file_exists(FCPATH . $new_path)) {
-                    // Supprimer ancien fichier
-                    if ($old && !empty($old['fichier']) && file_exists(FCPATH . $old['fichier'])) {
-                        @unlink(FCPATH . $old['fichier']);
-                        if (!empty($old['miniature'])) @unlink(FCPATH . $old['miniature']);
-                    }
-                    
-                    $data['fichier'] = $new_path;
-                    $data['taille'] = filesize(FCPATH . $new_path);
-                    $data['mime_type'] = mime_content_type(FCPATH . $new_path);
-                    $data['lien'] = NULL;
-                    $data['miniature'] = $this->input->post('miniature') ?: $this->generate_thumbnail($new_path, $sous_type);
-                }
-                break;
+        $data = $this->prepareItemData($sous_type, 'update', $old);
+        
+        if (!$data) {
+            redirect(base_url('autre'));
+            return;
         }
 
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
 
-        if ($rsp) {
-            $this->session->set_flashdata('success', 'Élément mis à jour avec succès.');
-        } else {
-            $this->session->set_flashdata('error', 'Erreur lors de la mise à jour.');
-        }
+        $this->setFlashMessage($rsp, 'Élément mis à jour avec succès.', 'Erreur lors de la mise à jour.');
         redirect(base_url('autre'));
     }
 
-    /**
-     * Supprimer un item
-     */
     public function Delete()
     {
         $id = $this->input->post('id');
@@ -453,18 +538,15 @@ class Autre extends MY_Controller {
         ]);
 
         if ($rsp) {
-            if ($item && !empty($item['fichier'])) @unlink(FCPATH . $item['fichier']);
-            if ($item && !empty($item['miniature'])) @unlink(FCPATH . $item['miniature']);
+            if ($item) $this->deleteItemFiles($item);
             $this->session->set_flashdata('success', 'Élément supprimé avec succès.');
         } else {
             $this->session->set_flashdata('error', 'Erreur lors de la suppression.');
         }
+        
         redirect(base_url('autre'));
     }
 
-    /**
-     * Changer le statut
-     */
     public function ChangeStatus()
     {
         $id = $this->input->post('id');
@@ -473,25 +555,13 @@ class Autre extends MY_Controller {
         
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => $status]);
 
-        if ($rsp) {
-            $this->session->set_flashdata('success', 'Statut mis à jour avec succès.');
-        } else {
-            $this->session->set_flashdata('error', 'Erreur lors de la mise à jour du statut.');
-        }
+        $this->setFlashMessage($rsp, 'Statut mis à jour avec succès.', 'Erreur lors de la mise à jour du statut.');
         redirect(base_url('autre'));    
     }
 
-    /**
-     * Toggle AJAX pour WhatsApp et Site Web
-     */
     public function toggleField()
     {
-        header('Content-Type: application/json');
-        
-        if (!$this->input->is_ajax_request()) {
-            echo json_encode(['success' => false, 'message' => 'Not AJAX']);
-            return;
-        }
+        $this->setJSONHeaders();
         
         $id = $this->input->post('id');
         $field = $this->input->post('field');
@@ -499,7 +569,7 @@ class Autre extends MY_Controller {
         
         $allowed = ['is_for_whatsapp', 'is_for_website'];
         if (!in_array($field, $allowed)) {
-            echo json_encode(['success' => false, 'message' => 'Champ non autorisé']);
+            $this->jsonResponse(false, 'Champ non autorisé');
             return;
         }
         
@@ -508,139 +578,325 @@ class Autre extends MY_Controller {
             'updated_at' => date('Y-m-d H:i:s')
         ]);
         
-        echo json_encode(['success' => (bool)$rsp]);
+        $this->jsonResponse((bool)$rsp);
     }
 
-    // ==================== HELPERS ====================
+    // ==================== TRAITEMENT FICHIERS ====================
 
-    /**
-     * Formater la taille de fichier
-     */
-    private function formatFileSize($bytes)
+    private function processFile($file_path, $filename, $sous_type)
     {
-        if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 2) . ' GB';
-        if ($bytes >= 1048576) return number_format($bytes / 1048576, 2) . ' MB';
-        if ($bytes >= 1024) return number_format($bytes / 1024, 2) . ' KB';
-        return $bytes . ' B';
-    }
-
-    /**
-     * Générer une miniature selon le type
-     */
-    private function generate_thumbnail($file_path, $sous_type)
-    {
-        $full_path = FCPATH . $file_path;
-        $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
-        
-        // Pour les images (photo)
-        if ($sous_type === 'photo' && in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-            return $this->create_image_thumbnail($file_path);
-        }
-        
-        // Pour les PDF (book)
-        if ($sous_type === 'book' && $ext === 'pdf') {
-            return $this->create_pdf_thumbnail($file_path);
-        }
-        
-        // Icônes par défaut selon le type
-        $icons = [
-            'book' => 'assets/images/book-default.png',
-            'photo' => 'assets/images/photo-default.png',
-            'other' => 'assets/images/file-default.png'
+        $result = [
+            'thumbnail' => null,
+            'preview' => null,
+            'dimensions' => null
         ];
-        
-        return $icons[$sous_type] ?? 'assets/images/file-default.png';
+
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $relative_path = 'attachments/Autre/' . $filename;
+
+        switch ($sous_type) {
+            case 'photo':
+                $result = array_merge($result, $this->processImage($file_path, $filename));
+                break;
+                
+            case 'book':
+                if ($ext === 'pdf') {
+                    $result = array_merge($result, $this->processPDF($file_path, $filename));
+                } else {
+                    $result['thumbnail'] = 'assets/images/book-default.png';
+                }
+                break;
+                
+            case 'other':
+                $result['thumbnail'] = $this->getIconForFile($ext);
+                break;
+        }
+
+        return $result;
     }
 
-    /**
-     * Créer miniature pour image
-     */
-    private function create_image_thumbnail($image_path)
+    private function processImage($file_path, $filename)
     {
-        $folder = FCPATH . 'attachments/Autre/thumbs/';
-        if (!is_dir($folder)) {
-            @mkdir($folder, 0777, TRUE);
+        $result = ['thumbnail' => null, 'dimensions' => null, 'preview' => null];
+        
+        // Dimensions
+        $dims = @getimagesize($file_path);
+        if ($dims) {
+            $result['dimensions'] = ['width' => $dims[0], 'height' => $dims[1]];
         }
+
+        // Générer miniature
+        $thumb_name = pathinfo($filename, PATHINFO_FILENAME) . '_thumb.jpg';
+        $thumb_path = $this->thumbs_dir . $thumb_name;
         
-        $name = pathinfo($image_path, PATHINFO_FILENAME) . '_thumb.jpg';
-        $thumb_path = $folder . $name;
-        $relative_path = 'attachments/Autre/thumbs/' . $name;
-        
-        $full_path = FCPATH . $image_path;
-        
-        // Utiliser GD ou Imagick si disponible
-        if (extension_loaded('gd')) {
-            list($width, $height) = getimagesize($full_path);
-            $thumb_width = 300;
-            $thumb_height = ($height / $width) * $thumb_width;
-            
-            $thumb = imagecreatetruecolor($thumb_width, $thumb_height);
-            
-            switch (mime_content_type($full_path)) {
-                case 'image/jpeg':
-                    $source = imagecreatefromjpeg($full_path);
-                    break;
-                case 'image/png':
-                    $source = imagecreatefrompng($full_path);
-                    imagealphablending($thumb, false);
-                    imagesavealpha($thumb, true);
-                    break;
-                case 'image/gif':
-                    $source = imagecreatefromgif($full_path);
-                    break;
-                default:
-                    return 'assets/images/photo-default.png';
+        if ($this->createThumbnail($file_path, $thumb_path, 400, 300)) {
+            $result['thumbnail'] = 'attachments/Autre/thumbs/' . $thumb_name;
+        }
+
+        // Générer preview WebP si grande image
+        if ($dims && ($dims[0] > 1920 || $dims[1] > 1080)) {
+            $preview_name = pathinfo($filename, PATHINFO_FILENAME) . '_preview.webp';
+            $preview_path = $this->thumbs_dir . $preview_name;
+            if ($this->createWebPPreview($file_path, $preview_path, 1920, 1080)) {
+                $result['preview'] = 'attachments/Autre/thumbs/' . $preview_name;
             }
-            
-            imagecopyresampled($thumb, $source, 0, 0, 0, 0, $thumb_width, $thumb_height, $width, $height);
-            imagejpeg($thumb, $thumb_path, 85);
-            imagedestroy($thumb);
-            imagedestroy($source);
-            
-            return $relative_path;
         }
-        
-        return 'assets/images/photo-default.png';
+
+        return $result;
     }
 
-    /**
-     * Créer miniature pour PDF
-     */
-    private function create_pdf_thumbnail($pdf_path)
+    private function processPDF($file_path, $filename)
     {
-        $ffmpeg = $this->check_ffmpeg();
-        if (!$ffmpeg) {
-            return 'assets/images/pdf-default.png';
+        $result = ['thumbnail' => null, 'preview' => null, 'pages' => null];
+        
+        // Extraire nombre de pages si possible
+        $result['pages'] = $this->getPDFPages($file_path);
+
+        // Générer miniature première page
+        $thumb_name = pathinfo($filename, PATHINFO_FILENAME) . '_thumb.jpg';
+        $thumb_path = $this->thumbs_dir . $thumb_name;
+        
+        $ffmpeg = $this->findFFmpeg();
+        if ($ffmpeg) {
+            $cmd = sprintf(
+                '%s -i %s -vf "select=eq(n\\,0),scale=400:-1" -vframes 1 -y %s 2>&1',
+                escapeshellarg($ffmpeg),
+                escapeshellarg($file_path),
+                escapeshellarg($thumb_path)
+            );
+            exec($cmd, $output, $code);
+            if ($code === 0 && file_exists($thumb_path)) {
+                $result['thumbnail'] = 'attachments/Autre/thumbs/' . $thumb_name;
+            }
         }
-        
-        $folder = FCPATH . 'attachments/Autre/thumbs/';
-        if (!is_dir($folder)) {
-            @mkdir($folder, 0777, TRUE);
+
+        if (!$result['thumbnail']) {
+            $result['thumbnail'] = 'assets/images/pdf-default.png';
         }
-        
-        $name = pathinfo($pdf_path, PATHINFO_FILENAME) . '_thumb.jpg';
-        $thumb_path = $folder . $name;
-        $relative_path = 'attachments/Autre/thumbs/' . $name;
-        
-        // Convertir première page en image avec FFmpeg
-        $cmd = sprintf('%s -i %s -vf "select=eq(n\\,0),scale=300:-1" -vframes 1 %s 2>&1',
-            escapeshellarg($ffmpeg),
-            escapeshellarg(FCPATH . $pdf_path),
-            escapeshellarg($thumb_path)
-        );
-        
-        exec($cmd, $output, $code);
-        
-        return ($code === 0 && file_exists($thumb_path)) ? $relative_path : 'assets/images/pdf-default.png';
+
+        return $result;
     }
 
-    /**
-     * Extraire miniature depuis URL
-     */
-    private function extract_thumbnail_from_url($url)
+    private function createThumbnail($source, $dest, $max_width, $max_height)
+    {
+        if (!extension_loaded('gd')) return false;
+
+        $info = getimagesize($source);
+        if (!$info) return false;
+
+        list($width, $height, $type) = $info;
+        
+        // Calculer nouvelles dimensions
+        $ratio = min($max_width / $width, $max_height / $height);
+        $new_width = (int)($width * $ratio);
+        $new_height = (int)($height * $ratio);
+
+        // Créer image source
+        switch ($type) {
+            case IMAGETYPE_JPEG: $src = imagecreatefromjpeg($source); break;
+            case IMAGETYPE_PNG: $src = imagecreatefrompng($source); break;
+            case IMAGETYPE_GIF: $src = imagecreatefromgif($source); break;
+            case IMAGETYPE_WEBP: $src = imagecreatefromwebp($source); break;
+            default: return false;
+        }
+
+        if (!$src) return false;
+
+        // Créer miniature
+        $dst = imagecreatetruecolor($new_width, $new_height);
+        
+        // Gérer transparence pour PNG
+        if ($type == IMAGETYPE_PNG) {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+        }
+
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+        
+        $success = imagejpeg($dst, $dest, 85);
+        
+        imagedestroy($src);
+        imagedestroy($dst);
+        
+        return $success;
+    }
+
+    private function createWebPPreview($source, $dest, $max_width, $max_height)
+    {
+        if (!function_exists('imagewebp')) return false;
+
+        $info = getimagesize($source);
+        if (!$info) return false;
+
+        list($width, $height, $type) = $info;
+        
+        $ratio = min($max_width / $width, $max_height / $height, 1);
+        $new_width = (int)($width * $ratio);
+        $new_height = (int)($height * $ratio);
+
+        switch ($type) {
+            case IMAGETYPE_JPEG: $src = imagecreatefromjpeg($source); break;
+            case IMAGETYPE_PNG: $src = imagecreatefrompng($source); break;
+            case IMAGETYPE_WEBP: $src = imagecreatefromwebp($source); break;
+            default: return false;
+        }
+
+        $dst = imagecreatetruecolor($new_width, $new_height);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+        
+        $success = imagewebp($dst, $dest, 80);
+        
+        imagedestroy($src);
+        imagedestroy($dst);
+        
+        return $success;
+    }
+
+    private function getPDFPages($file)
+    {
+        // Méthode rapide: compter /Type /Page
+        $content = file_get_contents($file, false, null, 0, 50000);
+        if (preg_match('/\/Type\s*\/Pages.*?\/Count\s+(\d+)/s', $content, $m)) {
+            return (int)$m[1];
+        }
+        if (preg_match_all('/\/Type\s*\/Page[^s]/', $content, $m)) {
+            return count($m[0]);
+        }
+        return null;
+    }
+
+    private function getIconForFile($ext)
+    {
+        $icons = [
+            'pdf' => 'assets/images/pdf-default.png',
+            'doc' => 'assets/images/doc-default.png',
+            'docx' => 'assets/images/doc-default.png',
+            'xls' => 'assets/images/xls-default.png',
+            'xlsx' => 'assets/images/xls-default.png',
+            'ppt' => 'assets/images/ppt-default.png',
+            'pptx' => 'assets/images/ppt-default.png',
+            'zip' => 'assets/images/zip-default.png',
+            'rar' => 'assets/images/zip-default.png',
+            'mp3' => 'assets/images/audio-default.png',
+            'mp4' => 'assets/images/video-default.png',
+        ];
+        return $icons[$ext] ?? 'assets/images/file-default.png';
+    }
+
+    // ==================== HELPERS PRIVÉS ====================
+
+    private function validateInitUpload($file_name, $file_size, $sous_type)
+    {
+        if (empty($file_name) || $file_size <= 0) {
+            return ['success' => false, 'message' => 'Paramètres invalides'];
+        }
+
+        if (!isset($this->type_configs[$sous_type])) {
+            return ['success' => false, 'message' => 'Type non supporté'];
+        }
+
+        $config = $this->type_configs[$sous_type];
+        
+        if ($config['max_size'] > 0 && $file_size > $config['max_size']) {
+            return [
+                'success' => false, 
+                'message' => 'Fichier trop grand pour ce type (max: ' . $this->formatBytes($config['max_size']) . ')'
+            ];
+        }
+
+        // Vérifier extension
+        if ($config['accept'] !== '*' && $config['accept'] !== null) {
+            $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+            if (!in_array($ext, $config['accept'])) {
+                return ['success' => false, 'message' => 'Format non supporté pour ce type'];
+            }
+        }
+
+        return ['success' => true];
+    }
+
+    private function prepareItemData($sous_type, $mode, $old = null)
+    {
+        $data = [
+            'titre' => $this->input->post('titre'),
+            'type' => 'autre',
+            'sous_type' => $sous_type,
+            'description' => $this->input->post('description') ?: null,
+            'categorie' => $this->input->post('categorie') ?: null,
+            'date_media' => $this->input->post('date_media') ?: null,
+            'credits' => $this->input->post('credits') ?: null,
+            'est_actif' => $this->input->post('est_actif') ? 1 : ($mode === 'create' ? 1 : ($old['est_actif'] ?? 1)),
+            'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
+            'message_reseaux' => $this->input->post('message_reseaux') ?: null,
+            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
+            'is_for_website' => $this->input->post('is_for_website') ? 1 : ($mode === 'create' ? 1 : 0),
+            'id_page_associee' => $this->input->post('id_page_associee') ?: null,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        if ($mode === 'create') {
+            $data['created_at'] = date('Y-m-d H:i:s');
+        }
+
+        // Gestion selon le type
+        switch ($sous_type) {
+            case 'link':
+                $data['lien'] = $this->input->post('lien');
+                $data['miniature'] = $this->extractLinkThumbnail($data['lien']);
+                break;
+                
+            case 'texte':
+                $data['contenu_texte'] = $this->input->post('contenu_texte') ?: null;
+                $data['miniature'] = 'assets/images/text-default.png';
+                break;
+                
+            default: // book, photo, other
+                $file_path = $this->input->post('uploaded_file_path');
+                
+                if ($mode === 'update' && empty($file_path) && $old && !empty($old['fichier'])) {
+                    // Garder l'ancien fichier
+                    $data['fichier'] = $old['fichier'];
+                    $data['taille'] = $old['taille'];
+                    $data['mime_type'] = $old['mime_type'];
+                    $data['miniature'] = $old['miniature'];
+                } elseif (!empty($file_path) && file_exists(FCPATH . $file_path)) {
+                    // Supprimer ancien si update
+                    if ($mode === 'update' && $old && !empty($old['fichier'])) {
+                        $this->deleteItemFiles($old);
+                    }
+                    
+                    $full_path = FCPATH . $file_path;
+                    $data['fichier'] = $file_path;
+                    $data['taille'] = filesize($full_path);
+                    $data['mime_type'] = mime_content_type($full_path);
+                    $data['lien'] = null;
+                    $data['miniature'] = $this->input->post('miniature') ?: $this->getIconForFile(
+                        pathinfo($file_path, PATHINFO_EXTENSION)
+                    );
+                } elseif ($mode === 'create') {
+                    $this->session->set_flashdata('error', 'Aucun fichier uploadé.');
+                    return false;
+                }
+                break;
+        }
+
+        return $data;
+    }
+
+    private function deleteItemFiles($item)
+    {
+        if (!empty($item['fichier']) && file_exists(FCPATH . $item['fichier'])) {
+            @unlink(FCPATH . $item['fichier']);
+        }
+        if (!empty($item['miniature']) && strpos($item['miniature'], 'http') !== 0 && file_exists(FCPATH . $item['miniature'])) {
+            @unlink(FCPATH . $item['miniature']);
+        }
+    }
+
+    private function extractLinkThumbnail($url)
     {
         // YouTube
-        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
+        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
             return "https://img.youtube.com/vi/{$m[1]}/mqdefault.jpg";
         }
         
@@ -649,7 +905,7 @@ class Autre extends MY_Controller {
             return "https://vumbnail.com/{$m[1]}.jpg";
         }
         
-        // Site générique - favicon
+        // Favicon générique
         $domain = parse_url($url, PHP_URL_HOST);
         if ($domain) {
             return "https://www.google.com/s2/favicons?domain={$domain}&sz=128";
@@ -658,16 +914,264 @@ class Autre extends MY_Controller {
         return 'assets/images/link-default.png';
     }
 
-    /**
-     * Vérifier si FFmpeg est installé
-     */
-    private function check_ffmpeg()
+    private function getExistingCategories()
+    {
+        $this->db->select('DISTINCT(categorie) as cat');
+        $this->db->where('type', 'autre');
+        $this->db->where('categorie IS NOT NULL');
+        $this->db->where('categorie !=', '');
+        $query = $this->db->get('galerie_medias');
+        
+        $categories = [];
+        foreach ($query->result() as $row) {
+            $categories[] = $row->cat;
+        }
+        return $categories;
+    }
+
+    private function calculateStats()
+    {
+        $stats = [
+            'total' => 0,
+            'by_type' => [],
+            'total_size' => 0
+        ];
+
+        foreach ($this->type_configs as $key => $config) {
+            $stats['by_type'][$key] = 0;
+        }
+
+        $items = $this->Model->read('galerie_medias', ['type' => 'autre', 'est_actif' => 1]);
+        
+        foreach ($items as $item) {
+            $stats['total']++;
+            $type = $item['sous_type'] ?? 'other';
+            if (isset($stats['by_type'][$type])) {
+                $stats['by_type'][$type]++;
+            }
+            $stats['total_size'] += $item['taille'] ?? 0;
+        }
+
+        return $stats;
+    }
+
+    // ==================== UTILITAIRES ====================
+
+    private function generateUploadId()
+    {
+        return 'autre_' . uniqid() . '_' . bin2hex(random_bytes(8));
+    }
+
+    private function generateFinalName($original_name)
+    {
+        $ext = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+        return date("YmdHis") . '_' . uniqid() . '.' . $ext;
+    }
+
+    private function saveMetadata($upload_id, $metadata)
+    {
+        $path = $this->upload_dir . $upload_id . '/metadata.json';
+        file_put_contents($path, json_encode($metadata, JSON_PRETTY_PRINT));
+    }
+
+    private function loadMetadata($upload_id)
+    {
+        $path = $this->upload_dir . $upload_id . '/metadata.json';
+        if (!file_exists($path)) return null;
+        return json_decode(file_get_contents($path), true);
+    }
+
+    private function updateLastActivity($upload_id)
+    {
+        $metadata = $this->loadMetadata($upload_id);
+        if ($metadata) {
+            $metadata['last_activity'] = time();
+            $this->saveMetadata($upload_id, $metadata);
+        }
+    }
+
+    private function markChunkUploaded($upload_id, $chunk_index)
+    {
+        $metadata = $this->loadMetadata($upload_id);
+        if (!$metadata) return;
+        
+        if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
+            $metadata['uploaded_chunks'][] = $chunk_index;
+            sort($metadata['uploaded_chunks']);
+            $this->saveMetadata($upload_id, $metadata);
+        }
+    }
+
+    private function calculateProgress($upload_id)
+    {
+        $metadata = $this->loadMetadata($upload_id);
+        if (!$metadata) return null;
+        
+        $uploaded = count($metadata['uploaded_chunks']);
+        $total = $metadata['total_chunks'];
+        
+        return [
+            'uploaded_chunks' => $uploaded,
+            'total_chunks' => $total,
+            'percent' => round(($uploaded / $total) * 100, 2),
+            'bytes_uploaded' => $uploaded * $metadata['chunk_size']
+        ];
+    }
+
+    private function getActualUploadedChunks($upload_id)
+    {
+        $temp_dir = $this->upload_dir . $upload_id . '/';
+        $chunks = [];
+        
+        foreach (glob($temp_dir . 'chunk_*') as $file) {
+            if (preg_match('/chunk_(\d+)$/', $file, $m)) {
+                $chunks[] = (int)$m[1];
+            }
+        }
+        
+        sort($chunks);
+        return $chunks;
+    }
+
+    private function assembleChunks($upload_id, $final_path, $metadata)
+    {
+        $start_time = microtime(true);
+        $temp_dir = $this->upload_dir . $upload_id . '/';
+        
+        $out = fopen($final_path, 'wb');
+        if (!$out) {
+            return ['success' => false, 'message' => 'Impossible de créer fichier final'];
+        }
+
+        try {
+            for ($i = 0; $i < $metadata['total_chunks']; $i++) {
+                $chunk_file = $temp_dir . 'chunk_' . $i;
+                
+                if (!file_exists($chunk_file)) {
+                    fclose($out);
+                    @unlink($final_path);
+                    return ['success' => false, 'message' => "Chunk $i manquant"];
+                }
+
+                $handle = fopen($chunk_file, 'rb');
+                while (!feof($handle)) {
+                    fwrite($out, fread($handle, 8192));
+                }
+                fclose($handle);
+                
+                unlink($chunk_file);
+            }
+            
+            fclose($out);
+            
+            return [
+                'success' => true,
+                'time_ms' => round((microtime(true) - $start_time) * 1000)
+            ];
+            
+        } catch (Exception $e) {
+            fclose($out);
+            @unlink($final_path);
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    private function cleanupUploadSession($upload_id)
+    {
+        $temp_dir = $this->upload_dir . $upload_id . '/';
+        $this->recursiveDelete($temp_dir);
+    }
+
+    private function getChunkPath($upload_id, $chunk_index)
+    {
+        return $this->upload_dir . $upload_id . '/chunk_' . $chunk_index;
+    }
+
+    private function setJSONHeaders()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: POST, OPTIONS');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+    }
+
+    private function jsonResponse($success, $message = '', $data = [])
+    {
+        echo json_encode(array_merge([
+            'success' => $success,
+            'message' => $message,
+            'timestamp' => time()
+        ], $data));
+    }
+
+    private function setFlashMessage($success, $success_msg, $error_msg)
+    {
+        $this->session->set_flashdata(
+            $success ? 'success' : 'error',
+            $success ? $success_msg : $error_msg
+        );
+    }
+
+    private function logError($context, $details)
+    {
+        $log = date('Y-m-d H:i:s') . " | $context | " . json_encode($details) . "\n";
+        $log_dir = FCPATH . 'logs/';
+        if (!is_dir($log_dir)) @mkdir($log_dir, 0777, true);
+        error_log($log, 3, $log_dir . 'autre_upload_errors.log');
+    }
+
+    private function getDetailedUploadError($code)
+    {
+        $errors = [
+            UPLOAD_ERR_INI_SIZE => ['type' => 'PHP_LIMIT', 'message' => 'Fichier trop grand (' . ini_get('upload_max_filesize') . ')'],
+            UPLOAD_ERR_FORM_SIZE => ['type' => 'FORM_LIMIT', 'message' => 'Fichier trop grand (formulaire)'],
+            UPLOAD_ERR_PARTIAL => ['type' => 'NETWORK', 'message' => 'Upload partiel'],
+            UPLOAD_ERR_NO_FILE => ['type' => 'NO_FILE', 'message' => 'Aucun fichier'],
+            UPLOAD_ERR_NO_TMP_DIR => ['type' => 'SERVER', 'message' => 'Dossier temporaire manquant'],
+            UPLOAD_ERR_CANT_WRITE => ['type' => 'DISK', 'message' => 'Erreur écriture disque'],
+            UPLOAD_ERR_EXTENSION => ['type' => 'EXT', 'message' => 'Extension bloquée']
+        ];
+        return $errors[$code] ?? ['type' => 'UNKNOWN', 'message' => 'Erreur #' . $code];
+    }
+
+    private function formatBytes($bytes)
+    {
+        if ($bytes >= 1099511627776) return number_format($bytes / 1099511627776, 2) . ' TB';
+        if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 2) . ' GB';
+        if ($bytes >= 1048576) return number_format($bytes / 1048576, 2) . ' MB';
+        if ($bytes >= 1024) return number_format($bytes / 1024, 2) . ' KB';
+        return $bytes . ' B';
+    }
+
+    // ==================== OUTILS EXTERNES ====================
+
+    private function findFFmpeg()
     {
         $paths = ['ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'C:\\ffmpeg\\bin\\ffmpeg.exe'];
         foreach ($paths as $p) {
             exec($p . ' -version 2>&1', $out, $code);
             if ($code === 0) return $p;
         }
-        return FALSE;
+        return false;
+    }
+
+    private function findImageMagick()
+    {
+        $paths = ['convert', '/usr/bin/convert', '/usr/local/bin/convert'];
+        foreach ($paths as $p) {
+            exec($p . ' -version 2>&1', $out, $code);
+            if ($code === 0) return $p;
+        }
+        return false;
+    }
+
+    private function findTesseract()
+    {
+        $paths = ['tesseract', '/usr/bin/tesseract', '/usr/local/bin/tesseract'];
+        foreach ($paths as $p) {
+            exec($p . ' --version 2>&1', $out, $code);
+            if ($code === 0) return $p;
+        }
+        return false;
     }
 }

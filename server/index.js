@@ -16,6 +16,11 @@ const io = socketIo(server, {
 process.on('uncaughtException', (err) => console.error('❌ Exception:', err));
 process.on('unhandledRejection', (reason) => console.error('❌ Rejet non géré:', reason));
 
+// Route de test simple pour vérifier que le serveur répond
+app.get('/', (req, res) => {
+  res.send('Serveur de signalisation opérationnel');
+});
+
 io.on('connection', (socket) => {
   console.log(`✅ Client connecté: ${socket.id}`);
 
@@ -45,7 +50,8 @@ io.on('connection', (socket) => {
   socket.on('error', (err) => console.error(`⚠️ Erreur socket ${socket.id}:`, err));
 });
 
-const PORT = 3000;
+const PORT = 3001;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur signalisation sur http://localhost:${PORT}`);
+  console.log(`🚀 Serveur de signalisation démarré sur le port ${PORT}`);
+  console.log(`🌐 Accessible publiquement via https://nufotec.com (le proxy redirige vers ce serveur)`);
 });

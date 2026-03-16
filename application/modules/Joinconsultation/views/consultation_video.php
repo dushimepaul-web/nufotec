@@ -218,9 +218,9 @@ $waitingMessage = ($current_role === 'patient') ? 'En attente du médecin...' : 
         'avatar' => $other_avatar_url
     ]) ?>;
     const currentRole = <?= json_encode($current_role) ?>; // 'patient' ou 'medecin'
-    const SIGNALING_SERVER = <?= json_encode('http://localhost:3000') ?>;
+    
+    // Plus besoin de SIGNALING_SERVER, on utilise l'origine de la page automatiquement
 </script>
-<!-- Inclusion unique du script de consultation -->
 <script src="<?= base_url('assets/js/consultation.js') ?>"></script>
 </body>
 </html>
