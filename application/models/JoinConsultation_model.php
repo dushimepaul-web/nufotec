@@ -1,0 +1,33 @@
+<?php
+class JoinConsultation_model extends CI_Model {
+
+    /**
+     * Vérifie qu'une consultation avec ce room_id existe et que l'utilisateur
+     * (patient ou médecin) y est associé.
+     */
+    public function get_by_room_and_user($room_id, $user_id) {
+        $sql = "SELECT c.* 
+                FROM consultations c
+                LEFT JOIN medecins m ON m.id = c.medecin_id
+                WHERE c.room_id = ? 
+                  AND (c.patient_id = ? OR m.user_id = ?)";
+        $query = $this->db->query($sql, array($room_id, $user_id, $user_id));
+        return $query->row();
+    }
+
+    /**
+     * Récupère les détails complets d'une consultation (avec les infos des deux participants)
+     */
+    public function get_full_consultation($room_id) {
+        $this->db->select('c.*, 
+                           u1.id as patient_user_id, u1.nom as patient_nom, u1.prenom as patient_prenom, u1.photo as patient_photo,
+                           u2.id as medecin_user_id, u2.nom as medecin_nom, u2.prenom as medecin_prenom, u2.photo as medecin_photo');
+        $this->db->from('consultations c');
+        $this->db->join('users u1', 'c.patient_id = u1.id');
+        $this->db->join('medecins m', 'c.medecin_id = m.id');
+        $this->db->join('users u2', 'm.user_id = u2.id');
+        $this->db->where('c.room_id', $room_id);
+        $query = $this->db->get();
+        return $query->row();
+    }
+}

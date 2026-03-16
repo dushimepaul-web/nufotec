@@ -1,0 +1,217 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/*
+| -------------------------------------------------------------------------
+| URI ROUTING
+| -------------------------------------------------------------------------
+| This file lets you re-map URI requests to specific controller functions.
+|
+| Typically there is a one-to-one relationship between a URL string
+| and its corresponding controller class/method. The segments in a
+| URL normally follow this pattern:
+|
+|	example.com/class/method/id/
+|
+| In some instances, however, you may want to remap this relationship
+| so that a different class/function is called than the one
+| corresponding to the URL.
+|
+| Please see the user guide for complete details:
+|
+|	https://codeigniter.com/user_guide/general/routing.html
+|
+| -------------------------------------------------------------------------
+| RESERVED ROUTES
+| -------------------------------------------------------------------------
+|
+| There are three reserved routes:
+|
+|	$route['default_controller'] = 'welcome';
+|
+| This route indicates which controller class should be loaded if the
+| URI contains no data. In the above example, the "welcome" class
+| would be loaded.
+|
+|	$route['404_override'] = 'errors/page_missing';
+|
+| This route will tell the Router which controller/method to use if those
+| provided in the URL cannot be matched to a valid route.
+|
+|	$route['translate_uri_dashes'] = FALSE;
+|
+| This is not exactly a route, but allows you to automatically route
+| controller and method names that contain dashes. '-' isn't a valid
+| class or method name character, so it requires translation.
+| When you set this option to TRUE, it will replace ALL dashes in the
+| controller and method URI segments.
+|
+| Examples:	my-controller/index	-> my_controller/index
+|		my-controller/my-method	-> my_controller/my_method
+*/
+
+$route['default_controller'] = 'Home';
+$route['404_override'] = '';
+$route['translate_uri_dashes'] = FALSE;
+
+
+
+//recherche
+$route['search/index'] = 'Home/search/index';
+$route['search/ajax_search'] = 'Home/search/ajax_search';
+
+
+// Routes de la boutique
+$route['boutique'] = 'Home/Boutique/index';
+$route['boutique/categorie/(:num)'] = 'Home/Boutique/categorie/$1';
+$route['boutique/categorie/(:num)/(:num)'] = 'Home/Boutique/categorie/$1/$2';
+$route['boutique/detail/(:any)'] = 'Home/Boutique/detail/$1';
+$route['boutique/recherche'] = 'Home/Boutique/recherche';
+$route['boutique/ajax_get_products'] = 'Home/Boutique/ajax_get_products';
+
+
+//panierpanier
+$route['panier'] = 'Home/Panier/index';
+$route['panier/get_cart'] = 'Home/Panier/get_cart';
+$route['panier/ajouter'] = 'Home/Panier/ajouter';
+$route['panier/update_quantity'] = 'Home/Panier/update_quantity';
+$route['panier/delete_line'] = 'Home/Panier/delete_line';
+$route['panier/toggle_favori'] = 'Home/Panier/toggle_favori';
+
+
+//COMMANDE
+$route['Commande'] = 'Home/Commande/index';
+$route['commande/valider'] = 'Home/Commande/valider';
+$route['commande/confirmation/(:num)'] = 'Home/Commande/confirmation/$1'; 
+$route['commande/paiement/(:num)'] = 'Home/Commande/paiement/$1';
+$route['commande/verifier_paiement/(:num)'] = 'home/Commande/verifier_paiement/$1';  
+
+
+
+
+//pages about
+$route['Profile-Entreprise'] = 'Frontend/Corporate_profile';
+
+
+$route['Medicins'] = 'Consultations/PatientForm/Medicin';
+$route['Swap-medecin'] = 'Consultations/PatientForm/changeDoctor'; 
+$route['patient-form'] = 'Consultations/PatientForm'; 
+$route['home-patient'] = 'Dashboard/PatientDashboard'; 
+$route['update-profile'] = 'Dashboard/PatientDashboard/update_home';
+//$route['update-profile'] = 'Dashboard/PatientDashboard/update_profile';
+
+
+
+$route['Investors-form'] = 'Api/Investors';  
+$route['Brokers-form'] = 'Api/Brokers'; 
+
+
+$route['actualites'] = 'Home/Actualites/index';  
+
+$route['commande'] = 'Home/Commande/index'; 
+
+
+$route['agf-phytomed-facility'] = 'Frontend/AGF_PHYTOMED_INDUSTRIES_Facility';
+$route['risk-analysis'] = 'Frontend/Risk_Analysis_Mitigation_Strategies';  
+$route['strategic-partnerships'] = 'Frontend/Strategic_Partnerships'; 
+$route['broker-commission'] = 'Frontend/Commission_Fee_Payment_to_Brokers';    
+$route['investor-commitment'] = 'Frontend/Our_Investor_Partner_Commitment';  
+$route['investment-projection'] = 'Frontend/Phased_Investment_Projection';   
+$route['market-outlook'] = 'Frontend/Market_Industry_Outlook';
+$route['digital-growth'] = 'Frontend/Market_Expansion_Platform';
+$route['vision-mission'] = 'Frontend/Vision_Mission';
+$route['corporate-structure-governance'] = 'Frontend/Corporate_Structure_Governance';
+$route['background-strategic-rationale'] = 'Frontend/Background_Strategic_Rationale';
+
+
+
+
+
+
+
+//backend
+$route['Workflow_categories'] = 'Produits/Workflow_categories/index';
+$route['Workflow_categories/Create'] = 'Produits/Workflow_categories/Create';
+$route['Workflow_categories/Delete'] = 'Produits/Workflow_categories/Delete';
+$route['Workflow_categories/Update'] = 'Produits/Workflow_categories/Update';
+
+
+
+
+ 
+
+ //vison mission cmpany statement 
+
+
+
+$route['info'] = 'Configurations/Settings_medecin/index';
+$route['update_info'] = 'Configurations/Settings_medecin/update_info';
+$route['change-password'] = 'Configurations/Settings_medecin/change_password';
+
+$route['calendrier'] = 'Users/Medecin_Calendrier/index';
+$route['calendriersave'] = 'Users/Medecin_Calendrier/save';
+$route['calendrier'] = 'Users/Medecin_Calendrier/index';
+ 
+
+
+$route['users'] = 'users/Users/index';
+$route['users-create'] = 'users/Users/Create';
+$route['users-update'] = 'users/Users/Update';
+$route['users-delete'] = 'users/Users/Delete';
+$route['users-create'] = 'users/Users/Create';
+ 
+
+ 
+/// Video Controller (dans media/Video.php)
+$route['video'] = 'media/Video';
+$route['video/(:any)'] = 'media/Video/$1';
+$route['video'] = 'media/Video/index';
+$route['video/index'] = 'media/Video/index';
+$route['video/Create'] = 'media/Video/Create';
+$route['video/Update'] = 'media/Video/Update';
+$route['video/Delete'] = 'media/Video/Delete';
+$route['video/ChangeStatus'] = 'media/Video/ChangeStatus';
+$route['video/toggleField'] = 'media/Video/toggleField';
+$route['video/initUpload'] = 'media/Video/initUpload';
+$route['video/uploadChunk'] = 'media/Video/uploadChunk';
+$route['video/checkStatus'] = 'media/Video/checkStatus';
+$route['video/completeUpload'] = 'media/Video/completeUpload';
+$route['video/cancelUpload'] = 'media/Video/cancelUpload';
+
+
+
+
+// Routes pour le contrôleur Autre (media/Autre.php)
+$route['autre'] = 'media/Autre';
+$route['autre/(:any)'] = 'media/Autre/$1';
+$route['autre/index'] = 'media/Autre/index';
+$route['autre/Create'] = 'media/Autre/Create';
+$route['autre/Update'] = 'media/Autre/Update';
+$route['autre/Delete'] = 'media/Autre/Delete';
+$route['autre/ChangeStatus'] = 'media/Autre/ChangeStatus';
+$route['autre/toggleField'] = 'media/Autre/toggleField';
+
+
+/// Audio Controller (dans media/Audio.php)
+$route['audio'] = 'media/Audio';
+$route['audio/(:any)'] = 'media/Audio/$1';
+$route['audio'] = 'media/Audio/index';
+$route['audio/index'] = 'media/Audio/index';
+$route['audio/Create'] = 'media/Audio/Create';
+$route['audio/Update'] = 'media/Audio/Update';
+$route['audio/Delete'] = 'media/Audio/Delete';
+$route['audio/ChangeStatus'] = 'media/Audio/ChangeStatus';
+$route['audio/toggleField'] = 'media/Audio/toggleField';
+
+// ==================== CHUNKED UPLOAD ROUTES ====================
+$route['audio/initUpload'] = 'media/Audio/initUpload';
+$route['audio/uploadChunk'] = 'media/Audio/uploadChunk';
+$route['audio/checkStatus'] = 'media/Audio/checkStatus';
+$route['audio/completeUpload'] = 'media/Audio/completeUpload';
+$route['audio/cancelUpload'] = 'media/Audio/cancelUpload';
+
+// ==================== WEBRTC RECORDING ROUTES ====================
+$route['audio/saveRecording'] = 'media/Audio/saveRecording';
+
+
+$route['patient-fallowed'] = 'Consultations/Entente/confirme/';
