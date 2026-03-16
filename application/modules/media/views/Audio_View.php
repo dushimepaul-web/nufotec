@@ -54,7 +54,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table id="audiosTable" class="table table-hover align-middle" style="width:100%">
+                <table id="table" class="table table-hover align-middle" style="width:100%">
                     <thead class="table-light">
                         <tr>
                             <th width="5%">#</th>
@@ -1740,23 +1740,7 @@ class AudioRecorder {
 // ==================== INITIALISATION ROBUSTE ====================
 document.addEventListener('DOMContentLoaded', function() {
     
-    // ---- DataTables (avec protection) ----
-    try {
-        if (typeof $ !== 'undefined' && $.fn.DataTable) {
-            var $table = $('#audiosTable');
-            if ($table.length) {
-                $table.DataTable({
-                    language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json' },
-                    order: [[0, 'desc']],
-                    pageLength: 10
-                });
-            } else {
-                console.warn('Table #audiosTable not found');
-            }
-        }
-    } catch (e) {
-        console.error('DataTables initialization error (non bloquant):', e);
-    }
+   
 
     // ---- Upload Managers ----
     try {
