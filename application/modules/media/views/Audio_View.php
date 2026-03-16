@@ -3,1777 +3,1929 @@
 <?php include VIEWPATH.'includes/backend/Topheader.php'; ?>
 
 <div class="page-wrapper">
-<div class="page-content">
+    <div class="page-content">
 
-    <!-- Breadcrumb -->
-    <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
-        <div class="breadcrumb-title pe-3">Médias</div>
-        <div class="ps-3">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0 p-0">
-                    <li class="breadcrumb-item"><a href="<?= base_url('Dashboard') ?>"><i class="bx bx-home-alt"></i></a></li>
-                    <li class="breadcrumb-item"><a href="javascript:;">Galerie</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Gestion des Audios</li>
-                </ol>
-            </nav>
-        </div>
-        <div class="ms-auto">
-            <a class="btn btn-primary btn-sm me-2" href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_audio">
-                <i class="bx bx-plus"></i> Nouvel Audio
-            </a>
-            <a class="btn btn-success btn-sm" href="javascript:;" data-bs-toggle="modal" data-bs-target="#record_audio">
-                <i class="bx bx-microphone"></i> Enregistrer
-            </a>
-        </div>
-    </div>
-
-    <!-- Messages Flash -->
-    <?php if ($this->session->flashdata('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
-            <i class="bx bx-check-circle fs-5 me-2"></i>
-            <?= $this->session->flashdata('success') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if ($this->session->flashdata('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
-            <i class="bx bx-error-circle fs-5 me-2"></i>
-            <?= $this->session->flashdata('error') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-
-    <!-- Card Principale -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <h5 class="mb-0 text-primary"><i class="bx bx-music me-2"></i>Liste des Audios</h5>
-                <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Upload Illimité (Chunked)</span>
+        <!-- Breadcrumb -->
+        <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
+            <div class="breadcrumb-title pe-3">Médias</div>
+            <div class="ps-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 p-0">
+                        <li class="breadcrumb-item"><a href="<?= base_url('Dashboard') ?>"><i class="bx bx-home-alt"></i></a></li>
+                        <li class="breadcrumb-item"><a href="javascript:;">Galerie</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Gestion des Audio</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="ms-auto">
+                <a class="btn btn-primary btn-sm" href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_audio">
+                    <i class="bx bx-plus"></i> Nouvel Audio
+                </a>
+                <a class="btn btn-outline-info btn-sm ms-2" href="<?= base_url('audio/diagnostics') ?>" target="_blank">
+                    <i class="bx bx-test-tube"></i> Diagnostic
+                </a>
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="audiosTable" class="table table-hover align-middle" style="width:100%">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="5%">#</th>
-                            <th width="12%">Waveform</th>
-                            <th width="20%">Titre</th>
-                            <th width="10%">Source</th>
-                            <th width="8%">Durée</th>
-                            <th width="8%">Taille</th>
-                            <th width="8%">Statut</th>
-                            <th width="8%">WhatsApp</th>
-                            <th width="8%">Site Web</th>
-                            <th width="13%">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if (!empty($audios)): $i = 1; foreach ($audios as $value): 
-                        $is_upload = !empty($value['fichier']);
-                        $is_link = !empty($value['lien']);
-                        $is_recording = !empty($value['is_recording']);
-                        
-                        // Badge source
-                        if ($is_recording) {
-                            $source_badge = '<span class="badge bg-warning"><i class="bx bx-microphone me-1"></i>Enreg.</span>';
-                        } elseif ($is_upload) {
-                            $source_badge = '<span class="badge bg-success"><i class="bx bx-upload me-1"></i>Upload</span>';
-                        } elseif ($is_link) {
-                            $source_badge = '<span class="badge bg-info"><i class="bx bx-link me-1"></i>Lien</span>';
-                        } else {
-                            $source_badge = '<span class="badge bg-secondary">Inconnu</span>';
-                        }
-                        
-                        // Formatage taille
-                        $taille_formatee = '-';
-                        if (!empty($value['taille'])) {
-                            $taille = $value['taille'];
-                            if ($taille >= 1048576) {
-                                $taille_formatee = number_format($taille / 1048576, 2) . ' MB';
-                            } elseif ($taille >= 1024) {
-                                $taille_formatee = number_format($taille / 1024, 2) . ' KB';
-                            } else {
-                                $taille_formatee = $taille . ' B';
-                            }
-                        }
-                        
-                        // Formatage durée
-                        $duree_formatee = '-';
-                        if (!empty($value['duree'])) {
-                            $mins = floor($value['duree'] / 60);
-                            $secs = floor($value['duree'] % 60);
-                            $duree_formatee = sprintf('%02d:%02d', $mins, $secs);
-                        }
-                        
-                        // Waveform/Miniature
-                        $waveform_path = !empty($value['miniature']) ? $value['miniature'] : 'assets/images/audio-default.png';
-                        $waveform_url = (strpos($waveform_path, 'http') === 0) ? $waveform_path : base_url($waveform_path);
-                    ?>
-                        <tr>
-                            <td><?= $i++ ?></td>
-                            
-                            <td>
-                                <div class="position-relative" style="width: 120px; height: 50px;">
-                                    <img src="<?= $waveform_url ?>" class="rounded border w-100 h-100" style="object-fit: cover; background: #f8f9fa;" alt="Waveform">
-                                    <div class="position-absolute top-50 start-50 translate-middle">
-                                        <i class="bx bx-play-circle text-primary" style="font-size: 1.5rem;"></i>
-                                    </div>
-                                    <?php if ($is_recording): ?>
-                                        <div class="position-absolute top-0 start-0">
-                                            <span class="badge bg-danger" title="Enregistrement"><i class="bx bx-microphone"></i></span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
 
-                            <td>
-                                <div class="d-flex flex-column">
-                                    <strong class="text-dark"><?= htmlspecialchars($value['titre'] ?? 'Sans titre') ?></strong>
-                                    <?php if (!empty($value['description'])): ?>
-                                        <small class="text-muted text-truncate" style="max-width: 200px;">
-                                            <?= htmlspecialchars(substr($value['description'], 0, 50)) ?>...
-                                        </small>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-
-                            <td><?= $source_badge ?></td>
-
-                            <td>
-                                <span class="badge bg-light text-dark border">
-                                    <i class="bx bx-time me-1"></i><?= $duree_formatee ?>
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="badge bg-light text-dark border"><?= $taille_formatee ?></span>
-                            </td>
-
-                            <td class="text-center">
-                                <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#status_<?= $value['id_media'] ?>" class="text-decoration-none">
-                                    <?php if (!empty($value['est_actif']) && $value['est_actif'] == 1): ?>
-                                        <span class="badge bg-success">Actif</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-danger">Inactif</span>
-                                    <?php endif; ?>
-                                </a>
-                            </td>
-
-                            <td class="text-center">
-                                <div class="form-check form-switch d-flex justify-content-center">
-                                    <input class="form-check-input toggle-field" type="checkbox" 
-                                           data-id="<?= $value['id_media'] ?>" 
-                                           data-field="is_for_whatsapp"
-                                           <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
-                                </div>
-                            </td>
-
-                            <td class="text-center">
-                                <div class="form-check form-switch d-flex justify-content-center">
-                                    <input class="form-check-input toggle-field" type="checkbox" 
-                                           data-id="<?= $value['id_media'] ?>" 
-                                           data-field="is_for_website"
-                                           <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
-                                </div>
-                            </td>
-
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
-                                        <i class="bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#view_<?= $value['id_media'] ?>">
-                                                <i class="bx bx-show me-2 text-info"></i>Écouter
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#edit_<?= $value['id_media'] ?>">
-                                                <i class="bx bx-edit me-2 text-primary"></i>Modifier
-                                            </a>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <a class="dropdown-item text-danger" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#delete_<?= $value['id_media'] ?>">
-                                                <i class="bx bx-trash me-2"></i>Supprimer
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <!-- Modal Status -->
-                        <div class="modal fade" id="status_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Changer le statut</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form action="<?= base_url('audio/ChangeStatus') ?>" method="POST">
-                                        <div class="modal-body text-center">
-                                            <i class="bx bx-question-mark-circle text-warning" style="font-size: 4rem;"></i>
-                                            <h5 class="mt-3">Voulez-vous changer le statut ?</h5>
-                                            <p class="text-muted"><?= htmlspecialchars($value['titre']) ?></p>
-                                            <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
-                                            <input type="hidden" name="est_actif" value="<?= $value['est_actif'] ?>">
-                                        </div>
-                                        <div class="modal-footer justify-content-center">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                            <button type="submit" class="btn btn-warning">Confirmer</button>
-                                        </div>
-                                    </form>
-                                </div>
+        <!-- Statistiques -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 me-3"><i class="bx bx-music"></i></div>
+                            <div>
+                                <h6 class="mb-0">Total Audio</h6>
+                                <h3 class="mb-0"><?= count($audios) ?></h3>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 me-3"><i class="bx bx-time"></i></div>
+                            <div>
+                                <h6 class="mb-0">Durée Totale</h6>
+                                <h3 class="mb-0"><?= $this->Audio->formatDuration($total_duration) ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 me-3"><i class="bx bx-headphone"></i></div>
+                            <div>
+                                <h6 class="mb-0">Écoutes</h6>
+                                <h3 class="mb-0">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 me-3"><i class="bx bx-trending-up"></i></div>
+                            <div>
+                                <h6 class="mb-0">Populaire</h6>
+                                <h3 class="mb-0">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                        <!-- Modal View (Lecteur) -->
-                        <div class="modal fade" id="view_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title"><i class="bx bx-music me-2"></i><?= htmlspecialchars($value['titre']) ?></h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body text-center">
+        <!-- Messages Flash -->
+        <?php $this->load->view('includes/backend/FlashMessages.php'); ?>
+
+        <!-- Card Principale -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0 text-primary"><i class="bx bx-music me-2"></i>Bibliothèque Audio</h5>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Upload Illimité</span>
+                        <span class="badge bg-info"><i class="bx bx-wave me-1"></i>Waveform</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="audioTable" class="table table-hover align-middle" style="width:100%">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="25%">Titre & Waveform</th>
+                                <th width="10%">Source</th>
+                                <th width="10%">Durée</th>
+                                <th width="10%">Qualité</th>
+                                <th width="8%">Taille</th>
+                                <th width="8%">Statut</th>
+                                <th width="8%">WhatsApp</th>
+                                <th width="8%">Site</th>
+                                <th width="8%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php if (!empty($audios)): $i = 1; foreach ($audios as $value): 
+                            $is_upload = !empty($value['fichier']);
+                            $is_link = !empty($value['lien']);
+                            
+                            $source_badge = $is_upload 
+                                ? '<span class="badge bg-success"><i class="bx bx-upload me-1"></i>Upload</span>'
+                                : ($is_link 
+                                    ? '<span class="badge bg-info"><i class="bx bx-link me-1"></i>Lien</span>'
+                                    : '<span class="badge bg-secondary">Inconnu</span>');
+                            
+                            // Formatage durée
+                            $duree_formatee = '-';
+                            if (!empty($value['duree'])) {
+                                $duree = (int)$value['duree'];
+                                if ($duree < 60) {
+                                    $duree_formatee = $duree . 's';
+                                } elseif ($duree < 3600) {
+                                    $duree_formatee = floor($duree / 60) . 'm ' . ($duree % 60) . 's';
+                                } else {
+                                    $duree_formatee = floor($duree / 3600) . 'h ' . floor(($duree % 3600) / 60) . 'm';
+                                }
+                            }
+                            
+                            // Formatage taille
+                            $taille_formatee = '-';
+                            if (!empty($value['taille'])) {
+                                $taille = $value['taille'];
+                                $taille_formatee = $taille >= 1048576 
+                                    ? number_format($taille / 1048576, 1) . ' MB'
+                                    : number_format($taille / 1024, 1) . ' KB';
+                            }
+                            
+                            // Qualité audio
+                            $quality_info = [];
+                            if (!empty($value['bitrate'])) {
+                                $quality_info[] = round($value['bitrate'] / 1000) . 'kbps';
+                            }
+                            if (!empty($value['sample_rate'])) {
+                                $quality_info[] = round($value['sample_rate'] / 1000, 1) . 'kHz';
+                            }
+                            $quality_badge = !empty($quality_info) 
+                                ? '<span class="badge bg-light text-dark border">' . implode(' • ', $quality_info) . '</span>'
+                                : '-';
+                            
+                            // Waveform data pour le player inline
+                            $waveform_data = null;
+                            if (!empty($value['waveform_data']) && file_exists(FCPATH . $value['waveform_data'])) {
+                                $waveform_data = file_get_contents(FCPATH . $value['waveform_data']);
+                            }
+                        ?>
+                            <tr data-audio-id="<?= $value['id_media'] ?>">
+                                <td><?= $i++ ?></td>
+                                
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <strong class="text-dark mb-1"><?= htmlspecialchars($value['titre'] ?? 'Sans titre') ?></strong>
+                                        
+                                        <?php if (!empty($value['credits'])): ?>
+                                            <small class="text-muted mb-2"><i class="bx bx-user me-1"></i><?= htmlspecialchars($value['credits']) ?></small>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Mini Player avec Waveform -->
                                         <?php if ($is_upload && !empty($value['fichier'])): ?>
-                                            <audio controls class="w-100 mb-3">
-                                                <source src="<?= base_url($value['fichier']) ?>" type="<?= $value['mime_type'] ?? 'audio/mpeg' ?>">
-                                                Votre navigateur ne supporte pas la lecture audio.
-                                            </audio>
-                                        <?php elseif ($is_link): ?>
-                                            <div class="alert alert-info">
-                                                <i class="bx bx-link-external me-2"></i>
-                                                <a href="<?= htmlspecialchars($value['lien']) ?>" target="_blank">Ouvrir le lien audio</a>
+                                            <div class="audio-player-mini" data-src="<?= base_url($value['fichier']) ?>" data-waveform='<?= $waveform_data ?: '[]' ?>'>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <button class="btn btn-sm btn-primary play-btn rounded-circle" style="width: 32px; height: 32px;">
+                                                        <i class="bx bx-play"></i>
+                                                    </button>
+                                                    <div class="waveform-container flex-grow-1" style="height: 30px; background: #f8f9fa; border-radius: 4px; overflow: hidden;">
+                                                        <canvas class="waveform-canvas" width="300" height="30"></canvas>
+                                                        <div class="progress-overlay" style="width: 0%;"></div>
+                                                    </div>
+                                                    <span class="time-display small text-muted" style="min-width: 45px;">0:00</span>
+                                                </div>
                                             </div>
                                         <?php endif; ?>
                                         
-                                        <div class="row text-muted small text-start">
-                                            <div class="col-6">
-                                                <p class="mb-1"><strong>Durée:</strong> <?= $duree_formatee ?></p>
-                                                <p class="mb-1"><strong>Taille:</strong> <?= $taille_formatee ?></p>
-                                            </div>
-                                            <div class="col-6">
-                                                <p class="mb-1"><strong>Type:</strong> <?= $value['mime_type'] ?? '-' ?></p>
-                                                <p class="mb-1"><strong>Catégorie:</strong> <?= htmlspecialchars($value['categorie'] ?? '-') ?></p>
-                                            </div>
+                                        <?php if (!empty($value['categorie'])): ?>
+                                            <small class="mt-1"><span class="badge bg-light text-dark border"><?= htmlspecialchars($value['categorie']) ?></span></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+
+                                <td><?= $source_badge ?></td>
+                                <td><span class="badge bg-dark"><?= $duree_formatee ?></span></td>
+                                <td><?= $quality_badge ?></td>
+                                <td><?= $taille_formatee ?></td>
+
+                                <td class="text-center">
+                                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#status_<?= $value['id_media'] ?>" class="text-decoration-none">
+                                        <?php if (!empty($value['est_actif']) && $value['est_actif'] == 1): ?>
+                                            <span class="badge bg-success">Actif</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger">Inactif</span>
+                                        <?php endif; ?>
+                                    </a>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-flex justify-content-center">
+                                        <input class="form-check-input toggle-field" type="checkbox" 
+                                               data-id="<?= $value['id_media'] ?>" 
+                                               data-field="is_for_whatsapp"
+                                               <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
+                                    </div>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-flex justify-content-center">
+                                        <input class="form-check-input toggle-field" type="checkbox" 
+                                               data-id="<?= $value['id_media'] ?>" 
+                                               data-field="is_for_website"
+                                               <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                                            <i class="bx bx-dots-vertical-rounded"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#view_<?= $value['id_media'] ?>">
+                                                    <i class="bx bx-play-circle me-2 text-success"></i>Écouter
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#edit_<?= $value['id_media'] ?>">
+                                                    <i class="bx bx-edit me-2 text-primary"></i>Modifier
+                                                </a>
+                                            </li>
+                                            <?php if ($is_upload): ?>
+                                            <li>
+                                                <a class="dropdown-item download-audio" href="<?= base_url($value['fichier']) ?>" download>
+                                                    <i class="bx bx-download me-2 text-info"></i>Télécharger
+                                                </a>
+                                            </li>
+                                            <?php endif; ?>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#delete_<?= $value['id_media'] ?>">
+                                                    <i class="bx bx-trash me-2"></i>Supprimer
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Modal Player -->
+                            <div class="modal fade audio-player-modal" id="view_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-dark text-white">
+                                            <h5 class="modal-title"><i class="bx bx-music me-2"></i><?= htmlspecialchars($value['titre']) ?></h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="edit_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier l'audio</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form action="<?= base_url('audio/Update') ?>" method="POST" class="audio-form" data-mode="edit">
-                                        <div class="modal-body">
-                                            <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" name="titre" value="<?= htmlspecialchars($value['titre']) ?>" required maxlength="255">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Type de source</label>
-                                                <select class="form-select source-type-selector" name="type_source" data-target="<?= $value['id_media'] ?>">
-                                                    <option value="upload" <?= $is_upload ? 'selected' : '' ?>>Fichier uploadé</option>
-                                                    <option value="link" <?= $is_link ? 'selected' : '' ?>>Lien externe</option>
-                                                </select>
-                                            </div>
-
-                                            <!-- Upload Section avec Chunked -->
-                                            <div class="upload-section mb-3" id="upload_section_<?= $value['id_media'] ?>" style="<?= $is_upload ? '' : 'display:none;' ?>">
-                                                <label class="form-label fw-bold">Nouveau fichier audio <span class="badge bg-success">Illimité</span></label>
-                                                
-                                                <div class="upload-zone border rounded p-4 text-center bg-light" id="drop_zone_<?= $value['id_media'] ?>">
-                                                    <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
-                                                    <p class="mb-2">Glissez-déposez un audio ici ou <span class="text-primary fw-bold">cliquez pour parcourir</span></p>
-                                                    <small class="text-muted d-block">Formats: MP3, WAV, OGG, WEBM, M4A, OPUS</small>
-                                                    
-                                                    <input type="file" class="form-control d-none file-input" accept="audio/*" data-upload-id="<?= $value['id_media'] ?>">
-                                                    <input type="hidden" name="uploaded_file_path" class="uploaded-path">
-                                                    <input type="hidden" name="waveform" class="waveform-path">
-                                                    <input type="hidden" name="duration" class="duration-field">
-                                                    
-                                                    <!-- Zone de progression -->
-                                                    <div class="upload-progress mt-3 d-none">
-                                                        <div class="d-flex justify-content-between small mb-1">
-                                                            <span class="upload-status">Préparation...</span>
-                                                            <span class="upload-percent">0%</span>
-                                                        </div>
-                                                        <div class="progress" style="height: 8px;">
-                                                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
-                                                        </div>
-                                                        <div class="upload-chunks small text-muted mt-1">Chunk 0/0</div>
+                                        <div class="modal-body p-0">
+                                            <?php if ($is_upload && !empty($value['fichier'])): ?>
+                                                <div class="audio-full-player" data-audio-id="<?= $value['id_media'] ?>" data-src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>">
+                                                    <!-- Cover Art ou Waveform -->
+                                                    <div class="player-visualization text-center p-4 bg-light">
+                                                        <?php if (!empty($value['waveform'])): ?>
+                                                            <img src="<?= base_url($value['waveform']) ?>" class="img-fluid rounded" style="max-height: 200px;" alt="Waveform">
+                                                        <?php else: ?>
+                                                            <div class="display-1 text-muted"><i class="bx bx-music"></i></div>
+                                                        <?php endif; ?>
                                                     </div>
                                                     
-                                                    <!-- Info fichier actuel -->
-                                                    <?php if ($is_upload): ?>
-                                                        <div class="current-file mt-3 p-2 bg-white rounded border d-flex align-items-center">
-                                                            <i class="bx bx-music text-success fs-4 me-2"></i>
-                                                            <div class="text-start">
-                                                                <small class="d-block fw-bold"><?= basename($value['fichier']) ?></small>
-                                                                <small class="text-muted"><?= $taille_formatee ?> • <?= $duree_formatee ?></small>
+                                                    <!-- Contrôles -->
+                                                    <div class="p-4">
+                                                        <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
+                                                            <button class="btn btn-outline-secondary btn-sm skip-back"><i class="bx bx-skip-previous"></i></button>
+                                                            <button class="btn btn-primary btn-lg rounded-circle play-pause-btn" style="width: 60px; height: 60px;">
+                                                                <i class="bx bx-play fs-4"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-secondary btn-sm skip-forward"><i class="bx bx-skip-next"></i></button>
+                                                        </div>
+                                                        
+                                                        <!-- Progress Bar -->
+                                                        <div class="progress-container mb-2">
+                                                            <div class="progress" style="height: 8px; cursor: pointer;">
+                                                                <div class="progress-bar bg-primary progress-bar-striped" role="progressbar" style="width: 0%"></div>
                                                             </div>
                                                         </div>
-                                                    <?php endif; ?>
+                                                        
+                                                        <div class="d-flex justify-content-between text-muted small">
+                                                            <span class="current-time">0:00</span>
+                                                            <span class="total-time"><?= $duree_formatee ?></span>
+                                                        </div>
+                                                        
+                                                        <!-- Volume -->
+                                                        <div class="d-flex align-items-center gap-2 mt-3">
+                                                            <i class="bx bx-volume-low"></i>
+                                                            <input type="range" class="form-range volume-slider" min="0" max="100" value="80" style="width: 100px;">
+                                                            <i class="bx bx-volume-full"></i>
+                                                        </div>
+                                                    </div>
                                                     
-                                                    <!-- Info nouveau fichier -->
-                                                    <div class="new-file-info mt-2 d-none">
-                                                        <div class="alert alert-success mb-0 py-2">
-                                                            <i class="bx bx-check-circle me-1"></i>
-                                                            <span class="new-file-name"></span>
+                                                    <!-- Audio Element Hidden -->
+                                                    <audio preload="metadata">
+                                                        <source src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>" type="<?= $value['mime_type'] ?? 'audio/mpeg' ?>">
+                                                    </audio>
+                                                </div>
+                                            <?php elseif ($is_link && !empty($value['embed_code'])): ?>
+                                                <div class="ratio ratio-16x9 bg-dark">
+                                                    <?= $value['embed_code'] ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <div class="p-5 text-center">
+                                                    <i class="bx bx-error-circle display-1 text-muted"></i>
+                                                    <p class="mt-3">Aucun lecteur disponible pour ce lien</p>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <?php if (!empty($value['spectrogram']) && file_exists(FCPATH . $value['spectrogram'])): ?>
+                                                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="collapse" data-bs-target="#spectro_<?= $value['id_media'] ?>">
+                                                    <i class="bx bx-pulse me-1"></i>Spectrogramme
+                                                </button>
+                                            <?php endif; ?>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                        </div>
+                                        
+                                        <?php if (!empty($value['spectrogram'])): ?>
+                                        <div class="collapse" id="spectro_<?= $value['id_media'] ?>">
+                                            <div class="card card-body border-0">
+                                                <h6>Analyse fréquentielle</h6>
+                                                <img src="<?= base_url($value['spectrogram']) ?>" class="img-fluid" alt="Spectrogramme">
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Edit -->
+                            <div class="modal fade" id="edit_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier l'audio</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="<?= base_url('audio/Update') ?>" method="POST" class="audio-form" data-mode="edit">
+                                            <div class="modal-body">
+                                                <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
+                                                    <input type="text" class="form-control" name="titre" value="<?= htmlspecialchars($value['titre']) ?>" required maxlength="255">
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Type de source</label>
+                                                    <select class="form-select source-type-selector" name="type_source" data-target="<?= $value['id_media'] ?>">
+                                                        <option value="upload" <?= $is_upload ? 'selected' : '' ?>>Fichier uploadé</option>
+                                                        <option value="link" <?= $is_link ? 'selected' : '' ?>>Lien externe</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- Upload Section -->
+                                                <div class="upload-section mb-3" id="upload_section_<?= $value['id_media'] ?>" style="<?= $is_upload ? '' : 'display:none;' ?>">
+                                                    <label class="form-label fw-bold">Nouveau fichier audio</label>
+                                                    
+                                                    <div class="upload-zone border rounded p-4 text-center bg-light" id="drop_zone_<?= $value['id_media'] ?>">
+                                                        <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
+                                                        <p class="mb-2">Glissez-déposez un fichier audio ou <span class="text-primary fw-bold browse-text">cliquez pour parcourir</span></p>
+                                                        <small class="text-muted d-block">MP3, WAV, FLAC, AAC, OGG, M4A... (Taille illimitée)</small>
+                                                        
+                                                        <input type="file" class="form-control d-none file-input" accept="audio/*" data-upload-id="<?= $value['id_media'] ?>">
+                                                        <input type="hidden" name="uploaded_file_path" class="uploaded-path">
+                                                        <input type="hidden" name="audio_metadata" class="audio-metadata">
+                                                        
+                                                        <!-- Progress -->
+                                                        <div class="upload-progress mt-3 d-none">
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span class="upload-status fw-bold">Préparation...</span>
+                                                                <span class="upload-percent text-primary">0%</span>
+                                                            </div>
+                                                            <div class="progress" style="height: 10px;">
+                                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
+                                                            </div>
+                                                            <div class="d-flex justify-content-between small text-muted mt-1">
+                                                                <span class="upload-chunks">Chunk 0/0</span>
+                                                                <span class="upload-speed">0 MB/s</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <?php if ($is_upload): ?>
+                                                            <div class="current-file mt-3 p-2 bg-white rounded border d-flex align-items-center">
+                                                                <i class="bx bx-music text-success fs-4 me-2"></i>
+                                                                <div class="text-start flex-grow-1">
+                                                                    <small class="d-block fw-bold text-truncate"><?= basename($value['fichier']) ?></small>
+                                                                    <small class="text-muted"><?= $duree_formatee ?> • <?= $taille_formatee ?></small>
+                                                                </div>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        
+                                                        <div class="new-file-info mt-2 d-none">
+                                                            <div class="alert alert-success mb-0 py-2">
+                                                                <i class="bx bx-check-circle me-2"></i>
+                                                                <span class="new-file-name fw-bold"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mt-2 d-flex gap-2">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger cancel-upload d-none">
+                                                            <i class="bx bx-x me-1"></i>Annuler
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary pause-upload d-none">
+                                                            <i class="bx bx-pause me-1"></i>Pause
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary resume-upload d-none">
+                                                            <i class="bx bx-play me-1"></i>Reprendre
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Link Section -->
+                                                <div class="link-section mb-3" id="link_section_<?= $value['id_media'] ?>" style="<?= $is_link ? '' : 'display:none;' ?>">
+                                                    <label class="form-label fw-bold">Lien audio (SoundCloud, Spotify...)</label>
+                                                    <input type="url" class="form-control" name="lien" value="<?= htmlspecialchars($value['lien'] ?? '') ?>" placeholder="https://...">
+                                                    <small class="text-muted">SoundCloud, Spotify, Mixcloud, Bandcamp supportés</small>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold">Artiste / Crédits</label>
+                                                        <input type="text" class="form-control" name="credits" value="<?= htmlspecialchars($value['credits'] ?? '') ?>">
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold">Catégorie</label>
+                                                        <input type="text" class="form-control" name="categorie" value="<?= htmlspecialchars($value['categorie'] ?? '') ?>" list="categories_list">
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Description</label>
+                                                    <textarea class="form-control" name="description" rows="3"><?= htmlspecialchars($value['description'] ?? '') ?></textarea>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" name="est_actif" value="1" <?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'checked' : '' ?>>
+                                                            <label class="form-check-label fw-bold">Audio actif</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input share-toggle" type="checkbox" name="a_partager_reseaux" value="1" <?= (!empty($value['a_partager_reseaux']) && $value['a_partager_reseaux'] == 1) ? 'checked' : '' ?> data-target="edit_msg_<?= $value['id_media'] ?>">
+                                                            <label class="form-check-label fw-bold">Partager sur réseaux</label>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
-                                                <div class="mt-2 d-flex gap-2">
-                                                    <button type="button" class="btn btn-sm btn-outline-danger cancel-upload d-none">
-                                                        <i class="bx bx-x me-1"></i>Annuler
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary pause-upload d-none">
-                                                        <i class="bx bx-pause me-1"></i>Pause
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary resume-upload d-none">
-                                                        <i class="bx bx-play me-1"></i>Reprendre
-                                                    </button>
+
+                                                <div class="mb-3" id="edit_msg_<?= $value['id_media'] ?>" style="<?= (!empty($value['a_partager_reseaux']) && $value['a_partager_reseaux'] == 1) ? '' : 'display:none;' ?>">
+                                                    <label class="form-label fw-bold">Message réseaux sociaux</label>
+                                                    <textarea class="form-control" name="message_reseaux" rows="2" maxlength="280"><?= htmlspecialchars($value['message_reseaux'] ?? '') ?></textarea>
                                                 </div>
-                                            </div>
 
-                                            <!-- Link Section -->
-                                            <div class="link-section mb-3" id="link_section_<?= $value['id_media'] ?>" style="<?= $is_link ? '' : 'display:none;' ?>">
-                                                <label class="form-label fw-bold">Lien audio (SoundCloud, Spotify...)</label>
-                                                <input type="url" class="form-control" name="lien" value="<?= htmlspecialchars($value['lien'] ?? '') ?>" placeholder="https://...">
-                                                <small class="text-muted">La waveform sera générée automatiquement</small>
-                                            </div>
-
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label fw-bold">Catégorie</label>
-                                                    <input type="text" class="form-control" name="categorie" value="<?= htmlspecialchars($value['categorie'] ?? '') ?>" list="categories_list">
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label fw-bold">Date du média</label>
-                                                    <input type="date" class="form-control" name="date_media" value="<?= $value['date_media'] ?? '' ?>">
-                                                </div>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Description</label>
-                                                <textarea class="form-control" name="description" rows="3"><?= htmlspecialchars($value['description'] ?? '') ?></textarea>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Crédits</label>
-                                                <input type="text" class="form-control" name="credits" value="<?= htmlspecialchars($value['credits'] ?? '') ?>">
-                                            </div>
-
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="est_actif" value="1" <?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'checked' : '' ?>>
-                                                        <label class="form-check-label fw-bold">Audio actif</label>
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1" <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
+                                                            <label class="form-check-label fw-bold">Pour WhatsApp</label>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input share-toggle" type="checkbox" name="a_partager_reseaux" value="1" <?= (!empty($value['a_partager_reseaux']) && $value['a_partager_reseaux'] == 1) ? 'checked' : '' ?> data-target="edit_msg_<?= $value['id_media'] ?>">
-                                                        <label class="form-check-label fw-bold">Partager sur réseaux</label>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" name="is_for_website" value="1" <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
+                                                            <label class="form-check-label fw-bold">Pour Site Web</label>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <div class="mb-3" id="edit_msg_<?= $value['id_media'] ?>" style="<?= (!empty($value['a_partager_reseaux']) && $value['a_partager_reseaux'] == 1) ? '' : 'display:none;' ?>">
-                                                <label class="form-label fw-bold">Message réseaux sociaux</label>
-                                                <textarea class="form-control" name="message_reseaux" rows="2" maxlength="280"><?= htmlspecialchars($value['message_reseaux'] ?? '') ?></textarea>
-                                                <small class="text-muted">Max 280 caractères</small>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="bx bx-save me-1"></i>Enregistrer
+                                                </button>
                                             </div>
-
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1" <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
-                                                        <label class="form-check-label fw-bold">Pour WhatsApp</label>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="is_for_website" value="1" <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
-                                                        <label class="form-check-label fw-bold">Pour Site Web</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="bx bx-save me-1"></i>Enregistrer
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modal Delete -->
-                        <div class="modal fade" id="delete_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header bg-danger text-white">
-                                        <h5 class="modal-title"><i class="bx bx-trash me-2"></i>Confirmer la suppression</h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </form>
                                     </div>
-                                    <form action="<?= base_url('audio/Delete') ?>" method="POST">
-                                        <div class="modal-body text-center">
-                                            <i class="bx bx-error-circle text-danger" style="font-size: 4rem;"></i>
-                                            <h5 class="mt-3">Êtes-vous sûr ?</h5>
-                                            <p class="text-muted"><?= htmlspecialchars($value['titre']) ?></p>
-                                            <div class="alert alert-warning">
-                                                <i class="bx bx-info-circle me-2"></i>
-                                                Le fichier sera définitivement supprimé.
-                                            </div>
-                                            <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
-                                        </div>
-                                        <div class="modal-footer justify-content-center">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="bx bx-trash me-1"></i>Supprimer
-                                            </button>
-                                        </div>
-                                    </form>
                                 </div>
                             </div>
-                        </div>
 
-                    <?php endforeach; else: ?>
-                        <tr>
-                            <td colspan="10" class="text-center py-5">
-                                <i class="bx bx-music fs-1 text-muted mb-3"></i>
-                                <p class="text-muted">Aucun audio trouvé</p>
-                                <a href="javascript:;" class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#create_audio">
-                                    <i class="bx bx-plus me-1"></i>Ajouter un audio
-                                </a>
-                                <a href="javascript:;" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#record_audio">
-                                    <i class="bx bx-microphone me-1"></i>Enregistrer
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
+                            <!-- Modal Delete -->
+                            <div class="modal fade" id="delete_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title"><i class="bx bx-trash me-2"></i>Confirmer la suppression</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="<?= base_url('audio/Delete') ?>" method="POST">
+                                            <div class="modal-body text-center">
+                                                <i class="bx bx-error-circle text-danger display-4"></i>
+                                                <h5 class="mt-3">Êtes-vous sûr ?</h5>
+                                                <p class="text-muted"><?= htmlspecialchars($value['titre']) ?></p>
+                                                <div class="alert alert-warning">
+                                                    <i class="bx bx-info-circle me-2"></i>
+                                                    Le fichier et les visualisations seront supprimés.
+                                                </div>
+                                                <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
+                                            </div>
+                                            <div class="modal-footer justify-content-center">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bx bx-trash me-1"></i>Supprimer
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                        <?php endforeach; else: ?>
+                            <tr>
+                                <td colspan="10" class="text-center py-5">
+                                    <i class="bx bx-music fs-1 text-muted mb-3"></i>
+                                    <p class="text-muted">Aucun audio trouvé</p>
+                                    <a href="javascript:;" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#create_audio">
+                                        <i class="bx bx-plus me-1"></i>Ajouter un audio
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
     </div>
 
-</div>
-</div>
-
-<!-- Modal Create (Upload) -->
-<div class="modal fade" id="create_audio" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouvel Audio</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="<?= base_url('audio/Create') ?>" method="POST" class="audio-form" id="create_form" data-mode="create">
-                <input type="hidden" name="type_source" value="upload">
-                <div class="modal-body">
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="titre" required maxlength="255" placeholder="Titre de l'audio">
-                    </div>
-
-                    <!-- Upload Section avec Chunked -->
-                    <div class="upload-section mb-3" id="upload_section_create">
-                        <label class="form-label fw-bold">Fichier audio <span class="badge bg-success">Chunked Upload - Illimité</span></label>
+    <!-- Modal Create -->
+    <div class="modal fade" id="create_audio" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouvel Audio</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="<?= base_url('audio/Create') ?>" method="POST" class="audio-form" id="create_form" data-mode="create">
+                    <div class="modal-body">
                         
-                        <div class="upload-zone border rounded p-4 text-center bg-light" id="drop_zone_create">
-                            <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
-                            <p class="mb-2">Glissez-déposez un audio ici ou <span class="text-primary fw-bold cursor-pointer">cliquez pour parcourir</span></p>
-                            <small class="text-muted d-block mb-2">Formats: MP3, WAV, OGG, WEBM, M4A, FLAC, OPUS</small>
-                            <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Pas de limite de taille</span>
-                            
-                            <input type="file" class="form-control d-none file-input" id="create_file_input" accept="audio/*" data-upload-id="create">
-                            <input type="hidden" name="uploaded_file_path" id="create_uploaded_path">
-                            <input type="hidden" name="waveform" id="create_waveform_path">
-                            <input type="hidden" name="duration" id="create_duration">
-                            
-                            <!-- Zone de progression -->
-                            <div class="upload-progress mt-3 d-none" id="create_progress_container">
-                                <div class="d-flex justify-content-between small mb-1">
-                                    <span id="create_upload_status">Préparation...</span>
-                                    <span id="create_upload_percent">0%</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="create_progress_bar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                                <div class="small text-muted mt-1" id="create_chunks_info">Chunk 0/0</div>
-                                <div class="small text-primary mt-1" id="create_size_info">0 MB / 0 MB</div>
-                            </div>
-                            
-                            <!-- Info fichier sélectionné -->
-                            <div class="file-info mt-2 d-none" id="create_file_info">
-                                <div class="alert alert-info mb-0 py-2 d-flex align-items-center justify-content-center">
-                                    <i class="bx bx-file me-2"></i>
-                                    <span id="create_file_name"></span>
-                                    <span class="mx-2">|</span>
-                                    <span id="create_file_size" class="fw-bold"></span>
-                                </div>
-                            </div>
-                            
-                            <!-- Succès upload -->
-                            <div class="upload-success mt-2 d-none" id="create_upload_success">
-                                <div class="alert alert-success mb-0 py-2">
-                                    <i class="bx bx-check-circle me-1"></i>
-                                    <span>Upload terminé avec succès!</span>
-                                </div>
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="titre" required maxlength="255" placeholder="Titre de la piste">
                         </div>
-                        
-                        <div class="mt-2 d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-danger cancel-upload d-none" id="create_cancel">
-                                <i class="bx bx-x me-1"></i>Annuler
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary pause-upload d-none" id="create_pause">
-                                <i class="bx bx-pause me-1"></i>Pause
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary resume-upload d-none" id="create_resume">
-                                <i class="bx bx-play me-1"></i>Reprendre
-                            </button>
-                        </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Catégorie</label>
-                            <input type="text" class="form-control" name="categorie" list="categories_list" placeholder="Ex: Podcast, Musique...">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Type de source <span class="text-danger">*</span></label>
+                            <select class="form-select source-type-selector" name="type_source" data-target="create" id="create_type_source">
+                                <option value="upload" selected>Uploader un fichier (Illimité)</option>
+                                <option value="link">Lien externe (SoundCloud, Spotify...)</option>
+                            </select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Date du média</label>
-                            <input type="date" class="form-control" name="date_media">
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Description</label>
-                        <textarea class="form-control" name="description" rows="3" placeholder="Description de l'audio..."></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Crédits / Auteur</label>
-                        <input type="text" class="form-control" name="credits" placeholder="Ex: Artiste, Studio...">
-                    </div>
-
-                    <div class="card border mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="bx bx-share-alt me-2"></i>Options de partage</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input share-toggle" type="checkbox" name="a_partager_reseaux" value="1" data-target="create_msg_reseaux">
-                                        <label class="form-check-label fw-bold">Partager sur réseaux sociaux</label>
+                        <!-- Upload Section -->
+                        <div class="upload-section mb-3" id="upload_section_create">
+                            <label class="form-label fw-bold">Fichier audio</label>
+                            
+                            <div class="upload-zone border rounded p-4 text-center bg-light" id="drop_zone_create">
+                                <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
+                                <p class="mb-2">Glissez-déposez un fichier audio ou <span class="text-primary fw-bold browse-text">cliquez pour parcourir</span></p>
+                                <small class="text-muted d-block mb-2">MP3, WAV, FLAC, AAC, OGG, M4A, WMA, AIFF</small>
+                                <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Pas de limite de taille (chunks de 2MB)</span>
+                                
+                                <input type="file" class="form-control d-none file-input" id="create_file_input" accept="audio/*" data-upload-id="create">
+                                <input type="hidden" name="uploaded_file_path" id="create_uploaded_path">
+                                <input type="hidden" name="audio_metadata" id="create_audio_metadata">
+                                
+                                <!-- Progress détaillé -->
+                                <div class="upload-progress mt-3 d-none" id="create_progress_container">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span id="create_upload_status" class="fw-bold">Préparation...</span>
+                                        <span id="create_upload_percent" class="text-primary">0%</span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="create_progress_bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between small text-muted mt-1">
+                                        <span id="create_chunks_info">Chunk 0/0</span>
+                                        <span id="create_upload_speed">0 MB/s</span>
+                                    </div>
+                                    <div class="small text-primary mt-1" id="create_size_info">0 MB / 0 MB</div>
+                                </div>
+                                
+                                <!-- Info fichier -->
+                                <div class="file-info mt-2 d-none" id="create_file_info">
+                                    <div class="alert alert-info mb-0 py-2 d-flex align-items-center justify-content-center">
+                                        <i class="bx bx-file me-2"></i>
+                                        <div>
+                                            <div id="create_file_name" class="fw-bold text-truncate" style="max-width: 300px;"></div>
+                                            <div id="create_file_size" class="small"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Métadonnées extraites -->
+                                <div class="metadata-extracted mt-2 d-none" id="create_metadata">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white py-2">
+                                            <small><i class="bx bx-info-circle me-1"></i>Métadonnées détectées</small>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="row text-start small">
+                                                <div class="col-6"><strong>Durée:</strong> <span id="meta_duration">-</span></div>
+                                                <div class="col-6"><strong>Bitrate:</strong> <span id="meta_bitrate">-</span></div>
+                                                <div class="col-6"><strong>Sample Rate:</strong> <span id="meta_samplerate">-</span></div>
+                                                <div class="col-6"><strong>Canaux:</strong> <span id="meta_channels">-</span></div>
+                                                <div class="col-12 mt-1"><strong>Artiste:</strong> <span id="meta_artist">-</span></div>
+                                                <div class="col-12"><strong>Album:</strong> <span id="meta_album">-</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Succès -->
+                                <div class="upload-success mt-2 d-none" id="create_upload_success">
+                                    <div class="alert alert-success mb-0 py-2 d-flex align-items-center justify-content-center">
+                                        <i class="bx bx-check-circle me-2 fs-5"></i>
+                                        <span class="fw-bold">Upload terminé avec succès!</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="mb-3" id="create_msg_reseaux" style="display:none;">
-                                <label class="form-label fw-bold">Message pour réseaux sociaux</label>
-                                <textarea class="form-control" name="message_reseaux" rows="2" maxlength="280" placeholder="Texte à publier avec l'audio..."></textarea>
-                                <small class="text-muted">Maximum 280 caractères</small>
+                            <div class="mt-2 d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger cancel-upload d-none" id="create_cancel">
+                                    <i class="bx bx-x me-1"></i>Annuler
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary pause-upload d-none" id="create_pause">
+                                    <i class="bx bx-pause me-1"></i>Pause
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary resume-upload d-none" id="create_resume">
+                                    <i class="bx bx-play me-1"></i>Reprendre
+                                </button>
                             </div>
+                        </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-2">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1">
-                                        <label class="form-check-label fw-bold">
-                                            <i class="bx bxl-whatsapp text-success me-1"></i>Disponible pour WhatsApp
-                                        </label>
+                        <!-- Link Section -->
+                        <div class="link-section mb-3" id="link_section_create" style="display:none;">
+                            <label class="form-label fw-bold">Lien audio <span class="text-muted">(SoundCloud, Spotify, Mixcloud, Bandcamp)</span></label>
+                            <input type="url" class="form-control" name="lien" placeholder="https://soundcloud.com/...">
+                            <small class="text-muted">Le lecteur intégré sera généré automatiquement</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Artiste / Crédits</label>
+                                <input type="text" class="form-control" name="credits" placeholder="Nom de l'artiste...">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Catégorie</label>
+                                <input type="text" class="form-control" name="categorie" list="categories_list" placeholder="Ex: Podcast, Musique, Interview...">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea class="form-control" name="description" rows="3" placeholder="Description de l'audio..."></textarea>
+                        </div>
+
+                        <div class="card border mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bx bx-share-alt me-2"></i>Options de partage</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input share-toggle" type="checkbox" name="a_partager_reseaux" value="1" data-target="create_msg_reseaux">
+                                            <label class="form-check-label fw-bold">Partager sur réseaux sociaux</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6 mb-2">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
-                                        <label class="form-check-label fw-bold">
-                                            <i class="bx bx-globe text-primary me-1"></i>Visible sur le site web
-                                        </label>
+                                
+                                <div class="mb-3" id="create_msg_reseaux" style="display:none;">
+                                    <label class="form-label fw-bold">Message pour réseaux sociaux</label>
+                                    <textarea class="form-control" name="message_reseaux" rows="2" maxlength="280" placeholder="Texte à publier..."></textarea>
+                                    <small class="text-muted">Maximum 280 caractères</small>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1">
+                                            <label class="form-check-label fw-bold">
+                                                <i class="bx bxl-whatsapp text-success me-1"></i>Disponible pour WhatsApp
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
+                                            <label class="form-check-label fw-bold">
+                                                <i class="bx bx-globe text-primary me-1"></i>Visible sur le site web
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bx bx-save me-1"></i>Créer l'audio
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Record Audio (WebRTC) -->
-<div class="modal fade" id="record_audio" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="bx bx-microphone me-2"></i>Enregistrement Audio</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="close_record_modal"></button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success" id="create_submit">
+                            <i class="bx bx-save me-1"></i>Créer l'audio
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form action="<?= base_url('audio/Create') ?>" method="POST" id="record_form">
-                <input type="hidden" name="type_source" value="recording">
-                <input type="hidden" name="uploaded_file_path" id="record_uploaded_path">
-                <input type="hidden" name="waveform" id="record_waveform_path">
-                <input type="hidden" name="duration" id="record_duration">
-                
-                <div class="modal-body">
-                    <!-- Titre -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="titre" required maxlength="255" placeholder="Titre de l'enregistrement">
-                    </div>
-
-                    <!-- Interface Enregistrement -->
-                    <div class="card border-0 bg-light mb-3">
-                        <div class="card-body text-center p-4">
-                            
-                            <!-- Timer -->
-                            <div class="mb-3">
-                                <span id="recording_timer" class="display-4 fw-bold text-dark font-monospace">00:00</span>
-                                <div class="text-muted small">Durée d'enregistrement</div>
-                            </div>
-
-                            <!-- Visualiseur -->
-                            <div id="recording_visualizer" class="mb-4 rounded bg-white border" style="height: 100px; width: 100%; position: relative; overflow: hidden;">
-                                <canvas id="audio_canvas" style="width: 100%; height: 100%; display: block;"></canvas>
-                            </div>
-
-                            <!-- Boutons de contrôle -->
-                            <div class="d-flex justify-content-center gap-3 mb-3" id="recorder_controls">
-                                <button type="button" id="btn_start_record" class="btn btn-danger btn-lg rounded-circle" style="width: 70px; height: 70px;" title="Démarrer l'enregistrement">
-                                    <i class="bx bx-microphone fs-2"></i>
-                                </button>
-                                
-                                <button type="button" id="btn_pause_record" class="btn btn-warning btn-lg rounded-circle d-none" style="width: 70px; height: 70px;" title="Pause">
-                                    <i class="bx bx-pause fs-2"></i>
-                                </button>
-                                
-                                <button type="button" id="btn_resume_record" class="btn btn-info btn-lg rounded-circle d-none" style="width: 70px; height: 70px;" title="Reprendre">
-                                    <i class="bx bx-play fs-2"></i>
-                                </button>
-                                
-                                <button type="button" id="btn_stop_record" class="btn btn-dark btn-lg rounded-circle d-none" style="width: 70px; height: 70px;" title="Arrêter">
-                                    <i class="bx bx-stop fs-2"></i>
-                                </button>
-                                
-                                <button type="button" id="btn_cancel_record" class="btn btn-outline-secondary btn-lg rounded-circle d-none" style="width: 70px; height: 70px;" title="Annuler">
-                                    <i class="bx bx-x fs-2"></i>
-                                </button>
-                            </div>
-
-                            <!-- Status -->
-                            <div id="record_status" class="mb-2">
-                                <span class="badge bg-secondary">Prêt à enregistrer - Cliquez sur le microphone</span>
-                            </div>
-
-                            <!-- Message d'erreur micro -->
-                            <div id="mic_error" class="alert alert-danger d-none">
-                                <i class="bx bx-error-circle me-2"></i>
-                                <span id="mic_error_text">Erreur d'accès au microphone</span>
-                            </div>
-
-                            <!-- Preview après enregistrement -->
-                            <div id="record_preview" class="d-none mt-3">
-                                <div class="alert alert-success">
-                                    <i class="bx bx-check-circle me-2"></i>Enregistrement terminé!
-                                </div>
-                                <audio id="recorded_audio" controls class="w-100 mb-2"></audio>
-                                <button type="button" id="btn_new_record" class="btn btn-outline-primary btn-sm">
-                                    <i class="bx bx-refresh me-1"></i>Nouvel enregistrement
-                                </button>
-                            </div>
-
-                            <!-- Progress Upload -->
-                            <div id="record_upload_progress" class="d-none mt-3">
-                                <div class="d-flex justify-content-between small mb-1">
-                                    <span>Sauvegarde sur le serveur...</span>
-                                    <span id="record_upload_percent">0%</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="record_progress_bar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Options -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Catégorie</label>
-                            <input type="text" class="form-control" name="categorie" list="categories_list" placeholder="Ex: Voix, Podcast...">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Date</label>
-                            <input type="date" class="form-control" name="date_media" value="<?= date('Y-m-d') ?>">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Description</label>
-                        <textarea class="form-control" name="description" rows="2" placeholder="Description de l'enregistrement..."></textarea>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1">
-                                <label class="form-check-label fw-bold">
-                                    <i class="bx bxl-whatsapp text-success me-1"></i>Pour WhatsApp
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
-                                <label class="form-check-label fw-bold">
-                                    <i class="bx bx-globe text-primary me-1"></i>Visible sur le site
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-success" id="record_submit" disabled>
-                        <i class="bx bx-save me-1"></i>Sauvegarder l'enregistrement
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
-</div>
 
-<!-- Datalist pour les catégories -->
-<datalist id="categories_list">
-    <option value="Podcast">
-    <option value="Musique">
-    <option value="Voix">
-    <option value="Interview">
-    <option value="Conférence">
-    <option value="Publicité">
-    <option value="Autre">
-</datalist>
+    <!-- Datalist catégories -->
+    <datalist id="categories_list">
+        <option value="Musique">
+        <option value="Podcast">
+        <option value="Interview">
+        <option value="Conférence">
+        <option value="Livre audio">
+        <option value="Méditation">
+        <option value="Sound design">
+        <option value="Field recording">
+        <?php if (!empty($categories)): foreach ($categories as $cat): ?>
+            <option value="<?= htmlspecialchars($cat) ?>">
+        <?php endforeach; endif; ?>
+    </datalist>
+
+</div>
 
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// ==================== CONFIGURATION ====================
-const CONFIG = {
-    CHUNK_SIZE: 5 * 1024 * 1024,
-    MAX_RETRIES: 3,
-    RETRY_DELAY: 1000,
-    ALLOWED_EXTENSIONS: ['mp3', 'wav', 'ogg', 'webm', 'm4a', 'flac', 'aac', 'opus']
-};
+/**
+ * =============================================================================
+ * AUDIO UPLOAD MANAGER - VERSION PROFESSIONNELLE 3.0
+ * Architecture: Modular ES6+ Class avec Web Audio API
+ * Features: Waveform visualization, Real-time player, ID3 extraction
+ * =============================================================================
+ */
 
-// ==================== UTILITAIRES ====================
-const Utils = {
-    formatBytes: (bytes) => {
+/**
+ * Utilitaires pour fichiers audio
+ */
+class AudioUtils {
+    static formatDuration(seconds) {
+        if (!seconds || seconds < 0) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        if (mins < 60) {
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        const hours = Math.floor(mins / 60);
+        const remainingMins = mins % 60;
+        return `${hours}:${remainingMins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    static formatSize(bytes, decimals = 2) {
         if (bytes === 0) return '0 B';
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    },
-    
-    formatDuration: (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    },
-    
-    showToast: (icon, title, text = '') => {
-        Swal.fire({
-            icon: icon,
-            title: title,
-            text: text,
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+    }
+
+    static getAudioMimeType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const types = {
+            'mp3': 'audio/mpeg',
+            'wav': 'audio/wav',
+            'flac': 'audio/flac',
+            'aac': 'audio/aac',
+            'ogg': 'audio/ogg',
+            'm4a': 'audio/mp4',
+            'wma': 'audio/x-ms-wma',
+            'aiff': 'audio/aiff',
+            'opus': 'audio/opus',
+            'weba': 'audio/webm'
+        };
+        return types[ext] || 'audio/mpeg';
+    }
+
+    /**
+     * Extrait les métadonnées ID3 d'un fichier audio via FileReader
+     */
+    static async extractMetadata(file) {
+        return new Promise((resolve) => {
+            // Lecture des premiers bytes pour ID3
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = e.target.result;
+                const metadata = {
+                    title: null,
+                    artist: null,
+                    album: null,
+                    year: null,
+                    duration: null
+                };
+
+                // Parsing basique ID3v2
+                const id3v2 = AudioUtils.parseID3v2(data);
+                if (id3v2) {
+                    Object.assign(metadata, id3v2);
+                }
+
+                // Estimation durée pour MP3 (approximation)
+                if (file.name.endsWith('.mp3')) {
+                    metadata.estimatedDuration = Math.floor(file.size / (128 * 1024 / 8)); // @128kbps
+                }
+
+                resolve(metadata);
+            };
+            reader.readAsArrayBuffer(file.slice(0, 1024 * 100)); // Lire 100KB max
         });
     }
-};
 
-// ==================== CHUNKED UPLOAD MANAGER ====================
-class ChunkedUploadManager {
-    constructor(uploadId, dropZoneId) {
-        this.uploadId = uploadId;
-        this.dropZone = document.getElementById(dropZoneId);
-        if (!this.dropZone) {
-            console.error('DropZone introuvable:', dropZoneId);
+    static parseID3v2(buffer) {
+        const view = new DataView(buffer);
+        const decoder = new TextDecoder('utf-8');
+        
+        // Vérifier signature ID3
+        if (decoder.decode(new Uint8Array(buffer, 0, 3)) !== 'ID3') {
+            return null;
+        }
+
+        const version = view.getUint8(3);
+        const flags = view.getUint8(5);
+        const size = ((view.getUint8(6) & 0x7F) << 21) |
+                     ((view.getUint8(7) & 0x7F) << 14) |
+                     ((view.getUint8(8) & 0x7F) << 7) |
+                     (view.getUint8(9) & 0x7F);
+
+        return { version: `2.${version}`, size: size };
+    }
+}
+
+/**
+ * Visualiseur de waveform sur Canvas
+ */
+class WaveformVisualizer {
+    constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.options = {
+            barWidth: 2,
+            barGap: 1,
+            barColor: '#007bff',
+            progressColor: '#28a745',
+            backgroundColor: 'transparent',
+            ...options
+        };
+        this.peaks = [];
+        this.progress = 0;
+    }
+
+    setPeaks(peaks) {
+        this.peaks = peaks;
+        this.draw();
+    }
+
+    setProgress(percent) {
+        this.progress = Math.max(0, Math.min(100, percent));
+        this.draw();
+    }
+
+    draw() {
+        const { width, height } = this.canvas;
+        this.ctx.clearRect(0, 0, width, height);
+        
+        if (!this.peaks.length) {
+            this.drawPlaceholder();
             return;
         }
-        this.fileInput = this.dropZone.querySelector('.file-input');
-        if (!this.fileInput) {
-            console.error('fileInput introuvable dans', dropZoneId);
-            return;
-        }
-        console.log(`Manager ${uploadId} initialisé, fileInput:`, this.fileInput);
 
-        this.progressBar = this.dropZone.querySelector('.progress-bar');
-        this.progressContainer = this.dropZone.querySelector('.upload-progress');
-        this.statusText = this.dropZone.querySelector('.upload-status') || document.getElementById(`${uploadId}_upload_status`);
-        this.percentText = this.dropZone.querySelector('.upload-percent') || document.getElementById(`${uploadId}_upload_percent`);
-        this.chunksInfo = this.dropZone.querySelector('.upload-chunks') || document.getElementById(`${uploadId}_chunks_info`);
-        this.sizeInfo = document.getElementById(`${uploadId}_size_info`);
+        const totalBars = Math.floor(width / (this.options.barWidth + this.options.barGap));
+        const step = Math.ceil(this.peaks.length / totalBars);
+        const barWidth = this.options.barWidth;
+        const gap = this.options.barGap;
+        const centerY = height / 2;
+
+        const progressX = (this.progress / 100) * width;
+
+        for (let i = 0; i < totalBars; i++) {
+            const peakIndex = i * step;
+            const peak = this.peaks[peakIndex] || 0;
+            const barHeight = peak * height * 0.9;
+            
+            const x = i * (barWidth + gap);
+            const isPlayed = x < progressX;
+
+            this.ctx.fillStyle = isPlayed ? this.options.progressColor : this.options.barColor;
+            
+            // Dessiner barre centrée
+            this.ctx.fillRect(
+                x, 
+                centerY - barHeight / 2, 
+                barWidth, 
+                barHeight
+            );
+        }
+    }
+
+    drawPlaceholder() {
+        const { width, height } = this.canvas;
+        this.ctx.fillStyle = '#dee2e6';
         
-        this.currentFile = null;
-        this.uploadSessionId = null;
-        this.isPaused = false;
-        this.isUploading = false;
-        this.uploadedChunks = [];
-        this.totalChunks = 0;
-        this.abortController = null;
-        
+        // Dessiner une ligne plate
+        this.ctx.fillRect(0, height / 2 - 1, width, 2);
+    }
+
+    /**
+     * Génère des peaks à partir d'un AudioBuffer
+     */
+    static async generatePeaksFromBuffer(audioBuffer, samples = 1000) {
+        const channelData = audioBuffer.getChannelData(0);
+        const step = Math.floor(channelData.length / samples);
+        const peaks = [];
+
+        for (let i = 0; i < samples; i++) {
+            const start = i * step;
+            const end = start + step;
+            let max = 0;
+            
+            for (let j = start; j < end; j++) {
+                const abs = Math.abs(channelData[j]);
+                if (abs > max) max = abs;
+            }
+            
+            peaks.push(max);
+        }
+
+        return peaks;
+    }
+}
+
+/**
+ * Lecteur audio avancé avec Web Audio API
+ */
+class AdvancedAudioPlayer {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.audio = container.querySelector('audio');
+        this.visualizer = null;
+        this.analyser = null;
+        this.dataArray = null;
+        this.animationId = null;
+        this.isPlaying = false;
+
+        this.elements = {
+            playBtn: container.querySelector('.play-pause-btn'),
+            progressBar: container.querySelector('.progress-bar'),
+            progressContainer: container.querySelector('.progress'),
+            currentTime: container.querySelector('.current-time'),
+            totalTime: container.querySelector('.total-time'),
+            volumeSlider: container.querySelector('.volume-slider'),
+            skipBack: container.querySelector('.skip-back'),
+            skipForward: container.querySelector('.skip-forward')
+        };
+
         this.init();
     }
-    
+
     init() {
-        this.dropZone.addEventListener('click', (e) => {
-            if (e.target !== this.fileInput && !e.target.closest('.progress') && !e.target.closest('button')) {
-                if (this.fileInput) {
-                    console.log('Clic sur dropZone, déclenchement input file');
-                    this.fileInput.click();
-                }
-            }
-        });
+        if (!this.audio) return;
+
+        // Event listeners
+        this.elements.playBtn?.addEventListener('click', () => this.togglePlay());
         
-        this.fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleFile(e.target.files[0]);
-            }
-        });
+        this.audio.addEventListener('timeupdate', () => this.updateProgress());
+        this.audio.addEventListener('loadedmetadata', () => this.updateDuration());
+        this.audio.addEventListener('ended', () => this.onEnded());
         
-        this.dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            this.dropZone.classList.add('border-primary', 'bg-light');
-        });
+        this.elements.progressContainer?.addEventListener('click', (e) => this.seek(e));
+        this.elements.volumeSlider?.addEventListener('input', (e) => this.setVolume(e.target.value));
         
-        this.dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            this.dropZone.classList.remove('border-primary', 'bg-light');
-        });
-        
-        this.dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            this.dropZone.classList.remove('border-primary', 'bg-light');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) this.handleFile(files[0]);
-        });
-        
-        const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
-        const cancelBtn = parent.querySelector('.cancel-upload');
-        const pauseBtn = parent.querySelector('.pause-upload');
-        const resumeBtn = parent.querySelector('.resume-upload');
-        
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); this.cancelUpload(); });
-        }
-        if (pauseBtn) {
-            pauseBtn.addEventListener('click', (e) => { e.stopPropagation(); this.pauseUpload(); });
-        }
-        if (resumeBtn) {
-            resumeBtn.addEventListener('click', (e) => { e.stopPropagation(); this.resumeUpload(); });
-        }
+        this.elements.skipBack?.addEventListener('click', () => this.skip(-10));
+        this.elements.skipForward?.addEventListener('click', () => this.skip(10));
+
+        // Web Audio API pour visualisation temps réel
+        this.initWebAudio();
     }
-    
-    handleFile(file) {
-        const ext = file.name.split('.').pop().toLowerCase();
-        if (!CONFIG.ALLOWED_EXTENSIONS.includes(ext)) {
-            Utils.showToast('error', 'Format non supporté', 'Formats acceptés: MP3, WAV, OGG, WEBM, M4A, FLAC, OPUS');
-            return;
-        }
-        this.currentFile = file;
-        
-        const fileInfo = document.getElementById(`${this.uploadId}_file_info`);
-        const fileName = document.getElementById(`${this.uploadId}_file_name`);
-        const fileSize = document.getElementById(`${this.uploadId}_file_size`);
-        
-        if (fileInfo && fileName && fileSize) {
-            fileName.textContent = file.name;
-            fileSize.textContent = Utils.formatBytes(file.size);
-            fileInfo.classList.remove('d-none');
-        }
-        
-        this.startUpload();
-    }
-    
-    async startUpload() {
-        if (!this.currentFile) return;
-        this.isUploading = true;
-        this.isPaused = false;
-        this.abortController = new AbortController();
-        
+
+    initWebAudio() {
         try {
-            await this.initUpload();
-            await this.uploadChunks();
-            await this.completeUpload();
-        } catch (error) {
-            console.error('Upload error:', error);
-            if (error.message !== 'Upload annulé' && error.name !== 'AbortError') {
-                Utils.showToast('error', 'Erreur upload', error.message);
-            }
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.audioContext = new AudioContext();
+            
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 256;
+            
+            const source = this.audioContext.createMediaElementSource(this.audio);
+            source.connect(this.analyser);
+            this.analyser.connect(this.audioContext.destination);
+            
+            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        } catch (e) {
+            console.log('Web Audio API not available');
         }
     }
-    
-    async initUpload() {
-        const formData = new FormData();
-        formData.append('file_name', this.currentFile.name);
-        formData.append('file_size', this.currentFile.size);
+
+    togglePlay() {
+        if (this.audioContext?.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    play() {
+        this.audio.play().then(() => {
+            this.isPlaying = true;
+            this.updatePlayButton();
+            this.startVisualization();
+        }).catch(e => console.error('Play error:', e));
+    }
+
+    pause() {
+        this.audio.pause();
+        this.isPlaying = false;
+        this.updatePlayButton();
+        this.stopVisualization();
+    }
+
+    updatePlayButton() {
+        const icon = this.elements.playBtn?.querySelector('i');
+        if (icon) {
+            icon.className = this.isPlaying ? 'bx bx-pause fs-4' : 'bx bx-play fs-4';
+        }
+    }
+
+    updateProgress() {
+        const percent = (this.audio.currentTime / this.audio.duration) * 100;
+        if (this.elements.progressBar) {
+            this.elements.progressBar.style.width = percent + '%';
+        }
+        if (this.elements.currentTime) {
+            this.elements.currentTime.textContent = AudioUtils.formatDuration(this.audio.currentTime);
+        }
+    }
+
+    updateDuration() {
+        if (this.elements.totalTime) {
+            this.elements.totalTime.textContent = AudioUtils.formatDuration(this.audio.duration);
+        }
+    }
+
+    seek(e) {
+        const rect = this.elements.progressContainer.getBoundingClientRect();
+        const percent = (e.clientX - rect.left) / rect.width;
+        this.audio.currentTime = percent * this.audio.duration;
+    }
+
+    skip(seconds) {
+        this.audio.currentTime = Math.max(0, Math.min(this.audio.duration, this.audio.currentTime + seconds));
+    }
+
+    setVolume(value) {
+        this.audio.volume = value / 100;
+    }
+
+    onEnded() {
+        this.isPlaying = false;
+        this.updatePlayButton();
+        this.stopVisualization();
+    }
+
+    startVisualization() {
+        if (!this.analyser) return;
         
-        const response = await fetch('<?= base_url("audio/initUpload") ?>', {
+        const visualize = () => {
+            if (!this.isPlaying) return;
+            
+            this.analyser.getByteFrequencyData(this.dataArray);
+            // Ici on pourrait mettre à jour une visualisation temps réel
+            this.animationId = requestAnimationFrame(visualize);
+        };
+        
+        visualize();
+    }
+
+    stopVisualization() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+    }
+}
+
+/**
+ * Gestionnaire d'upload chunked (réutilisé de Video avec adaptations)
+ */
+class ChunkedUploadManager {
+    constructor(options = {}) {
+        this.baseUrl = options.baseUrl || '';
+        this.chunkSize = options.chunkSize || 2 * 1024 * 1024;
+        this.maxRetries = options.maxRetries || 3;
+        this.maxConcurrency = options.maxConcurrency || 2;
+        this.retryDelay = options.retryDelay || 1000;
+
+        this.state = {
+            file: null,
+            uploadId: null,
+            totalChunks: 0,
+            uploadedChunks: new Set(),
+            failedChunks: new Map(),
+            isPaused: false,
+            isCancelled: false,
+            isUploading: false,
+            startTime: null,
+            bytesUploaded: 0
+        };
+
+        this.callbacks = {
+            onProgress: () => {},
+            onChunkComplete: () => {},
+            onComplete: () => {},
+            onError: () => {},
+            onCancel: () => {},
+            onPause: () => {},
+            onResume: () => {},
+            onMetadataExtracted: () => {} // Nouveau callback pour audio
+        };
+
+        Object.assign(this.callbacks, options);
+    }
+
+    async start(file) {
+        try {
+            this.reset();
+            this.state.file = file;
+            this.state.isUploading = true;
+            this.state.startTime = Date.now();
+
+            // Extraction métadonnées avant upload (spécifique audio)
+            const metadata = await AudioUtils.extractMetadata(file);
+            this.callbacks.onMetadataExtracted(metadata);
+
+            // Initialisation
+            const initData = await this.initializeUpload(metadata);
+            this.state.uploadId = initData.upload_id;
+            this.state.totalChunks = initData.total_chunks;
+
+            if (initData.chunk_size) {
+                this.chunkSize = initData.chunk_size;
+                this.state.totalChunks = Math.ceil(file.size / this.chunkSize);
+            }
+
+            this.notifyProgress({
+                phase: 'uploading',
+                percent: 0,
+                uploadedChunks: 0,
+                totalChunks: this.state.totalChunks,
+                uploadedSize: 0,
+                totalSize: file.size,
+                speed: 0
+            });
+
+            // Upload parallèle
+            await this.uploadChunksParallel();
+
+            if (this.state.isCancelled) {
+                await this.cancel();
+                return;
+            }
+
+            await this.finalizeUpload();
+
+        } catch (error) {
+            console.error('[ChunkedUploadManager] Error:', error);
+            this.callbacks.onError(error.message || 'Erreur inconnue', error);
+        } finally {
+            this.state.isUploading = false;
+        }
+    }
+
+    async initializeUpload(metadata) {
+        const formData = new FormData();
+        formData.append('file_name', this.state.file.name);
+        formData.append('file_size', this.state.file.size);
+        
+        const hash = await this.calculateHash(this.state.file.slice(0, Math.min(1024 * 1024, this.state.file.size)));
+        formData.append('file_hash', hash);
+        formData.append('metadata', JSON.stringify(metadata));
+
+        const response = await fetch(this.baseUrl + 'initUpload', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
-        if (!data.success) throw new Error(data.message || 'Erreur initialisation');
+        if (!data.success) throw new Error(data.message);
         
-        this.uploadSessionId = data.upload_id;
-        this.totalChunks = data.total_chunks;
-        
-        if (this.progressContainer) this.progressContainer.classList.remove('d-none');
-        
-        const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
-        const cancelBtn = parent.querySelector('.cancel-upload');
-        const pauseBtn = parent.querySelector('.pause-upload');
-        if (cancelBtn) cancelBtn.classList.remove('d-none');
-        if (pauseBtn) pauseBtn.classList.remove('d-none');
-        
-        this.updateProgress(0);
-    }
-    
-    async uploadChunks() {
-        const chunkSize = CONFIG.CHUNK_SIZE;
-        for (let i = 0; i < this.totalChunks; i++) {
-            if (!this.isUploading) break;
-            while (this.isPaused) await new Promise(r => setTimeout(r, 100));
-            if (!this.isUploading) break;
-            if (this.uploadedChunks.includes(i)) continue;
-            
-            const start = i * chunkSize;
-            const end = Math.min(start + chunkSize, this.currentFile.size);
-            const chunk = this.currentFile.slice(start, end);
-            
-            let retries = 0, success = false;
-            while (retries < CONFIG.MAX_RETRIES && !success) {
-                try {
-                    await this.uploadChunk(i, chunk);
-                    success = true;
-                    this.uploadedChunks.push(i);
-                    this.updateProgress((this.uploadedChunks.length / this.totalChunks) * 100);
-                } catch (error) {
-                    if (++retries >= CONFIG.MAX_RETRIES) throw new Error(`Échec chunk ${i} après ${CONFIG.MAX_RETRIES} tentatives`);
-                    await new Promise(r => setTimeout(r, CONFIG.RETRY_DELAY));
-                }
-            }
-        }
-    }
-    
-    async uploadChunk(index, chunk) {
-        const formData = new FormData();
-        formData.append('upload_id', this.uploadSessionId);
-        formData.append('chunk_index', index);
-        formData.append('chunk', chunk);
-        
-        const response = await fetch('<?= base_url("audio/uploadChunk") ?>', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            signal: this.abortController.signal
-        });
-        
-        const data = await response.json();
-        if (!data.success) throw new Error(data.message || 'Erreur chunk');
         return data;
     }
-    
-    async completeUpload() {
-        if (!this.isUploading) return;
-        
+
+    async uploadChunksParallel() {
+        const queue = [];
+        for (let i = 0; i < this.state.totalChunks; i++) {
+            if (!this.state.uploadedChunks.has(i)) queue.push(i);
+        }
+
+        const workers = [];
+        for (let w = 0; w < this.maxConcurrency; w++) {
+            workers.push(this.uploadWorker(queue));
+        }
+
+        await Promise.all(workers);
+    }
+
+    async uploadWorker(queue) {
+        while (queue.length > 0 && !this.state.isCancelled && !this.state.isPaused) {
+            const index = queue.shift();
+            await this.uploadChunkWithRetry(index);
+        }
+    }
+
+    async uploadChunkWithRetry(index, attempt = 0) {
+        try {
+            await this.uploadChunk(index);
+        } catch (error) {
+            const retryCount = this.state.failedChunks.get(index) || 0;
+            if (retryCount < this.maxRetries && !this.state.isCancelled) {
+                const delay = this.retryDelay * Math.pow(2, retryCount);
+                this.state.failedChunks.set(index, retryCount + 1);
+                await this.sleep(delay);
+                await this.uploadChunkWithRetry(index, retryCount + 1);
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    async uploadChunk(index) {
+        while (this.state.isPaused && !this.state.isCancelled) {
+            await this.sleep(100);
+        }
+        if (this.state.isCancelled) return;
+
+        const start = index * this.chunkSize;
+        const end = Math.min(start + this.chunkSize, this.state.file.size);
+        const chunk = this.state.file.slice(start, end);
+
         const formData = new FormData();
-        formData.append('upload_id', this.uploadSessionId);
+        formData.append('upload_id', this.state.uploadId);
+        formData.append('chunk_index', index);
+        formData.append('chunk', chunk, `chunk_${index}`);
+
+        const startTime = Date.now();
         
-        const response = await fetch('<?= base_url("audio/completeUpload") ?>', {
+        const response = await fetch(this.baseUrl + 'uploadChunk', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
         const data = await response.json();
-        if (!data.success) throw new Error(data.message || 'Erreur finalisation');
-        
-        const uploadedPath = this.dropZone.querySelector('.uploaded-path') || document.getElementById(`${this.uploadId}_uploaded_path`);
-        const waveformPath = this.dropZone.querySelector('.waveform-path') || document.getElementById(`${this.uploadId}_waveform_path`);
-        const durationField = this.dropZone.querySelector('.duration-field') || document.getElementById(`${this.uploadId}_duration`);
-        
-        if (uploadedPath) uploadedPath.value = data.file_path;
-        if (waveformPath) waveformPath.value = data.waveform || '';
-        if (durationField) durationField.value = data.duration || 0;
-        
-        const successDiv = document.getElementById(`${this.uploadId}_upload_success`);
-        if (successDiv) successDiv.classList.remove('d-none');
-        
-        Utils.showToast('success', 'Upload terminé!', `${data.file_size_formatted} uploadé avec succès`);
-        
-        const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
-        const cancelBtn = parent.querySelector('.cancel-upload');
-        const pauseBtn = parent.querySelector('.pause-upload');
-        const resumeBtn = parent.querySelector('.resume-upload');
-        if (cancelBtn) cancelBtn.classList.add('d-none');
-        if (pauseBtn) pauseBtn.classList.add('d-none');
-        if (resumeBtn) resumeBtn.classList.add('d-none');
-        
-        this.isUploading = false;
+        if (!data.success) {
+            if (data.error_type === 'PHP_LIMIT') {
+                throw new Error(`Limite serveur: ${data.message}`);
+            }
+            throw new Error(data.message);
+        }
+
+        this.state.uploadedChunks.add(index);
+        this.state.bytesUploaded += chunk.size;
+
+        const speed = this.calculateSpeed();
+        this.notifyProgress({
+            phase: 'uploading',
+            percent: (this.state.uploadedChunks.size / this.state.totalChunks) * 100,
+            uploadedChunks: this.state.uploadedChunks.size,
+            totalChunks: this.state.totalChunks,
+            uploadedSize: this.state.bytesUploaded,
+            totalSize: this.state.file.size,
+            currentChunk: index + 1,
+            speed: speed
+        });
+
+        this.callbacks.onChunkComplete(index, data);
     }
-    
-    pauseUpload() {
-        this.isPaused = true;
-        const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
-        const pauseBtn = parent.querySelector('.pause-upload');
-        const resumeBtn = parent.querySelector('.resume-upload');
-        if (pauseBtn) pauseBtn.classList.add('d-none');
-        if (resumeBtn) resumeBtn.classList.remove('d-none');
-        if (this.statusText) this.statusText.textContent = 'En pause...';
+
+    async finalizeUpload() {
+        this.notifyProgress({ phase: 'finalizing', percent: 100, message: 'Traitement audio...' });
+
+        const formData = new FormData();
+        formData.append('upload_id', this.state.uploadId);
+
+        const response = await fetch(this.baseUrl + 'completeUpload', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            if (data.missing_chunks?.length > 0) {
+                for (const idx of data.missing_chunks) this.state.uploadedChunks.delete(idx);
+                await this.uploadChunksParallel();
+                return this.finalizeUpload();
+            }
+            throw new Error(data.message);
+        }
+
+        this.callbacks.onComplete(data);
     }
-    
-    resumeUpload() {
-        this.isPaused = false;
-        const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
-        const pauseBtn = parent.querySelector('.pause-upload');
-        const resumeBtn = parent.querySelector('.resume-upload');
-        if (pauseBtn) pauseBtn.classList.remove('d-none');
-        if (resumeBtn) resumeBtn.classList.add('d-none');
-        if (this.statusText) this.statusText.textContent = 'Upload en cours...';
-    }
-    
-    async cancelUpload() {
-        this.isUploading = false;
-        if (this.abortController) this.abortController.abort();
-        
-        if (this.uploadSessionId) {
-            const formData = new FormData();
-            formData.append('upload_id', this.uploadSessionId);
+
+    async cancel() {
+        this.state.isCancelled = true;
+        this.state.isPaused = false;
+
+        if (this.state.uploadId) {
             try {
-                await fetch('<?= base_url("audio/cancelUpload") ?>', {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
+                const formData = new FormData();
+                formData.append('upload_id', this.state.uploadId);
+                await fetch(this.baseUrl + 'cancelUpload', { method: 'POST', body: formData });
             } catch (e) {}
         }
-        
-        if (this.progressContainer) this.progressContainer.classList.add('d-none');
-        document.getElementById(`${this.uploadId}_file_info`)?.classList.add('d-none');
-        document.getElementById(`${this.uploadId}_upload_success`)?.classList.add('d-none');
-        
-        const parent = this.dropZone.closest('.upload-section') || this.dropZone.parentElement;
-        const cancelBtn = parent.querySelector('.cancel-upload');
-        const pauseBtn = parent.querySelector('.pause-upload');
-        const resumeBtn = parent.querySelector('.resume-upload');
-        if (cancelBtn) cancelBtn.classList.add('d-none');
-        if (pauseBtn) pauseBtn.classList.add('d-none');
-        if (resumeBtn) resumeBtn.classList.add('d-none');
-        
-        this.fileInput.value = '';
-        this.currentFile = null;
-        this.uploadSessionId = null;
-        this.uploadedChunks = [];
-        
-        Utils.showToast('info', 'Upload annulé');
+
+        this.callbacks.onCancel();
     }
-    
-    updateProgress(percent) {
-        if (this.progressBar) {
-            this.progressBar.style.width = percent + '%';
-            this.progressBar.setAttribute('aria-valuenow', percent);
-        }
-        if (this.percentText) this.percentText.textContent = Math.round(percent) + '%';
-        if (this.statusText) this.statusText.textContent = percent >= 100 ? 'Finalisation...' : 'Upload en cours...';
-        if (this.chunksInfo) this.chunksInfo.textContent = `Chunk ${this.uploadedChunks.length}/${this.totalChunks}`;
-        if (this.sizeInfo && this.currentFile) {
-            const uploaded = (this.uploadedChunks.length / this.totalChunks) * this.currentFile.size;
-            this.sizeInfo.textContent = `${Utils.formatBytes(uploaded)} / ${Utils.formatBytes(this.currentFile.size)}`;
+
+    pause() {
+        if (this.state.isUploading && !this.state.isCancelled) {
+            this.state.isPaused = true;
+            this.callbacks.onPause();
         }
     }
+
+    resume() {
+        if (this.state.isPaused) {
+            this.state.isPaused = false;
+            this.callbacks.onResume();
+        }
+    }
+
+    calculateSpeed() {
+        const elapsed = (Date.now() - this.state.startTime) / 1000;
+        return elapsed === 0 ? 0 : (this.state.bytesUploaded / elapsed) / (1024 * 1024);
+    }
+
+    notifyProgress(progress) {
+        if (this.progressThrottle && progress.phase === 'uploading') {
+            const now = Date.now();
+            if (now - (this.lastProgressUpdate || 0) < 100) return;
+            this.lastProgressUpdate = now;
+        }
+        this.callbacks.onProgress(progress);
+    }
+
+    reset() {
+        this.state = {
+            file: null,
+            uploadId: null,
+            totalChunks: 0,
+            uploadedChunks: new Set(),
+            failedChunks: new Map(),
+            isPaused: false,
+            isCancelled: false,
+            isUploading: false,
+            startTime: null,
+            bytesUploaded: 0
+        };
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async calculateHash(blob) {
+        const buffer = await blob.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    get isUploading() { return this.state.isUploading; }
+    get isPaused() { return this.state.isPaused; }
 }
 
-// ==================== WEBRTC AUDIO RECORDER - CORRIGÉ ====================
-class AudioRecorder {
-    constructor() {
-        this.mediaRecorder = null;
-        this.audioChunks = [];
-        this.stream = null;
-        this.startTime = null;
-        this.elapsedTime = 0;
-        this.timerInterval = null;
-        this.isPaused = false;
-        this.isRecording = false;
-        this.audioContext = null;
-        this.analyser = null;
-        this.canvas = null;
-        this.canvasCtx = null;
-        this.animationId = null;
-        this.recordedBlob = null;
-        this.recordedDuration = 0;
-        
-        this.init();
-    }
+// =============================================================================
+// INITIALISATION
+// =============================================================================
+
+$(document).ready(function() {
     
-    init() {
-        this.btnStart = document.getElementById('btn_start_record');
-        this.btnPause = document.getElementById('btn_pause_record');
-        this.btnStop = document.getElementById('btn_stop_record');
-        this.btnResume = document.getElementById('btn_resume_record');
-        this.btnCancel = document.getElementById('btn_cancel_record');
-        this.btnNew = document.getElementById('btn_new_record');
+    const UPLOAD_CONFIG = {
+        baseUrl: '<?= base_url('audio/') ?>',
+        chunkSize: 2 * 1024 * 1024,
+        maxRetries: 3
+    };
+
+    let currentUploader = null;
+
+    // Auto-hide alerts
+    setTimeout(() => {
+        $('.alert:not(.alert-permanent)').fadeOut('slow');
+    }, 5000);
+
+    // Toggle AJAX fields
+    $(document).on('change', '.toggle-field', function() {
+        const $cb = $(this);
+        $cb.prop('disabled', true);
         
-        this.timerDisplay = document.getElementById('recording_timer');
-        this.visualizer = document.getElementById('recording_visualizer');
-        this.recordStatus = document.getElementById('record_status');
-        this.recordPreview = document.getElementById('record_preview');
-        this.recordedAudio = document.getElementById('recorded_audio');
-        this.uploadProgress = document.getElementById('record_upload_progress');
-        this.progressBar = document.getElementById('record_progress_bar');
-        this.progressPercent = document.getElementById('record_upload_percent');
-        this.submitBtn = document.getElementById('record_submit');
-        this.micError = document.getElementById('mic_error');
-        this.micErrorText = document.getElementById('mic_error_text');
-        
-        this.canvas = document.getElementById('audio_canvas');
-        
-        if (this.btnStart) this.btnStart.addEventListener('click', () => this.startRecording());
-        if (this.btnPause) this.btnPause.addEventListener('click', () => this.pauseRecording());
-        if (this.btnStop) this.btnStop.addEventListener('click', () => this.stopRecording());
-        if (this.btnResume) this.btnResume.addEventListener('click', () => this.resumeRecording());
-        if (this.btnCancel) this.btnCancel.addEventListener('click', () => this.cancelRecording());
-        if (this.btnNew) this.btnNew.addEventListener('click', () => this.resetRecorder());
-        
-        const closeBtn = document.getElementById('close_record_modal');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                if (this.isRecording) this.stopRecording();
-            });
-        }
-        
-        const modal = document.getElementById('record_audio');
-        if (modal) {
-            modal.addEventListener('hidden.bs.modal', () => this.resetRecorder());
-            modal.addEventListener('shown.bs.modal', () => {
-                this.setupCanvas();
-                this.drawInitialState();
-            });
-        }
-        
-        if (this.canvas) {
-            this.setupCanvas();
-            this.drawInitialState();
-        }
-    }
-    
-    setupCanvas() {
-        if (!this.canvas) return;
-        const container = this.visualizer;
-        if (container) {
-            const rect = container.getBoundingClientRect();
-            this.canvas.width = rect.width || 400;
-            this.canvas.height = rect.height || 100;
-        }
-        this.canvasCtx = this.canvas.getContext('2d');
-    }
-    
-    drawInitialState() {
-        if (!this.canvasCtx || !this.canvas) return;
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        
-        this.canvasCtx.fillStyle = '#f8f9fa';
-        this.canvasCtx.fillRect(0, 0, width, height);
-        
-        this.canvasCtx.strokeStyle = '#dee2e6';
-        this.canvasCtx.lineWidth = 2;
-        this.canvasCtx.beginPath();
-        this.canvasCtx.moveTo(0, height / 2);
-        this.canvasCtx.lineTo(width, height / 2);
-        this.canvasCtx.stroke();
-        
-        this.canvasCtx.fillStyle = '#6c757d';
-        this.canvasCtx.font = '14px Arial';
-        this.canvasCtx.textAlign = 'center';
-        this.canvasCtx.textBaseline = 'middle';
-        this.canvasCtx.fillText('🎤 Cliquez sur le microphone pour démarrer', width / 2, height / 2);
-    }
-    
-    drawVisualizer() {
-        if (!this.analyser || !this.canvasCtx || !this.canvas) return;
-        
-        const bufferLength = this.analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        this.analyser.getByteFrequencyData(dataArray);
-        
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        const barWidth = (width / bufferLength) * 2.5;
-        let x = 0;
-        
-        this.canvasCtx.fillStyle = '#f8f9fa';
-        this.canvasCtx.fillRect(0, 0, width, height);
-        
-        for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * height * 0.8;
-            const gradient = this.canvasCtx.createLinearGradient(0, height, 0, height - barHeight);
-            
-            if (this.isPaused) {
-                gradient.addColorStop(0, '#ffc107');
-                gradient.addColorStop(1, '#ff9800');
-            } else {
-                gradient.addColorStop(0, '#dc3545');
-                gradient.addColorStop(1, '#ff4444');
-            }
-            
-            this.canvasCtx.fillStyle = gradient;
-            this.canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
-            x += barWidth + 1;
-        }
-        
-        if (this.isRecording) {
-            this.animationId = requestAnimationFrame(() => this.drawVisualizer());
-        }
-    }
-    
-    async startRecording() {
-        try {
-            if (this.micError) this.micError.classList.add('d-none');
-            
-            if (!navigator.mediaDevices || !window.MediaRecorder) {
-                throw new Error('Votre navigateur ne supporte pas l\'enregistrement audio');
-            }
-            
-            console.log('Demande accès micro...');
-            
-            this.stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 44100,
-                    channelCount: 1
+        $.ajax({
+            url: '<?= base_url('audio/toggleField') ?>',
+            type: 'POST',
+            data: {
+                id: $cb.data('id'),
+                field: $cb.data('field'),
+                value: $cb.is(':checked') ? 1 : 0,
+                '<?= $this->security->get_csrf_token_name() ?>': '<?= $this->security->get_csrf_hash() ?>'
+            },
+            dataType: 'json',
+            success: (r) => {
+                if (!r?.success) {
+                    $cb.prop('checked', !$cb.is(':checked'));
+                    toastr.error('Erreur mise à jour');
                 }
-            });
-            
-            console.log('Micro accès accordé');
-            
-            try {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const source = this.audioContext.createMediaStreamSource(this.stream);
-                this.analyser = this.audioContext.createAnalyser();
-                this.analyser.fftSize = 256;
-                source.connect(this.analyser);
-            } catch (audioErr) {
-                console.warn('Web Audio API non disponible:', audioErr);
-            }
-            
-            const mimeTypes = [
-                'audio/webm;codecs=opus',
-                'audio/webm',
-                'audio/ogg;codecs=opus',
-                'audio/ogg',
-                'audio/mp4'
-            ];
-            
-            let selectedMimeType = '';
-            for (const type of mimeTypes) {
-                if (MediaRecorder.isTypeSupported(type)) {
-                    selectedMimeType = type;
-                    console.log('Format supporté:', type);
-                    break;
-                }
-            }
-            
-            if (!selectedMimeType) {
-                selectedMimeType = 'audio/webm';
-            }
-            
-            const options = {
-                mimeType: selectedMimeType,
-                audioBitsPerSecond: 128000
-            };
-            
-            this.mediaRecorder = new MediaRecorder(this.stream, options);
-            this.audioChunks = [];
-            
-            this.mediaRecorder.ondataavailable = (e) => {
-                console.log('Data available:', e.data.size, 'bytes, type:', e.data.type);
-                if (e.data && e.data.size > 0) {
-                    this.audioChunks.push(e.data);
-                }
-            };
-            
-            this.mediaRecorder.onstop = () => {
-                console.log('MediaRecorder stopped, chunks:', this.audioChunks.length);
-                this.handleRecordingComplete();
-            };
-            
-            this.mediaRecorder.onerror = (e) => {
-                console.error('MediaRecorder error:', e);
-                Utils.showToast('error', 'Erreur lors de l\'enregistrement');
-                this.resetRecorder();
-            };
-            
-            this.mediaRecorder.start(100);
-            
-            this.isRecording = true;
-            this.isPaused = false;
-            this.elapsedTime = 0;
-            this.recordedDuration = 0;
-            
-            this.startTimer();
-            
-            if (this.analyser) {
-                this.drawVisualizer();
-            }
-            
-            this.updateUIState('recording');
-            this.updateStatus('Enregistrement en cours...', 'danger');
-            
-            console.log('Enregistrement démarré');
-            
-        } catch (error) {
-            console.error('Erreur démarrage:', error);
-            
-            let errorMsg = error.message;
-            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                errorMsg = 'Accès au microphone refusé. Vérifiez les permissions.';
-            } else if (error.name === 'NotFoundError') {
-                errorMsg = 'Aucun microphone trouvé.';
-            }
-            
-            if (this.micError && this.micErrorText) {
-                this.micErrorText.textContent = errorMsg;
-                this.micError.classList.remove('d-none');
-            }
-            
-            Swal.fire({
-                icon: 'error',
-                title: 'Erreur microphone',
-                text: errorMsg
-            });
-        }
-    }
-    
-    startTimer() {
-        this.timerInterval = setInterval(() => {
-            if (!this.isPaused) {
-                this.elapsedTime++;
-                if (this.timerDisplay) {
-                    this.timerDisplay.textContent = Utils.formatDuration(this.elapsedTime);
-                }
-            }
-        }, 1000);
-    }
-    
-    pauseRecording() {
-        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-            this.mediaRecorder.pause();
-            this.isPaused = true;
-            if (this.animationId) {
-                cancelAnimationFrame(this.animationId);
-            }
-            this.updateUIState('paused');
-            this.updateStatus('Enregistrement en pause', 'warning');
-        }
-    }
-    
-    resumeRecording() {
-        if (this.mediaRecorder && this.mediaRecorder.state === 'paused') {
-            this.mediaRecorder.resume();
-            this.isPaused = false;
-            if (this.analyser) {
-                this.drawVisualizer();
-            }
-            this.updateUIState('recording');
-            this.updateStatus('Enregistrement en cours...', 'danger');
-        }
-    }
-    
-    stopRecording() {
-        console.log('Arrêt enregistrement...');
+            },
+            error: () => {
+                $cb.prop('checked', !$cb.is(':checked'));
+                toastr.error('Erreur connexion');
+            },
+            complete: () => $cb.prop('disabled', false)
+        });
+    });
+
+    // Toggle sections
+    $(document).on('change', '.source-type-selector', function() {
+        const target = $(this).data('target');
+        const isUpload = $(this).val() === 'upload';
         
-        this.recordedDuration = this.elapsedTime;
-        console.log('Durée enregistrée:', this.recordedDuration, 'secondes');
-        
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            this.mediaRecorder.stop();
+        if (target === 'create') {
+            $('#upload_section_create').toggle(isUpload);
+            $('#link_section_create').toggle(!isUpload);
+            $('#create_uploaded_path').prop('required', isUpload);
+            $('input[name="lien"]').prop('required', !isUpload);
+            if (!isUpload && currentUploader) currentUploader.cancel();
+        } else {
+            $(`#upload_section_${target}`).toggle(isUpload);
+            $(`#link_section_${target}`).toggle(!isUpload);
         }
-        
-        if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
-        }
-        
-        this.isRecording = false;
-        this.isPaused = false;
-        clearInterval(this.timerInterval);
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-        
-        this.updateUIState('stopped');
-        this.updateStatus('Enregistrement terminé', 'success');
-    }
-    
-    cancelRecording() {
-        console.log('Annulation enregistrement...');
-        
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            this.mediaRecorder.stop();
-        }
-        
-        if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
-        }
-        
-        this.isRecording = false;
-        this.isPaused = false;
-        clearInterval(this.timerInterval);
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-        
-        this.audioChunks = [];
-        this.resetRecorder();
-        this.updateStatus('Enregistrement annulé', 'secondary');
-    }
-    
-    handleRecordingComplete() {
-        if (this.audioChunks.length === 0) {
-            console.error('Aucune donnée audio');
-            Utils.showToast('error', 'Erreur', 'Aucune donnée audio capturée');
-            this.resetRecorder();
+    });
+
+    $(document).on('change', '.share-toggle', function() {
+        $(`#${$(this).data('target')}`).toggle($(this).is(':checked'));
+    });
+
+    // ========================================================================
+    // UPLOAD HANDLING
+    // ========================================================================
+
+    $(document).on('click', '.upload-zone', function(e) {
+        if ($(e.target).is('input, .upload-progress, .upload-progress *')) return;
+        $(this).find('.file-input').trigger('click');
+    });
+
+    $(document).on('dragover', '.upload-zone', function(e) {
+        e.preventDefault();
+        $(this).addClass('drag-active border-primary bg-light');
+    });
+
+    $(document).on('dragleave', '.upload-zone', function(e) {
+        e.preventDefault();
+        $(this).removeClass('drag-active border-primary bg-light');
+    });
+
+    $(document).on('drop', '.upload-zone', function(e) {
+        e.preventDefault();
+        $(this).removeClass('drag-active border-primary bg-light');
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) handleFileSelection(files[0], $(this));
+    });
+
+    $(document).on('change', '.file-input', function() {
+        const file = this.files[0];
+        if (file) handleFileSelection(file, $(this).closest('.upload-zone'));
+    });
+
+    function handleFileSelection(file, $zone) {
+        if (!file.type.startsWith('audio/')) {
+            toastr.error('Veuillez sélectionner un fichier audio.');
             return;
         }
+
+        const uploadId = $zone.find('.file-input').data('upload-id');
         
-        const blobType = this.audioChunks[0]?.type || 'audio/webm';
-        this.recordedBlob = new Blob(this.audioChunks, { type: blobType });
-        
-        console.log('Blob créé:', this.recordedBlob.size, 'bytes, type:', this.recordedBlob.type);
-        console.log('Durée finale:', this.recordedDuration, 'secondes');
-        
-        const audioUrl = URL.createObjectURL(this.recordedBlob);
-        if (this.recordedAudio) {
-            this.recordedAudio.src = audioUrl;
+        // Afficher info
+        const formattedSize = AudioUtils.formatSize(file.size);
+        if (uploadId === 'create') {
+            $('#create_file_name').text(file.name).attr('title', file.name);
+            $('#create_file_size').text(formattedSize);
+            $('#create_file_info').removeClass('d-none');
+        } else {
+            $zone.find('.new-file-info').removeClass('d-none');
+            $zone.find('.new-file-name').text(file.name);
         }
-        
-        if (this.recordPreview) {
-            this.recordPreview.classList.remove('d-none');
-        }
-        
-        if (this.submitBtn) {
-            this.submitBtn.disabled = false;
-        }
-        
-        const durationField = document.getElementById('record_duration');
-        if (durationField) {
-            durationField.value = this.recordedDuration;
-            console.log('Champ duration mis à jour:', durationField.value);
-        }
-        
-        this.uploadRecording();
+
+        startChunkedUpload(file, uploadId, $zone);
     }
-    
-    async uploadRecording() {
-        if (!this.recordedBlob) return;
+
+    function startChunkedUpload(file, uploadId, $zone) {
+        const isCreate = uploadId === 'create';
+        const ui = getUploadUI(uploadId, $zone);
         
-        console.log('Upload enregistrement...');
-        console.log('Durée envoyée:', this.recordedDuration);
+        resetUploadUI(ui);
+        showUploadControls(ui);
+
+        currentUploader = new ChunkedUploadManager({
+            baseUrl: UPLOAD_CONFIG.baseUrl,
+            chunkSize: UPLOAD_CONFIG.chunkSize,
+            maxRetries: UPLOAD_CONFIG.maxRetries,
+            
+            onMetadataExtracted: (metadata) => {
+                // Afficher métadonnées extraites
+                if (isCreate && metadata) {
+                    $('#meta_duration').text(metadata.estimatedDuration ? 
+                        AudioUtils.formatDuration(metadata.estimatedDuration) : '-');
+                    $('#create_metadata').removeClass('d-none');
+                }
+            },
+            
+            onProgress: (data) => updateProgressUI(ui, data),
+            
+            onChunkComplete: (index, response) => {
+                console.log(`Chunk ${index} uploaded`);
+            },
+            
+            onComplete: (data) => {
+                handleUploadComplete(ui, data, uploadId);
+                
+                // Afficher métadonnées serveur
+                if (isCreate) {
+                    $('#meta_duration').text(data.duration_formatted || '-');
+                    $('#meta_bitrate').text(data.bitrate ? Math.round(data.bitrate/1000) + ' kbps' : '-');
+                    $('#meta_samplerate').text(data.sample_rate ? (data.sample_rate/1000).toFixed(1) + ' kHz' : '-');
+                    $('#meta_channels').text(data.channels ? (data.channels === 1 ? 'Mono' : data.channels === 2 ? 'Stéréo' : data.channels + ' canaux') : '-');
+                    if (data.metadata?.artist) $('#meta_artist').text(data.metadata.artist);
+                    if (data.metadata?.album) $('#meta_album').text(data.metadata.album);
+                }
+            },
+            
+            onError: (message) => handleUploadError(ui, message),
+            onCancel: () => handleUploadCancel(ui, uploadId),
+            onPause: () => {
+                ui.$status.text('En pause');
+                ui.$bar.removeClass('progress-bar-animated');
+            },
+            onResume: () => {
+                ui.$status.text('Upload en cours...');
+                ui.$bar.addClass('progress-bar-animated');
+            }
+        });
+
+        currentUploader.start(file);
+        bindControlButtons(ui, currentUploader);
+    }
+
+    function getUploadUI(uploadId, $zone) {
+        const isCreate = uploadId === 'create';
         
-        if (this.uploadProgress) {
-            this.uploadProgress.classList.remove('d-none');
+        if (isCreate) {
+            return {
+                $progress: $('#create_progress_container'),
+                $status: $('#create_upload_status'),
+                $percent: $('#create_upload_percent'),
+                $bar: $('#create_progress_bar'),
+                $chunks: $('#create_chunks_info'),
+                $speed: $('#create_upload_speed'),
+                $sizeInfo: $('#create_size_info'),
+                $cancelBtn: $('#create_cancel'),
+                $pauseBtn: $('#create_pause'),
+                $resumeBtn: $('#create_resume'),
+                $success: $('#create_upload_success'),
+                $fileInfo: $('#create_file_info')
+            };
         }
         
-        const formData = new FormData();
-        formData.append('audio', this.recordedBlob, 'recording.webm');
-        formData.append('duration', this.recordedDuration);
+        return {
+            $progress: $zone.find('.upload-progress'),
+            $status: $zone.find('.upload-status'),
+            $percent: $zone.find('.upload-percent'),
+            $bar: $zone.find('.progress-bar'),
+            $chunks: $zone.find('.upload-chunks'),
+            $speed: $zone.find('.upload-speed'),
+            $sizeInfo: null,
+            $cancelBtn: $zone.closest('.upload-section').find('.cancel-upload'),
+            $pauseBtn: $zone.closest('.upload-section').find('.pause-upload'),
+            $resumeBtn: $zone.closest('.upload-section').find('.resume-upload'),
+            $success: $zone.find('.new-file-info'),
+            $fileInfo: $zone.find('.current-file')
+        };
+    }
+
+    function resetUploadUI(ui) {
+        ui.$progress.removeClass('d-none');
+        ui.$bar.css('width', '0%').attr('aria-valuenow', 0);
+        ui.$percent.text('0%');
+        ui.$status.text('Préparation...');
+        ui.$chunks.text('Chunk 0/0');
+        if (ui.$speed) ui.$speed.text('0 MB/s');
+        if (ui.$sizeInfo) ui.$sizeInfo.text('0 MB / 0 MB');
+        ui.$success.addClass('d-none');
+    }
+
+    function showUploadControls(ui) {
+        ui.$cancelBtn.removeClass('d-none');
+        ui.$pauseBtn.removeClass('d-none');
+        ui.$resumeBtn.addClass('d-none');
+    }
+
+    function updateProgressUI(ui, data) {
+        const percent = Math.round(data.percent);
+        ui.$bar.css('width', percent + '%').attr('aria-valuenow', percent);
+        ui.$percent.text(percent + '%');
         
-        try {
-            const response = await fetch('<?= base_url("audio/saveRecording") ?>', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
+        if (data.phase === 'finalizing') {
+            ui.$status.text(data.message);
+        } else {
+            ui.$status.text(`Upload en cours (${data.currentChunk || '?'}/${data.totalChunks})`);
+            ui.$chunks.text(`Chunk ${data.uploadedChunks}/${data.totalChunks}`);
+            if (ui.$speed) ui.$speed.text(data.speed.toFixed(2) + ' MB/s');
+            if (ui.$sizeInfo) {
+                ui.$sizeInfo.text(`${AudioUtils.formatSize(data.uploadedSize)} / ${AudioUtils.formatSize(data.totalSize)}`);
+            }
+        }
+    }
+
+    function handleUploadComplete(ui, data, uploadId) {
+        ui.$progress.addClass('d-none');
+        ui.$cancelBtn.addClass('d-none');
+        ui.$pauseBtn.addClass('d-none');
+        ui.$resumeBtn.addClass('d-none');
+        
+        if (uploadId === 'create') {
+            $('#create_uploaded_path').val(data.file_path);
+            $('#create_audio_metadata').val(JSON.stringify({
+                duration: data.duration,
+                bitrate: data.bitrate,
+                sample_rate: data.sample_rate,
+                channels: data.channels,
+                waveform: data.waveform,
+                spectrogram: data.spectrogram,
+                waveform_data: data.waveform_data,
+                metadata: data.metadata
+            }));
+            $('#create_upload_success').removeClass('d-none');
+        } else {
+            const $zone = $(`#drop_zone_${uploadId}`);
+            $zone.closest('form').find('.uploaded-path').val(data.file_path);
+            $zone.closest('form').find('.audio-metadata').val(JSON.stringify(data));
+            ui.$success.html(`
+                <div class="alert alert-success mb-0 py-2">
+                    <i class="bx bx-check-circle me-2"></i>
+                    <span class="fw-bold">Upload terminé!</span>
+                    <div class="small">${data.file_size_formatted} • ${data.duration_formatted || ''}</div>
+                </div>
+            `).removeClass('d-none');
+        }
+        
+        toastr.success('Upload terminé avec succès!');
+        currentUploader = null;
+    }
+
+    function handleUploadError(ui, message) {
+        ui.$progress.addClass('d-none');
+        ui.$cancelBtn.addClass('d-none');
+        ui.$pauseBtn.addClass('d-none');
+        ui.$resumeBtn.addClass('d-none');
+        toastr.error(message, 'Erreur Upload', { timeOut: 10000 });
+        currentUploader = null;
+    }
+
+    function handleUploadCancel(ui, uploadId) {
+        ui.$progress.addClass('d-none');
+        ui.$cancelBtn.addClass('d-none');
+        ui.$pauseBtn.addClass('d-none');
+        ui.$resumeBtn.addClass('d-none');
+        
+        if (uploadId === 'create') {
+            $('#create_file_info').addClass('d-none');
+            $('#create_upload_success').addClass('d-none');
+            $('#create_metadata').addClass('d-none');
+            $('#create_uploaded_path').val('');
+            $('#create_audio_metadata').val('');
+        } else {
+            $(`#drop_zone_${uploadId}`).find('.new-file-info').addClass('d-none');
+        }
+        currentUploader = null;
+    }
+
+    function bindControlButtons(ui, uploader) {
+        ui.$cancelBtn.off('click').on('click', () => {
+            if (confirm('Annuler l\'upload ?')) uploader.cancel();
+        });
+        
+        ui.$pauseBtn.off('click').on('click', function() {
+            uploader.pause();
+            $(this).addClass('d-none');
+            ui.$resumeBtn.removeClass('d-none');
+        });
+        
+        ui.$resumeBtn.off('click').on('click', function() {
+            uploader.resume();
+            $(this).addClass('d-none');
+            ui.$pauseBtn.removeClass('d-none');
+        });
+    }
+
+    // ========================================================================
+    // MINI PLAYERS (Waveform inline)
+    // ========================================================================
+    
+    $('.audio-player-mini').each(function() {
+        const $container = $(this);
+        const src = $container.data('src');
+        const waveformData = $container.data('waveform') || [];
+        
+        const canvas = $container.find('.waveform-canvas')[0];
+        const visualizer = new WaveformVisualizer(canvas, {
+            barWidth: 2,
+            barGap: 1,
+            barColor: '#6c757d',
+            progressColor: '#0d6efd'
+        });
+        
+        visualizer.setPeaks(waveformData.length ? waveformData : Array(100).fill(0.1));
+        
+        const audio = new Audio(src);
+        let isPlaying = false;
+        
+        $container.find('.play-btn').on('click', function() {
+            const $btn = $(this);
+            const $icon = $btn.find('i');
             
-            const data = await response.json();
-            
-            if (data.success) {
-                console.log('Upload réussi:', data);
-                
-                const pathField = document.getElementById('record_uploaded_path');
-                const waveformField = document.getElementById('record_waveform_path');
-                const durationField = document.getElementById('record_duration');
-                
-                if (pathField) pathField.value = data.file_path;
-                if (waveformField) waveformField.value = data.waveform || '';
-                
-                const finalDuration = data.duration || this.recordedDuration;
-                if (durationField) durationField.value = finalDuration;
-                
-                if (this.progressBar) {
-                    this.progressBar.style.width = '100%';
-                    this.progressBar.classList.remove('progress-bar-animated');
-                }
-                if (this.progressPercent) {
-                    this.progressPercent.textContent = '100%';
-                }
-                
-                Utils.showToast('success', 'Enregistrement sauvegardé!', `Durée: ${Utils.formatDuration(finalDuration)}`);
-                
+            if (isPlaying) {
+                audio.pause();
+                $icon.removeClass('bx-pause').addClass('bx-play');
+                isPlaying = false;
             } else {
-                throw new Error(data.message || 'Erreur serveur');
-            }
-            
-        } catch (error) {
-            console.error('Erreur upload:', error);
-            Utils.showToast('error', 'Erreur sauvegarde', error.message);
-            if (this.uploadProgress) {
-                this.uploadProgress.classList.add('d-none');
-            }
-        }
-    }
-    
-    resetRecorder() {
-        console.log('Reset recorder...');
-        
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            try {
-                this.mediaRecorder.stop();
-            } catch (e) {}
-        }
-        
-        if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
-        }
-        
-        this.mediaRecorder = null;
-        this.stream = null;
-        this.audioChunks = [];
-        this.recordedBlob = null;
-        this.isRecording = false;
-        this.isPaused = false;
-        this.elapsedTime = 0;
-        this.recordedDuration = 0;
-        
-        clearInterval(this.timerInterval);
-        if (this.timerDisplay) {
-            this.timerDisplay.textContent = '00:00';
-        }
-        
-        this.updateUIState('idle');
-        this.updateStatus('Prêt à enregistrer - Cliquez sur le microphone', 'secondary');
-        
-        if (this.recordPreview) this.recordPreview.classList.add('d-none');
-        if (this.uploadProgress) this.uploadProgress.classList.add('d-none');
-        if (this.micError) this.micError.classList.add('d-none');
-        if (this.submitBtn) this.submitBtn.disabled = true;
-        
-        this.drawInitialState();
-        
-        const pathField = document.getElementById('record_uploaded_path');
-        const waveformField = document.getElementById('record_waveform_path');
-        const durationField = document.getElementById('record_duration');
-        
-        if (pathField) pathField.value = '';
-        if (waveformField) waveformField.value = '';
-        if (durationField) durationField.value = '';
-    }
-    
-    updateUIState(state) {
-        if (this.btnStart) this.btnStart.classList.add('d-none');
-        if (this.btnPause) this.btnPause.classList.add('d-none');
-        if (this.btnResume) this.btnResume.classList.add('d-none');
-        if (this.btnStop) this.btnStop.classList.add('d-none');
-        if (this.btnCancel) this.btnCancel.classList.add('d-none');
-        
-        switch (state) {
-            case 'idle':
-                if (this.btnStart) this.btnStart.classList.remove('d-none');
-                break;
-            case 'recording':
-                if (this.btnPause) this.btnPause.classList.remove('d-none');
-                if (this.btnStop) this.btnStop.classList.remove('d-none');
-                if (this.btnCancel) this.btnCancel.classList.remove('d-none');
-                break;
-            case 'paused':
-                if (this.btnResume) this.btnResume.classList.remove('d-none');
-                if (this.btnStop) this.btnStop.classList.remove('d-none');
-                if (this.btnCancel) this.btnCancel.classList.remove('d-none');
-                break;
-            case 'stopped':
-                break;
-        }
-    }
-    
-    updateStatus(message, type) {
-        if (this.recordStatus) {
-            const badgeClass = {
-                'secondary': 'bg-secondary',
-                'danger': 'bg-danger',
-                'warning': 'bg-warning',
-                'success': 'bg-success'
-            }[type] || 'bg-secondary';
-            
-            this.recordStatus.innerHTML = `<span class="badge ${badgeClass}">${message}</span>`;
-        }
-    }
-}
-
-// ==================== INITIALISATION ROBUSTE ====================
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // ---- Upload Managers ----
-    try {
-        if (document.getElementById('drop_zone_create')) {
-            window.createUpload = new ChunkedUploadManager('create', 'drop_zone_create');
-        }
-        
-        document.querySelectorAll('.upload-zone[id^="drop_zone_"]').forEach(zone => {
-            const id = zone.id.replace('drop_zone_', '');
-            if (id !== 'create' && !window['upload_' + id]) {
-                window['upload_' + id] = new ChunkedUploadManager(id, zone.id);
+                // Pause autres players
+                $('.audio-player-mini audio').each(function() {
+                    this.pause();
+                });
+                $('.audio-player-mini .play-btn i').removeClass('bx-pause').addClass('bx-play');
+                
+                audio.play();
+                $icon.removeClass('bx-play').addClass('bx-pause');
+                isPlaying = true;
             }
         });
-    } catch (e) {
-        console.error('Upload manager initialization error:', e);
-    }
+        
+        audio.addEventListener('timeupdate', () => {
+            const percent = (audio.currentTime / audio.duration) * 100;
+            visualizer.setProgress(percent);
+            $container.find('.time-display').text(AudioUtils.formatDuration(audio.currentTime));
+        });
+        
+        audio.addEventListener('ended', () => {
+            isPlaying = false;
+            $container.find('.play-btn i').removeClass('bx-pause').addClass('bx-play');
+            visualizer.setProgress(0);
+        });
+    });
 
-    // ---- Audio Recorder ----
-    try {
-        if (document.getElementById('record_audio')) {
-            window.audioRecorder = new AudioRecorder();
+    // ========================================================================
+    // MODAL PLAYERS (Full player)
+    // ========================================================================
+    
+    $('.audio-player-modal').on('shown.bs.modal', function() {
+        const $modal = $(this);
+        const $player = $modal.find('.audio-full-player');
+        
+        if ($player.length && !$player.data('initialized')) {
+            new AdvancedAudioPlayer($player[0]);
+            $player.data('initialized', true);
         }
-    } catch (e) {
-        console.error('AudioRecorder error:', e);
+    });
+
+    // ========================================================================
+    // FORM VALIDATION
+    // ========================================================================
+    
+    $('#create_form').on('submit', function(e) {
+        const typeSource = $('#create_type_source').val();
+        
+        if (typeSource === 'upload' && !$('#create_uploaded_path').val()) {
+            e.preventDefault();
+            toastr.warning('Veuillez attendre la fin de l\'upload.');
+            return false;
+        }
+        
+        if (typeSource === 'link' && !$('input[name="lien"]').val().trim()) {
+            e.preventDefault();
+            toastr.warning('Veuillez saisir un lien.');
+            return false;
+        }
+    });
+
+    $('#create_audio').on('hidden.bs.modal', function() {
+        if (currentUploader?.isUploading) currentUploader.cancel();
+        
+        $(this).find('form')[0].reset();
+        $('#create_progress_container, #create_file_info, #create_upload_success, #create_metadata').addClass('d-none');
+        $('#create_cancel, #create_pause, #create_resume').addClass('d-none');
+        $('#create_upload_bar').css('width', '0%');
+        $('#create_uploaded_path, #create_audio_metadata').val('');
+        $('#upload_section_create').show();
+        $('#link_section_create').hide();
+    });
+
+    // ========================================================================
+    // DATATABLE
+    // ========================================================================
+    
+    if ($.fn.DataTable) {
+        $('#audioTable').DataTable({
+            language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' },
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true
+        });
     }
 
-    // ---- Source type selector (upload/link) ----
-    try {
-        document.querySelectorAll('.source-type-selector').forEach(select => {
-            select.addEventListener('change', function() {
-                const targetId = this.dataset.target;
-                const uploadSection = document.getElementById(`upload_section_${targetId}`);
-                const linkSection = document.getElementById(`link_section_${targetId}`);
-                if (this.value === 'upload') {
-                    if (uploadSection) uploadSection.style.display = '';
-                    if (linkSection) linkSection.style.display = 'none';
-                } else {
-                    if (uploadSection) uploadSection.style.display = 'none';
-                    if (linkSection) linkSection.style.display = '';
-                }
-            });
-        });
-    } catch (e) {
-        console.error('Source type selector error:', e);
-    }
-
-    // ---- Share toggle (réseaux sociaux) ----
-    try {
-        document.querySelectorAll('.share-toggle').forEach(toggle => {
-            toggle.addEventListener('change', function() {
-                const targetId = this.dataset.target;
-                const targetElement = document.getElementById(targetId);
-                if (targetElement) {
-                    targetElement.style.display = this.checked ? '' : 'none';
-                }
-            });
-        });
-    } catch (e) {
-        console.error('Share toggle error:', e);
-    }
-
-    // ---- Toggle fields (whatsapp/site) ----
-    try {
-        document.querySelectorAll('.toggle-field').forEach(toggle => {
-            toggle.addEventListener('change', async function() {
-                const id = this.dataset.id;
-                const field = this.dataset.field;
-                const value = this.checked ? 1 : 0;
-                try {
-                    const response = await fetch('<?= base_url("audio/toggleField") ?>', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: `id=${id}&field=${field}&value=${value}`
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        Utils.showToast('success', 'Statut mis à jour');
-                    } else {
-                        throw new Error(data.message);
-                    }
-                } catch (error) {
-                    console.error('Erreur toggle:', error);
-                    Utils.showToast('error', 'Erreur', 'Impossible de mettre à jour');
-                    this.checked = !this.checked;
-                }
-            });
-        });
-    } catch (e) {
-        console.error('Toggle fields error:', e);
-    }
-
-    // ---- Vérification formulaire audio ----
-    try {
-        document.querySelectorAll('.audio-form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const mode = this.dataset.mode;
-                const typeSource = this.querySelector('[name="type_source"]')?.value || 'upload';
-                if (typeSource === 'upload' || typeSource === 'recording') {
-                    const filePath = this.querySelector('[name="uploaded_file_path"]')?.value;
-                    if (!filePath && mode === 'create') {
-                        e.preventDefault();
-                        Utils.showToast('warning', 'Attention', 'Veuillez d\'abord uploader un fichier audio');
-                        return false;
-                    }
-                }
-            });
-        });
-    } catch (e) {
-        console.error('Form validation error:', e);
-    }
 });
 </script>
+
+<style>
+/* Styles Audio spécifiques */
+.upload-zone {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-zone:hover, .upload-zone.drag-active {
+    border-color: #0d6efd !important;
+    background-color: #f8f9fa !important;
+}
+
+.browse-text {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* Mini player inline */
+.audio-player-mini {
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.waveform-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.waveform-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.progress-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(13, 110, 253, 0.2);
+    pointer-events: none;
+    transition: width 0.1s;
+}
+
+/* Full player */
+.audio-full-player .player-visualization {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Animations */
+@keyframes pulse-audio {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.play-pause-btn:active {
+    animation: pulse-audio 0.2s;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .audio-player-mini .waveform-container {
+        display: none;
+    }
+}
+</style>

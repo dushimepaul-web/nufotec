@@ -214,4 +214,12 @@ $route['audio/cancelUpload'] = 'media/Audio/cancelUpload';
 $route['audio/saveRecording'] = 'media/Audio/saveRecording';
 
 
+
+$route['audio/diagnostics'] = 'media/Audio/diagnostics';
+
+$route['audio/getWaveform/(:num)'] = 'media/Audio/getWaveform/$1';
+$route['audio/stream/(:any)'] = 'media/Audio/stream/$1';
+$route['audio/convert'] = 'media/Audio/convert';
+
+
 $route['patient-fallowed'] = 'Consultations/Entente/confirme/';
