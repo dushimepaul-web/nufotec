@@ -37,14 +37,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
     
- <link rel="stylesheet" href="<?= base_url()?>assets/summernote/summernote-bs4.min.css">
     
     <!-- Theme Style CSS -->
     <link rel="stylesheet" href="<?= base_url() ?>assets/backend/sass/dark-theme.css">
     <link rel="stylesheet" href="<?= base_url() ?>assets/backend/sass/semi-dark.css">
     <link rel="stylesheet" href="<?= base_url() ?>assets/backend/sass/bordered-theme.css">
-
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
     <title><?= $this->Model->get_setting('site_name', 'AGF Phytomed') ?></title>
 </head>

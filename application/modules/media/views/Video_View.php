@@ -51,7 +51,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table id="videosTable" class="table table-hover align-middle" style="width:100%">
+                <table id="table" class="table table-hover align-middle" style="width:100%">
                     <thead class="table-light">
                         <tr>
                             <th width="5%">#</th>
@@ -962,18 +962,6 @@ class ChunkedUploader {
 
 $(document).ready(function() {
     
-    // DataTable
-    $('#videosTable').DataTable({
-        language: {
-            url: '<?= base_url('assets/js/datatables-fr.json') ?>' // Local pour éviter CORS
-        },
-        order: [[0, 'desc']],
-        pageLength: 25,
-        responsive: true,
-        columnDefs: [
-            { orderable: false, targets: [1, 9] }
-        ]
-    });
 
     // Auto-hide alerts
     setTimeout(() => {
@@ -1057,6 +1045,7 @@ $(document).ready(function() {
 
     // Click sur zone de drop pour ouvrir le fichier
     $(document).on('click', '.upload-zone', function(e) {
+         console.log('Clic détecté sur upload-zone');
         if ($(e.target).hasClass('file-input') || $(e.target).closest('.upload-progress').length) {
             return;
         }
