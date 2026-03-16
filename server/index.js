@@ -50,7 +50,7 @@ io.on('connection', (socket) => {
   socket.on('error', (err) => console.error(`⚠️ Erreur socket ${socket.id}:`, err));
 });
 
-const PORT = 3001;
+const PORT = 3002;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur de signalisation démarré sur le port ${PORT}`);
   console.log(`🌐 Accessible publiquement via https://nufotec.com (le proxy redirige vers ce serveur)`);
