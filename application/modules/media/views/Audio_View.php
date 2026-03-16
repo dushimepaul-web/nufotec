@@ -1729,99 +1729,153 @@ class AudioRecorder {
     }
 }
 
-// ==================== INITIALISATION ====================
+
+
+
+
+
+
+
+
+// ==================== INITIALISATION ROBUSTE ====================
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof $.fn.DataTable !== 'undefined') {
-        $('#audiosTable').DataTable({
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json' },
-            order: [[0, 'desc']],
-            pageLength: 10
-        });
-    }
     
-    const createUpload = new ChunkedUploadManager('create', 'drop_zone_create');
-    
-    document.querySelectorAll('.upload-zone[id^="drop_zone_"]').forEach(zone => {
-        const id = zone.id.replace('drop_zone_', '');
-        if (id !== 'create') {
-            new ChunkedUploadManager(id, zone.id);
-        }
-    });
-    
-    const audioRecorder = new AudioRecorder();
-    
-    document.querySelectorAll('.source-type-selector').forEach(select => {
-        select.addEventListener('change', function() {
-            const targetId = this.dataset.target;
-            const uploadSection = document.getElementById(`upload_section_${targetId}`);
-            const linkSection = document.getElementById(`link_section_${targetId}`);
-            
-            if (this.value === 'upload') {
-                if (uploadSection) uploadSection.style.display = '';
-                if (linkSection) linkSection.style.display = 'none';
-            } else {
-                if (uploadSection) uploadSection.style.display = 'none';
-                if (linkSection) linkSection.style.display = '';
-            }
-        });
-    });
-    
-    document.querySelectorAll('.share-toggle').forEach(toggle => {
-        toggle.addEventListener('change', function() {
-            const targetId = this.dataset.target;
-            const targetElement = document.getElementById(targetId);
-            if (targetElement) {
-                targetElement.style.display = this.checked ? '' : 'none';
-            }
-        });
-    });
-    
-    document.querySelectorAll('.toggle-field').forEach(toggle => {
-        toggle.addEventListener('change', async function() {
-            const id = this.dataset.id;
-            const field = this.dataset.field;
-            const value = this.checked ? 1 : 0;
-            
-            try {
-                const response = await fetch('<?= base_url("audio/toggleField") ?>', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: `id=${id}&field=${field}&value=${value}`
+    // ---- DataTables (avec protection) ----
+    try {
+        if (typeof $ !== 'undefined' && $.fn.DataTable) {
+            var $table = $('#audiosTable');
+            if ($table.length) {
+                $table.DataTable({
+                    language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json' },
+                    order: [[0, 'desc']],
+                    pageLength: 10
                 });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    Utils.showToast('success', 'Statut mis à jour');
+            } else {
+                console.warn('Table #audiosTable not found');
+            }
+        }
+    } catch (e) {
+        console.error('DataTables initialization error (non bloquant):', e);
+    }
+
+    // ---- Upload Managers ----
+    try {
+        // Pour la création
+        if (document.getElementById('drop_zone_create')) {
+            window.createUpload = new ChunkedUploadManager('create', 'drop_zone_create');
+        }
+        
+        // Pour les modals d'édition
+        document.querySelectorAll('.upload-zone[id^="drop_zone_"]').forEach(zone => {
+            const id = zone.id.replace('drop_zone_', '');
+            if (id !== 'create') {
+                if (!window['upload_' + id]) {
+                    window['upload_' + id] = new ChunkedUploadManager(id, zone.id);
+                }
+            }
+        });
+    } catch (e) {
+        console.error('Upload manager initialization error:', e);
+    }
+
+    // ---- Audio Recorder ----
+    try {
+        if (document.getElementById('record_audio')) {
+            window.audioRecorder = new AudioRecorder();
+        }
+    } catch (e) {
+        console.error('AudioRecorder error:', e);
+    }
+
+    // ---- Source type selector (upload/link) ----
+    try {
+        document.querySelectorAll('.source-type-selector').forEach(select => {
+            select.addEventListener('change', function() {
+                const targetId = this.dataset.target;
+                const uploadSection = document.getElementById(`upload_section_${targetId}`);
+                const linkSection = document.getElementById(`link_section_${targetId}`);
+                if (this.value === 'upload') {
+                    if (uploadSection) uploadSection.style.display = '';
+                    if (linkSection) linkSection.style.display = 'none';
                 } else {
-                    throw new Error(data.message);
+                    if (uploadSection) uploadSection.style.display = 'none';
+                    if (linkSection) linkSection.style.display = '';
                 }
-            } catch (error) {
-                console.error('Erreur toggle:', error);
-                Utils.showToast('error', 'Erreur', 'Impossible de mettre à jour');
-                this.checked = !this.checked;
-            }
+            });
         });
-    });
-    
-    document.querySelectorAll('.audio-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const mode = this.dataset.mode;
-            const typeSource = this.querySelector('[name="type_source"]')?.value || 'upload';
-            
-            if (typeSource === 'upload' || typeSource === 'recording') {
-                const filePath = this.querySelector('[name="uploaded_file_path"]')?.value;
-                
-                if (!filePath && mode === 'create') {
-                    e.preventDefault();
-                    Utils.showToast('warning', 'Attention', 'Veuillez d\'abord uploader un fichier audio');
-                    return false;
+    } catch (e) {
+        console.error('Source type selector error:', e);
+    }
+
+    // ---- Share toggle (réseaux sociaux) ----
+    try {
+        document.querySelectorAll('.share-toggle').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const targetId = this.dataset.target;
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.style.display = this.checked ? '' : 'none';
                 }
-            }
+            });
         });
-    });
+    } catch (e) {
+        console.error('Share toggle error:', e);
+    }
+
+    // ---- Toggle fields (whatsapp/site) ----
+    try {
+        document.querySelectorAll('.toggle-field').forEach(toggle => {
+            toggle.addEventListener('change', async function() {
+                const id = this.dataset.id;
+                const field = this.dataset.field;
+                const value = this.checked ? 1 : 0;
+                try {
+                    const response = await fetch('<?= base_url("audio/toggleField") ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: `id=${id}&field=${field}&value=${value}`
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        Utils.showToast('success', 'Statut mis à jour');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    console.error('Erreur toggle:', error);
+                    Utils.showToast('error', 'Erreur', 'Impossible de mettre à jour');
+                    this.checked = !this.checked;
+                }
+            });
+        });
+    } catch (e) {
+        console.error('Toggle fields error:', e);
+    }
+
+    // ---- Vérification formulaire audio ----
+    try {
+        document.querySelectorAll('.audio-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const mode = this.dataset.mode;
+                const typeSource = this.querySelector('[name="type_source"]')?.value || 'upload';
+                if (typeSource === 'upload' || typeSource === 'recording') {
+                    const filePath = this.querySelector('[name="uploaded_file_path"]')?.value;
+                    if (!filePath && mode === 'create') {
+                        e.preventDefault();
+                        Utils.showToast('warning', 'Attention', 'Veuillez d\'abord uploader un fichier audio');
+                        return false;
+                    }
+                }
+            });
+        });
+    } catch (e) {
+        console.error('Form validation error:', e);
+    }
 });
+
+
+
 </script>
