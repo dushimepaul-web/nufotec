@@ -102,6 +102,10 @@ class Audio extends MY_Controller {
     {
         header('Content-Type: application/json');
 
+        // Désactiver le cache pour les requêtes AJAX
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+
         $upload_id = $this->input->post('upload_id');
         $chunk_index = $this->input->post('chunk_index');
 
@@ -114,39 +118,73 @@ class Audio extends MY_Controller {
         $temp_dir = $this->upload_dir . $upload_id . '/';
 
         if (!is_dir($temp_dir)) {
-            echo json_encode(['success' => false, 'message' => 'Session invalide']);
+            echo json_encode(['success' => false, 'message' => 'Session invalide ou expirée']);
+            return;
+        }
+
+        // Vérifier si $_FILES est vide (problème de taille)
+        if (empty($_FILES)) {
+            $post_max = ini_get('post_max_size');
+            $upload_max = ini_get('upload_max_filesize');
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Aucun fichier reçu. Vérifiez post_max_size ('.$post_max.') et upload_max_filesize ('.$upload_max.')'
+            ]);
             return;
         }
 
         if (empty($_FILES['chunk'])) {
-            echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
+            echo json_encode(['success' => false, 'message' => 'Chunk non reçu']);
             return;
         }
 
         if ($_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
             $errors = [
-                UPLOAD_ERR_INI_SIZE => 'Fichier trop grand (php.ini)',
-                UPLOAD_ERR_FORM_SIZE => 'Fichier trop grand (formulaire)',
-                UPLOAD_ERR_PARTIAL => 'Upload partiel',
-                UPLOAD_ERR_NO_FILE => 'Aucun fichier',
-                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temp manquant',
-                UPLOAD_ERR_CANT_WRITE => 'Erreur écriture',
-                UPLOAD_ERR_EXTENSION => 'Extension bloquée'
+                UPLOAD_ERR_INI_SIZE => 'Chunk trop grand pour php.ini',
+                UPLOAD_ERR_FORM_SIZE => 'Chunk trop grand pour le formulaire',
+                UPLOAD_ERR_PARTIAL => 'Upload partiel - réessayez',
+                UPLOAD_ERR_NO_FILE => 'Aucun fichier envoyé',
+                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant',
+                UPLOAD_ERR_CANT_WRITE => 'Erreur écriture disque',
+                UPLOAD_ERR_EXTENSION => 'Extension PHP bloquante'
             ];
-            $msg = isset($errors[$_FILES['chunk']['error']]) ? $errors[$_FILES['chunk']['error']] : 'Erreur '.$_FILES['chunk']['error'];
+            $msg = isset($errors[$_FILES['chunk']['error']]) ? $errors[$_FILES['chunk']['error']] : 'Erreur #'.$_FILES['chunk']['error'];
+            error_log('Upload chunk error: ' . $msg . ' for upload_id: ' . $upload_id);
             echo json_encode(['success' => false, 'message' => $msg]);
             return;
         }
 
         $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
 
+        // Utiliser copy si move_uploaded_file échoue (parfois sur certains serveurs)
         if (!move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde chunk']);
+            // Essayer avec copy comme fallback
+            if (!copy($_FILES['chunk']['tmp_name'], $chunk_path)) {
+                error_log('Failed to save chunk ' . $chunk_index . ' for upload_id: ' . $upload_id);
+                echo json_encode(['success' => false, 'message' => 'Impossible de sauvegarder le chunk']);
+                return;
+            }
+            // Supprimer le fichier temporaire après copy
+            @unlink($_FILES['chunk']['tmp_name']);
+        }
+
+        // Vérifier que le fichier a bien été créé
+        if (!file_exists($chunk_path)) {
+            echo json_encode(['success' => false, 'message' => 'Chunk non sauvegardé']);
             return;
         }
 
         $metadata_path = $temp_dir . 'metadata.json';
+        if (!file_exists($metadata_path)) {
+            echo json_encode(['success' => false, 'message' => 'Métadonnées non trouvées']);
+            return;
+        }
+
         $metadata = json_decode(file_get_contents($metadata_path), true);
+        if (!$metadata) {
+            echo json_encode(['success' => false, 'message' => 'Erreur lecture métadonnées']);
+            return;
+        }
 
         if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
             $metadata['uploaded_chunks'][] = $chunk_index;
