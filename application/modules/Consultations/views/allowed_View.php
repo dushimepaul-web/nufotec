@@ -144,7 +144,7 @@
 
                           <td class="text-center">
     <?php if (!empty($value['room_id'])): ?>
-        <a href="<?= base_url('joinconsultation/index?room=' . $value['room_id'] . '&user=' . $this->session->userdata('user_id')) ?>" 
+        <a href="<?= base_url('Joinconsultation/index?room=' . $value['room_id'] . '&user=' . $this->session->userdata('user_id')) ?>" 
            class="btn btn-success" 
            target="_blank">
             <i class="bx bx-video me-1"></i> REJOINDRE

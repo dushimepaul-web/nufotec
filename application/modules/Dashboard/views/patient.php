@@ -478,7 +478,7 @@ if (!empty($consultation->room_id) &&
     in_array($consultation->statut, ['confirmee', 'en_cours']) && 
     ($maintenant >= $ouverture_salle || $consultation->statut == 'en_cours')
 ): ?>
-    <a href="<?= base_url('joinconsultation/index?room=' . urlencode($consultation->room_id) . '&user=' . $this->session->userdata('user_id')) ?>" 
+    <a href="<?= base_url('Joinconsultation/index?room=' . urlencode($consultation->room_id) . '&user=' . $this->session->userdata('user_id')) ?>" 
        target="_blank" 
        class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-all shadow-sm animate-pulse" 
        title="Rejoindre la consultation">
