@@ -9,7 +9,7 @@ class Joinconsultation extends MY_Controller {
         $this->load->library('form_validation');
     }
 
-    // URL : /joinconsultation/index?room=ABC123&user=12
+    // URL : /Joinconsultation/index?room=ABC123&user=12
     public function index() {
         $room_id = $this->input->get('room');
         $user_id = $this->input->get('user');
@@ -26,7 +26,7 @@ class Joinconsultation extends MY_Controller {
 
         // Si déjà connecté, on peut sauter l'étape du mot de passe
         if ($this->session->userdata('logged_in') && $this->session->userdata('user_id') == $user_id) {
-            redirect("/joinconsultation/room/$room_id/$user_id");
+            redirect("/Joinconsultation/room/$room_id/$user_id");
         }
 
         // Afficher le formulaire de mot de passe
@@ -64,10 +64,10 @@ class Joinconsultation extends MY_Controller {
                     'logged_in' => TRUE
                 );
                 $this->session->set_userdata($session_data);
-                redirect("/joinconsultation/room/$room_id/$user_id");
+                redirect("/Joinconsultation/room/$room_id/$user_id");
             } else {
                 $this->session->set_flashdata('error', 'Mot de passe incorrect');
-                redirect("/joinconsultation/index?room=$room_id&user=$user_id");
+                redirect("/Joinconsultation/index?room=$room_id&user=$user_id");
             }
         }
     }
@@ -78,7 +78,7 @@ class Joinconsultation extends MY_Controller {
 public function room($room_id, $user_id) {
     // Vérifier que l'utilisateur est bien connecté et correspond
     if (!$this->session->userdata('logged_in') || $this->session->userdata('user_id') != $user_id) {
-        redirect("/joinconsultation/index?room=$room_id&user=$user_id");
+        redirect("/Joinconsultation/index?room=$room_id&user=$user_id");
     }
 
     // Récupérer les informations de la consultation avec les deux participants
