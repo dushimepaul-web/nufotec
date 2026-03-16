@@ -49,7 +49,18 @@
                             <div class="fs-1 me-3"><i class="bx bx-time"></i></div>
                             <div>
                                 <h6 class="mb-0">Durée Totale</h6>
-                                <h3 class="mb-0"><?= $this->Audio->formatDuration($total_duration) ?></h3>
+                                <h3 class="mb-0">
+    <?php
+    $seconds = (int)$total_duration;
+    if ($seconds < 60) {
+        echo gmdate("s\\s", $seconds);
+    } elseif ($seconds < 3600) {
+        echo gmdate("i\\m s\\s", $seconds);
+    } else {
+        echo gmdate("H\\h i\\m s\\s", $seconds);
+    }
+    ?>
+</h3>
                             </div>
                         </div>
                     </div>
