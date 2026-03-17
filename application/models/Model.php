@@ -65,6 +65,11 @@ class Model extends CI_Model {
         return false;
     }
 
+
+     public function get_user_by_id($id) {
+        return $this->db->where('id', $id)->get('users')->row_array();
+    }
+
     /**
      * Crée un enregistrement et retourne l'ID
      * 
