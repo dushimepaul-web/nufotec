@@ -13,21 +13,21 @@
                     <ol class="breadcrumb mb-0 p-0">
                         <li class="breadcrumb-item"><a href="<?= base_url('Dashboard') ?>"><i class="bx bx-home-alt"></i></a></li>
                         <li class="breadcrumb-item"><a href="javascript:;">Galerie</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Gestion des Audio</li>
+                        <li class="breadcrumb-item active" aria-current="page">Gestion Audio Intelligente</li>
                     </ol>
                 </nav>
             </div>
             <div class="ms-auto">
-                <a class="btn btn-primary btn-sm" href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_audio">
+                <a class="btn btn-primary btn-sm" href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_audio_modal">
                     <i class="bx bx-plus"></i> Nouvel Audio
                 </a>
                 <a class="btn btn-outline-info btn-sm ms-2" href="<?= base_url('audio/diagnostics') ?>" target="_blank">
-                    <i class="bx bx-test-tube"></i> Diagnostic
+                    <i class="bx bx-test-tube"></i> Diagnostic Système
                 </a>
             </div>
         </div>
 
-        <!-- Statistiques -->
+        <!-- Statistiques Avancées -->
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm bg-primary text-white">
@@ -50,17 +50,15 @@
                             <div>
                                 <h6 class="mb-0">Durée Totale</h6>
                                 <h3 class="mb-0">
-    <?php
-    $seconds = (int)$total_duration;
-    if ($seconds < 60) {
-        echo gmdate("s\\s", $seconds);
-    } elseif ($seconds < 3600) {
-        echo gmdate("i\\m s\\s", $seconds);
-    } else {
-        echo gmdate("H\\h i\\m s\\s", $seconds);
-    }
-    ?>
-</h3>
+                                    <?php
+                                    $seconds = (int)$total_duration;
+                                    if ($seconds < 3600) {
+                                        echo floor($seconds / 60) . 'm ' . ($seconds % 60) . 's';
+                                    } else {
+                                        echo floor($seconds / 3600) . 'h ' . floor(($seconds % 3600) / 60) . 'm';
+                                    }
+                                    ?>
+                                </h3>
                             </div>
                         </div>
                     </div>
@@ -70,10 +68,10 @@
                 <div class="card border-0 shadow-sm bg-info text-white">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
-                            <div class="fs-1 me-3"><i class="bx bx-headphone"></i></div>
+                            <div class="fs-1 me-3"><i class="bx bx-brain"></i></div>
                             <div>
-                                <h6 class="mb-0">Écoutes</h6>
-                                <h3 class="mb-0">-</h3>
+                                <h6 class="mb-0">Auto-Détection</h6>
+                                <h3 class="mb-0">Active</h3>
                             </div>
                         </div>
                     </div>
@@ -83,10 +81,14 @@
                 <div class="card border-0 shadow-sm bg-warning text-dark">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
-                            <div class="fs-1 me-3"><i class="bx bx-trending-up"></i></div>
+                            <div class="fs-1 me-3"><i class="bx bx-image"></i></div>
                             <div>
-                                <h6 class="mb-0">Populaire</h6>
-                                <h3 class="mb-0">-</h3>
+                                <h6 class="mb-0">Avec Cover</h6>
+                                <h3 class="mb-0">
+                                    <?= count(array_filter($audios, function($a) { 
+                                        return !empty($a['miniature']); 
+                                    })) ?>
+                                </h3>
                             </div>
                         </div>
                     </div>
@@ -101,10 +103,11 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <div class="d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0 text-primary"><i class="bx bx-music me-2"></i>Bibliothèque Audio</h5>
+                    <h5 class="mb-0 text-primary"><i class="bx bx-music me-2"></i>Bibliothèque Audio Intelligente</h5>
                     <div class="d-flex gap-2">
                         <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Upload Illimité</span>
-                        <span class="badge bg-info"><i class="bx bx-wave me-1"></i>Waveform</span>
+                        <span class="badge bg-info"><i class="bx bx-brain me-1"></i>IA Détection</span>
+                        <span class="badge bg-warning"><i class="bx bx-image me-1"></i>Covers Auto</span>
                     </div>
                 </div>
             </div>
@@ -114,15 +117,15 @@
                         <thead class="table-light">
                             <tr>
                                 <th width="5%">#</th>
-                                <th width="25%">Titre & Waveform</th>
-                                <th width="10%">Source</th>
-                                <th width="10%">Durée</th>
+                                <th width="8%">Cover</th>
+                                <th width="22%">Titre & Infos</th>
                                 <th width="10%">Qualité</th>
+                                <th width="8%">Durée</th>
                                 <th width="8%">Taille</th>
                                 <th width="8%">Statut</th>
                                 <th width="8%">WhatsApp</th>
                                 <th width="8%">Site</th>
-                                <th width="8%">Actions</th>
+                                <th width="13%">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -130,15 +133,12 @@
                             $is_upload = !empty($value['fichier']);
                             $is_link = !empty($value['lien']);
                             
-                            $source_badge = $is_upload 
-                                ? '<span class="badge bg-success"><i class="bx bx-upload me-1"></i>Upload</span>'
-                                : ($is_link 
-                                    ? '<span class="badge bg-info"><i class="bx bx-link me-1"></i>Lien</span>'
-                                    : '<span class="badge bg-secondary">Inconnu</span>');
+                            // Parse metadata JSON
+                            $metadata = !empty($value['metadata_id3']) ? json_decode($value['metadata_id3'], true) : [];
                             
                             // Formatage durée
                             $duree_formatee = '-';
-                            if (!empty($value['duree'])) {
+                            if (!empty($value['duree']) && $value['duree'] > 0) {
                                 $duree = (int)$value['duree'];
                                 if ($duree < 60) {
                                     $duree_formatee = $duree . 's';
@@ -170,7 +170,15 @@
                                 ? '<span class="badge bg-light text-dark border">' . implode(' • ', $quality_info) . '</span>'
                                 : '-';
                             
-                            // Waveform data pour le player inline
+                            // Cover/Thumbnail
+                            $cover_html = '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bx bx-music text-muted fs-2"></i></div>';
+                            if (!empty($value['miniature']) && file_exists(FCPATH . $value['miniature'])) {
+                                $cover_html = '<img src="' . base_url($value['miniature']) . '" class="rounded" style="width:60px;height:60px;object-fit:cover;" alt="Cover">';
+                            } elseif (!empty($value['waveform']) && file_exists(FCPATH . $value['waveform'])) {
+                                $cover_html = '<img src="' . base_url($value['waveform']) . '" class="rounded" style="width:60px;height:60px;object-fit:cover;" alt="Waveform">';
+                            }
+                            
+                            // Waveform data pour player
                             $waveform_data = null;
                             if (!empty($value['waveform_data']) && file_exists(FCPATH . $value['waveform_data'])) {
                                 $waveform_data = file_get_contents(FCPATH . $value['waveform_data']);
@@ -179,26 +187,32 @@
                             <tr data-audio-id="<?= $value['id_media'] ?>">
                                 <td><?= $i++ ?></td>
                                 
+                                <td><?= $cover_html ?></td>
+                                
                                 <td>
                                     <div class="d-flex flex-column">
                                         <strong class="text-dark mb-1"><?= htmlspecialchars($value['titre'] ?? 'Sans titre') ?></strong>
                                         
                                         <?php if (!empty($value['credits'])): ?>
-                                            <small class="text-muted mb-2"><i class="bx bx-user me-1"></i><?= htmlspecialchars($value['credits']) ?></small>
+                                            <small class="text-muted mb-1"><i class="bx bx-user me-1"></i><?= htmlspecialchars($value['credits']) ?></small>
                                         <?php endif; ?>
                                         
-                                        <!-- Mini Player avec Waveform -->
+                                        <?php if (!empty($value['album'])): ?>
+                                            <small class="text-muted mb-1"><i class="bx bx-album me-1"></i><?= htmlspecialchars($value['album']) ?></small>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Mini Player -->
                                         <?php if ($is_upload && !empty($value['fichier'])): ?>
-                                            <div class="audio-player-mini" data-src="<?= base_url($value['fichier']) ?>" data-waveform='<?= $waveform_data ?: '[]' ?>'>
+                                            <div class="audio-player-mini mt-2" data-src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>" data-waveform='<?= $waveform_data ?: '[]' ?>'>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <button class="btn btn-sm btn-primary play-btn rounded-circle" style="width: 32px; height: 32px;">
                                                         <i class="bx bx-play"></i>
                                                     </button>
-                                                    <div class="waveform-container flex-grow-1" style="height: 30px; background: #f8f9fa; border-radius: 4px; overflow: hidden;">
-                                                        <canvas class="waveform-canvas" width="300" height="30"></canvas>
-                                                        <div class="progress-overlay" style="width: 0%;"></div>
+                                                    <div class="waveform-container flex-grow-1" style="height: 30px; background: #f8f9fa; border-radius: 4px; overflow: hidden; position: relative;">
+                                                        <canvas class="waveform-canvas" width="200" height="30"></canvas>
+                                                        <div class="progress-overlay" style="position: absolute; top: 0; left: 0; height: 100%; background: rgba(13, 110, 253, 0.2); width: 0%; pointer-events: none;"></div>
                                                     </div>
-                                                    <span class="time-display small text-muted" style="min-width: 45px;">0:00</span>
+                                                    <span class="time-display small text-muted" style="min-width: 45px; font-size: 11px;">0:00</span>
                                                 </div>
                                             </div>
                                         <?php endif; ?>
@@ -209,9 +223,8 @@
                                     </div>
                                 </td>
 
-                                <td><?= $source_badge ?></td>
-                                <td><span class="badge bg-dark"><?= $duree_formatee ?></span></td>
                                 <td><?= $quality_badge ?></td>
+                                <td><span class="badge bg-dark"><?= $duree_formatee ?></span></td>
                                 <td><?= $taille_formatee ?></td>
 
                                 <td class="text-center">
@@ -260,7 +273,12 @@
                                             </li>
                                             <?php if ($is_upload): ?>
                                             <li>
-                                                <a class="dropdown-item download-audio" href="<?= base_url($value['fichier']) ?>" download>
+                                                <a class="dropdown-item" href="<?= base_url('audio/reanalyze/' . $value['id_media']) ?>" class="reanalyze-btn">
+                                                    <i class="bx bx-refresh me-2 text-warning"></i>Ré-analyser
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="<?= base_url($value['fichier']) ?>" download>
                                                     <i class="bx bx-download me-2 text-info"></i>Télécharger
                                                 </a>
                                             </li>
@@ -287,26 +305,38 @@
                                         <div class="modal-body p-0">
                                             <?php if ($is_upload && !empty($value['fichier'])): ?>
                                                 <div class="audio-full-player" data-audio-id="<?= $value['id_media'] ?>" data-src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>">
-                                                    <!-- Cover Art ou Waveform -->
+                                                    <!-- Cover Art -->
                                                     <div class="player-visualization text-center p-4 bg-light">
-                                                        <?php if (!empty($value['waveform'])): ?>
+                                                        <?php if (!empty($value['miniature'])): ?>
+                                                            <img src="<?= base_url($value['miniature']) ?>" class="img-fluid rounded shadow" style="max-height: 300px;" alt="Cover">
+                                                        <?php elseif (!empty($value['waveform'])): ?>
                                                             <img src="<?= base_url($value['waveform']) ?>" class="img-fluid rounded" style="max-height: 200px;" alt="Waveform">
                                                         <?php else: ?>
                                                             <div class="display-1 text-muted"><i class="bx bx-music"></i></div>
                                                         <?php endif; ?>
+                                                        
+                                                        <!-- Métadonnées -->
+                                                        <div class="mt-3">
+                                                            <?php if (!empty($value['credits'])): ?>
+                                                                <h6 class="mb-1"><?= htmlspecialchars($value['credits']) ?></h6>
+                                                            <?php endif; ?>
+                                                            <?php if (!empty($value['album'])): ?>
+                                                                <small class="text-muted"><?= htmlspecialchars($value['album']) ?></small>
+                                                            <?php endif; ?>
+                                                        </div>
                                                     </div>
                                                     
                                                     <!-- Contrôles -->
                                                     <div class="p-4">
                                                         <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
                                                             <button class="btn btn-outline-secondary btn-sm skip-back"><i class="bx bx-skip-previous"></i></button>
-                                                            <button class="btn btn-primary btn-lg rounded-circle play-pause-btn" style="width: 60px; height: 60px;">
-                                                                <i class="bx bx-play fs-4"></i>
+                                                            <button class="btn btn-primary btn-lg rounded-circle play-pause-btn" style="width: 70px; height: 70px;">
+                                                                <i class="bx bx-play fs-2"></i>
                                                             </button>
                                                             <button class="btn btn-outline-secondary btn-sm skip-forward"><i class="bx bx-skip-next"></i></button>
                                                         </div>
                                                         
-                                                        <!-- Progress Bar -->
+                                                        <!-- Progress -->
                                                         <div class="progress-container mb-2">
                                                             <div class="progress" style="height: 8px; cursor: pointer;">
                                                                 <div class="progress-bar bg-primary progress-bar-striped" role="progressbar" style="width: 0%"></div>
@@ -319,14 +349,31 @@
                                                         </div>
                                                         
                                                         <!-- Volume -->
-                                                        <div class="d-flex align-items-center gap-2 mt-3">
+                                                        <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
                                                             <i class="bx bx-volume-low"></i>
-                                                            <input type="range" class="form-range volume-slider" min="0" max="100" value="80" style="width: 100px;">
+                                                            <input type="range" class="form-range volume-slider" min="0" max="100" value="80" style="width: 150px;">
                                                             <i class="bx bx-volume-full"></i>
+                                                        </div>
+                                                        
+                                                        <!-- Infos techniques -->
+                                                        <div class="mt-3 pt-3 border-top">
+                                                            <div class="row text-center small text-muted">
+                                                                <div class="col-4">
+                                                                    <i class="bx bx-tachometer d-block mb-1"></i>
+                                                                    <?= !empty($value['bitrate']) ? round($value['bitrate']/1000) . ' kbps' : '-' ?>
+                                                                </div>
+                                                                <div class="col-4">
+                                                                    <i class="bx bx-wave d-block mb-1"></i>
+                                                                    <?= !empty($value['sample_rate']) ? round($value['sample_rate']/1000, 1) . ' kHz' : '-' ?>
+                                                                </div>
+                                                                <div class="col-4">
+                                                                    <i class="bx bx-speaker d-block mb-1"></i>
+                                                                    <?= !empty($value['channels']) ? ($value['channels'] == 1 ? 'Mono' : ($value['channels'] == 2 ? 'Stéréo' : $value['channels'] . ' canaux')) : '-' ?>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     
-                                                    <!-- Audio Element Hidden -->
                                                     <audio preload="metadata">
                                                         <source src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>" type="<?= $value['mime_type'] ?? 'audio/mpeg' ?>">
                                                     </audio>
@@ -371,136 +418,110 @@
                                             <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier l'audio</h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
-                                        <form action="<?= base_url('audio/Update') ?>" method="POST" class="audio-form" data-mode="edit">
+                                        <form action="<?= base_url('audio/Update') ?>" method="POST" class="audio-form">
                                             <div class="modal-body">
                                                 <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
+                                                <input type="hidden" name="auto_detected_data" class="auto-detected-data">
                                                 
+                                                <!-- Aperçu actuel -->
+                                                <div class="current-preview mb-3 p-3 bg-light rounded">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <?php if (!empty($value['miniature'])): ?>
+                                                            <img src="<?= base_url($value['miniature']) ?>" style="width:80px;height:80px;object-fit:cover;" class="rounded">
+                                                        <?php endif; ?>
+                                                        <div>
+                                                            <h6 class="mb-1"><?= htmlspecialchars($value['titre']) ?></h6>
+                                                            <small class="text-muted"><?= $duree_formatee ?> • <?= $taille_formatee ?></small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <div class="mb-3">
-                                                    <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" name="titre" value="<?= htmlspecialchars($value['titre']) ?>" required maxlength="255">
+                                                    <label class="form-label fw-bold">Description <span class="text-primary">(seul champ requis)</span></label>
+                                                    <textarea class="form-control" name="description" rows="3" placeholder="Décrivez cet audio..."><?= htmlspecialchars($value['description'] ?? '') ?></textarea>
+                                                    <small class="text-muted">Titre, artiste et métadonnées sont auto-détectés du fichier</small>
                                                 </div>
 
                                                 <div class="mb-3">
                                                     <label class="form-label fw-bold">Type de source</label>
-                                                    <select class="form-select source-type-selector" name="type_source" data-target="<?= $value['id_media'] ?>">
+                                                    <select class="form-select source-type-selector" name="type_source" data-target="edit_<?= $value['id_media'] ?>">
                                                         <option value="upload" <?= $is_upload ? 'selected' : '' ?>>Fichier uploadé</option>
                                                         <option value="link" <?= $is_link ? 'selected' : '' ?>>Lien externe</option>
                                                     </select>
                                                 </div>
 
                                                 <!-- Upload Section -->
-                                                <div class="upload-section mb-3" id="upload_section_<?= $value['id_media'] ?>" style="<?= $is_upload ? '' : 'display:none;' ?>">
-                                                    <label class="form-label fw-bold">Nouveau fichier audio</label>
+                                                <div class="upload-section mb-3" id="upload_section_edit_<?= $value['id_media'] ?>" style="<?= $is_upload ? '' : 'display:none;' ?>">
+                                                    <label class="form-label fw-bold">Nouveau fichier audio (optionnel)</label>
                                                     
-                                                    <div class="upload-zone border rounded p-4 text-center bg-light" id="drop_zone_<?= $value['id_media'] ?>">
+                                                    <div class="upload-zone border rounded p-4 text-center bg-light" id="drop_zone_edit_<?= $value['id_media'] ?>">
                                                         <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
-                                                        <p class="mb-2">Glissez-déposez un fichier audio ou <span class="text-primary fw-bold browse-text">cliquez pour parcourir</span></p>
-                                                        <small class="text-muted d-block">MP3, WAV, FLAC, AAC, OGG, M4A... (Taille illimitée)</small>
+                                                        <p class="mb-2">Glissez-déposez ou <span class="text-primary fw-bold browse-text">cliquez pour parcourir</span></p>
+                                                        <small class="text-muted d-block">Laissez vide pour conserver l'audio actuel</small>
                                                         
-                                                        <input type="file" class="form-control d-none file-input" accept="audio/*" data-upload-id="<?= $value['id_media'] ?>">
+                                                        <input type="file" class="form-control d-none file-input" accept="audio/*" data-upload-id="edit_<?= $value['id_media'] ?>">
                                                         <input type="hidden" name="uploaded_file_path" class="uploaded-path">
-                                                        <input type="hidden" name="audio_metadata" class="audio-metadata">
                                                         
                                                         <!-- Progress -->
                                                         <div class="upload-progress mt-3 d-none">
-                                                            <div class="d-flex justify-content-between small mb-1">
-                                                                <span class="upload-status fw-bold">Préparation...</span>
-                                                                <span class="upload-percent text-primary">0%</span>
+                                                            <div class="progress" style="height: 8px;">
+                                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
                                                             </div>
-                                                            <div class="progress" style="height: 10px;">
-                                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
-                                                            </div>
-                                                            <div class="d-flex justify-content-between small text-muted mt-1">
-                                                                <span class="upload-chunks">Chunk 0/0</span>
-                                                                <span class="upload-speed">0 MB/s</span>
+                                                            <div class="d-flex justify-content-between small mt-1">
+                                                                <span class="upload-status">Préparation...</span>
+                                                                <span class="upload-percent">0%</span>
                                                             </div>
                                                         </div>
                                                         
-                                                        <?php if ($is_upload): ?>
-                                                            <div class="current-file mt-3 p-2 bg-white rounded border d-flex align-items-center">
-                                                                <i class="bx bx-music text-success fs-4 me-2"></i>
-                                                                <div class="text-start flex-grow-1">
-                                                                    <small class="d-block fw-bold text-truncate"><?= basename($value['fichier']) ?></small>
-                                                                    <small class="text-muted"><?= $duree_formatee ?> • <?= $taille_formatee ?></small>
+                                                        <!-- Résultat analyse -->
+                                                        <div class="analysis-result mt-3 d-none">
+                                                            <div class="alert alert-info">
+                                                                <h6 class="mb-2"><i class="bx bx-brain me-2"></i>Métadonnées détectées</h6>
+                                                                <div class="row text-start small">
+                                                                    <div class="col-6"><strong>Titre:</strong> <span class="detected-title">-</span></div>
+                                                                    <div class="col-6"><strong>Artiste:</strong> <span class="detected-artist">-</span></div>
+                                                                    <div class="col-6"><strong>Durée:</strong> <span class="detected-duration">-</span></div>
+                                                                    <div class="col-6"><strong>Qualité:</strong> <span class="detected-quality">-</span></div>
                                                                 </div>
                                                             </div>
-                                                        <?php endif; ?>
-                                                        
-                                                        <div class="new-file-info mt-2 d-none">
-                                                            <div class="alert alert-success mb-0 py-2">
-                                                                <i class="bx bx-check-circle me-2"></i>
-                                                                <span class="new-file-name fw-bold"></span>
-                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    
-                                                    <div class="mt-2 d-flex gap-2">
-                                                        <button type="button" class="btn btn-sm btn-outline-danger cancel-upload d-none">
-                                                            <i class="bx bx-x me-1"></i>Annuler
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary pause-upload d-none">
-                                                            <i class="bx bx-pause me-1"></i>Pause
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-primary resume-upload d-none">
-                                                            <i class="bx bx-play me-1"></i>Reprendre
-                                                        </button>
                                                     </div>
                                                 </div>
 
                                                 <!-- Link Section -->
-                                                <div class="link-section mb-3" id="link_section_<?= $value['id_media'] ?>" style="<?= $is_link ? '' : 'display:none;' ?>">
-                                                    <label class="form-label fw-bold">Lien audio (SoundCloud, Spotify...)</label>
+                                                <div class="link-section mb-3" id="link_section_edit_<?= $value['id_media'] ?>" style="<?= $is_link ? '' : 'display:none;' ?>">
+                                                    <label class="form-label fw-bold">Lien audio</label>
                                                     <input type="url" class="form-control" name="lien" value="<?= htmlspecialchars($value['lien'] ?? '') ?>" placeholder="https://...">
-                                                    <small class="text-muted">SoundCloud, Spotify, Mixcloud, Bandcamp supportés</small>
                                                 </div>
 
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
-                                                        <label class="form-label fw-bold">Artiste / Crédits</label>
-                                                        <input type="text" class="form-control" name="credits" value="<?= htmlspecialchars($value['credits'] ?? '') ?>">
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label fw-bold">Catégorie</label>
+                                                        <label class="form-label">Catégorie suggérée</label>
                                                         <input type="text" class="form-control" name="categorie" value="<?= htmlspecialchars($value['categorie'] ?? '') ?>" list="categories_list">
                                                     </div>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold">Description</label>
-                                                    <textarea class="form-control" name="description" rows="3"><?= htmlspecialchars($value['description'] ?? '') ?></textarea>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">Date média</label>
+                                                        <input type="date" class="form-control" name="date_media" value="<?= $value['date_media'] ?? '' ?>">
+                                                    </div>
                                                 </div>
 
                                                 <div class="row">
-                                                    <div class="col-md-6 mb-3">
+                                                    <div class="col-md-4 mb-3">
                                                         <div class="form-check form-switch">
                                                             <input class="form-check-input" type="checkbox" name="est_actif" value="1" <?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'checked' : '' ?>>
-                                                            <label class="form-check-label fw-bold">Audio actif</label>
+                                                            <label class="form-check-label">Audio actif</label>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input share-toggle" type="checkbox" name="a_partager_reseaux" value="1" <?= (!empty($value['a_partager_reseaux']) && $value['a_partager_reseaux'] == 1) ? 'checked' : '' ?> data-target="edit_msg_<?= $value['id_media'] ?>">
-                                                            <label class="form-check-label fw-bold">Partager sur réseaux</label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mb-3" id="edit_msg_<?= $value['id_media'] ?>" style="<?= (!empty($value['a_partager_reseaux']) && $value['a_partager_reseaux'] == 1) ? '' : 'display:none;' ?>">
-                                                    <label class="form-label fw-bold">Message réseaux sociaux</label>
-                                                    <textarea class="form-control" name="message_reseaux" rows="2" maxlength="280"><?= htmlspecialchars($value['message_reseaux'] ?? '') ?></textarea>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
+                                                    <div class="col-md-4 mb-3">
                                                         <div class="form-check form-switch">
                                                             <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1" <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
-                                                            <label class="form-check-label fw-bold">Pour WhatsApp</label>
+                                                            <label class="form-check-label">WhatsApp</label>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-6 mb-3">
+                                                    <div class="col-md-4 mb-3">
                                                         <div class="form-check form-switch">
                                                             <input class="form-check-input" type="checkbox" name="is_for_website" value="1" <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
-                                                            <label class="form-check-label fw-bold">Pour Site Web</label>
+                                                            <label class="form-check-label">Site Web</label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -531,7 +552,7 @@
                                                 <p class="text-muted"><?= htmlspecialchars($value['titre']) ?></p>
                                                 <div class="alert alert-warning">
                                                     <i class="bx bx-info-circle me-2"></i>
-                                                    Le fichier et les visualisations seront supprimés.
+                                                    Le fichier, les visualisations et la miniature seront supprimés.
                                                 </div>
                                                 <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
                                             </div>
@@ -546,12 +567,35 @@
                                 </div>
                             </div>
 
+                            <!-- Modal Status -->
+                            <div class="modal fade" id="status_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-sm modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Changer le statut</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="<?= base_url('audio/ChangeStatus') ?>" method="POST">
+                                            <div class="modal-body text-center">
+                                                <p>Statut actuel: <strong><?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'Actif' : 'Inactif' ?></strong></p>
+                                                <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
+                                                <input type="hidden" name="est_actif" value="<?= $value['est_actif'] ?? 0 ?>">
+                                            </div>
+                                            <div class="modal-footer justify-content-center">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn btn-primary">Confirmer</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
                         <?php endforeach; else: ?>
                             <tr>
                                 <td colspan="10" class="text-center py-5">
                                     <i class="bx bx-music fs-1 text-muted mb-3"></i>
                                     <p class="text-muted">Aucun audio trouvé</p>
-                                    <a href="javascript:;" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#create_audio">
+                                    <a href="javascript:;" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#create_audio_modal">
                                         <i class="bx bx-plus me-1"></i>Ajouter un audio
                                     </a>
                                 </td>
@@ -565,180 +609,245 @@
 
     </div>
 
-    <!-- Modal Create -->
-    <div class="modal fade" id="create_audio" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+    <!-- ==================== MODAL CRÉATION INTELLIGENTE ==================== -->
+    <div class="modal fade" id="create_audio_modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouvel Audio</h5>
+                    <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouvel Audio - Détection Intelligente</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="<?= base_url('audio/Create') ?>" method="POST" class="audio-form" id="create_form" data-mode="create">
+                
+                <form action="<?= base_url('audio/Create') ?>" method="POST" id="create_audio_form">
                     <div class="modal-body">
+                        <input type="hidden" name="type_source" value="upload">
+                        <input type="hidden" name="uploaded_file_path" id="uploaded_file_path">
+                        <input type="hidden" name="auto_detected_data" id="auto_detected_data">
                         
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="titre" required maxlength="255" placeholder="Titre de la piste">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Type de source <span class="text-danger">*</span></label>
-                            <select class="form-select source-type-selector" name="type_source" data-target="create" id="create_type_source">
-                                <option value="upload" selected>Uploader un fichier (Illimité)</option>
-                                <option value="link">Lien externe (SoundCloud, Spotify...)</option>
-                            </select>
-                        </div>
-
-                        <!-- Upload Section -->
-                        <div class="upload-section mb-3" id="upload_section_create">
-                            <label class="form-label fw-bold">Fichier audio</label>
+                        <div class="row">
+                            <!-- Colonne Upload -->
+                            <div class="col-md-7">
+                                <!-- Zone Upload Audio -->
+                                <div class="card border-0 bg-light mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="bx bx-upload me-2"></i>1. Upload Audio</h6>
+                                        
+                                        <div class="upload-zone border-2 border-dashed rounded p-4 text-center" id="main_upload_zone" style="border-style: dashed; border-color: #dee2e6; cursor: pointer; transition: all 0.3s;">
+                                            <div class="upload-placeholder">
+                                                <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
+                                                <p class="mb-1 fw-bold">Glissez votre fichier audio ici</p>
+                                                <p class="text-muted small mb-2">ou cliquez pour parcourir</p>
+                                                <span class="badge bg-secondary">MP3, WAV, FLAC, AAC, OGG, M4A...</span>
+                                                <p class="text-success small mt-2 mb-0"><i class="bx bx-infinity me-1"></i>Pas de limite de taille</p>
+                                            </div>
+                                            
+                                            <input type="file" id="audio_file_input" class="d-none" accept="audio/*">
+                                            
+                                            <!-- Progress Upload -->
+                                            <div class="upload-progress d-none mt-3">
+                                                <div class="d-flex justify-content-between small mb-1">
+                                                    <span id="upload_status" class="fw-bold text-primary">Préparation...</span>
+                                                    <span id="upload_percent">0%</span>
+                                                </div>
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="upload_progress_bar" style="width: 0%"></div>
+                                                </div>
+                                                <div class="d-flex justify-content-between small text-muted mt-1">
+                                                    <span id="chunks_info">Chunk 0/0</span>
+                                                    <span id="upload_speed">0 MB/s</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Fichier sélectionné -->
+                                            <div class="file-selected d-none mt-3">
+                                                <div class="alert alert-success mb-0 d-flex align-items-center">
+                                                    <i class="bx bx-check-circle fs-4 me-2"></i>
+                                                    <div class="text-start">
+                                                        <div id="selected_filename" class="fw-bold text-truncate" style="max-width: 300px;"></div>
+                                                        <small id="selected_filesize" class="text-muted"></small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Contrôles upload -->
+                                        <div class="upload-controls d-none">
+                                            <button type="button" class="btn btn-sm btn-outline-danger me-2" id="cancel_upload">
+                                                <i class="bx bx-x me-1"></i>Annuler
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="pause_upload">
+                                                <i class="bx bx-pause me-1"></i>Pause
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary d-none" id="resume_upload">
+                                                <i class="bx bx-play me-1"></i>Reprendre
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Résultats Analyse -->
+                                <div class="card border-0 bg-light d-none" id="analysis_card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success"><i class="bx bx-brain me-2"></i>2. Métadonnées Auto-Détectées</h6>
+                                        
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded">
+                                                    <small class="text-muted d-block">Titre détecté</small>
+                                                    <strong id="detected_title" class="text-primary">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded">
+                                                    <small class="text-muted d-block">Artiste</small>
+                                                    <strong id="detected_artist">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded">
+                                                    <small class="text-muted d-block">Album</small>
+                                                    <strong id="detected_album">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded">
+                                                    <small class="text-muted d-block">Année</small>
+                                                    <strong id="detected_year">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded">
+                                                    <small class="text-muted d-block">Durée</small>
+                                                    <strong id="detected_duration" class="text-success">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded">
+                                                    <small class="text-muted d-block">Qualité</small>
+                                                    <strong id="detected_quality">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="p-2 bg-white rounded">
+                                                    <small class="text-muted d-block">Genre</small>
+                                                    <span id="detected_genre" class="badge bg-light text-dark">-</span>
+                                                    <span id="detected_category" class="badge bg-info ms-1">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="alert alert-warning mt-2 mb-0 py-2 small">
+                                            <i class="bx bx-info-circle me-1"></i>
+                                            Ces valeurs seront utilisées automatiquement. Vous pouvez les modifier après création si nécessaire.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <div class="upload-zone border rounded p-4 text-center bg-light" id="drop_zone_create">
-                                <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
-                                <p class="mb-2">Glissez-déposez un fichier audio ou <span class="text-primary fw-bold browse-text">cliquez pour parcourir</span></p>
-                                <small class="text-muted d-block mb-2">MP3, WAV, FLAC, AAC, OGG, M4A, WMA, AIFF</small>
-                                <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Pas de limite de taille (chunks de 2MB)</span>
-                                
-                                <input type="file" class="form-control d-none file-input" id="create_file_input" accept="audio/*" data-upload-id="create">
-                                <input type="hidden" name="uploaded_file_path" id="create_uploaded_path">
-                                <input type="hidden" name="audio_metadata" id="create_audio_metadata">
-                                
-                                <!-- Progress détaillé -->
-                                <div class="upload-progress mt-3 d-none" id="create_progress_container">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <span id="create_upload_status" class="fw-bold">Préparation...</span>
-                                        <span id="create_upload_percent" class="text-primary">0%</span>
-                                    </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="create_progress_bar" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                    <div class="d-flex justify-content-between small text-muted mt-1">
-                                        <span id="create_chunks_info">Chunk 0/0</span>
-                                        <span id="create_upload_speed">0 MB/s</span>
-                                    </div>
-                                    <div class="small text-primary mt-1" id="create_size_info">0 MB / 0 MB</div>
-                                </div>
-                                
-                                <!-- Info fichier -->
-                                <div class="file-info mt-2 d-none" id="create_file_info">
-                                    <div class="alert alert-info mb-0 py-2 d-flex align-items-center justify-content-center">
-                                        <i class="bx bx-file me-2"></i>
-                                        <div>
-                                            <div id="create_file_name" class="fw-bold text-truncate" style="max-width: 300px;"></div>
-                                            <div id="create_file_size" class="small"></div>
+                            <!-- Colonne Miniature & Description -->
+                            <div class="col-md-5">
+                                <!-- Miniature -->
+                                <div class="card border-0 bg-light mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="bx bx-image me-2"></i>Miniature (Optionnel)</h6>
+                                        
+                                        <div class="text-center mb-3">
+                                            <div id="thumbnail_preview" class="bg-white rounded d-flex align-items-center justify-content-center mx-auto" style="width: 200px; height: 200px; border: 2px dashed #dee2e6;">
+                                                <div class="text-center p-3">
+                                                    <i class="bx bx-image-add fs-1 text-muted mb-2"></i>
+                                                    <p class="small text-muted mb-0">Aperçu miniature</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-grid gap-2">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="upload_thumbnail_btn">
+                                                <i class="bx bx-upload me-1"></i>Uploader une image
+                                            </button>
+                                            <input type="file" id="thumbnail_input" class="d-none" accept="image/*">
+                                            <input type="hidden" name="custom_thumbnail" id="custom_thumbnail_path">
+                                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="use_generated_thumb" checked>
+                                                <label class="form-check-label small" for="use_generated_thumb">
+                                                    Utiliser la cover extraite ou générée automatiquement si pas d'image
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-2 small text-muted">
+                                            <i class="bx bx-info-circle me-1"></i>
+                                            Ordre de priorité: 1. Image uploadée 2. Cover extraite du fichier 3. Générée depuis le waveform
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <!-- Métadonnées extraites -->
-                                <div class="metadata-extracted mt-2 d-none" id="create_metadata">
-                                    <div class="card border-success">
-                                        <div class="card-header bg-success text-white py-2">
-                                            <small><i class="bx bx-info-circle me-1"></i>Métadonnées détectées</small>
+                                <!-- Description (Seul champ utilisateur) -->
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary"><i class="bx bx-edit me-2"></i>3. Description</h6>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Description de l'audio <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" name="description" rows="6" placeholder="Décrivez le contenu de cet audio... Quel est le sujet ? Qui parle ? Contexte ?" required></textarea>
+                                            <small class="text-muted">C'est le seul champ que vous devez remplir. Tout le reste est détecté automatiquement !</small>
                                         </div>
-                                        <div class="card-body py-2">
-                                            <div class="row text-start small">
-                                                <div class="col-6"><strong>Durée:</strong> <span id="meta_duration">-</span></div>
-                                                <div class="col-6"><strong>Bitrate:</strong> <span id="meta_bitrate">-</span></div>
-                                                <div class="col-6"><strong>Sample Rate:</strong> <span id="meta_samplerate">-</span></div>
-                                                <div class="col-6"><strong>Canaux:</strong> <span id="meta_channels">-</span></div>
-                                                <div class="col-12 mt-1"><strong>Artiste:</strong> <span id="meta_artist">-</span></div>
-                                                <div class="col-12"><strong>Album:</strong> <span id="meta_album">-</span></div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Catégorie (auto-suggérée)</label>
+                                            <input type="text" class="form-control" name="categorie" id="suggested_category" list="categories_list" placeholder="Sera détectée automatiquement...">
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
+                                                    <label class="form-check-label small">Publier sur site</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1">
+                                                    <label class="form-check-label small">WhatsApp</label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <!-- Succès -->
-                                <div class="upload-success mt-2 d-none" id="create_upload_success">
-                                    <div class="alert alert-success mb-0 py-2 d-flex align-items-center justify-content-center">
-                                        <i class="bx bx-check-circle me-2 fs-5"></i>
-                                        <span class="fw-bold">Upload terminé avec succès!</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-2 d-flex gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-danger cancel-upload d-none" id="create_cancel">
-                                    <i class="bx bx-x me-1"></i>Annuler
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary pause-upload d-none" id="create_pause">
-                                    <i class="bx bx-pause me-1"></i>Pause
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary resume-upload d-none" id="create_resume">
-                                    <i class="bx bx-play me-1"></i>Reprendre
-                                </button>
                             </div>
                         </div>
-
-                        <!-- Link Section -->
-                        <div class="link-section mb-3" id="link_section_create" style="display:none;">
-                            <label class="form-label fw-bold">Lien audio <span class="text-muted">(SoundCloud, Spotify, Mixcloud, Bandcamp)</span></label>
-                            <input type="url" class="form-control" name="lien" placeholder="https://soundcloud.com/...">
-                            <small class="text-muted">Le lecteur intégré sera généré automatiquement</small>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Artiste / Crédits</label>
-                                <input type="text" class="form-control" name="credits" placeholder="Nom de l'artiste...">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Catégorie</label>
-                                <input type="text" class="form-control" name="categorie" list="categories_list" placeholder="Ex: Podcast, Musique, Interview...">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Description</label>
-                            <textarea class="form-control" name="description" rows="3" placeholder="Description de l'audio..."></textarea>
-                        </div>
-
-                        <div class="card border mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0"><i class="bx bx-share-alt me-2"></i>Options de partage</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input share-toggle" type="checkbox" name="a_partager_reseaux" value="1" data-target="create_msg_reseaux">
-                                            <label class="form-check-label fw-bold">Partager sur réseaux sociaux</label>
+                        
+                        <!-- Visualisations générées (affichées après upload) -->
+                        <div class="row mt-3 d-none" id="visualizations_row">
+                            <div class="col-12">
+                                <h6><i class="bx bx-pulse me-2"></i>Visualisations générées</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header py-2">Waveform</div>
+                                            <div class="card-body p-0">
+                                                <img id="generated_waveform" class="img-fluid" style="display:none;">
+                                                <div id="waveform_placeholder" class="p-3 text-center text-muted small">En génération...</div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                
-                                <div class="mb-3" id="create_msg_reseaux" style="display:none;">
-                                    <label class="form-label fw-bold">Message pour réseaux sociaux</label>
-                                    <textarea class="form-control" name="message_reseaux" rows="2" maxlength="280" placeholder="Texte à publier..."></textarea>
-                                    <small class="text-muted">Maximum 280 caractères</small>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-2">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1">
-                                            <label class="form-check-label fw-bold">
-                                                <i class="bx bxl-whatsapp text-success me-1"></i>Disponible pour WhatsApp
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
-                                            <label class="form-check-label fw-bold">
-                                                <i class="bx bx-globe text-primary me-1"></i>Visible sur le site web
-                                            </label>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header py-2">Spectrogramme</div>
+                                            <div class="card-body p-0">
+                                                <img id="generated_spectrogram" class="img-fluid" style="display:none;">
+                                                <div id="spectrogram_placeholder" class="p-3 text-center text-muted small">En génération...</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     </div>
-                    <div class="modal-footer">
+                    
+                    <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-success" id="create_submit">
+                        <button type="submit" class="btn btn-success btn-lg" id="submit_btn" disabled>
                             <i class="bx bx-save me-1"></i>Créer l'audio
                         </button>
                     </div>
@@ -769,1130 +878,642 @@
 <script>
 /**
  * =============================================================================
- * AUDIO UPLOAD MANAGER - VERSION PROFESSIONNELLE 3.0
- * Architecture: Modular ES6+ Class avec Web Audio API
- * Features: Waveform visualization, Real-time player, ID3 extraction
+ * AUDIO MANAGER ULTRA-INTELLIGENT v4.0
+ * Auto-detection complète, Upload chunked, Miniature intelligente
  * =============================================================================
  */
 
-/**
- * Utilitaires pour fichiers audio
- */
-class AudioUtils {
-    static formatDuration(seconds) {
-        if (!seconds || seconds < 0) return '0:00';
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        if (mins < 60) {
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-        const hours = Math.floor(mins / 60);
-        const remainingMins = mins % 60;
-        return `${hours}:${remainingMins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    static formatSize(bytes, decimals = 2) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
-    }
-
-    static getAudioMimeType(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        const types = {
-            'mp3': 'audio/mpeg',
-            'wav': 'audio/wav',
-            'flac': 'audio/flac',
-            'aac': 'audio/aac',
-            'ogg': 'audio/ogg',
-            'm4a': 'audio/mp4',
-            'wma': 'audio/x-ms-wma',
-            'aiff': 'audio/aiff',
-            'opus': 'audio/opus',
-            'weba': 'audio/webm'
-        };
-        return types[ext] || 'audio/mpeg';
-    }
-
-    /**
-     * Extrait les métadonnées ID3 d'un fichier audio via FileReader
-     */
-    static async extractMetadata(file) {
-        return new Promise((resolve) => {
-            // Lecture des premiers bytes pour ID3
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = e.target.result;
-                const metadata = {
-                    title: null,
-                    artist: null,
-                    album: null,
-                    year: null,
-                    duration: null
-                };
-
-                // Parsing basique ID3v2
-                const id3v2 = AudioUtils.parseID3v2(data);
-                if (id3v2) {
-                    Object.assign(metadata, id3v2);
-                }
-
-                // Estimation durée pour MP3 (approximation)
-                if (file.name.endsWith('.mp3')) {
-                    metadata.estimatedDuration = Math.floor(file.size / (128 * 1024 / 8)); // @128kbps
-                }
-
-                resolve(metadata);
-            };
-            reader.readAsArrayBuffer(file.slice(0, 1024 * 100)); // Lire 100KB max
-        });
-    }
-
-    static parseID3v2(buffer) {
-        const view = new DataView(buffer);
-        const decoder = new TextDecoder('utf-8');
+class AudioUploadManager {
+    constructor() {
+        this.baseUrl = '<?= base_url('audio/') ?>';
+        this.chunkSize = 2 * 1024 * 1024; // 2MB
+        this.maxRetries = 3;
         
-        // Vérifier signature ID3
-        if (decoder.decode(new Uint8Array(buffer, 0, 3)) !== 'ID3') {
-            return null;
-        }
-
-        const version = view.getUint8(3);
-        const flags = view.getUint8(5);
-        const size = ((view.getUint8(6) & 0x7F) << 21) |
-                     ((view.getUint8(7) & 0x7F) << 14) |
-                     ((view.getUint8(8) & 0x7F) << 7) |
-                     (view.getUint8(9) & 0x7F);
-
-        return { version: `2.${version}`, size: size };
-    }
-}
-
-/**
- * Visualiseur de waveform sur Canvas
- */
-class WaveformVisualizer {
-    constructor(canvas, options = {}) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.options = {
-            barWidth: 2,
-            barGap: 1,
-            barColor: '#007bff',
-            progressColor: '#28a745',
-            backgroundColor: 'transparent',
-            ...options
-        };
-        this.peaks = [];
-        this.progress = 0;
-    }
-
-    setPeaks(peaks) {
-        this.peaks = peaks;
-        this.draw();
-    }
-
-    setProgress(percent) {
-        this.progress = Math.max(0, Math.min(100, percent));
-        this.draw();
-    }
-
-    draw() {
-        const { width, height } = this.canvas;
-        this.ctx.clearRect(0, 0, width, height);
-        
-        if (!this.peaks.length) {
-            this.drawPlaceholder();
-            return;
-        }
-
-        const totalBars = Math.floor(width / (this.options.barWidth + this.options.barGap));
-        const step = Math.ceil(this.peaks.length / totalBars);
-        const barWidth = this.options.barWidth;
-        const gap = this.options.barGap;
-        const centerY = height / 2;
-
-        const progressX = (this.progress / 100) * width;
-
-        for (let i = 0; i < totalBars; i++) {
-            const peakIndex = i * step;
-            const peak = this.peaks[peakIndex] || 0;
-            const barHeight = peak * height * 0.9;
-            
-            const x = i * (barWidth + gap);
-            const isPlayed = x < progressX;
-
-            this.ctx.fillStyle = isPlayed ? this.options.progressColor : this.options.barColor;
-            
-            // Dessiner barre centrée
-            this.ctx.fillRect(
-                x, 
-                centerY - barHeight / 2, 
-                barWidth, 
-                barHeight
-            );
-        }
-    }
-
-    drawPlaceholder() {
-        const { width, height } = this.canvas;
-        this.ctx.fillStyle = '#dee2e6';
-        
-        // Dessiner une ligne plate
-        this.ctx.fillRect(0, height / 2 - 1, width, 2);
-    }
-
-    /**
-     * Génère des peaks à partir d'un AudioBuffer
-     */
-    static async generatePeaksFromBuffer(audioBuffer, samples = 1000) {
-        const channelData = audioBuffer.getChannelData(0);
-        const step = Math.floor(channelData.length / samples);
-        const peaks = [];
-
-        for (let i = 0; i < samples; i++) {
-            const start = i * step;
-            const end = start + step;
-            let max = 0;
-            
-            for (let j = start; j < end; j++) {
-                const abs = Math.abs(channelData[j]);
-                if (abs > max) max = abs;
-            }
-            
-            peaks.push(max);
-        }
-
-        return peaks;
-    }
-}
-
-/**
- * Lecteur audio avancé avec Web Audio API
- */
-class AdvancedAudioPlayer {
-    constructor(container, options = {}) {
-        this.container = container;
-        this.audio = container.querySelector('audio');
-        this.visualizer = null;
-        this.analyser = null;
-        this.dataArray = null;
-        this.animationId = null;
-        this.isPlaying = false;
-
-        this.elements = {
-            playBtn: container.querySelector('.play-pause-btn'),
-            progressBar: container.querySelector('.progress-bar'),
-            progressContainer: container.querySelector('.progress'),
-            currentTime: container.querySelector('.current-time'),
-            totalTime: container.querySelector('.total-time'),
-            volumeSlider: container.querySelector('.volume-slider'),
-            skipBack: container.querySelector('.skip-back'),
-            skipForward: container.querySelector('.skip-forward')
-        };
-
-        this.init();
-    }
-
-    init() {
-        if (!this.audio) return;
-
-        // Event listeners
-        this.elements.playBtn?.addEventListener('click', () => this.togglePlay());
-        
-        this.audio.addEventListener('timeupdate', () => this.updateProgress());
-        this.audio.addEventListener('loadedmetadata', () => this.updateDuration());
-        this.audio.addEventListener('ended', () => this.onEnded());
-        
-        this.elements.progressContainer?.addEventListener('click', (e) => this.seek(e));
-        this.elements.volumeSlider?.addEventListener('input', (e) => this.setVolume(e.target.value));
-        
-        this.elements.skipBack?.addEventListener('click', () => this.skip(-10));
-        this.elements.skipForward?.addEventListener('click', () => this.skip(10));
-
-        // Web Audio API pour visualisation temps réel
-        this.initWebAudio();
-    }
-
-    initWebAudio() {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.audioContext = new AudioContext();
-            
-            this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 256;
-            
-            const source = this.audioContext.createMediaElementSource(this.audio);
-            source.connect(this.analyser);
-            this.analyser.connect(this.audioContext.destination);
-            
-            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-        } catch (e) {
-            console.log('Web Audio API not available');
-        }
-    }
-
-    togglePlay() {
-        if (this.audioContext?.state === 'suspended') {
-            this.audioContext.resume();
-        }
-
-        if (this.isPlaying) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    }
-
-    play() {
-        this.audio.play().then(() => {
-            this.isPlaying = true;
-            this.updatePlayButton();
-            this.startVisualization();
-        }).catch(e => console.error('Play error:', e));
-    }
-
-    pause() {
-        this.audio.pause();
-        this.isPlaying = false;
-        this.updatePlayButton();
-        this.stopVisualization();
-    }
-
-    updatePlayButton() {
-        const icon = this.elements.playBtn?.querySelector('i');
-        if (icon) {
-            icon.className = this.isPlaying ? 'bx bx-pause fs-4' : 'bx bx-play fs-4';
-        }
-    }
-
-    updateProgress() {
-        const percent = (this.audio.currentTime / this.audio.duration) * 100;
-        if (this.elements.progressBar) {
-            this.elements.progressBar.style.width = percent + '%';
-        }
-        if (this.elements.currentTime) {
-            this.elements.currentTime.textContent = AudioUtils.formatDuration(this.audio.currentTime);
-        }
-    }
-
-    updateDuration() {
-        if (this.elements.totalTime) {
-            this.elements.totalTime.textContent = AudioUtils.formatDuration(this.audio.duration);
-        }
-    }
-
-    seek(e) {
-        const rect = this.elements.progressContainer.getBoundingClientRect();
-        const percent = (e.clientX - rect.left) / rect.width;
-        this.audio.currentTime = percent * this.audio.duration;
-    }
-
-    skip(seconds) {
-        this.audio.currentTime = Math.max(0, Math.min(this.audio.duration, this.audio.currentTime + seconds));
-    }
-
-    setVolume(value) {
-        this.audio.volume = value / 100;
-    }
-
-    onEnded() {
-        this.isPlaying = false;
-        this.updatePlayButton();
-        this.stopVisualization();
-    }
-
-    startVisualization() {
-        if (!this.analyser) return;
-        
-        const visualize = () => {
-            if (!this.isPlaying) return;
-            
-            this.analyser.getByteFrequencyData(this.dataArray);
-            // Ici on pourrait mettre à jour une visualisation temps réel
-            this.animationId = requestAnimationFrame(visualize);
-        };
-        
-        visualize();
-    }
-
-    stopVisualization() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-    }
-}
-
-/**
- * Gestionnaire d'upload chunked (réutilisé de Video avec adaptations)
- */
-class ChunkedUploadManager {
-    constructor(options = {}) {
-        this.baseUrl = options.baseUrl || '';
-        this.chunkSize = options.chunkSize || 2 * 1024 * 1024;
-        this.maxRetries = options.maxRetries || 3;
-        this.maxConcurrency = options.maxConcurrency || 2;
-        this.retryDelay = options.retryDelay || 1000;
-
         this.state = {
             file: null,
             uploadId: null,
-            totalChunks: 0,
-            uploadedChunks: new Set(),
-            failedChunks: new Map(),
-            isPaused: false,
-            isCancelled: false,
             isUploading: false,
-            startTime: null,
-            bytesUploaded: 0
+            isPaused: false,
+            uploader: null,
+            detectedData: null
         };
-
-        this.callbacks = {
-            onProgress: () => {},
-            onChunkComplete: () => {},
-            onComplete: () => {},
-            onError: () => {},
-            onCancel: () => {},
-            onPause: () => {},
-            onResume: () => {},
-            onMetadataExtracted: () => {} // Nouveau callback pour audio
-        };
-
-        Object.assign(this.callbacks, options);
+        
+        this.init();
     }
-
-    async start(file) {
+    
+    init() {
+        this.bindEvents();
+        this.initMiniPlayers();
+        this.initFullPlayers();
+    }
+    
+    bindEvents() {
+        // Upload zone events
+        const zone = document.getElementById('main_upload_zone');
+        const fileInput = document.getElementById('audio_file_input');
+        
+        zone.addEventListener('click', () => fileInput.click());
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.style.borderColor = '#0d6efd';
+            zone.style.background = '#f8f9fa';
+        });
+        zone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            zone.style.borderColor = '#dee2e6';
+            zone.style.background = '';
+        });
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.style.borderColor = '#dee2e6';
+            zone.style.background = '';
+            if (e.dataTransfer.files.length > 0) {
+                this.handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleFileSelect(e.target.files[0]);
+            }
+        });
+        
+        // Contrôles upload
+        document.getElementById('cancel_upload')?.addEventListener('click', () => this.cancelUpload());
+        document.getElementById('pause_upload')?.addEventListener('click', () => this.pauseUpload());
+        document.getElementById('resume_upload')?.addEventListener('click', () => this.resumeUpload());
+        
+        // Miniature upload
+        document.getElementById('upload_thumbnail_btn')?.addEventListener('click', () => {
+            document.getElementById('thumbnail_input').click();
+        });
+        
+        document.getElementById('thumbnail_input')?.addEventListener('change', (e) => {
+            this.handleThumbnailUpload(e.target.files[0]);
+        });
+        
+        // Soumission formulaire
+        document.getElementById('create_audio_form')?.addEventListener('submit', (e) => {
+            if (!document.getElementById('uploaded_file_path').value) {
+                e.preventDefault();
+                alert('Veuillez attendre la fin de l\'upload audio.');
+                return false;
+            }
+        });
+    }
+    
+    async handleFileSelect(file) {
+        if (!file.type.startsWith('audio/')) {
+            alert('Veuillez sélectionner un fichier audio valide.');
+            return;
+        }
+        
+        this.state.file = file;
+        
+        // UI updates
+        document.querySelector('.upload-placeholder').classList.add('d-none');
+        document.querySelector('.file-selected').classList.remove('d-none');
+        document.getElementById('selected_filename').textContent = file.name;
+        document.getElementById('selected_filesize').textContent = this.formatBytes(file.size);
+        document.querySelector('.upload-controls').classList.remove('d-none');
+        document.getElementById('submit_btn').disabled = true;
+        
+        // Démarrer upload chunked
+        await this.startChunkedUpload(file);
+    }
+    
+    async startChunkedUpload(file) {
+        this.state.isUploading = true;
+        
         try {
-            this.reset();
-            this.state.file = file;
-            this.state.isUploading = true;
-            this.state.startTime = Date.now();
-
-            // Extraction métadonnées avant upload (spécifique audio)
-            const metadata = await AudioUtils.extractMetadata(file);
-            this.callbacks.onMetadataExtracted(metadata);
-
-            // Initialisation
-            const initData = await this.initializeUpload(metadata);
+            // 1. Initialiser
+            const initData = await this.initUpload(file);
             this.state.uploadId = initData.upload_id;
-            this.state.totalChunks = initData.total_chunks;
-
-            if (initData.chunk_size) {
-                this.chunkSize = initData.chunk_size;
-                this.state.totalChunks = Math.ceil(file.size / this.chunkSize);
+            
+            // 2. Upload chunks
+            const totalChunks = initData.total_chunks;
+            let uploadedChunks = 0;
+            
+            this.showProgress();
+            
+            for (let i = 0; i < totalChunks; i++) {
+                if (this.state.isPaused) {
+                    await this.waitForResume();
+                }
+                
+                if (!this.state.isUploading) {
+                    throw new Error('Upload annulé');
+                }
+                
+                const start = i * this.chunkSize;
+                const end = Math.min(start + this.chunkSize, file.size);
+                const chunk = file.slice(start, end);
+                
+                await this.uploadChunk(i, chunk, totalChunks);
+                uploadedChunks++;
+                
+                this.updateProgress(uploadedChunks, totalChunks, file.size);
             }
-
-            this.notifyProgress({
-                phase: 'uploading',
-                percent: 0,
-                uploadedChunks: 0,
-                totalChunks: this.state.totalChunks,
-                uploadedSize: 0,
-                totalSize: file.size,
-                speed: 0
-            });
-
-            // Upload parallèle
-            await this.uploadChunksParallel();
-
-            if (this.state.isCancelled) {
-                await this.cancel();
-                return;
-            }
-
-            await this.finalizeUpload();
-
+            
+            // 3. Finaliser
+            await this.completeUpload();
+            
         } catch (error) {
-            console.error('[ChunkedUploadManager] Error:', error);
-            this.callbacks.onError(error.message || 'Erreur inconnue', error);
-        } finally {
-            this.state.isUploading = false;
+            console.error('Upload error:', error);
+            alert('Erreur upload: ' + error.message);
+            this.resetUpload();
         }
     }
-
-    async initializeUpload(metadata) {
+    
+    async initUpload(file) {
         const formData = new FormData();
-        formData.append('file_name', this.state.file.name);
-        formData.append('file_size', this.state.file.size);
+        formData.append('file_name', file.name);
+        formData.append('file_size', file.size);
         
-        const hash = await this.calculateHash(this.state.file.slice(0, Math.min(1024 * 1024, this.state.file.size)));
-        formData.append('file_hash', hash);
-        formData.append('metadata', JSON.stringify(metadata));
-
         const response = await fetch(this.baseUrl + 'initUpload', {
             method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            body: formData
         });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
         if (!data.success) throw new Error(data.message);
         
         return data;
     }
-
-    async uploadChunksParallel() {
-        const queue = [];
-        for (let i = 0; i < this.state.totalChunks; i++) {
-            if (!this.state.uploadedChunks.has(i)) queue.push(i);
-        }
-
-        const workers = [];
-        for (let w = 0; w < this.maxConcurrency; w++) {
-            workers.push(this.uploadWorker(queue));
-        }
-
-        await Promise.all(workers);
-    }
-
-    async uploadWorker(queue) {
-        while (queue.length > 0 && !this.state.isCancelled && !this.state.isPaused) {
-            const index = queue.shift();
-            await this.uploadChunkWithRetry(index);
-        }
-    }
-
-    async uploadChunkWithRetry(index, attempt = 0) {
-        try {
-            await this.uploadChunk(index);
-        } catch (error) {
-            const retryCount = this.state.failedChunks.get(index) || 0;
-            if (retryCount < this.maxRetries && !this.state.isCancelled) {
-                const delay = this.retryDelay * Math.pow(2, retryCount);
-                this.state.failedChunks.set(index, retryCount + 1);
-                await this.sleep(delay);
-                await this.uploadChunkWithRetry(index, retryCount + 1);
-            } else {
-                throw error;
-            }
-        }
-    }
-
-    async uploadChunk(index) {
-        while (this.state.isPaused && !this.state.isCancelled) {
-            await this.sleep(100);
-        }
-        if (this.state.isCancelled) return;
-
-        const start = index * this.chunkSize;
-        const end = Math.min(start + this.chunkSize, this.state.file.size);
-        const chunk = this.state.file.slice(start, end);
-
+    
+    async uploadChunk(index, chunk, total) {
         const formData = new FormData();
         formData.append('upload_id', this.state.uploadId);
         formData.append('chunk_index', index);
-        formData.append('chunk', chunk, `chunk_${index}`);
-
-        const startTime = Date.now();
+        formData.append('chunk', chunk);
         
         const response = await fetch(this.baseUrl + 'uploadChunk', {
             method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            body: formData
         });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
+        
         const data = await response.json();
-        if (!data.success) {
-            if (data.error_type === 'PHP_LIMIT') {
-                throw new Error(`Limite serveur: ${data.message}`);
-            }
-            throw new Error(data.message);
-        }
-
-        this.state.uploadedChunks.add(index);
-        this.state.bytesUploaded += chunk.size;
-
-        const speed = this.calculateSpeed();
-        this.notifyProgress({
-            phase: 'uploading',
-            percent: (this.state.uploadedChunks.size / this.state.totalChunks) * 100,
-            uploadedChunks: this.state.uploadedChunks.size,
-            totalChunks: this.state.totalChunks,
-            uploadedSize: this.state.bytesUploaded,
-            totalSize: this.state.file.size,
-            currentChunk: index + 1,
-            speed: speed
-        });
-
-        this.callbacks.onChunkComplete(index, data);
+        if (!data.success) throw new Error(data.message);
+        
+        return data;
     }
-
-    async finalizeUpload() {
-        this.notifyProgress({ phase: 'finalizing', percent: 100, message: 'Traitement audio...' });
-
+    
+    async completeUpload() {
         const formData = new FormData();
         formData.append('upload_id', this.state.uploadId);
-
+        formData.append('description', document.querySelector('textarea[name="description"]').value);
+        formData.append('custom_thumbnail', document.getElementById('custom_thumbnail_path').value);
+        
+        document.getElementById('upload_status').textContent = 'Analyse en cours...';
+        
         const response = await fetch(this.baseUrl + 'completeUpload', {
             method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            body: formData
         });
-
+        
         const data = await response.json();
-
-        if (!data.success) {
-            if (data.missing_chunks?.length > 0) {
-                for (const idx of data.missing_chunks) this.state.uploadedChunks.delete(idx);
-                await this.uploadChunksParallel();
-                return this.finalizeUpload();
-            }
-            throw new Error(data.message);
+        if (!data.success) throw new Error(data.message);
+        
+        // Stocker données détectées
+        this.state.detectedData = data;
+        
+        // Mettre à jour UI avec résultats
+        this.displayDetectedData(data);
+        this.storeFormData(data);
+        
+        // Afficher visualisations
+        this.displayVisualizations(data);
+        
+        // Activer soumission
+        document.getElementById('submit_btn').disabled = false;
+        document.querySelector('.upload-controls').classList.add('d-none');
+        
+        // Mettre à jour miniature si cover extraite
+        if (data.thumbnail && !document.getElementById('custom_thumbnail_path').value) {
+            this.updateThumbnailPreview(data.thumbnail);
         }
-
-        this.callbacks.onComplete(data);
     }
-
-    async cancel() {
-        this.state.isCancelled = true;
+    
+    displayDetectedData(data) {
+        document.getElementById('analysis_card').classList.remove('d-none');
+        
+        document.getElementById('detected_title').textContent = data.suggested_data.titre || '-';
+        document.getElementById('detected_artist').textContent = data.artist || data.suggested_data.credits || '-';
+        document.getElementById('detected_album').textContent = data.album || '-';
+        document.getElementById('detected_year').textContent = data.year || '-';
+        document.getElementById('detected_duration').textContent = data.duration_formatted || '-';
+        document.getElementById('detected_quality').textContent = data.bitrate ? Math.round(data.bitrate/1000) + 'kbps, ' + (data.sample_rate/1000).toFixed(1) + 'kHz' : '-';
+        document.getElementById('detected_genre').textContent = data.genre || 'Non détecté';
+        document.getElementById('detected_category').textContent = data.suggested_data.categorie || 'Musique';
+        
+        // Suggérer catégorie dans champ
+        document.getElementById('suggested_category').value = data.suggested_data.categorie || 'Musique';
+    }
+    
+    storeFormData(data) {
+        document.getElementById('uploaded_file_path').value = data.file_path;
+        
+        const autoData = {
+            title: data.title || data.suggested_data.titre,
+            artist: data.artist || data.suggested_data.credits,
+            album: data.album,
+            year: data.year,
+            genre: data.genre,
+            category: data.suggested_data.categorie,
+            duration: data.duration,
+            bitrate: data.bitrate,
+            sample_rate: data.sample_rate,
+            channels: data.channels,
+            codec: data.codec,
+            thumbnail: data.thumbnail,
+            waveform: data.waveform,
+            spectrogram: data.spectrogram,
+            waveform_data: data.waveform_data
+        };
+        
+        document.getElementById('auto_detected_data').value = JSON.stringify(autoData);
+    }
+    
+    displayVisualizations(data) {
+        document.getElementById('visualizations_row').classList.remove('d-none');
+        
+        if (data.waveform) {
+            document.getElementById('generated_waveform').src = '<?= base_url() ?>' + data.waveform;
+            document.getElementById('generated_waveform').style.display = 'block';
+            document.getElementById('waveform_placeholder').style.display = 'none';
+        }
+        
+        if (data.spectrogram) {
+            document.getElementById('generated_spectrogram').src = '<?= base_url() ?>' + data.spectrogram;
+            document.getElementById('generated_spectrogram').style.display = 'block';
+            document.getElementById('spectrogram_placeholder').style.display = 'none';
+        }
+    }
+    
+    async handleThumbnailUpload(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('Veuillez sélectionner une image valide.');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('thumbnail', file);
+        
+        try {
+            const response = await fetch(this.baseUrl + 'uploadThumbnail', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message);
+            
+            document.getElementById('custom_thumbnail_path').value = data.thumbnail_path;
+            this.updateThumbnailPreview(data.thumbnail_path);
+            
+        } catch (error) {
+            alert('Erreur upload miniature: ' + error.message);
+        }
+    }
+    
+    updateThumbnailPreview(path) {
+        const preview = document.getElementById('thumbnail_preview');
+        preview.innerHTML = `<img src="<?= base_url() ?>${path}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.375rem;">`;
+        preview.style.border = 'none';
+    }
+    
+    showProgress() {
+        document.querySelector('.upload-progress').classList.remove('d-none');
+    }
+    
+    updateProgress(uploaded, total, fileSize) {
+        const percent = Math.round((uploaded / total) * 100);
+        document.getElementById('upload_progress_bar').style.width = percent + '%';
+        document.getElementById('upload_percent').textContent = percent + '%';
+        document.getElementById('chunks_info').textContent = `Chunk ${uploaded}/${total}`;
+        document.getElementById('upload_status').textContent = percent === 100 ? 'Finalisation...' : 'Upload en cours...';
+    }
+    
+    pauseUpload() {
+        this.state.isPaused = true;
+        document.getElementById('pause_upload').classList.add('d-none');
+        document.getElementById('resume_upload').classList.remove('d-none');
+    }
+    
+    resumeUpload() {
         this.state.isPaused = false;
-
+        document.getElementById('resume_upload').classList.add('d-none');
+        document.getElementById('pause_upload').classList.remove('d-none');
+    }
+    
+    waitForResume() {
+        return new Promise(resolve => {
+            const check = setInterval(() => {
+                if (!this.state.isPaused) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+    
+    cancelUpload() {
+        if (!confirm('Annuler l\'upload ?')) return;
+        
+        this.state.isUploading = false;
+        
         if (this.state.uploadId) {
-            try {
-                const formData = new FormData();
-                formData.append('upload_id', this.state.uploadId);
-                await fetch(this.baseUrl + 'cancelUpload', { method: 'POST', body: formData });
-            } catch (e) {}
+            fetch(this.baseUrl + 'cancelUpload', {
+                method: 'POST',
+                body: JSON.stringify({upload_id: this.state.uploadId})
+            });
         }
-
-        this.callbacks.onCancel();
+        
+        this.resetUpload();
     }
-
-    pause() {
-        if (this.state.isUploading && !this.state.isCancelled) {
-            this.state.isPaused = true;
-            this.callbacks.onPause();
-        }
-    }
-
-    resume() {
-        if (this.state.isPaused) {
-            this.state.isPaused = false;
-            this.callbacks.onResume();
-        }
-    }
-
-    calculateSpeed() {
-        const elapsed = (Date.now() - this.state.startTime) / 1000;
-        return elapsed === 0 ? 0 : (this.state.bytesUploaded / elapsed) / (1024 * 1024);
-    }
-
-    notifyProgress(progress) {
-        if (this.progressThrottle && progress.phase === 'uploading') {
-            const now = Date.now();
-            if (now - (this.lastProgressUpdate || 0) < 100) return;
-            this.lastProgressUpdate = now;
-        }
-        this.callbacks.onProgress(progress);
-    }
-
-    reset() {
+    
+    resetUpload() {
         this.state = {
             file: null,
             uploadId: null,
-            totalChunks: 0,
-            uploadedChunks: new Set(),
-            failedChunks: new Map(),
-            isPaused: false,
-            isCancelled: false,
             isUploading: false,
-            startTime: null,
-            bytesUploaded: 0
+            isPaused: false,
+            uploader: null,
+            detectedData: null
         };
+        
+        document.querySelector('.upload-placeholder').classList.remove('d-none');
+        document.querySelector('.file-selected').classList.add('d-none');
+        document.querySelector('.upload-progress').classList.add('d-none');
+        document.querySelector('.upload-controls').classList.add('d-none');
+        document.getElementById('analysis_card').classList.add('d-none');
+        document.getElementById('visualizations_row').classList.add('d-none');
+        document.getElementById('submit_btn').disabled = true;
+        document.getElementById('uploaded_file_path').value = '';
+        document.getElementById('auto_detected_data').value = '';
+        document.getElementById('audio_file_input').value = '';
     }
-
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    async calculateHash(blob) {
-        const buffer = await blob.arrayBuffer();
-        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    get isUploading() { return this.state.isUploading; }
-    get isPaused() { return this.state.isPaused; }
-}
-
-// =============================================================================
-// INITIALISATION
-// =============================================================================
-
-$(document).ready(function() {
     
-    const UPLOAD_CONFIG = {
-        baseUrl: '<?= base_url('audio/') ?>',
-        chunkSize: 2 * 1024 * 1024,
-        maxRetries: 3
-    };
-
-    let currentUploader = null;
-
-    // Auto-hide alerts
-    setTimeout(() => {
-        $('.alert:not(.alert-permanent)').fadeOut('slow');
-    }, 5000);
-
-    // Toggle AJAX fields
-    $(document).on('change', '.toggle-field', function() {
-        const $cb = $(this);
-        $cb.prop('disabled', true);
-        
-        $.ajax({
-            url: '<?= base_url('audio/toggleField') ?>',
-            type: 'POST',
-            data: {
-                id: $cb.data('id'),
-                field: $cb.data('field'),
-                value: $cb.is(':checked') ? 1 : 0,
-                '<?= $this->security->get_csrf_token_name() ?>': '<?= $this->security->get_csrf_hash() ?>'
-            },
-            dataType: 'json',
-            success: (r) => {
-                if (!r?.success) {
-                    $cb.prop('checked', !$cb.is(':checked'));
-                    toastr.error('Erreur mise à jour');
-                }
-            },
-            error: () => {
-                $cb.prop('checked', !$cb.is(':checked'));
-                toastr.error('Erreur connexion');
-            },
-            complete: () => $cb.prop('disabled', false)
-        });
-    });
-
-    // Toggle sections
-    $(document).on('change', '.source-type-selector', function() {
-        const target = $(this).data('target');
-        const isUpload = $(this).val() === 'upload';
-        
-        if (target === 'create') {
-            $('#upload_section_create').toggle(isUpload);
-            $('#link_section_create').toggle(!isUpload);
-            $('#create_uploaded_path').prop('required', isUpload);
-            $('input[name="lien"]').prop('required', !isUpload);
-            if (!isUpload && currentUploader) currentUploader.cancel();
-        } else {
-            $(`#upload_section_${target}`).toggle(isUpload);
-            $(`#link_section_${target}`).toggle(!isUpload);
-        }
-    });
-
-    $(document).on('change', '.share-toggle', function() {
-        $(`#${$(this).data('target')}`).toggle($(this).is(':checked'));
-    });
-
-    // ========================================================================
-    // UPLOAD HANDLING
-    // ========================================================================
-
-    $(document).on('click', '.upload-zone', function(e) {
-        if ($(e.target).is('input, .upload-progress, .upload-progress *')) return;
-        $(this).find('.file-input').trigger('click');
-    });
-
-    $(document).on('dragover', '.upload-zone', function(e) {
-        e.preventDefault();
-        $(this).addClass('drag-active border-primary bg-light');
-    });
-
-    $(document).on('dragleave', '.upload-zone', function(e) {
-        e.preventDefault();
-        $(this).removeClass('drag-active border-primary bg-light');
-    });
-
-    $(document).on('drop', '.upload-zone', function(e) {
-        e.preventDefault();
-        $(this).removeClass('drag-active border-primary bg-light');
-        const files = e.originalEvent.dataTransfer.files;
-        if (files.length > 0) handleFileSelection(files[0], $(this));
-    });
-
-    $(document).on('change', '.file-input', function() {
-        const file = this.files[0];
-        if (file) handleFileSelection(file, $(this).closest('.upload-zone'));
-    });
-
-    function handleFileSelection(file, $zone) {
-        if (!file.type.startsWith('audio/')) {
-            toastr.error('Veuillez sélectionner un fichier audio.');
-            return;
-        }
-
-        const uploadId = $zone.find('.file-input').data('upload-id');
-        
-        // Afficher info
-        const formattedSize = AudioUtils.formatSize(file.size);
-        if (uploadId === 'create') {
-            $('#create_file_name').text(file.name).attr('title', file.name);
-            $('#create_file_size').text(formattedSize);
-            $('#create_file_info').removeClass('d-none');
-        } else {
-            $zone.find('.new-file-info').removeClass('d-none');
-            $zone.find('.new-file-name').text(file.name);
-        }
-
-        startChunkedUpload(file, uploadId, $zone);
+    formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
-
-    function startChunkedUpload(file, uploadId, $zone) {
-        const isCreate = uploadId === 'create';
-        const ui = getUploadUI(uploadId, $zone);
-        
-        resetUploadUI(ui);
-        showUploadControls(ui);
-
-        currentUploader = new ChunkedUploadManager({
-            baseUrl: UPLOAD_CONFIG.baseUrl,
-            chunkSize: UPLOAD_CONFIG.chunkSize,
-            maxRetries: UPLOAD_CONFIG.maxRetries,
+    
+    // ==================== MINI PLAYERS ====================
+    
+    initMiniPlayers() {
+        document.querySelectorAll('.audio-player-mini').forEach(container => {
+            const canvas = container.querySelector('.waveform-canvas');
+            const ctx = canvas.getContext('2d');
+            const waveformData = JSON.parse(container.dataset.waveform || '[]');
+            const audioSrc = container.dataset.src;
             
-            onMetadataExtracted: (metadata) => {
-                // Afficher métadonnées extraites
-                if (isCreate && metadata) {
-                    $('#meta_duration').text(metadata.estimatedDuration ? 
-                        AudioUtils.formatDuration(metadata.estimatedDuration) : '-');
-                    $('#create_metadata').removeClass('d-none');
+            // Dessiner waveform
+            this.drawWaveform(ctx, canvas, waveformData);
+            
+            // Setup audio
+            const audio = new Audio(audioSrc);
+            let isPlaying = false;
+            
+            const playBtn = container.querySelector('.play-btn');
+            const progressOverlay = container.querySelector('.progress-overlay');
+            const timeDisplay = container.querySelector('.time-display');
+            
+            playBtn.addEventListener('click', () => {
+                if (isPlaying) {
+                    audio.pause();
+                    playBtn.innerHTML = '<i class="bx bx-play"></i>';
+                    isPlaying = false;
+                } else {
+                    // Stop autres players
+                    document.querySelectorAll('.audio-player-mini audio').forEach(a => a.pause());
+                    document.querySelectorAll('.audio-player-mini .play-btn').forEach(b => b.innerHTML = '<i class="bx bx-play"></i>');
+                    
+                    audio.play();
+                    playBtn.innerHTML = '<i class="bx bx-pause"></i>';
+                    isPlaying = true;
                 }
-            },
+            });
             
-            onProgress: (data) => updateProgressUI(ui, data),
+            audio.addEventListener('timeupdate', () => {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressOverlay.style.width = percent + '%';
+                timeDisplay.textContent = this.formatTime(audio.currentTime);
+            });
             
-            onChunkComplete: (index, response) => {
-                console.log(`Chunk ${index} uploaded`);
-            },
+            audio.addEventListener('ended', () => {
+                isPlaying = false;
+                playBtn.innerHTML = '<i class="bx bx-play"></i>';
+                progressOverlay.style.width = '0%';
+            });
+        });
+    }
+    
+    drawWaveform(ctx, canvas, data) {
+        const width = canvas.width;
+        const height = canvas.height;
+        const barWidth = 2;
+        const gap = 1;
+        const bars = Math.floor(width / (barWidth + gap));
+        const step = Math.ceil(data.length / bars);
+        
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#6c757d';
+        
+        for (let i = 0; i < bars; i++) {
+            const idx = i * step;
+            const value = data[idx] || 0;
+            const barHeight = value * height * 0.8;
+            const x = i * (barWidth + gap);
+            const y = (height - barHeight) / 2;
             
-            onComplete: (data) => {
-                handleUploadComplete(ui, data, uploadId);
+            ctx.fillRect(x, y, barWidth, barHeight);
+        }
+    }
+    
+    // ==================== FULL PLAYERS ====================
+    
+    initFullPlayers() {
+        document.querySelectorAll('.audio-player-modal').forEach(modal => {
+            modal.addEventListener('shown.bs.modal', () => {
+                const player = modal.querySelector('.audio-full-player');
+                if (!player || player.dataset.initialized) return;
                 
-                // Afficher métadonnées serveur
-                if (isCreate) {
-                    $('#meta_duration').text(data.duration_formatted || '-');
-                    $('#meta_bitrate').text(data.bitrate ? Math.round(data.bitrate/1000) + ' kbps' : '-');
-                    $('#meta_samplerate').text(data.sample_rate ? (data.sample_rate/1000).toFixed(1) + ' kHz' : '-');
-                    $('#meta_channels').text(data.channels ? (data.channels === 1 ? 'Mono' : data.channels === 2 ? 'Stéréo' : data.channels + ' canaux') : '-');
-                    if (data.metadata?.artist) $('#meta_artist').text(data.metadata.artist);
-                    if (data.metadata?.album) $('#meta_album').text(data.metadata.album);
-                }
-            },
-            
-            onError: (message) => handleUploadError(ui, message),
-            onCancel: () => handleUploadCancel(ui, uploadId),
-            onPause: () => {
-                ui.$status.text('En pause');
-                ui.$bar.removeClass('progress-bar-animated');
-            },
-            onResume: () => {
-                ui.$status.text('Upload en cours...');
-                ui.$bar.addClass('progress-bar-animated');
-            }
-        });
-
-        currentUploader.start(file);
-        bindControlButtons(ui, currentUploader);
-    }
-
-    function getUploadUI(uploadId, $zone) {
-        const isCreate = uploadId === 'create';
-        
-        if (isCreate) {
-            return {
-                $progress: $('#create_progress_container'),
-                $status: $('#create_upload_status'),
-                $percent: $('#create_upload_percent'),
-                $bar: $('#create_progress_bar'),
-                $chunks: $('#create_chunks_info'),
-                $speed: $('#create_upload_speed'),
-                $sizeInfo: $('#create_size_info'),
-                $cancelBtn: $('#create_cancel'),
-                $pauseBtn: $('#create_pause'),
-                $resumeBtn: $('#create_resume'),
-                $success: $('#create_upload_success'),
-                $fileInfo: $('#create_file_info')
-            };
-        }
-        
-        return {
-            $progress: $zone.find('.upload-progress'),
-            $status: $zone.find('.upload-status'),
-            $percent: $zone.find('.upload-percent'),
-            $bar: $zone.find('.progress-bar'),
-            $chunks: $zone.find('.upload-chunks'),
-            $speed: $zone.find('.upload-speed'),
-            $sizeInfo: null,
-            $cancelBtn: $zone.closest('.upload-section').find('.cancel-upload'),
-            $pauseBtn: $zone.closest('.upload-section').find('.pause-upload'),
-            $resumeBtn: $zone.closest('.upload-section').find('.resume-upload'),
-            $success: $zone.find('.new-file-info'),
-            $fileInfo: $zone.find('.current-file')
-        };
-    }
-
-    function resetUploadUI(ui) {
-        ui.$progress.removeClass('d-none');
-        ui.$bar.css('width', '0%').attr('aria-valuenow', 0);
-        ui.$percent.text('0%');
-        ui.$status.text('Préparation...');
-        ui.$chunks.text('Chunk 0/0');
-        if (ui.$speed) ui.$speed.text('0 MB/s');
-        if (ui.$sizeInfo) ui.$sizeInfo.text('0 MB / 0 MB');
-        ui.$success.addClass('d-none');
-    }
-
-    function showUploadControls(ui) {
-        ui.$cancelBtn.removeClass('d-none');
-        ui.$pauseBtn.removeClass('d-none');
-        ui.$resumeBtn.addClass('d-none');
-    }
-
-    function updateProgressUI(ui, data) {
-        const percent = Math.round(data.percent);
-        ui.$bar.css('width', percent + '%').attr('aria-valuenow', percent);
-        ui.$percent.text(percent + '%');
-        
-        if (data.phase === 'finalizing') {
-            ui.$status.text(data.message);
-        } else {
-            ui.$status.text(`Upload en cours (${data.currentChunk || '?'}/${data.totalChunks})`);
-            ui.$chunks.text(`Chunk ${data.uploadedChunks}/${data.totalChunks}`);
-            if (ui.$speed) ui.$speed.text(data.speed.toFixed(2) + ' MB/s');
-            if (ui.$sizeInfo) {
-                ui.$sizeInfo.text(`${AudioUtils.formatSize(data.uploadedSize)} / ${AudioUtils.formatSize(data.totalSize)}`);
-            }
-        }
-    }
-
-    function handleUploadComplete(ui, data, uploadId) {
-        ui.$progress.addClass('d-none');
-        ui.$cancelBtn.addClass('d-none');
-        ui.$pauseBtn.addClass('d-none');
-        ui.$resumeBtn.addClass('d-none');
-        
-        if (uploadId === 'create') {
-            $('#create_uploaded_path').val(data.file_path);
-            $('#create_audio_metadata').val(JSON.stringify({
-                duration: data.duration,
-                bitrate: data.bitrate,
-                sample_rate: data.sample_rate,
-                channels: data.channels,
-                waveform: data.waveform,
-                spectrogram: data.spectrogram,
-                waveform_data: data.waveform_data,
-                metadata: data.metadata
-            }));
-            $('#create_upload_success').removeClass('d-none');
-        } else {
-            const $zone = $(`#drop_zone_${uploadId}`);
-            $zone.closest('form').find('.uploaded-path').val(data.file_path);
-            $zone.closest('form').find('.audio-metadata').val(JSON.stringify(data));
-            ui.$success.html(`
-                <div class="alert alert-success mb-0 py-2">
-                    <i class="bx bx-check-circle me-2"></i>
-                    <span class="fw-bold">Upload terminé!</span>
-                    <div class="small">${data.file_size_formatted} • ${data.duration_formatted || ''}</div>
-                </div>
-            `).removeClass('d-none');
-        }
-        
-        toastr.success('Upload terminé avec succès!');
-        currentUploader = null;
-    }
-
-    function handleUploadError(ui, message) {
-        ui.$progress.addClass('d-none');
-        ui.$cancelBtn.addClass('d-none');
-        ui.$pauseBtn.addClass('d-none');
-        ui.$resumeBtn.addClass('d-none');
-        toastr.error(message, 'Erreur Upload', { timeOut: 10000 });
-        currentUploader = null;
-    }
-
-    function handleUploadCancel(ui, uploadId) {
-        ui.$progress.addClass('d-none');
-        ui.$cancelBtn.addClass('d-none');
-        ui.$pauseBtn.addClass('d-none');
-        ui.$resumeBtn.addClass('d-none');
-        
-        if (uploadId === 'create') {
-            $('#create_file_info').addClass('d-none');
-            $('#create_upload_success').addClass('d-none');
-            $('#create_metadata').addClass('d-none');
-            $('#create_uploaded_path').val('');
-            $('#create_audio_metadata').val('');
-        } else {
-            $(`#drop_zone_${uploadId}`).find('.new-file-info').addClass('d-none');
-        }
-        currentUploader = null;
-    }
-
-    function bindControlButtons(ui, uploader) {
-        ui.$cancelBtn.off('click').on('click', () => {
-            if (confirm('Annuler l\'upload ?')) uploader.cancel();
-        });
-        
-        ui.$pauseBtn.off('click').on('click', function() {
-            uploader.pause();
-            $(this).addClass('d-none');
-            ui.$resumeBtn.removeClass('d-none');
-        });
-        
-        ui.$resumeBtn.off('click').on('click', function() {
-            uploader.resume();
-            $(this).addClass('d-none');
-            ui.$pauseBtn.removeClass('d-none');
+                this.setupFullPlayer(player);
+                player.dataset.initialized = 'true';
+            });
         });
     }
-
-    // ========================================================================
-    // MINI PLAYERS (Waveform inline)
-    // ========================================================================
     
-    $('.audio-player-mini').each(function() {
-        const $container = $(this);
-        const src = $container.data('src');
-        const waveformData = $container.data('waveform') || [];
+    setupFullPlayer(container) {
+        const audio = container.querySelector('audio');
+        const playBtn = container.querySelector('.play-pause-btn');
+        const progressBar = container.querySelector('.progress-bar');
+        const progressContainer = container.querySelector('.progress');
+        const currentTime = container.querySelector('.current-time');
+        const totalTime = container.querySelector('.total-time');
+        const volumeSlider = container.querySelector('.volume-slider');
         
-        const canvas = $container.find('.waveform-canvas')[0];
-        const visualizer = new WaveformVisualizer(canvas, {
-            barWidth: 2,
-            barGap: 1,
-            barColor: '#6c757d',
-            progressColor: '#0d6efd'
-        });
-        
-        visualizer.setPeaks(waveformData.length ? waveformData : Array(100).fill(0.1));
-        
-        const audio = new Audio(src);
         let isPlaying = false;
         
-        $container.find('.play-btn').on('click', function() {
-            const $btn = $(this);
-            const $icon = $btn.find('i');
-            
+        playBtn.addEventListener('click', () => {
             if (isPlaying) {
                 audio.pause();
-                $icon.removeClass('bx-pause').addClass('bx-play');
+                playBtn.innerHTML = '<i class="bx bx-play fs-2"></i>';
                 isPlaying = false;
             } else {
-                // Pause autres players
-                $('.audio-player-mini audio').each(function() {
-                    this.pause();
-                });
-                $('.audio-player-mini .play-btn i').removeClass('bx-pause').addClass('bx-play');
-                
                 audio.play();
-                $icon.removeClass('bx-play').addClass('bx-pause');
+                playBtn.innerHTML = '<i class="bx bx-pause fs-2"></i>';
                 isPlaying = true;
             }
         });
         
         audio.addEventListener('timeupdate', () => {
             const percent = (audio.currentTime / audio.duration) * 100;
-            visualizer.setProgress(percent);
-            $container.find('.time-display').text(AudioUtils.formatDuration(audio.currentTime));
+            progressBar.style.width = percent + '%';
+            currentTime.textContent = this.formatTime(audio.currentTime);
+        });
+        
+        audio.addEventListener('loadedmetadata', () => {
+            totalTime.textContent = this.formatTime(audio.duration);
         });
         
         audio.addEventListener('ended', () => {
             isPlaying = false;
-            $container.find('.play-btn i').removeClass('bx-pause').addClass('bx-play');
-            visualizer.setProgress(0);
+            playBtn.innerHTML = '<i class="bx bx-play fs-2"></i>';
+            progressBar.style.width = '0%';
         });
-    });
-
-    // ========================================================================
-    // MODAL PLAYERS (Full player)
-    // ========================================================================
-    
-    $('.audio-player-modal').on('shown.bs.modal', function() {
-        const $modal = $(this);
-        const $player = $modal.find('.audio-full-player');
         
-        if ($player.length && !$player.data('initialized')) {
-            new AdvancedAudioPlayer($player[0]);
-            $player.data('initialized', true);
-        }
-    });
-
-    // ========================================================================
-    // FORM VALIDATION
-    // ========================================================================
-    
-    $('#create_form').on('submit', function(e) {
-        const typeSource = $('#create_type_source').val();
+        progressContainer.addEventListener('click', (e) => {
+            const rect = progressContainer.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = percent * audio.duration;
+        });
         
-        if (typeSource === 'upload' && !$('#create_uploaded_path').val()) {
-            e.preventDefault();
-            toastr.warning('Veuillez attendre la fin de l\'upload.');
-            return false;
-        }
+        volumeSlider.addEventListener('input', (e) => {
+            audio.volume = e.target.value / 100;
+        });
         
-        if (typeSource === 'link' && !$('input[name="lien"]').val().trim()) {
-            e.preventDefault();
-            toastr.warning('Veuillez saisir un lien.');
-            return false;
-        }
-    });
-
-    $('#create_audio').on('hidden.bs.modal', function() {
-        if (currentUploader?.isUploading) currentUploader.cancel();
+        // Skip buttons
+        container.querySelector('.skip-back')?.addEventListener('click', () => {
+            audio.currentTime = Math.max(0, audio.currentTime - 10);
+        });
         
-        $(this).find('form')[0].reset();
-        $('#create_progress_container, #create_file_info, #create_upload_success, #create_metadata').addClass('d-none');
-        $('#create_cancel, #create_pause, #create_resume').addClass('d-none');
-        $('#create_upload_bar').css('width', '0%');
-        $('#create_uploaded_path, #create_audio_metadata').val('');
-        $('#upload_section_create').show();
-        $('#link_section_create').hide();
-    });
-
-    // ========================================================================
-    // DATATABLE
-    // ========================================================================
-    
-    if ($.fn.DataTable) {
-        $('#audioTable').DataTable({
-            language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' },
-            order: [[0, 'desc']],
-            pageLength: 25,
-            responsive: true
+        container.querySelector('.skip-forward')?.addEventListener('click', () => {
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
         });
     }
+    
+    formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+}
 
+// ==================== INITIALISATION ====================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialiser Audio Manager
+    window.audioManager = new AudioUploadManager();
+    
+    // Toggle fields AJAX
+    document.querySelectorAll('.toggle-field').forEach(toggle => {
+        toggle.addEventListener('change', async function() {
+            this.disabled = true;
+            
+            try {
+                const response = await fetch('<?= base_url('audio/toggleField') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `id=${this.dataset.id}&field=${this.dataset.field}&value=${this.checked ? 1 : 0}&<?= $this->security->get_csrf_token_name() ?>=<?= $this->security->get_csrf_hash() ?>`
+                });
+                
+                const data = await response.json();
+                if (!data.success) {
+                    this.checked = !this.checked;
+                    alert('Erreur mise à jour');
+                }
+            } catch (error) {
+                this.checked = !this.checked;
+                alert('Erreur connexion');
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+    
+    // Toggle source type (upload/link)
+    document.querySelectorAll('.source-type-selector').forEach(selector => {
+        selector.addEventListener('change', function() {
+            const target = this.dataset.target;
+            const isUpload = this.value === 'upload';
+            
+            document.getElementById(`upload_section_${target}`).style.display = isUpload ? 'block' : 'none';
+            document.getElementById(`link_section_${target}`).style.display = isUpload ? 'none' : 'block';
+        });
+    });
+    
+    // DataTable
+    if (typeof $.fn.DataTable !== 'undefined') {
+        $('#audioTable').DataTable({
+            language: { 
+                url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' 
+            },
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true,
+            columnDefs: [
+                { orderable: false, targets: [1, 9] } // Cover et Actions non triables
+            ]
+        });
+    }
+    
+    // Reset modal on close
+    document.getElementById('create_audio_modal')?.addEventListener('hidden.bs.modal', () => {
+        window.audioManager.resetUpload();
+        document.getElementById('create_audio_form').reset();
+        document.getElementById('thumbnail_preview').innerHTML = `
+            <div class="text-center p-3">
+                <i class="bx bx-image-add fs-1 text-muted mb-2"></i>
+                <p class="small text-muted mb-0">Aperçu miniature</p>
+            </div>
+        `;
+        document.getElementById('thumbnail_preview').style.border = '2px dashed #dee2e6';
+    });
 });
 </script>
 
 <style>
-/* Styles Audio spécifiques */
+/* Styles Audio Ultra-Modernes */
 .upload-zone {
     transition: all 0.3s ease;
-    cursor: pointer;
 }
 
-.upload-zone:hover, .upload-zone.drag-active {
+.upload-zone:hover {
     border-color: #0d6efd !important;
     background-color: #f8f9fa !important;
 }
 
-.browse-text {
-    cursor: pointer;
-    text-decoration: underline;
+.upload-zone.drag-active {
+    border-color: #0d6efd !important;
+    background-color: #e7f1ff !important;
+    transform: scale(1.02);
 }
 
-/* Mini player inline */
+/* Mini Player */
 .audio-player-mini {
     background: #f8f9fa;
-    padding: 8px;
+    padding: 6px;
     border-radius: 8px;
-    margin-top: 8px;
+    border: 1px solid #e9ecef;
 }
 
 .waveform-container {
@@ -1903,22 +1524,18 @@ $(document).ready(function() {
 .waveform-canvas {
     width: 100%;
     height: 100%;
+    display: block;
 }
 
 .progress-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: rgba(13, 110, 253, 0.2);
-    pointer-events: none;
-    transition: width 0.1s;
+    transition: width 0.1s linear;
 }
 
-/* Full player */
+/* Full Player */
 .audio-full-player .player-visualization {
-    min-height: 200px;
+    min-height: 300px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
 }
@@ -1933,10 +1550,54 @@ $(document).ready(function() {
     animation: pulse-audio 0.2s;
 }
 
+/* Cards */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .audio-player-mini .waveform-container {
         display: none;
     }
+    
+    .player-visualization img {
+        max-height: 200px !important;
+    }
+}
+
+/* Loading states */
+.uploading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 </style>
