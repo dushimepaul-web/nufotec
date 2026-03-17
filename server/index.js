@@ -6,18 +6,26 @@ const app = express();
 const server = http.createServer(app);
 
 // ============================================
-// ⭐ CORS GLOBAL - DOIT ÊTRE EN PREMIER
+// ⭐ MIDDLEWARE CORS + ANTI-CACHE (DOIT ÊTRE EN PREMIER)
 // ============================================
 app.use((req, res, next) => {
-  // Autoriser tous les domaines (ou spécifiez 'https://nufotec.com')
+  // CORS headers
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
-  res.header('Access-Control-Allow-Credentials', 'false');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
-  // Intercepter et répondre immédiatement aux requêtes OPTIONS
+  // ⭐ Anti-cache headers pour Cloudflare/LiteSpeed
+  res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.header('Pragma', 'no-cache');
+  res.header('Expires', '0');
+  res.header('Surrogate-Control', 'no-store');
+  
+  // Identifier que la réponse vient de Node.js
+  res.header('X-Server', 'NodeJS-SocketIO');
+  
+  // Répondre immédiatement aux OPTIONS (pre-flight)
   if (req.method === 'OPTIONS') {
-    console.log('🔄 Requête OPTIONS interceptée');
+    console.log('🔄 OPTIONS:', req.path);
     return res.status(200).end();
   }
   
@@ -49,13 +57,13 @@ process.on('uncaughtException', (err) => console.error('❌ Exception:', err));
 process.on('unhandledRejection', (reason) => console.error('❌ Rejet:', reason));
 
 // ============================================
-// Routes de test
+// Routes
 // ============================================
 app.get('/test', (req, res) => {
   res.json({ 
     status: 'ok', 
+    server: 'nodejs',
     cors: 'enabled',
-    origin: req.headers.origin || 'no origin',
     time: new Date().toISOString()
   });
 });
@@ -63,6 +71,7 @@ app.get('/test', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     status: 'Serveur Socket.IO opérationnel',
+    server: 'nodejs',
     cors: 'enabled',
     time: new Date().toISOString()
   });
@@ -117,7 +126,7 @@ const port = process.env.PORT || 3002;
 
 server.listen(port, () => {
   console.log(`🚀 Serveur démarré sur port ${port}`);
-  console.log(`📡 CORS activé pour toutes les origines`);
+  console.log(`📡 CORS activé avec anti-cache`);
 });
 
 process.on('SIGTERM', () => {
