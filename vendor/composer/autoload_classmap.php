@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'BaseSendGridClientInterface' => $vendorDir . '/sendgrid/sendgrid/lib/BaseSendGridClientInterface.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'File_Iterator' => $vendorDir . '/phpunit/php-file-iterator/src/Iterator.php',
     'File_Iterator_Facade' => $vendorDir . '/phpunit/php-file-iterator/src/Facade.php',
@@ -459,5 +460,7 @@ return array(
     'SebastianBergmann\\Timer\\TimeSinceStartOfRequestNotAvailableException' => $vendorDir . '/phpunit/php-timer/src/exceptions/TimeSinceStartOfRequestNotAvailableException.php',
     'SebastianBergmann\\Timer\\Timer' => $vendorDir . '/phpunit/php-timer/src/Timer.php',
     'SebastianBergmann\\Version' => $vendorDir . '/sebastian/version/src/Version.php',
+    'SendGrid' => $vendorDir . '/sendgrid/sendgrid/lib/SendGrid.php',
     'Text_Template' => $vendorDir . '/phpunit/php-text-template/src/Template.php',
+    'TwilioEmail' => $vendorDir . '/sendgrid/sendgrid/lib/TwilioEmail.php',
 );

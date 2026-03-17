@@ -522,116 +522,90 @@ class PatientForm extends MY_Controller {
      * Send consultation notification emails to patient and doctor
      */
 
-    private function _send_consultation_emails($data)
-    {    
-        try {
-            // Get patient email
-            $this->db->select('email, nom, prenom');
-            $this->db->where('id', $data['patient_id']);
-            $this->db->from('users');
-            $patient_query = $this->db->get();
-            $patient = $patient_query->row_array();
 
-            // Get doctor email if doctor_id exists
-            $doctor = null;
-            if (!empty($data['doctor_id'])) {
-                $this->db->select('medecins.*, users.email, users.nom, users.prenom');
-                $this->db->where('medecins.id', $data['doctor_id']);
-                $this->db->from('medecins');
-                $this->db->join('users', 'users.id = medecins.user_id');
-                $doctor_query = $this->db->get();
-                $doctor = $doctor_query->row_array();
-            }
 
-            // Get SMTP settings from database or use cPanel defaults
-            $smtp_pass = $this->Model->get_setting('smtp_pass', '6886Paul@');
-            $smtp_email = $this->Model->get_setting('smtp_user', '_mainaccount@nufotec.com');
-            $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
-            $admin_email = $this->Model->get_setting('admin_email', 'admin@nufotec.com');
 
-            // ✅ CONFIGURATION SMTP cPanel (CORRIGÉE)
-            $config = [
-                'protocol'       => 'smtp',
-                'smtp_host'      => 'mail.nufotec.com',     // ← Votre serveur cPanel
-                'smtp_port'      => 465,                     // ← Port SSL
-                'smtp_user'      => $smtp_email,             // ← _mainaccount@nufotec.com
-                'smtp_pass'      => $smtp_pass,              // ← Mot de passe cPanel
-                'smtp_crypto'    => 'ssl',                   // ← SSL pour port 465
-                'smtp_timeout'   => 30,
-                'smtp_keepalive' => FALSE,                   // ← FALSE pour éviter les conflits
-                'mailtype'       => 'html',
-                'charset'        => 'utf-8',
-                'newline'        => "\r\n",
-                'crlf'           => "\r\n",
-                'wordwrap'       => TRUE,
-                'validate'       => TRUE
-            ];
 
-            $this->email->initialize($config);
+    /**
+ * Send consultation notification emails to patient and doctor using SendGrid
+ */
+private function _send_consultation_emails($data)
+{    
+    try {
+        // Charger SendGrid
+        $this->load->library('Sendgrid_lib');
 
-            // ========== EMAIL TO PATIENT ==========
-            if ($patient && !empty($patient['email'])) {
-                $this->email->from($smtp_email, $site_name);
-                $this->email->to($patient['email']);
-                $this->email->subject('Your consultation request has been received - ' . $data['numero_consultation']);
+        // Get patient email
+        $this->db->select('email, nom, prenom');
+        $this->db->where('id', $data['patient_id']);
+        $this->db->from('users');
+        $patient_query = $this->db->get();
+        $patient = $patient_query->row_array();
 
-                $patient_message = $this->_build_patient_email($data, $patient, $doctor, $site_name);
-                $this->email->message($patient_message);
-                
-                $patient_sent = $this->email->send();
-                
-                if (!$patient_sent) {
-                    log_message('error', 'Email to patient failed: ' . $this->email->print_debugger());
-                } else {
-                    log_message('info', 'Consultation confirmation email sent to patient: ' . $patient['email']);
-                }
-                
-                $this->email->clear(TRUE); // ← TRUE pour réinitialiser complètement
-            }
-
-            // ========== EMAIL TO DOCTOR ==========
-            if ($doctor && !empty($doctor['email'])) {
-                $this->email->from($smtp_email, $site_name);
-                $this->email->to($doctor['email']);
-                $this->email->subject('New consultation request - ' . $data['numero_consultation']);
-
-                $doctor_message = $this->_build_doctor_email($data, $patient, $doctor, $site_name);
-                $this->email->message($doctor_message);
-                
-                $doctor_sent = $this->email->send();
-                
-                if (!$doctor_sent) {
-                    log_message('error', 'Email to doctor failed: ' . $this->email->print_debugger());
-                } else {
-                    log_message('info', 'Consultation notification email sent to doctor: ' . $doctor['email']);
-                }
-                
-                $this->email->clear(TRUE);
-            }
-
-            // ========== EMAIL TO ADMIN (Optional) ==========
-            if (!empty($admin_email)) {
-                $this->email->from($smtp_email, $site_name);
-                $this->email->to($admin_email);
-                $this->email->subject('New consultation created - ' . $data['numero_consultation']);
-
-                $admin_message = $this->_build_admin_email($data, $patient, $doctor, $site_name);
-                $this->email->message($admin_message);
-                
-                $admin_sent = $this->email->send();
-                
-                if (!$admin_sent) {
-                    log_message('error', 'Email to admin failed: ' . $this->email->print_debugger());
-                }
-            }
-
-            return true;
-
-        } catch (Exception $e) {
-            log_message('error', 'Exception in consultation email sending: ' . $e->getMessage());
-            return false;
+        // Get doctor email if doctor_id exists
+        $doctor = null;
+        if (!empty($data['doctor_id'])) {
+            $this->db->select('medecins.*, users.email, users.nom, users.prenom');
+            $this->db->where('medecins.id', $data['doctor_id']);
+            $this->db->from('medecins');
+            $this->db->join('users', 'users.id = medecins.user_id');
+            $doctor_query = $this->db->get();
+            $doctor = $doctor_query->row_array();
         }
+
+        $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
+
+        // ========== EMAIL TO PATIENT ==========
+        if ($patient && !empty($patient['email'])) {
+            $subject = 'Your consultation request has been received - ' . $data['numero_consultation'];
+            $message = $this->_build_patient_email($data, $patient, $doctor, $site_name);
+            
+            $result = $this->sendgrid_lib->send_email($patient['email'], $subject, $message);
+            $patient_sent = ($result['status'] == 202 || $result['status'] == 200);
+            
+            if (!$patient_sent) {
+                log_message('error', 'SendGrid - Email to patient failed: ' . json_encode($result));
+            } else {
+                log_message('info', 'Consultation confirmation email sent to patient: ' . $patient['email']);
+            }
+        }
+
+        // ========== EMAIL TO DOCTOR ==========
+        if ($doctor && !empty($doctor['email'])) {
+            $subject = 'New consultation request - ' . $data['numero_consultation'];
+            $message = $this->_build_doctor_email($data, $patient, $doctor, $site_name);
+            
+            $result = $this->sendgrid_lib->send_email($doctor['email'], $subject, $message);
+            $doctor_sent = ($result['status'] == 202 || $result['status'] == 200);
+            
+            if (!$doctor_sent) {
+                log_message('error', 'SendGrid - Email to doctor failed: ' . json_encode($result));
+            } else {
+                log_message('info', 'Consultation notification email sent to doctor: ' . $doctor['email']);
+            }
+        }
+
+        // ========== EMAIL TO ADMIN (Optional) ==========
+        $admin_email = $this->Model->get_setting('admin_email', 'admin@nufotec.com');
+        if (!empty($admin_email)) {
+            $subject = 'New consultation created - ' . $data['numero_consultation'];
+            $message = $this->_build_admin_email($data, $patient, $doctor, $site_name);
+            
+            $result = $this->sendgrid_lib->send_email($admin_email, $subject, $message);
+            $admin_sent = ($result['status'] == 202 || $result['status'] == 200);
+            
+            if (!$admin_sent) {
+                log_message('error', 'SendGrid - Email to admin failed: ' . json_encode($result));
+            }
+        }
+
+        return true;
+
+    } catch (Exception $e) {
+        log_message('error', 'Exception in consultation email sending: ' . $e->getMessage());
+        return false;
     }
+}
 
     /**
      * Build email for patient

@@ -290,111 +290,94 @@ class Brokers extends MY_Controller
     /**
      * Envoi des emails de notification
      */
-    private function _send_notification_emails($data)
-    {    
-        try {
-            $smtp_pass = $this->Model->get_setting('smtp_password', '');
-            $smtp_email = $this->Model->get_setting('smtp_email', 'noreply@agf-phytomed.com');
-            $site_name = $this->Model->get_setting('site_name', 'AGF Phytomed');
-            $admin_email = $this->Model->get_setting('admin_email', 'partnerships@agf-phytomed.com');
-            $whatsapp = $this->Model->get_setting('site_phone', '68863945'); 
+    /**
+ * Envoi des emails de notification via SendGrid
+ */
+private function _send_notification_emails($data)
+{    
+    try {
+        // Charger SendGrid
+        $this->load->library('Sendgrid_lib');
 
-            $config = [
-                'protocol'    => 'smtp',
-                'smtp_host'   => 'smtp.gmail.com',
-                'smtp_port'   => 587,
-                'smtp_user'   => $smtp_email,
-                'smtp_pass'   => $smtp_pass,
-                'smtp_crypto' => 'tls',
-                'mailtype'    => 'html',
-                'charset'     => 'utf-8',
-                'newline'     => "\r\n"
-            ];
+        $site_name = $this->Model->get_setting('site_name', 'AGF Phytomed');
+        $admin_email = $this->Model->get_setting('admin_email', 'partnerships@agf-phytomed.com');
+        $whatsapp = $this->Model->get_setting('site_phone', '68863945');
 
-            $this->email->initialize($config);
-
-            // Pays
-            $country_name = 'Unknown';
-            if (!empty($data['id_pays'])) {
-                $country = $this->db->get_where('pays', ['id' => $data['id_pays']])->row();
-                $country_name = $country ? ($country->pays ?? $country->name ?? 'Unknown') : 'Unknown';
-            }
-
-            $format_bool = fn($v) => $v ? 'Yes' : 'No';
-
-            // Capacités
-            $capacities = [];
-            $cap_map = [
-                'capacity_investment_broker' => 'Investment Broker',
-                'capacity_placement_agent' => 'Placement Agent',
-                'capacity_corporate_finance_advisor' => 'Corporate Finance Advisor',
-                'capacity_fund_manager' => 'Fund Manager',
-                'capacity_family_office_rep' => 'Family Office Rep',
-                'capacity_esg_advisor' => 'ESG Advisor',
-                'capacity_independent_introducer' => 'Independent Introducer'
-            ];
-            foreach ($cap_map as $field => $label) {
-                if (!empty($data[$field])) $capacities[] = $label;
-            }
-            if (!empty($data['capacity_other'])) $capacities[] = 'Other: ' . $data['capacity_other'];
-            $caps = implode(', ', $capacities) ?: 'None';
-
-            // Investisseurs
-            $investor_types = [];
-            if (!empty($data['investor_private_equity'])) $investor_types[] = 'PE/VC';
-            if (!empty($data['investor_esg_impact'])) $investor_types[] = 'ESG/Impact';
-            if (!empty($data['investor_dfi'])) $investor_types[] = 'DFI';
-            if (!empty($data['investor_institutional'])) $investor_types[] = 'Institutional';
-            if (!empty($data['investor_hnwi'])) $investor_types[] = 'HNWI/Family Office';
-            if (!empty($data['investor_sovereign'])) $investor_types[] = 'Sovereign';
-            $investors = implode(', ', $investor_types) ?: 'None';
-
-            // Mandats
-            $mandates = [];
-            if (!empty($data['mandate_equity'])) $mandates[] = 'Equity';
-            if (!empty($data['mandate_structured_debt'])) $mandates[] = 'Structured Debt';
-            if (!empty($data['mandate_blended_finance'])) $mandates[] = 'Blended Finance';
-            if (!empty($data['mandate_grant'])) $mandates[] = 'Grant';
-            if (!empty($data['mandate_strategic_partnership'])) $mandates[] = 'Strategic Partnership';
-            if (!empty($data['mandate_full_program'])) $mandates[] = 'Full Program';
-            $mands = implode(', ', $mandates) ?: 'None';
-
-            // Email admin
-            $this->email->from($smtp_email, $site_name);
-            $this->email->reply_to($data['email'], $data['full_name']);
-            $this->email->to($admin_email);
-            $this->email->subject('New Broker Registration');
-
-            $admin_message = $this->_build_admin_email($data, $country_name, $caps, $investors, $mands, $format_bool, $site_name);
-            $this->email->message($admin_message);
-            $admin_sent = $this->email->send();
-            
-            if (!$admin_sent) {
-                log_message('error', 'Email admin broker échoué: ' . $this->email->print_debugger());
-            }
-            
-            $this->email->clear();
-
-            // Email broker
-            $this->email->from($smtp_email, $site_name);
-            $this->email->to($data['email']);
-            $this->email->subject('Thank you for your interest in AGF Phytomed');
-
-            $user_message = $this->_build_user_email($data, $whatsapp, $site_name);
-            $this->email->message($user_message);
-            $user_sent = $this->email->send();
-            
-            if (!$user_sent) {
-                log_message('error', 'Email broker échoué: ' . $this->email->print_debugger());
-            }
-
-            return ($admin_sent && $user_sent);
-
-        } catch (Exception $e) {
-            log_message('error', 'Exception email broker: ' . $e->getMessage());
-            return false;
+        // Pays
+        $country_name = 'Unknown';
+        if (!empty($data['id_pays'])) {
+            $country = $this->db->get_where('pays', ['id' => $data['id_pays']])->row();
+            $country_name = $country ? ($country->pays ?? $country->name ?? 'Unknown') : 'Unknown';
         }
+
+        $format_bool = fn($v) => $v ? 'Yes' : 'No';
+
+        // Capacités
+        $capacities = [];
+        $cap_map = [
+            'capacity_investment_broker' => 'Investment Broker',
+            'capacity_placement_agent' => 'Placement Agent',
+            'capacity_corporate_finance_advisor' => 'Corporate Finance Advisor',
+            'capacity_fund_manager' => 'Fund Manager',
+            'capacity_family_office_rep' => 'Family Office Rep',
+            'capacity_esg_advisor' => 'ESG Advisor',
+            'capacity_independent_introducer' => 'Independent Introducer'
+        ];
+        foreach ($cap_map as $field => $label) {
+            if (!empty($data[$field])) $capacities[] = $label;
+        }
+        if (!empty($data['capacity_other'])) $capacities[] = 'Other: ' . $data['capacity_other'];
+        $caps = implode(', ', $capacities) ?: 'None';
+
+        // Investisseurs
+        $investor_types = [];
+        if (!empty($data['investor_private_equity'])) $investor_types[] = 'PE/VC';
+        if (!empty($data['investor_esg_impact'])) $investor_types[] = 'ESG/Impact';
+        if (!empty($data['investor_dfi'])) $investor_types[] = 'DFI';
+        if (!empty($data['investor_institutional'])) $investor_types[] = 'Institutional';
+        if (!empty($data['investor_hnwi'])) $investor_types[] = 'HNWI/Family Office';
+        if (!empty($data['investor_sovereign'])) $investor_types[] = 'Sovereign';
+        $investors = implode(', ', $investor_types) ?: 'None';
+
+        // Mandats
+        $mandates = [];
+        if (!empty($data['mandate_equity'])) $mandates[] = 'Equity';
+        if (!empty($data['mandate_structured_debt'])) $mandates[] = 'Structured Debt';
+        if (!empty($data['mandate_blended_finance'])) $mandates[] = 'Blended Finance';
+        if (!empty($data['mandate_grant'])) $mandates[] = 'Grant';
+        if (!empty($data['mandate_strategic_partnership'])) $mandates[] = 'Strategic Partnership';
+        if (!empty($data['mandate_full_program'])) $mandates[] = 'Full Program';
+        $mands = implode(', ', $mandates) ?: 'None';
+
+        // ========== EMAIL ADMIN ==========
+        $admin_subject = 'New Broker Registration';
+        $admin_message = $this->_build_admin_email($data, $country_name, $caps, $investors, $mands, $format_bool, $site_name);
+        
+        $admin_result = $this->sendgrid_lib->send_email($admin_email, $admin_subject, $admin_message);
+        $admin_sent = ($admin_result['status'] == 202 || $admin_result['status'] == 200);
+        
+        if (!$admin_sent) {
+            log_message('error', 'SendGrid - Email admin broker échoué: ' . json_encode($admin_result));
+        }
+
+        // ========== EMAIL BROKER ==========
+        $user_subject = 'Thank you for your interest in AGF Phytomed';
+        $user_message = $this->_build_user_email($data, $whatsapp, $site_name);
+        
+        $user_result = $this->sendgrid_lib->send_email($data['email'], $user_subject, $user_message);
+        $user_sent = ($user_result['status'] == 202 || $user_result['status'] == 200);
+        
+        if (!$user_sent) {
+            log_message('error', 'SendGrid - Email broker échoué: ' . json_encode($user_result));
+        }
+
+        return ($admin_sent && $user_sent);
+
+    } catch (Exception $e) {
+        log_message('error', 'Exception email broker: ' . $e->getMessage());
+        return false;
     }
+}
 
     /**
      * Construction de l'email admin

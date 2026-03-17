@@ -275,188 +275,165 @@ private function _prepare_insert_data($input_data) {
     }
 
     /**
-     * Send concise and friendly notification emails to admin and investor
-     * 
-     * @param array $data      The investor's data
-     * @param int   $insert_id The new investor ID
-     * @return bool True if both emails sent successfully, false otherwise
-     */
-    private function _send_notification_emails($data, $insert_id)
-    {
-        try {
-            // Load email library and configure SMTP
-            $this->load->library('email');
-            
-            // Get SMTP settings from database
-            $smtp_email = $this->Model->get_setting('smtp_email', 'noreply@agf-phytomed.com');
-            $smtp_pass  = $this->Model->get_setting('smtp_password', '');
-            $site_name  = $this->Model->get_setting('site_name', 'AGF Phytomed');
-            $admin_email = $this->Model->get_setting('admin_email', 'partnerships@agf-phytomed.com');
-            $whatsapp    = $this->Model->get_setting('site_phone', '68863945');
+ * Send concise and friendly notification emails to admin and investor using SendGrid
+ * 
+ * @param array $data      The investor's data
+ * @param int   $insert_id The new investor ID
+ * @return bool True if both emails sent successfully, false otherwise
+ */
+private function _send_notification_emails($data, $insert_id)
+{
+    try {
+        // Charger SendGrid
+        $this->load->library('Sendgrid_lib');
 
-            // SMTP configuration
-            $config = [
-                'protocol'    => 'smtp',
-                'smtp_host'   => 'smtp.gmail.com',
-                'smtp_port'   => 587,
-                'smtp_user'   => $smtp_email,
-                'smtp_pass'   => $smtp_pass,
-                'smtp_crypto' => 'tls',
-                'mailtype'    => 'html',
-                'charset'     => 'utf-8',
-                'newline'     => "\r\n"
-            ];
-            $this->email->initialize($config);
+        // Get settings
+        $site_name  = $this->Model->get_setting('site_name', 'AGF Phytomed');
+        $admin_email = $this->Model->get_setting('admin_email', 'partnerships@agf-phytomed.com');
+        $whatsapp    = $this->Model->get_setting('site_phone', '68863945');
 
-            // Get country name
-            $country_name = 'Unknown';
-            if (!empty($data['id_pays'])) {
-                $country = $this->db->get_where('pays', ['id' => $data['id_pays']])->row();
-                $country_name = $country ? $country->pays : 'Unknown';
-            }
-
-            // Helper for boolean display
-            $format_bool = function($val) {
-                return $val ? 'Yes' : 'No';
-            };
-
-            // --- Prepare interest types list ---
-            $interest_map = [
-                'interest_equity'                 => 'Equity',
-                'interest_debt'                   => 'Debt',
-                'interest_blended_finance'        => 'Blended Finance',
-                'interest_grant'                   => 'Grant',
-                'interest_strategic_partnership'   => 'Strategic Partnership',
-                'interest_technical_collaboration' => 'Technical Collaboration',
-                'interest_offtake_distribution'    => 'Offtake/Distribution'
-            ];
-            $interests = [];
-            foreach ($interest_map as $field => $label) {
-                if (!empty($data[$field])) $interests[] = $label;
-            }
-            if (!empty($data['interest_other'])) {
-                $interests[] = 'Other: ' . $data['interest_other'];
-            }
-            $interests_str = implode(', ', $interests) ?: 'None';
-
-            // --- Prepare focus areas list ---
-            $focus_map = [
-                'focus_research_lab'       => 'Research & Lab',
-                'focus_gmp_facility'       => 'GMP Facility',
-                'focus_medicinal_plant'    => 'Medicinal Plant',
-                'focus_commercialization'   => 'Commercialization',
-                'focus_full_platform'       => 'Full Platform'
-            ];
-            $focus_areas = [];
-            foreach ($focus_map as $field => $label) {
-                if (!empty($data[$field])) $focus_areas[] = $label;
-            }
-            $focus_str = implode(', ', $focus_areas) ?: 'None';
-
-            // ========== 1. EMAIL TO ADMIN ==========
-            $this->email->from($smtp_email, $site_name . ' - Investor Portal');
-            $this->email->reply_to($data['email'], $data['full_name']);
-            $this->email->to($admin_email);
-            $this->email->subject('New Investor Expression of Interest #' . $insert_id);
-
-            $admin_message = "
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset='UTF-8'></head>
-            <body style='font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px;'>
-                <div style='max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden;'>
-                    <div style='background: #0B4F2E; color: white; padding: 20px; text-align: center;'>
-                        <h2 style='margin:0;'>New Investor Application #{$insert_id}</h2>
-                    </div>
-                    <div style='padding: 25px;'>
-                        <p><strong>Submitted:</strong> " . date('Y-m-d H:i') . "</p>
-                        <p><strong>Name:</strong> {$data['full_name']}<br>
-                        <strong>Position:</strong> {$data['position_title']}<br>
-                        <strong>Organization:</strong> {$data['organization']}<br>
-                        <strong>Country:</strong> $country_name<br>
-                        <strong>Email:</strong> {$data['email']}<br>
-                        <strong>Phone:</strong> {$data['phone']}</p>
-                        
-                        <p><strong>Interest types:</strong> $interests_str</p>
-                        <p><strong>Focus areas:</strong> $focus_str</p>
-                        <p><strong>Commitment range:</strong> " . ($data['commitment_range'] ?? 'Not specified') . "<br>
-                        <strong>Timeline:</strong> " . ($data['timeline'] ?? 'Not specified') . "</p>
-                        
-                        <p><strong>Strategic message:</strong> " . nl2br($data['strategic_message'] ?? 'None') . "</p>
-                        
-                        <p><strong>Compliance:</strong><br>
-                        Accept contact: {$format_bool($data['agree_contact'])}<br>
-                        Non-binding confirmation: {$format_bool($data['non_binding_confirmation'])}</p>
-                        
-                        <p style='text-align: center; margin-top: 30px;'>
-                            <a href='" . base_url('Eoi_partners') . "' style='background: #0B4F2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;'>View in Dashboard</a>
-                        </p>
-                    </div>
-                    <div style='background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px;'>
-                        Automated notification from $site_name.
-                    </div>
-                </div>
-            </body>
-            </html>";
-
-            $this->email->message($admin_message);
-            $admin_sent = $this->email->send();
-            
-            if (!$admin_sent) {
-                log_message('error', 'Admin email failed: ' . $this->email->print_debugger());
-            }
-            $this->email->clear();
-
-            // ========== 2. WELCOME EMAIL TO INVESTOR ==========
-            $this->email->from($smtp_email, $site_name . ' Partnership Team');
-            $this->email->to($data['email']);
-            $this->email->subject('Thank you for your interest in AGF Phytomed');
-
-            $user_message = "
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset='UTF-8'></head>
-            <body style='font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px;'>
-                <div style='max-width: 500px; margin: auto; background: white; border-radius: 8px; overflow: hidden;'>
-                    <div style='background: #0B4F2E; color: white; padding: 30px; text-align: center;'>
-                        <h1 style='margin:0;'>Hello {$data['full_name']}!</h1>
-                    </div>
-                    <div style='padding: 30px;'>
-                        <p>We are grateful for you approaching African Green Farmers LTD.</p>
-                        <p>This is an automatic acknowledgement that we have received your expression of interest (reference #{$insert_id}).</p>
-                        <p>Kindly expect feedback from us within <strong>two (2) working days</strong>.</p>
-                        <p>In the unlikely event that you haven't heard from us within that period, please do not hesitate to call or send us a message via our WhatsApp number <strong>$whatsapp</strong> for a quicker reply.</p>
-                        <p>Best Regards,<br>
-                        <strong>Public Relation Officer</strong><br>
-                        African Green Farmers LTD<br>
-                        Muyinga, Burundi<br>
-                        $whatsapp<br>
-                        Email: <a href='mailto:partnerships@agf-phytomed.com'>partnerships@agf-phytomed.com</a></p>
-                    </div>
-                    <div style='background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px;'>
-                        © " . date('Y') . " AGF Phytomed. All rights reserved.
-                    </div>
-                </div>
-            </body>
-            </html>";
-
-            $this->email->message($user_message);
-            $user_sent = $this->email->send();
-            
-            if (!$user_sent) {
-                log_message('error', 'Investor email failed: ' . $this->email->print_debugger());
-            }
-
-            $both_sent = $admin_sent && $user_sent;
-            log_message('info', 'Emails sent: admin=' . ($admin_sent ? 'OK' : 'FAIL') . ', investor=' . ($user_sent ? 'OK' : 'FAIL'));
-            
-            return $both_sent;
-
-        } catch (Exception $e) {
-            log_message('error', 'Email exception: ' . $e->getMessage());
-            return false;
+        // Get country name
+        $country_name = 'Unknown';
+        if (!empty($data['id_pays'])) {
+            $country = $this->db->get_where('pays', ['id' => $data['id_pays']])->row();
+            $country_name = $country ? $country->pays : 'Unknown';
         }
+
+        // Helper for boolean display
+        $format_bool = function($val) {
+            return $val ? 'Yes' : 'No';
+        };
+
+        // --- Prepare interest types list ---
+        $interest_map = [
+            'interest_equity'                 => 'Equity',
+            'interest_debt'                   => 'Debt',
+            'interest_blended_finance'        => 'Blended Finance',
+            'interest_grant'                   => 'Grant',
+            'interest_strategic_partnership'   => 'Strategic Partnership',
+            'interest_technical_collaboration' => 'Technical Collaboration',
+            'interest_offtake_distribution'    => 'Offtake/Distribution'
+        ];
+        $interests = [];
+        foreach ($interest_map as $field => $label) {
+            if (!empty($data[$field])) $interests[] = $label;
+        }
+        if (!empty($data['interest_other'])) {
+            $interests[] = 'Other: ' . $data['interest_other'];
+        }
+        $interests_str = implode(', ', $interests) ?: 'None';
+
+        // --- Prepare focus areas list ---
+        $focus_map = [
+            'focus_research_lab'       => 'Research & Lab',
+            'focus_gmp_facility'       => 'GMP Facility',
+            'focus_medicinal_plant'    => 'Medicinal Plant',
+            'focus_commercialization'   => 'Commercialization',
+            'focus_full_platform'       => 'Full Platform'
+        ];
+        $focus_areas = [];
+        foreach ($focus_map as $field => $label) {
+            if (!empty($data[$field])) $focus_areas[] = $label;
+        }
+        $focus_str = implode(', ', $focus_areas) ?: 'None';
+
+        // ========== 1. EMAIL TO ADMIN ==========
+        $admin_subject = 'New Investor Expression of Interest #' . $insert_id;
+        $admin_message = "
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset='UTF-8'></head>
+        <body style='font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px;'>
+            <div style='max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden;'>
+                <div style='background: #0B4F2E; color: white; padding: 20px; text-align: center;'>
+                    <h2 style='margin:0;'>New Investor Application #{$insert_id}</h2>
+                </div>
+                <div style='padding: 25px;'>
+                    <p><strong>Submitted:</strong> " . date('Y-m-d H:i') . "</p>
+                    <p><strong>Name:</strong> {$data['full_name']}<br>
+                    <strong>Position:</strong> {$data['position_title']}<br>
+                    <strong>Organization:</strong> {$data['organization']}<br>
+                    <strong>Country:</strong> $country_name<br>
+                    <strong>Email:</strong> {$data['email']}<br>
+                    <strong>Phone:</strong> {$data['phone']}</p>
+                    
+                    <p><strong>Interest types:</strong> $interests_str</p>
+                    <p><strong>Focus areas:</strong> $focus_str</p>
+                    <p><strong>Commitment range:</strong> " . ($data['commitment_range'] ?? 'Not specified') . "<br>
+                    <strong>Timeline:</strong> " . ($data['timeline'] ?? 'Not specified') . "</p>
+                    
+                    <p><strong>Strategic message:</strong> " . nl2br($data['strategic_message'] ?? 'None') . "</p>
+                    
+                    <p><strong>Compliance:</strong><br>
+                    Accept contact: {$format_bool($data['agree_contact'])}<br>
+                    Non-binding confirmation: {$format_bool($data['non_binding_confirmation'])}</p>
+                    
+                    <p style='text-align: center; margin-top: 30px;'>
+                        <a href='" . base_url('Eoi_partners') . "' style='background: #0B4F2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;'>View in Dashboard</a>
+                    </p>
+                </div>
+                <div style='background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px;'>
+                    Automated notification from $site_name.
+                </div>
+            </div>
+        </body>
+        </html>";
+
+        $admin_result = $this->sendgrid_lib->send_email($admin_email, $admin_subject, $admin_message);
+        $admin_sent = ($admin_result['status'] == 202 || $admin_result['status'] == 200);
+        
+        if (!$admin_sent) {
+            log_message('error', 'SendGrid - Admin email failed: ' . json_encode($admin_result));
+        }
+
+        // ========== 2. WELCOME EMAIL TO INVESTOR ==========
+        $user_subject = 'Thank you for your interest in AGF Phytomed';
+        $user_message = "
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset='UTF-8'></head>
+        <body style='font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px;'>
+            <div style='max-width: 500px; margin: auto; background: white; border-radius: 8px; overflow: hidden;'>
+                <div style='background: #0B4F2E; color: white; padding: 30px; text-align: center;'>
+                    <h1 style='margin:0;'>Hello {$data['full_name']}!</h1>
+                </div>
+                <div style='padding: 30px;'>
+                    <p>We are grateful for you approaching African Green Farmers LTD.</p>
+                    <p>This is an automatic acknowledgement that we have received your expression of interest (reference #{$insert_id}).</p>
+                    <p>Kindly expect feedback from us within <strong>two (2) working days</strong>.</p>
+                    <p>In the unlikely event that you haven't heard from us within that period, please do not hesitate to call or send us a message via our WhatsApp number <strong>$whatsapp</strong> for a quicker reply.</p>
+                    <p>Best Regards,<br>
+                    <strong>Public Relation Officer</strong><br>
+                    African Green Farmers LTD<br>
+                    Muyinga, Burundi<br>
+                    $whatsapp<br>
+                    Email: <a href='mailto:partnerships@agf-phytomed.com'>partnerships@agf-phytomed.com</a></p>
+                </div>
+                <div style='background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px;'>
+                    © " . date('Y') . " AGF Phytomed. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>";
+
+        $user_result = $this->sendgrid_lib->send_email($data['email'], $user_subject, $user_message);
+        $user_sent = ($user_result['status'] == 202 || $user_result['status'] == 200);
+        
+        if (!$user_sent) {
+            log_message('error', 'SendGrid - Investor email failed: ' . json_encode($user_result));
+        }
+
+        $both_sent = $admin_sent && $user_sent;
+        log_message('info', 'SendGrid emails sent: admin=' . ($admin_sent ? 'OK' : 'FAIL') . ', investor=' . ($user_sent ? 'OK' : 'FAIL'));
+        
+        return $both_sent;
+
+    } catch (Exception $e) {
+        log_message('error', 'SendGrid email exception: ' . $e->getMessage());
+        return false;
     }
+}
+
 
     private function get_sections($slug = 'investors-form') {
         $page = $this->Model->readOne('pages', [

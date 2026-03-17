@@ -177,7 +177,7 @@ class Entente extends MY_Controller {
         $data['date_debut'] = $date_debut;
         $data['date_fin'] = $date_fin;
         
-        // 🔥 Génération du room_id pour VOTRE système de vidéoconférence (pas Jitsi)
+        // Génération du room_id pour VOTRE système de vidéoconférence
         $room_id = $this->generateRoomId($consultation);
         $data['room_id'] = $room_id;
         
@@ -263,67 +263,64 @@ class Entente extends MY_Controller {
     }
 
     /**
-     * Rejoindre la salle de vidéoconférence (votre système personnalisé)
-     * Le médecin et le patient passent tous les deux par joinMeet() avant d'arriver à Videocall::index()
-     Seul le médecin démarre la consultation (passe le statut de confirmee à en_cours)
-     La vue video_call.php reçoit les mêmes données pour les deux types d'utilisateurs, avec juste is_initiator qui diffère
+     * Rejoindre la salle de vidéoconférence
      */
     public function joinMeet($room_id = null)
-{
-    if (empty($room_id)) {
-        show_404();
-    }
-    
-    // Vérifier que la consultation existe et est active
-    $consultation = $this->db->where('room_id', $room_id)
-                              ->where_in('statut', ['confirmee', 'en_cours'])
-                              ->get('consultations')
-                              ->row_array();
-    
-    if (!$consultation) {
-        $this->session->set_flashdata('error', 'Cette consultation n\'est pas disponible ou a expiré.');
-        redirect(base_url('Consultations/Entente'));
-        return;
-    }
-    
-    // Vérifier les autorisations
-    $user_id = $this->session->userdata('user_id');
-    $user_type = $this->session->userdata('type_utilisateur');
+    {
+        if (empty($room_id)) {
+            show_404();
+        }
+        
+        // Vérifier que la consultation existe et est active
+        $consultation = $this->db->where('room_id', $room_id)
+                                  ->where_in('statut', ['confirmee', 'en_cours'])
+                                  ->get('consultations')
+                                  ->row_array();
+        
+        if (!$consultation) {
+            $this->session->set_flashdata('error', 'Cette consultation n\'est pas disponible ou a expiré.');
+            redirect(base_url('Consultations/Entente'));
+            return;
+        }
+        
+        // Vérifier les autorisations
+        $user_id = $this->session->userdata('user_id');
+        $user_type = $this->session->userdata('type_utilisateur');
 
-     $doctor = $this->db->where('user_id', $user_id)
+        $doctor = $this->db->where('user_id', $user_id)
                               ->get('medecins')
                               ->row_array();
-   
-    
-    $is_authorized = false;
-    
-    // Médecin : vérifier qu'il est le médecin assigné
-    if ($user_type === 'medecin' && $consultation['medecin_id'] == $doctor['id']) {
-        $is_authorized = true;
-    } 
-    // Patient : vérifier qu'il est le patient assigné
-    elseif ($user_type === 'patient' && $consultation['patient_id'] == $user_id) {
-        $is_authorized = true;
+       
+        $is_authorized = false;
+        
+        // Médecin : vérifier qu'il est le médecin assigné
+        if ($user_type === 'medecin' && $consultation['medecin_id'] == $doctor['id']) {
+            $is_authorized = true;
+        } 
+        // Patient : vérifier qu'il est le patient assigné
+        elseif ($user_type === 'patient' && $consultation['patient_id'] == $user_id) {
+            $is_authorized = true;
+        }
+        
+        if (!$is_authorized) {
+            $this->session->set_flashdata('error', 'Vous n\'êtes pas autorisé à rejoindre cette consultation.');
+            redirect(base_url('Consultations/Entente/confirme'));
+            return;
+        }
+        
+        // Si médecin et consultation confirmée -> démarrer la consultation
+        if ($consultation['statut'] === 'confirmee' && $user_type === 'medecin') {
+            $this->db->where('id', $consultation['id'])
+                     ->update('consultations', [
+                         'statut' => 'en_cours',
+                         'date_debut' => date('Y-m-d H:i:s')
+                     ]);
+        }
+        
+        // Redirection vers la salle vidéo
+        redirect('VideoCall?room=' . $room_id);
     }
-    
-    if (!$is_authorized) {
-        $this->session->set_flashdata('error', 'Vous n\'êtes pas autorisé à rejoindre cette consultation.');
-        redirect(base_url('Consultations/Entente/confirme'));
-        return;
-    }
-    
-    // Si médecin et consultation confirmée -> démarrer la consultation
-    if ($consultation['statut'] === 'confirmee' && $user_type === 'medecin') {
-        $this->db->where('id', $consultation['id'])
-                 ->update('consultations', [
-                     'statut' => 'en_cours',
-                     'date_debut' => date('Y-m-d H:i:s')
-                 ]);
-    }
-    
-    // Redirection vers la salle vidéo
-    redirect('VideoCall?room=' . $room_id);
-}
+
     /**
      * Récupérer les détails complets d'une consultation
      */
@@ -349,25 +346,6 @@ class Entente extends MY_Controller {
     }
 
     /**
-     * Configuration SMTP centralisée
-     */
-    private function getMailConfig()
-    {
-        return [
-            'protocol'    => 'smtp',
-            'smtp_host'   => $this->Model->get_setting('smtp_host', 'smtp.gmail.com'),
-            'smtp_port'   => $this->Model->get_setting('smtp_port', 587),
-            'smtp_user'   => $this->Model->get_setting('smtp_email', 'noreply@votreclinique.com'),
-            'smtp_pass'   => $this->Model->get_setting('smtp_password', ''),
-            'smtp_crypto' => $this->Model->get_setting('smtp_crypto', 'tls'),
-            'mailtype'    => 'html',
-            'charset'     => 'utf-8',
-            'newline'     => "\r\n",
-            'wordwrap'    => TRUE
-        ];
-    }
-
-    /**
      * Récupérer l'email du patient
      */
     private function getPatientEmail($patient_id)
@@ -381,54 +359,54 @@ class Entente extends MY_Controller {
         return $patient;
     }
 
+    
     /**
-     * Envoyer email de confirmation avec lien vers votre système vidéo
-     */
-    private function notifyPatientConfirmation($consultation, $room_id, $date_confirmee)
-    {
-        try {
-            $patient = $this->getPatientEmail($consultation['patient_id']);
-            
-            if (!$patient || empty($patient['email'])) {
-                throw new Exception('Email patient non trouvé pour l\'ID: ' . $consultation['patient_id']);
-            }
-            
-            $patient_email = $patient['email'];
-            if (!filter_var($patient_email, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception('Email patient invalide: ' . $patient_email);
-            }
-            
-            $config = $this->getMailConfig();
-            $this->email->initialize($config);
-            
-            $patient_nom = $consultation['patient_prenom'] . ' ' . $consultation['patient_nom'];
-            $medecin_nom = $consultation['medecin_prenom'] . ' ' . $consultation['medecin_nom'];
-            $date_formatee = date('d/m/Y à H:i', strtotime($date_confirmee));
-            $join_url = base_url('Consultations/Entente/joinMeet/' . $room_id);
-            
-            $this->email->from($config['smtp_user'], $this->Model->get_setting('site_name', 'AGF'));
-            $this->email->to($patient_email);
-            $this->email->subject('Votre téléconsultation est confirmée - ' . $consultation['numero_consultation']);
-            
-            $message = $this->buildConfirmationEmail($patient_nom, $medecin_nom, $date_formatee, $join_url, $room_id, $consultation);
-            $this->email->message($message);
-            
-            $sent = $this->email->send();
-            
-            if (!$sent) {
-                log_message('error', 'Échec envoi email confirmation: ' . $this->email->print_debugger());
-            }
-            
-            return $sent;
-            
-        } catch (Exception $e) {
-            log_message('error', 'Erreur envoi email confirmation: ' . $e->getMessage());
-            return false;
+ * Envoyer email de confirmation avec SendGrid
+ */
+private function notifyPatientConfirmation($consultation, $room_id, $date_confirmee)
+{
+    try {
+        $patient = $this->getPatientEmail($consultation['patient_id']);
+        
+        if (!$patient || empty($patient['email'])) {
+            throw new Exception('Email patient non trouvé pour l\'ID: ' . $consultation['patient_id']);
         }
+        
+        $patient_email = $patient['email'];
+        if (!filter_var($patient_email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Email patient invalide: ' . $patient_email);
+        }
+        
+        $patient_nom = $consultation['patient_prenom'] . ' ' . $consultation['patient_nom'];
+        $medecin_nom = $consultation['medecin_prenom'] . ' ' . $consultation['medecin_nom'];
+        $date_formatee = date('d/m/Y à H:i', strtotime($date_confirmee));
+        
+        // NOUVELLE URL : Joinconsultation avec paramètres room et user
+        $join_url = base_url('Joinconsultation/index?room=' . $room_id . '&user=' . $consultation['patient_id']);
+        
+        $subject = 'Votre téléconsultation est confirmée - ' . $consultation['numero_consultation'];
+        $message = $this->buildConfirmationEmail($patient_nom, $medecin_nom, $date_formatee, $join_url, $room_id, $consultation);
+        
+        // Charger et utiliser SendGrid
+        $this->load->library('Sendgrid_lib');
+        $result = $this->sendgrid_lib->send_email($patient_email, $subject, $message);
+        
+        $sent = ($result['status'] == 202 || $result['status'] == 200);
+        
+        if (!$sent) {
+            log_message('error', 'Échec envoi email confirmation SendGrid: ' . json_encode($result));
+        }
+        
+        return $sent;
+        
+    } catch (Exception $e) {
+        log_message('error', 'Erreur envoi email confirmation: ' . $e->getMessage());
+        return false;
     }
+}
 
     /**
-     * Envoyer email de refus
+     * Envoyer email de refus avec SendGrid
      */
     private function notifyPatientRefusal($consultation, $motif)
     {
@@ -444,22 +422,19 @@ class Entente extends MY_Controller {
                 throw new Exception('Email patient invalide: ' . $patient_email);
             }
             
-            $config = $this->getMailConfig();
-            $this->email->initialize($config);
-            
             $patient_nom = $consultation['patient_prenom'] . ' ' . $consultation['patient_nom'];
             
-            $this->email->from($config['smtp_user'], $this->Model->get_setting('site_name', 'AGF'));
-            $this->email->to($patient_email);
-            $this->email->subject('Demande de téléconsultation - ' . $consultation['numero_consultation']);
-            
+            $subject = 'Demande de téléconsultation - ' . $consultation['numero_consultation'];
             $message = $this->buildRefusalEmail($patient_nom, $motif, $consultation);
-            $this->email->message($message);
             
-            $sent = $this->email->send();
+            // Charger et utiliser SendGrid
+            $this->load->library('Sendgrid_lib');
+            $result = $this->sendgrid_lib->send_email($patient_email, $subject, $message);
+            
+            $sent = ($result['status'] == 202 || $result['status'] == 200);
             
             if (!$sent) {
-                log_message('error', 'Échec envoi email refus: ' . $this->email->print_debugger());
+                log_message('error', 'Échec envoi email refus SendGrid: ' . json_encode($result));
             }
             
             return $sent;
@@ -471,7 +446,7 @@ class Entente extends MY_Controller {
     }
 
     /**
-     * Construction de l'email de confirmation (sans Jitsi)
+     * Construction de l'email de confirmation
      */
     private function buildConfirmationEmail($patient_nom, $medecin_nom, $date_formatee, $join_url, $room_id, $consultation)
     {
@@ -768,7 +743,7 @@ class Entente extends MY_Controller {
     }
 
     /**
-     * API pour terminer la consultation (appelée depuis votre système vidéo)
+     * API pour terminer la consultation
      */
     public function endConsultationApi($id = null)
     {
