@@ -126,8 +126,8 @@ class Audio extends MY_Controller {
     {
         $data['audios'] = $this->Model->read('galerie_medias', 
             ['type' => 'audio'], 
-            'id_media', 
-            'DESC'
+            'titre', 
+            'ASC'
         );
         
         $data['categories'] = $this->getExistingCategories();

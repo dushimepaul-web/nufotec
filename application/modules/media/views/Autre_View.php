@@ -50,7 +50,7 @@
             <div class="col-md-2 col-6">
                 <div class="card border-0 shadow-sm bg-dark text-white">
                     <div class="card-body text-center">
-                        <h3 class="mb-0"><?= $this->autre->formatBytes($stats['total_size']) ?></h3>
+                        <h3 class="mb-0"><?= isset($this->autre) ? $this->autre->formatBytes($stats['total_size']) : $stats['total_size'] ?></h3>
                         <small>Stockage</small>
                     </div>
                 </div>
@@ -117,8 +117,8 @@
                                     : '<span class="badge bg-light text-dark">-</span>');
                             
                             $taille_formatee = !empty($value['taille']) 
-                                ? $this->autre->formatBytes($value['taille']) 
-                                : '-';
+    ? (isset($this->autre) ? $this->autre->formatBytes($value['taille']) : $value['taille'])
+    : '-';
                             
                             $thumb_url = !empty($value['miniature']) 
                                 ? (strpos($value['miniature'], 'http') === 0 ? $value['miniature'] : base_url($value['miniature']))
@@ -874,7 +874,7 @@ async function handleFileSelect(file, type) {
     } catch (error) {
         if (error.name !== 'AbortError') {
             console.error('Upload error:', error);
-            showUploadError(error.message || 'Erreur lors de l\\'upload');
+            showUploadError(error.message || 'Erreur lors de l\'upload');
         }
     }
 }
@@ -1070,10 +1070,11 @@ async function calculateChunkHash(chunk) {
 }
 
 function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0 || bytes === null || bytes === undefined) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
+    if (!isFinite(i) || i < 0) return '0 B';
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 

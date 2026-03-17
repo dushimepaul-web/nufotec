@@ -223,3 +223,19 @@ $route['audio/convert'] = 'media/Audio/convert';
 
 
 $route['patient-fallowed'] = 'Consultations/Entente/confirme/';
+
+
+
+
+// Routes API pour les interactions AJAX
+$route['media/trackView'] = 'Home/Media/trackView';
+$route['media/toggleLike'] = 'Home/Media/toggleLike';
+$route['media/trackPlay'] = 'Home/Media/trackPlay';
+$route['media/addComment'] = 'Home/Media/addComment';
+$route['media/rateMedia'] = 'Home/Media/rateMedia';
+$route['media/getComments/(:num)'] = 'Home/Media/getComments/$1';
+$route['media/search'] = 'media/search';
+$route['media/getRecommended/(:num)'] = 'Home/Media/getRecommended/$1';
+$route['media/getCategories'] = 'Home/Media/getCategories';
+$route['media/getStats'] = 'Home/Media/getStats';
+$route['media/checkUserLike'] = 'Home/Media/checkUserLike';

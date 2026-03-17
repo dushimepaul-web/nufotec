@@ -677,6 +677,12 @@ class Autre extends MY_Controller {
         return $result;
     }
 
+
+        /**
+     * Méthode publique pour formater les bytes (accessible depuis les vues)
+     */
+    
+
     private function createThumbnail($source, $dest, $max_width, $max_height)
     {
         if (!extension_loaded('gd')) return false;
@@ -1134,14 +1140,19 @@ class Autre extends MY_Controller {
         return $errors[$code] ?? ['type' => 'UNKNOWN', 'message' => 'Erreur #' . $code];
     }
 
-    private function formatBytes($bytes)
+   public function formatBytes($bytes, $precision = 2)
     {
-        if ($bytes >= 1099511627776) return number_format($bytes / 1099511627776, 2) . ' TB';
-        if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 2) . ' GB';
-        if ($bytes >= 1048576) return number_format($bytes / 1048576, 2) . ' MB';
-        if ($bytes >= 1024) return number_format($bytes / 1024, 2) . ' KB';
-        return $bytes . ' B';
+        if ($bytes === 0 || $bytes === null) return '0 B';
+        
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= pow(1024, $pow);
+        
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
+
 
     // ==================== OUTILS EXTERNES ====================
 
