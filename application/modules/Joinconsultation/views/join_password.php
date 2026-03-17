@@ -19,7 +19,7 @@
         <?php if ($this->session->flashdata('error')): ?>
             <div class="error"><?= $this->session->flashdata('error') ?></div>
         <?php endif; ?>
-        <form method="post" action="<?= site_url('joinconsultation/verify') ?>">
+        <form method="post" action="<?= site_url('Joinconsultation/verify') ?>">
             <input type="hidden" name="room_id" value="<?= $room_id ?>">
             <input type="hidden" name="user_id" value="<?= $user_id ?>">
             <input type="password" name="password" placeholder="Votre mot de passe" required>
