@@ -33,8 +33,10 @@ let audioEnabled = true;
 let videoEnabled = true;
 let connectionEstablished = false;
 
-// Connexion Socket.io – utilise automatiquement l'origine de la page (https://nufotec.com)
-const socket = io();
+// Connexion Socket.io vers le sous-domaine dédié avec support du fallback polling
+const socket = io("https://consultation.nufotec.com", {
+  transports: ["websocket", "polling"]  // Essaie WebSocket d'abord, puis polling
+});
 
 // ========== Fonctions utilitaires ==========
 function showToast(message, type = 'info', duration = 4000) {

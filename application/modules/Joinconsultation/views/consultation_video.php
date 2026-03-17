@@ -219,7 +219,8 @@ $waitingMessage = ($current_role === 'patient') ? 'En attente du médecin...' : 
     ]) ?>;
     const currentRole = <?= json_encode($current_role) ?>; // 'patient' ou 'medecin'
     
-    // Plus besoin de SIGNALING_SERVER, on utilise l'origine de la page automatiquement
+    // URL du serveur de signalisation Node.js
+    const SIGNALING_SERVER = "https://consultation.nufotec.com";
 </script>
 <script src="<?= base_url('assets/js/consultation.js') ?>"></script>
 </body>

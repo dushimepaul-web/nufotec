@@ -53,7 +53,7 @@ class Joinconsultation extends MY_Controller {
             
             $user = $this->Model->read('users',['id'=>$user_id]);
 
-            if ($user && password_verify($password, $user->password)) {
+            if ($user && password_verify($password, $user['password'])) {
                 // Connexion réussie, créer session
                 $session_data = array(
                     'user_id'   => $user->id,

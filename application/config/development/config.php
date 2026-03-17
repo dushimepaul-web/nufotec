@@ -556,7 +556,7 @@ $config['whapi_base_url'] = 'https://gate.whapi.cloud'; // URL de base de l'API
 $config['zapier_webhook_url'] = 'https://hooks.zapier.com/hooks/catch/123456/abcde';
 
 //composer require sendgrid/sendgrid envoyer des email sur avec send email de tuilio
-$config['sendgrid_api_key'] = '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';
+$config['sendgrid_api_key'] = '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';
 
 // Twilio Configuration
 $config['twilio_account_sid'] = 'VOTRE_ACCOUNT_SID';

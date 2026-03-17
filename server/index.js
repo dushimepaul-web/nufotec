@@ -50,8 +50,12 @@ io.on('connection', (socket) => {
   socket.on('error', (err) => console.error(`⚠️ Erreur socket ${socket.id}:`, err));
 });
 
-const PORT = 3002;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur de signalisation démarré sur le port ${PORT}`);
-  console.log(`🌐 Accessible publiquement via https://nufotec.com (le proxy redirige vers ce serveur)`);
+// *** MODIFICATION IMPORTANTE ***
+// Utilisation de process.env.PORT fourni par Phusion Passenger/cPanel
+// ou fallback sur 3002 pour le développement local
+const port = process.env.PORT || 3002;
+
+server.listen(port, '0.0.0.0', () => {
+  console.log(`🚀 Serveur de signalisation démarré sur le port ${port}`);
+  console.log(`🌐 Accessible publiquement via https://consultation.nufotec.com`);
 });
