@@ -34,14 +34,28 @@ let videoEnabled = true;
 let connectionEstablished = false;
 let pendingIceCandidates = []; // File d'attente pour les candidats ICE
 
-// ========== CORRECTION 1: Configuration Socket.IO optimisée pour cPanel ==========
+// CORRECTION: Configuration Socket.IO forcée en polling d'abord si WebSocket échoue
 const socket = io("https://consultation.nufotec.com", {
-  path: '/socket.io/',           // Chemin explicite requis
-  transports: ['websocket', 'polling'], // Fallback polling si WebSocket échoue
-  reconnection: true,            // Reconnexion automatique
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  timeout: 20000
+  path: '/socket.io/',
+  transports: ['polling', 'websocket'], // Polling d'abord pour cPanel !
+  reconnection: true,
+  reconnectionAttempts: 10,
+  reconnectionDelay: 2000,
+  reconnectionDelayMax: 10000,
+  timeout: 20000,
+  forceNew: true, // Force nouvelle connexion
+  autoConnect: true
+});
+
+// Debug du transport utilisé
+socket.on('connect', () => {
+  console.log('✅ Connecté au serveur:', socket.id);
+  console.log('📡 Transport utilisé:', socket.io.engine.transport.name);
+  
+  // Log du changement de transport
+  socket.io.engine.on('upgrade', (transport) => {
+    console.log('⬆️ Transport upgradé vers:', transport.name);
+  });
 });
 
 // ========== Fonctions utilitaires ==========
