@@ -5,35 +5,72 @@ const socketIo = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// Configuration Socket.IO pour cPanel/Passenger
+// ============================================
+// ⭐ CORS GLOBAL - DOIT ÊTRE EN PREMIER
+// ============================================
+app.use((req, res, next) => {
+  // Autoriser tous les domaines (ou spécifiez 'https://nufotec.com')
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
+  res.header('Access-Control-Allow-Credentials', 'false');
+  
+  // Intercepter et répondre immédiatement aux requêtes OPTIONS
+  if (req.method === 'OPTIONS') {
+    console.log('🔄 Requête OPTIONS interceptée');
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// ============================================
+// Configuration Socket.IO
+// ============================================
 const io = socketIo(server, {
   cors: { 
     origin: "*", 
-    methods: ["GET", "POST"],
-    credentials: true
+    methods: ["GET", "POST", "OPTIONS"],
+    credentials: false,
+    allowedHeaders: ["Content-Type", "Authorization"]
   },
   pingTimeout: 60000,
   pingInterval: 25000,
   path: '/socket.io/',
-  transports: ['polling', 'websocket'], // Polling d'abord !
+  transports: ['polling', 'websocket'],
   allowUpgrades: true,
   upgradeTimeout: 10000
 });
 
+// ============================================
 // Logs
+// ============================================
 process.on('uncaughtException', (err) => console.error('❌ Exception:', err));
 process.on('unhandledRejection', (reason) => console.error('❌ Rejet:', reason));
 
-// Routes
-app.get('/', (req, res) => {
+// ============================================
+// Routes de test
+// ============================================
+app.get('/test', (req, res) => {
   res.json({ 
     status: 'ok', 
-    time: new Date().toISOString(),
-    transport: 'polling/websocket'
+    cors: 'enabled',
+    origin: req.headers.origin || 'no origin',
+    time: new Date().toISOString()
   });
 });
 
-// Socket.IO
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'Serveur Socket.IO opérationnel',
+    cors: 'enabled',
+    time: new Date().toISOString()
+  });
+});
+
+// ============================================
+// Socket.IO Events
+// ============================================
 io.on('connection', (socket) => {
   console.log(`✅ Connecté: ${socket.id} (${socket.conn.transport.name})`);
 
@@ -73,14 +110,16 @@ io.on('connection', (socket) => {
   });
 });
 
-// Démarrage (Passenger fournit process.env.PORT)
+// ============================================
+// Démarrage
+// ============================================
 const port = process.env.PORT || 3002;
 
 server.listen(port, () => {
   console.log(`🚀 Serveur démarré sur port ${port}`);
+  console.log(`📡 CORS activé pour toutes les origines`);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM, fermeture...');
   server.close(() => process.exit(0));
