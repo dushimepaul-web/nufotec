@@ -1,16 +1,14 @@
-// consultation.js - Version corrigée v3 pour nufotec.com
+// ============================================
+// ⭐ NUFOTEC CONSULTATION - VERSION ULTIME
+// ============================================
 
 let localStream;
 let peerConnection;
 let dataChannel;
 let otherSocketId = null;
 let isInitiator = false;
-let iceServers = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
-  ]
-};
+let iceServersConfig = null;
+let pendingIceCandidates = [];
 
 // Éléments DOM
 const localVideo = document.getElementById('local-video');
@@ -32,29 +30,29 @@ const waitingOverlay = document.getElementById('waiting-overlay');
 let audioEnabled = true;
 let videoEnabled = true;
 let connectionEstablished = false;
-let pendingIceCandidates = []; // File d'attente pour les candidats ICE
+let usingRelay = false;
 
+// ============================================
+// ⭐ CONFIGURATION SOCKET.IO AVANCÉE
+// ============================================
 const socket = io('https://consultation.nufotec.com', {
-  transports: ['polling', 'websocket'], // Polling d'abord pour cPanel
-  withCredentials: false, // Important : false quand origin est "*"
+  transports: ['polling', 'websocket'],
+  withCredentials: false,
   path: '/socket.io/',
   reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000
+  reconnectionAttempts: 10,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000
 });
 
-socket.on('connect', () => {
-  console.log('✅ Connecté:', socket.id);
-});
-
-socket.on('connect_error', (err) => {
-  console.error('❌ Erreur connexion:', err.message);
-});
-
-// ========== Fonctions utilitaires ==========
+// ============================================
+// ⭐ FONCTIONS UTILITAIRES
+// ============================================
 function showToast(message, type = 'info', duration = 4000) {
   const container = document.getElementById('toast-container');
   if (!container) return;
+  
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')}"></i><span>${message}</span>`;
@@ -81,16 +79,50 @@ function showWaitingOverlay() {
   }
 }
 
-// ========== Gestion des médias ==========
+// ============================================
+// ⭐ CHARGEMENT CONFIGURATION ICE
+// ============================================
+async function loadIceServers() {
+  try {
+    console.log('🌐 Chargement configuration ICE...');
+    const response = await fetch('/api/ice-servers');
+    const config = await response.json();
+    iceServersConfig = config;
+    console.log('✅ Configuration ICE chargée:', iceServersConfig);
+    return iceServersConfig;
+  } catch (err) {
+    console.error('❌ Erreur chargement ICE, fallback STUN:', err);
+    // Fallback minimal
+    iceServersConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+    return iceServersConfig;
+  }
+}
+
+// ============================================
+// ⭐ GESTION DES MÉDIAS
+// ============================================
 async function initMedia() {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ 
-      video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: true 
+      video: { 
+        width: { ideal: 1280 }, 
+        height: { ideal: 720 } 
+      },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
     });
+    
     if (localVideo) {
       localVideo.srcObject = localStream;
-      localVideo.muted = true; // Éviter l'écho sur sa propre vidéo
+      localVideo.muted = true;
     }
     console.log('✅ Médias locaux initialisés');
   } catch (err) {
@@ -100,14 +132,21 @@ async function initMedia() {
   }
 }
 
-// ========== CORRECTION 2: Gestion améliorée de la connexion WebRTC ==========
+// ============================================
+// ⭐ CONNEXION WEBRTC OPTIMISÉE
+// ============================================
 async function createPeerConnection() {
   if (peerConnection) {
-    console.log('Fermeture ancienne connexion');
     peerConnection.close();
   }
   
-  peerConnection = new RTCPeerConnection(iceServers);
+  // Charger configuration ICE si nécessaire
+  if (!iceServersConfig) {
+    await loadIceServers();
+  }
+  
+  const connectionStart = Date.now();
+  peerConnection = new RTCPeerConnection(iceServersConfig);
 
   // Ajout des tracks locaux
   if (localStream) {
@@ -116,10 +155,18 @@ async function createPeerConnection() {
     });
   }
 
-  // Gestion des candidats ICE avec file d'attente
+  // Gestion des candidats ICE
   peerConnection.onicecandidate = (event) => {
     if (event.candidate && otherSocketId) {
-      console.log('📤 Envoi candidat ICE');
+      // Détection du type de candidat
+      const candidateStr = event.candidate.candidate;
+      if (candidateStr.includes('relay')) {
+        usingRelay = true;
+        console.log('🔄 Utilisation TURN');
+      } else if (candidateStr.includes('srflx')) {
+        console.log('🌍 Utilisation STUN');
+      }
+      
       socket.emit('ice-candidate', { 
         target: otherSocketId, 
         candidate: event.candidate 
@@ -127,18 +174,30 @@ async function createPeerConnection() {
     }
   };
 
-  // Surveillance de l'état de connexion
-  peerConnection.onconnectionstatechange = () => {
-    console.log('État connexion:', peerConnection.connectionState);
-    if (peerConnection.connectionState === 'connected') {
+  // Surveillance état connexion
+  peerConnection.oniceconnectionstatechange = () => {
+    const state = peerConnection.iceConnectionState;
+    const duration = ((Date.now() - connectionStart) / 1000).toFixed(1);
+    console.log(`📊 ICE ${state} (${duration}s)`);
+    
+    if (state === 'connected') {
       connectionEstablished = true;
       closeWaitingOverlay();
       updateOtherStatus(true);
-    } else if (peerConnection.connectionState === 'disconnected' || 
-               peerConnection.connectionState === 'failed') {
+      
+      // Envoyer stats au serveur
+      socket.emit('connection-quality', {
+        quality: usingRelay ? 'relay' : 'direct',
+        duration: duration
+      });
+    } else if (state === 'failed' || state === 'disconnected') {
       connectionEstablished = false;
       updateOtherStatus(false);
     }
+  };
+
+  peerConnection.onconnectionstatechange = () => {
+    console.log('État connexion:', peerConnection.connectionState);
   };
 
   peerConnection.ontrack = (event) => {
@@ -192,12 +251,14 @@ function setupDataChannel() {
   };
 }
 
-// ========== CORRECTION 3: Signalisation Socket robuste ==========
-
+// ============================================
+// ⭐ ÉVÉNEMENTS SOCKET.IO
+// ============================================
 socket.on('connect', () => {
-  console.log('✅ Connecté au serveur, socket ID:', socket.id);
+  console.log('✅ Connecté au serveur:', socket.id);
+  
   if (typeof roomId !== 'undefined' && roomId) {
-    console.log('📤 Tentative join-room:', roomId);
+    console.log('📤 Rejoindre salle:', roomId);
     socket.emit('join-room', roomId);
   } else {
     console.error('❌ roomId non défini');
@@ -217,18 +278,25 @@ socket.on('disconnect', (reason) => {
 
 socket.on('reconnect', (attemptNumber) => {
   console.log('🔄 Reconnecté après', attemptNumber, 'tentatives');
+  if (roomId) {
+    socket.emit('join-room', roomId);
+  }
+});
+
+socket.on('ice-servers', (servers) => {
+  console.log('📡 Configuration ICE reçue du serveur');
+  iceServersConfig = servers;
 });
 
 socket.on('room-full', (msg) => {
-  console.log('Salle pleine:', msg);
   showToast(msg.message || 'Salle pleine', 'error');
   setTimeout(() => window.location.href = '/', 3000);
 });
 
-socket.on('user-connected', async (socketId) => {
+socket.on('user-connected', async (data) => {
+  const socketId = data.id || data;
   console.log('👤 Autre utilisateur connecté:', socketId);
   
-  // Éviter la double connexion
   if (otherSocketId === socketId) {
     console.log('Déjà connecté à cet utilisateur');
     return;
@@ -242,22 +310,22 @@ socket.on('user-connected', async (socketId) => {
     : 'L\'autre utilisateur';
   showToast(`${otherName} a rejoint la consultation.`, 'success');
 
-  // Seul l'initiateur crée l'offre
   if (!peerConnection && !isInitiator) {
     isInitiator = true;
-    console.log('🎯 Je suis l\'initiateur, création de l\'offre...');
+    console.log('🎯 Création de l\'offre...');
     
     try {
       await createPeerConnection();
       
-      // Création du data channel
       dataChannel = peerConnection.createDataChannel('chat', {
         ordered: true
       });
       setupDataChannel();
       
-      // Création de l'offre
-      const offer = await peerConnection.createOffer();
+      const offer = await peerConnection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
       await peerConnection.setLocalDescription(offer);
       
       console.log('📤 Envoi offre à:', otherSocketId);
@@ -273,28 +341,26 @@ socket.on('offer', async (data) => {
   console.log('📩 Offre reçue de:', data.sender);
   
   if (!data.sdp) {
-    console.error('Offre invalide, pas de SDP');
+    console.error('Offre invalide');
     return;
   }
   
   otherSocketId = data.sender;
-  isInitiator = false; // Je ne suis pas l'initiateur
+  isInitiator = false;
 
   try {
     if (!peerConnection) {
       await createPeerConnection();
     }
 
-    // Définir la description distante
     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
     
-    // Traiter les candidats en attente
+    // Traiter candidats en attente
     while (pendingIceCandidates.length > 0) {
       const candidate = pendingIceCandidates.shift();
       await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     }
 
-    // Créer la réponse
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
     
@@ -309,7 +375,7 @@ socket.on('answer', async (data) => {
   console.log('📩 Réponse reçue de:', data.sender);
   
   if (!peerConnection) {
-    console.error('Pas de peerConnection pour traiter la réponse');
+    console.error('Pas de peerConnection');
     return;
   }
 
@@ -318,13 +384,10 @@ socket.on('answer', async (data) => {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
       console.log('✅ Réponse appliquée');
       
-      // Traiter les candidats en attente
       while (pendingIceCandidates.length > 0) {
         const candidate = pendingIceCandidates.shift();
         await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
       }
-    } else {
-      console.warn('État inattendu pour answer:', peerConnection.signalingState);
     }
   } catch (err) {
     console.error('❌ Erreur traitement réponse:', err);
@@ -334,10 +397,7 @@ socket.on('answer', async (data) => {
 socket.on('ice-candidate', async (data) => {
   console.log('📩 Candidat ICE reçu');
   
-  if (!data.candidate) {
-    console.log('Candidat ICE null (fin de gathering)');
-    return;
-  }
+  if (!data.candidate) return;
 
   if (peerConnection && peerConnection.remoteDescription) {
     try {
@@ -347,14 +407,15 @@ socket.on('ice-candidate', async (data) => {
       console.error('❌ Erreur ajout ICE:', err);
     }
   } else {
-    // Mise en file d'attente si la description distante n'est pas encore définie
     console.log('⏳ Candidat ICE mis en attente');
     pendingIceCandidates.push(data.candidate);
   }
 });
 
-socket.on('user-disconnected', (socketId) => {
+socket.on('user-disconnected', (data) => {
+  const socketId = data.id || data;
   console.log('👤 Utilisateur déconnecté:', socketId);
+  
   if (socketId === otherSocketId) {
     otherSocketId = null;
     isInitiator = false;
@@ -369,7 +430,6 @@ socket.on('user-disconnected', (socketId) => {
     connectionEstablished = false;
     showWaitingOverlay();
     
-    // Nettoyer la connexion
     if (peerConnection) {
       peerConnection.close();
       peerConnection = null;
@@ -378,7 +438,9 @@ socket.on('user-disconnected', (socketId) => {
   }
 });
 
-// ========== Gestion du chat (inchangé, mais avec vérifications) ==========
+// ============================================
+// ⭐ GESTION DU CHAT
+// ============================================
 function displayMessage(text, senderId, timestamp, file = null) {
   if (!chatMessages) return;
   
@@ -478,7 +540,9 @@ function sendMessage(text, file = null) {
   }
 }
 
-// Event listeners avec vérifications
+// ============================================
+// ⭐ EVENT LISTENERS
+// ============================================
 if (chatSend && chatInput) {
   chatSend.addEventListener('click', () => {
     const text = chatInput.value.trim();
@@ -508,7 +572,6 @@ if (fileInput) {
   });
 }
 
-// ========== Contrôles média ==========
 if (muteAudioBtn) {
   muteAudioBtn.addEventListener('click', () => {
     if (!localStream) return;
@@ -542,7 +605,6 @@ if (leaveBtn) {
   });
 }
 
-// ========== Gestion du chat mobile ==========
 if (toggleChatBtn && chatArea) {
   toggleChatBtn.addEventListener('click', () => chatArea.classList.add('chat-visible'));
 }
@@ -551,11 +613,18 @@ if (chatCloseBtn && chatArea) {
   chatCloseBtn.addEventListener('click', () => chatArea.classList.remove('chat-visible'));
 }
 
-// ========== Initialisation ==========
+// ============================================
+// ⭐ INITIALISATION
+// ============================================
 (async function init() {
   try {
+    // Charger configuration ICE d'abord
+    await loadIceServers();
+    
+    // Puis initialiser médias
     await initMedia();
-    console.log('🚀 Initialisation terminée, en attente d\'un participant...');
+    
+    console.log('🚀 Initialisation terminée');
   } catch (err) {
     console.error('Échec initialisation:', err);
   }
