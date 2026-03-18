@@ -30,4 +30,33 @@ class JoinConsultation_model extends CI_Model {
         $query = $this->db->get();
         return $query->row();
     }
+
+
+    /**
+ * Récupérer une consultation par son ID
+ */
+public function get_by_id($id) {
+    return $this->db->where('id', $id)
+                    ->get('consultations')
+                    ->row();
+}
+
+/**
+ * Mettre à jour une consultation
+ */
+public function update_consultation($id, $data) {
+    $this->db->where('id', $id);
+    return $this->db->update('consultations', $data);
+}
+
+/**
+ * Récupérer la consultation en cours par room_id
+ */
+public function get_by_room_id($room_id) {
+    return $this->db->where('room_id', $room_id)
+                    ->where('statut', 'en_cours')
+                    ->or_where('statut', 'confirmee')
+                    ->get('consultations')
+                    ->row();
+}
 }

@@ -130,4 +130,107 @@ class Joinconsultation extends MY_Controller {
 
     $this->load->view('consultation_video', $data);
 }
+
+
+/**
+ * API pour terminer une consultation
+ * Met à jour le statut de 'en_cours' à 'terminee'
+ * Calcule automatiquement la durée
+ */
+public function endConsultationApi($id = null) {
+    // Vérifier que c'est une requête AJAX
+    if (!$this->input->is_ajax_request()) {
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_status_header(403)
+            ->set_output(json_encode(['success' => false, 'message' => 'Accès non autorisé']));
+    }
+
+    // Vérifier que l'utilisateur est connecté
+    if (!$this->session->userdata('logged_in')) {
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_status_header(401)
+            ->set_output(json_encode(['success' => false, 'message' => 'Non authentifié']));
+    }
+
+    // Vérifier l'ID
+    if (empty($id)) {
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode(['success' => false, 'message' => 'ID de consultation manquant']));
+    }
+    
+    // Récupérer la consultation
+    $consultation = $this->JoinConsultation_model->get_by_id($id);
+    
+    if (!$consultation) {
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode(['success' => false, 'message' => 'Consultation non trouvée']));
+    }
+    
+    // Vérifier que l'utilisateur est bien participant à cette consultation
+    $user_id = $this->session->userdata('user_id');
+    $patient_id = is_object($consultation) ? $consultation->patient_id : $consultation['patient_id'];
+    $medecin_id = is_object($consultation) ? $consultation->medecin_id : $consultation['medecin_id'];
+    
+    if ($user_id != $patient_id && $user_id != $medecin_id) {
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_status_header(403)
+            ->set_output(json_encode(['success' => false, 'message' => 'Vous n\'êtes pas autorisé à terminer cette consultation']));
+    }
+    
+    // Récupérer la date de début
+    $date_debut = null;
+    if (is_object($consultation)) {
+        $date_debut = $consultation->date_debut ?? $consultation->date_confirmee ?? null;
+    } else {
+        $date_debut = $consultation['date_debut'] ?? $consultation['date_confirmee'] ?? null;
+    }
+    
+    // Calculer la durée
+    $duree_minutes = 30; // Durée par défaut
+    
+    if ($date_debut) {
+        $debut = strtotime($date_debut);
+        $fin = time();
+        $duree_calc = max(1, round(($fin - $debut) / 60)); // Minimum 1 minute
+        $duree_minutes = min($duree_calc, 120); // Maximum 2 heures
+    }
+    
+    // Préparer les données de mise à jour
+    $update_data = [
+        'statut' => 'terminee',
+        'date_fin' => date('Y-m-d H:i:s'),
+        'duree_minutes' => $duree_minutes
+    ];
+    
+    // Mettre à jour la consultation
+    $result = $this->JoinConsultation_model->update_consultation($id, $update_data);
+    
+    if ($result) {
+        // Log pour debug
+        log_message('info', "Consultation $id terminée. Durée: $duree_minutes minutes");
+        
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => true, 
+                'message' => 'Consultation terminée avec succès',
+                'duration' => $duree_minutes,
+                'statut' => 'terminee'
+            ]));
+    } else {
+        log_message('error', "Erreur lors de la terminaison de la consultation $id");
+        
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => false, 
+                'message' => 'Erreur lors de la mise à jour'
+            ]));
+    }
+}
 }

@@ -1230,27 +1230,60 @@
             });
         }
 
-        // Quitter l'appel
-        if (elements.leaveBtn) {
-            elements.leaveBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+       // Quitter l'appel - Version améliorée
+if (elements.leaveBtn) {
+    elements.leaveBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        if (confirm('Voulez-vous vraiment quitter la consultation ?')) {
+            
+            // 1. D'abord, appeler l'API pour terminer la consultation
+            if (CONFIG.consultationId) {
+                utils.log('info', `📤 Terminaison consultation ${CONFIG.consultationId}`);
                 
-                if (confirm('Voulez-vous vraiment quitter la consultation ?')) {
-                    if (CONFIG.consultationId) {
-                        fetch(`/Joinconsultation/endConsultationApi/${CONFIG.consultationId}`, {
-                            method: 'POST',
-                            headers: { 
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Content-Type': 'application/json'
-                            }
-                        }).catch(err => utils.log('error', 'Erreur API fin consultation:', err));
+                fetch(`/Joinconsultation/endConsultationApi/${CONFIG.consultationId}`, {
+                    method: 'POST',
+                    headers: { 
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
                     }
-                    
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        utils.log('success', `✅ Consultation terminée - Durée: ${data.duration} minutes`);
+                        utils.showToast(`Consultation terminée (${data.duration} min)`, 'success', 3000);
+                    } else {
+                        utils.log('warn', `⚠️ Problème: ${data.message}`);
+                    }
+                })
+                .catch(err => {
+                    utils.log('error', '❌ Erreur API fin consultation:', err);
+                    utils.showToast('Erreur lors de la terminaison', 'error', 3000);
+                })
+                .finally(() => {
+                    // 2. Nettoyer les ressources WebRTC
                     utils.cleanup();
-                    window.location.href = '/';
-                }
-            });
+                    
+                    // 3. Rediriger après un court délai
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                });
+            } else {
+                // Pas d'ID de consultation, rediriger directement
+                utils.log('warn', '⚠️ Aucun ID de consultation trouvé');
+                utils.cleanup();
+                window.location.href = '/';
+            }
         }
+    });
+}
 
         // Chat toggle
         if (elements.toggleChatBtn && elements.chatArea) {
