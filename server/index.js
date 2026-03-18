@@ -1,5 +1,5 @@
 // ============================================
-// NUFOTEC SIGNALING - VERSION SIMPLE ET TESTÉE
+// NUFOTEC SIGNALING - VERSION CORRIGÉE
 // ============================================
 
 const express = require('express');
@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const PORT = 3002;
 const BASE_PATH = '/socket';
 
-// CORS simple
+// CORS
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -20,21 +20,17 @@ app.use((req, res, next) => {
     next();
 });
 
-// Route de test
+// Routes API
 app.get(BASE_PATH + '/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        port: PORT,
-        time: new Date().toISOString()
-    });
+    res.json({ status: 'healthy', port: PORT, time: new Date().toISOString() });
 });
 
-// Route ICE servers
 app.get(BASE_PATH + '/api/ice-servers', (req, res) => {
     res.json({
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
         ]
     });
 });
@@ -47,7 +43,7 @@ const io = socketIo(server, {
 });
 
 io.on('connection', (socket) => {
-    console.log('✅ Client connecté:', socket.id);
+    console.log(`✅ Client connecté: ${socket.id}`);
 
     socket.on('join-room', (roomId) => {
         socket.join(roomId);
@@ -77,12 +73,12 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('❌ Client déconnecté:', socket.id);
+        console.log(`❌ Client déconnecté: ${socket.id}`);
         socket.broadcast.emit('user-disconnected', socket.id);
     });
 });
 
-// Démarrage
+// UN SEUL listen() - celui-ci
 server.listen(PORT, '127.0.0.1', () => {
     console.log(`
 ╔════════════════════════════════════════╗
