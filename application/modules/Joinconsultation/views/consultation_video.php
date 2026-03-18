@@ -249,95 +249,41 @@ $otherRoleLabel = ($current_role === 'patient') ? 'Dr. ' : '';
 <div id="toast-container"></div>
 
 <!-- ============================================ -->
-<!-- ⭐ CHARGEMENT SOCKET.IO DEPUIS CDN -->
+<!-- ⭐ VERSION SIMPLIFIÉE -->
 <!-- ============================================ -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" 
-        integrity="sha384-mZLF4Urtxi/qmjR/Wtjq+67uzs2Y6oqfGb1A4W66LX/ZNLkIqL6Jf5bqU6wW1qI" 
-        crossorigin="anonymous"></script>
 
+<!-- Socket.IO CDN (sans integrity) -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<!-- Variables globales -->
 <script>
-// ============================================
-// ⭐ CONFIGURATION GLOBALE - CORRIGÉE POUR /socket/
-// ============================================
-// Variables globales avec validation et valeurs par défaut sécurisées
-const roomId = <?= json_encode($room_id ?? null) ?>;
-const currentUser = <?= json_encode([
-    'id' => $current_id ?? 'unknown',
-    'name' => trim(($current_user['prenom'] ?? '') . ' ' . ($current_user['nom'] ?? '')) ?: 'Utilisateur',
-    'avatar' => $current_avatar_url ?? '/assets/img/default-avatar.png',
-    'role' => $current_role ?? 'participant'
-]) ?>;
-const otherUser = <?= json_encode([
-    'id' => $other_id ?? 'other',
-    'name' => trim(($other_prenom ?? '') . ' ' . ($other_nom ?? '')) ?: 'Participant',
-    'avatar' => $other_avatar_url ?? '/assets/img/default-avatar.png',
-    'role' => $current_role === 'patient' ? 'medecin' : 'patient'
-]) ?>;
-const currentRole = <?= json_encode($current_role ?? 'participant') ?>;
+// Passage des données PHP à JavaScript
+window.roomId = <?= json_encode($room_id ?? null) ?>;
+window.currentUser = <?= json_encode($current_user ?? ['id' => 'me', 'name' => 'Moi']) ?>;
+window.otherUser = <?= json_encode($other_user ?? ['id' => 'other', 'name' => 'Autre']) ?>;
+window.currentRole = <?= json_encode($current_role ?? 'participant') ?>;
 
-// ============================================
-// ⭐ URL DU SERVEUR DE SIGNALISATION - CORRIGÉE
-// ============================================
-// ✅ Important: On utilise le domaine principal avec le chemin virtuel /socket/
-const SIGNALING_SERVER = window.location.origin;  // https://nufotec.com (auto-détection)
-
-// Configuration Socket.IO - Ces variables seront utilisées par consultation.js
-const SOCKET_CONFIG = {
-    url: SIGNALING_SERVER,
-    path: '/socket/socket.io',           // ⚠️ CRITIQUE - correspond au .htaccess
-    transports: ['websocket', 'polling'], // websocket en priorité
-    withCredentials: true
+// Configuration
+window.SOCKET_CONFIG = {
+    url: window.location.origin,
+    path: '/socket/socket.io'
 };
 
-// ============================================
-// ⭐ VALIDATION CRITIQUE
-// ============================================
-if (!roomId) {
-    console.error('❌ ERREUR CRITIQUE: roomId non défini');
-    alert('Erreur: Identifiant de salle manquant. Veuillez recharger la page.');
-}
-
-// ============================================
-// ⭐ DEBUG INFO
-// ============================================
-console.log('🔧 Configuration NUFOTEC:', {
-    roomId: roomId,
-    currentUser: currentUser,
-    otherUser: otherUser,
-    role: currentRole,
-    signalingServer: SIGNALING_SERVER,
-    socketPath: SOCKET_CONFIG.path,
-    timestamp: new Date().toISOString()
+// Debug
+console.log('✅ Variables chargées:', {
+    roomId: window.roomId,
+    currentUser: window.currentUser,
+    otherUser: window.otherUser
 });
 
-// ============================================
-// ⭐ TEST DE CONNEXION AU SERVEUR
-// ============================================
-// Test rapide pour vérifier que le serveur Node.js est accessible
-fetch(SIGNALING_SERVER + '/socket/health')
-    .then(response => response.json())
-    .then(data => {
-        console.log('✅ Serveur de signalisation opérationnel:', data);
-    })
-    .catch(err => {
-        console.warn('⚠️ Serveur de signalisation non joignable:', err.message);
-        console.warn('   Vérifiez que le serveur Node.js tourne sur le port 3000');
-    });
-
-// ============================================
-// ⭐ FONCTION UTILITAIRE POUR TEST MANUEL
-// ============================================
-window.testSignalingServer = function() {
-    fetch(SIGNALING_SERVER + '/socket/health')
-        .then(res => res.json())
-        .then(data => console.log('✅ Test OK:', data))
-        .catch(err => console.error('❌ Test échoué:', err));
-};
+// Test serveur
+fetch('/socket/health')
+    .then(r => r.json())
+    .then(d => console.log('✅ Serveur OK:', d))
+    .catch(e => console.warn('⚠️ Serveur indisponible'));
 </script>
 
-<!-- ============================================ -->
-<!-- ⭐ CHARGEMENT DU CLIENT CONSULTATION -->
-<!-- ============================================ -->
+<!-- Consultation JS -->
 <script src="<?= base_url('assets/js/consultation.js?v=' . time()) ?>"></script>
 
 </body>
