@@ -1,46 +1,16 @@
-# ============================================================
-# NUFOTEC CONSULTATION - CONFIGURATION APACHE
-# ============================================================
-
 RewriteEngine On
-Options +FollowSymLinks
 
 # ============================================================
-# 1. PONT VERS NODE.JS (SIGNALISATION WEBRTC)
+# 1. PONT VERS NODE.JS (Priorité Maximale)
 # ============================================================
-# Redirige toutes les requêtes /socket/* vers le serveur Node.js
-# Le serveur Node.js tourne sur le port 3000 (fichier: /server/index.js)
-# ============================================================
-
-# Vérifier que mod_proxy est disponible
 <IfModule mod_proxy.c>
-    <IfModule mod_proxy_http.c>
-        # Proxy vers le serveur de signalisation Node.js
-        RewriteCond %{REQUEST_URI} ^/socket/ [NC]
-        RewriteRule ^socket/(.*) http://127.0.0.1:3000/socket/$1 [P,L]
-        
-        # Proxy inverse pour les réponses
-        ProxyPassReverse /socket/ http://127.0.0.1:3000/socket/
-    </IfModule>
+    RewriteRule ^socket/(.*) http://127.0.0.1:3002/$1 [P,L]
+    ProxyPassReverse /socket/ http://127.0.0.1:3002/
 </IfModule>
 
 # ============================================================
-# 2. RÈGLES CODEIGNITER (Votre application PHP)
+# 2. RÈGLES CODEIGNITER (Votre code actuel)
 # ============================================================
-# À GARDER EN DERNIER - Ne pas modifier
-# ============================================================
-
-# Enlever index.php des URLs
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [L]
-
-# ============================================================
-# 3. HEADERS DE SÉCURITÉ
-# ============================================================
-
-<IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
-    Header set X-XSS-Protection "1; mode=block"
-</IfModule>
