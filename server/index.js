@@ -7,142 +7,99 @@ const app = express();
 const server = http.createServer(app);
 
 // ============================================
-// ⭐ MIDDLEWARE DE SECURITE MAXIMALE
+// ⭐ CORS ULTRA-PERMISSIF - CORRECTION MAXIMALE
 // ============================================
+const cors = require('cors');
+
+// Option 1: CORS complet pour tous les domaines
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: false,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// Option 2: Middleware CORS manuel supplémentaire (double sécurité)
 app.use((req, res, next) => {
-  // CORS ultra-permissif pour test
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Max-Age', '86400');
   
-  // Anti-cache agressif
-  res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  // Anti-cache
+  res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.header('Pragma', 'no-cache');
-  res.header('Expires', '0');
-  res.header('Surrogate-Control', 'no-store');
-  
-  // Headers sécurité
-  res.header('X-Content-Type-Options', 'nosniff');
-  res.header('X-Frame-Options', 'DENY');
-  res.header('X-XSS-Protection', '1; mode=block');
-  res.header('X-Server', 'NUFOTEC-ULTIME');
   
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(204).end();
   }
   next();
 });
 
 // ============================================
-// ⭐ SERVEURS TURN/STUN DYNAMIQUES
+// ⭐ BODY PARSER (nécessaire pour POST/PUT)
+// ============================================
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ============================================
+// ⭐ SERVEURS TURN/STUN
 // ============================================
 const TURN_CONFIG = {
   iceServers: [
-    // STUN Google (multiples pour redondance)
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    
-    // STUN alternatifs
-    { urls: 'stun:stun.voipbuster.com:3478' },
-    { urls: 'stun:stun.voipstunt.com:3478' },
-    
-    // ⚠️ TURN à configurer plus tard
-    // {
-    //   urls: 'turn:turn.nufotec.com:3478',
-    //   username: 'nufotec',
-    //   credential: 'votre_mot_de_passe'
-    // }
-  ],
-  iceTransportPolicy: 'all',
-  iceCandidatePoolSize: 10
+    { urls: 'stun:stun2.l.google.com:19302' }
+  ]
 };
 
 // ============================================
-// Configuration Socket.IO ULTIME
+// ⭐ SOCKET.IO AVEC CORS CORRECT
 // ============================================
 const io = socketIo(server, {
   cors: { 
-    origin: "*", 
-    methods: ["GET", "POST", "OPTIONS"],
-    credentials: false,
-    allowedHeaders: ["Content-Type", "Authorization"]
+    origin: "*",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+    credentials: false
   },
   pingTimeout: 60000,
   pingInterval: 25000,
-  path: '/socket.io/',
   transports: ['polling', 'websocket'],
-  allowUpgrades: true,
-  upgradeTimeout: 10000,
-  perMessageDeflate: {
-    threshold: 1024
-  },
-  maxHttpBufferSize: 1e7,
-  connectTimeout: 45000
+  allowUpgrades: true
 });
 
 // ============================================
-// Statistiques en temps réel
+// ⭐ ROUTES API
 // ============================================
-const stats = {
-  connections: 0,
-  rooms: 0,
-  startTime: Date.now()
-};
 
-io.engine.on('connection', () => {
-  stats.connections++;
-});
-
-setInterval(() => {
-  stats.rooms = io.engine.clientsCount;
-  console.log(`📊 Stats: ${stats.connections} total, ${stats.rooms} actives`);
-}, 30000);
-
-// ============================================
-// Routes API
-// ============================================
+// Test simple
 app.get('/', (req, res) => {
   res.json({ 
-    status: '🚀 SERVEUR NUFOTEC ULTIME',
-    version: '3.0',
-    uptime: Math.floor((Date.now() - stats.startTime) / 1000) + 's',
-    connections: stats.rooms,
-    features: {
-      cors: true,
-      websocket: true,
-      stun: true,
-      turn: false
-    },
-    transports: ['polling', 'websocket'],
+    status: 'OK',
+    server: 'NUFOTEC Consultation',
     time: new Date().toISOString()
   });
 });
 
+// ICE servers - CORRIGÉ avec CORS explicite
 app.get('/api/ice-servers', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
   res.json(TURN_CONFIG);
 });
 
-app.get('/api/stats', (req, res) => {
-  res.json({
-    connections: stats.rooms,
-    totalConnections: stats.connections,
-    uptime: Date.now() - stats.startTime,
-    memory: process.memoryUsage(),
-    cpu: os.loadavg()
-  });
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', uptime: process.uptime() });
 });
 
 // ============================================
-// Socket.IO Events
+// ⭐ SOCKET.IO EVENTS
 // ============================================
 io.on('connection', (socket) => {
-  console.log(`✅ Connecté: ${socket.id} (${socket.conn.transport.name})`);
-
-  // Envoyer configuration ICE au client
-  socket.emit('ice-servers', TURN_CONFIG);
+  console.log('✅ Connecté:', socket.id);
 
   socket.on('join-room', (roomId) => {
     const rooms = io.sockets.adapter.rooms;
@@ -150,105 +107,62 @@ io.on('connection', (socket) => {
     const numClients = room ? room.size : 0;
 
     if (numClients >= 2) {
-      socket.emit('room-full', { message: 'Salle pleine (max 2)' });
+      socket.emit('room-full', { message: 'Salle pleine' });
       return;
     }
 
     socket.join(roomId);
-    console.log(`📌 ${socket.id} → ${roomId} (${numClients + 1}/2)`);
+    console.log(`📌 ${socket.id} → ${roomId}`);
     
     socket.to(roomId).emit('user-connected', {
       id: socket.id,
       timestamp: Date.now()
     });
-
-    // Heartbeat pour garder la connexion active
-    socket.heartbeatTimer = setInterval(() => {
-      socket.to(roomId).emit('heartbeat', { 
-        id: socket.id, 
-        time: Date.now() 
-      });
-    }, 15000);
   });
 
-  // Événements WebRTC
   socket.on('offer', (data) => {
     socket.to(data.target).emit('offer', { 
       sdp: data.sdp, 
-      sender: socket.id,
-      timestamp: Date.now()
+      sender: socket.id 
     });
   });
 
   socket.on('answer', (data) => {
     socket.to(data.target).emit('answer', { 
       sdp: data.sdp, 
-      sender: socket.id,
-      timestamp: Date.now()
+      sender: socket.id 
     });
   });
 
   socket.on('ice-candidate', (data) => {
     socket.to(data.target).emit('ice-candidate', { 
       candidate: data.candidate, 
-      sender: socket.id,
-      timestamp: Date.now()
+      sender: socket.id 
     });
   });
 
-  socket.on('connection-quality', (data) => {
-    console.log(`📶 Qualité ${socket.id}: ${data.quality}`);
-  });
-
-  socket.on('disconnect', (reason) => {
-    console.log(`❌ Déconnecté: ${socket.id} (${reason})`);
-    
-    if (socket.heartbeatTimer) {
-      clearInterval(socket.heartbeatTimer);
-    }
-    
+  socket.on('disconnect', () => {
+    console.log('❌ Déconnecté:', socket.id);
     socket.rooms.forEach(room => {
       if (room !== socket.id) {
-        socket.to(room).emit('user-disconnected', {
-          id: socket.id,
-          reason: reason,
-          timestamp: Date.now()
-        });
+        socket.to(room).emit('user-disconnected', { id: socket.id });
       }
     });
   });
 });
 
 // ============================================
-// Démarrage
+// ⭐ DÉMARRAGE
 // ============================================
 const port = process.env.PORT || 3002;
 
 server.listen(port, () => {
   console.log(`
 ╔════════════════════════════════════════╗
-║  🚀 NUFOTEC CONSULTATION ULTIME       ║
+║  🚀 NUFOTEC CONSULTATION              ║
 ╠════════════════════════════════════════╣
-║  📡 Port: ${String(port).padEnd(30)}║
-║  🌐 URL: https://consultation.nufotec.com ║
-║  🔧 Node: ${process.version.padEnd(29)}║
-║  💻 Host: ${os.hostname().padEnd(29)}║
-║  📊 Cores: ${os.cpus().length} CPU                      ║
-║  🎯 STUN: 7 serveurs actifs           ║
+║  Port: ${port}                          ║
+║  CORS: * (tous domaines)               ║
 ╚════════════════════════════════════════╝
   `);
-});
-
-// Gestion propre de l'arrêt
-process.on('SIGTERM', () => {
-  console.log('SIGTERM reçu, arrêt gracieux...');
-  server.close(() => process.exit(0));
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('❌ Exception:', err);
-});
-
-process.on('unhandledRejection', (reason) => {
-  console.error('❌ Rejection:', reason);
 });
