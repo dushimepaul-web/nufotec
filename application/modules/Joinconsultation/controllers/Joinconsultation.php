@@ -52,8 +52,8 @@ class Joinconsultation extends MY_Controller {
             $room_id = $this->input->post('room_id');
 
             // CORRECTION: Utiliser le modèle User au lieu de $this->Model
-            $this->load->model('User_model');
-            $user = $this->User_model->get_user_by_id($user_id);
+        
+            $user = $this->Model->get_user_by_id($user_id);
 
             if ($user && password_verify($password, $user['password'])) {
                 // Connexion réussie, créer session
@@ -102,9 +102,8 @@ class Joinconsultation extends MY_Controller {
         show_error('Vous n\'êtes pas autorisé à accéder à cette consultation.', 403);
     }
 
-    // Charger les infos de l'autre participant
-    $this->load->model('User_model');
-    $other_user = $this->User_model->get_user_by_id($other_user_id);
+    
+    $other_user = $this->Model->get_user_by_id($other_user_id);
 
     if (!$other_user) {
         show_error('L\'autre participant est introuvable.', 404);
