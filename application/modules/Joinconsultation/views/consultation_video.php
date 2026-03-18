@@ -321,7 +321,7 @@ fetch(SIGNALING_SERVER + '/socket/health')
     })
     .catch(err => {
         console.warn('⚠️ Serveur de signalisation non joignable:', err.message);
-        console.warn('   Vérifiez que le serveur Node.js tourne sur le port 3002');
+        console.warn('   Vérifiez que le serveur Node.js tourne sur le port 3000');
     });
 
 // ============================================
