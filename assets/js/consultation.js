@@ -1,658 +1,1170 @@
 // ============================================
-// ⭐ NUFOTEC CONSULTATION - VERSION ULTIME
+// NUFOTEC CONSULTATION - CLIENT PRINCIPAL
+// Version : 4.1.0 - CodeIgniter 3
+// Description : Consultation vidéo peer-to-peer
+// CORRECTIONS : Gestion d'erreurs, null checks, optimisation
 // ============================================
 
-let localStream;
-let peerConnection;
-let dataChannel;
-let otherSocketId = null;
-let isInitiator = false;
-let iceServersConfig = null;
-let pendingIceCandidates = [];
+(function() {
+    'use strict';
 
-// Éléments DOM
-const localVideo = document.getElementById('local-video');
-const remoteVideo = document.getElementById('remote-video');
-const chatMessages = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
-const chatSend = document.getElementById('chat-send');
-const fileInput = document.getElementById('file-input');
-const muteAudioBtn = document.getElementById('mute-audio');
-const muteVideoBtn = document.getElementById('mute-video');
-const leaveBtn = document.getElementById('leave-call');
-const toggleChatBtn = document.getElementById('toggle-chat');
-const chatCloseBtn = document.getElementById('chat-close');
-const chatArea = document.getElementById('chat-area');
-const otherStatus = document.getElementById('other-status');
-const waitingOverlay = document.getElementById('waiting-overlay');
-
-// États
-let audioEnabled = true;
-let videoEnabled = true;
-let connectionEstablished = false;
-let usingRelay = false;
-
-// ============================================
-// ⭐ CONFIGURATION SOCKET.IO CORRIGÉE
-// ============================================
-const SOCKET_URL = 'https://nufotec.com';  // Domaine principal
-const SOCKET_PATH = '/socket/socket.io';    // Chemin corrigé
-
-const socket = io(SOCKET_URL, {
-  path: SOCKET_PATH,                          // ⚠️ CRITIQUE - correspond au serveur
-  transports: ['websocket', 'polling'],       // websocket en PRIORITÉ
-  withCredentials: true,                       // IMPORTANT pour les cookies
-  reconnection: true,
-  reconnectionAttempts: 10,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  timeout: 20000,
-  autoConnect: true
-});
-
-// ============================================
-// ⭐ FONCTIONS UTILITAIRES
-// ============================================
-function showToast(message, type = 'info', duration = 4000) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')}"></i><span>${message}</span>`;
-  container.appendChild(toast);
-  setTimeout(() => toast.remove(), duration);
-}
-
-function updateOtherStatus(online) {
-  if (!otherStatus) return;
-  otherStatus.textContent = online ? 'En ligne' : 'Hors ligne';
-  otherStatus.style.color = online ? '#00a884' : '#8696a0';
-}
-
-function closeWaitingOverlay() {
-  if (waitingOverlay) {
-    waitingOverlay.style.display = 'none';
-    console.log('✅ Overlay fermé');
-  }
-}
-
-function showWaitingOverlay() {
-  if (waitingOverlay) {
-    waitingOverlay.style.display = 'flex';
-  }
-}
-
-// ============================================
-// ⭐ CHARGEMENT CONFIGURATION ICE - CORRIGÉ
-// ============================================
-async function loadIceServers() {
-  try {
-    console.log('🌐 Chargement configuration ICE...');
-    // URL corrigée avec /socket/
-    const response = await fetch('/socket/api/ice-servers', {
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
-    const config = await response.json();
-    iceServersConfig = config;
-    console.log('✅ Configuration ICE chargée:', iceServersConfig);
-    return iceServersConfig;
-  } catch (err) {
-    console.error('❌ Erreur chargement ICE, fallback STUN:', err);
-    // Fallback minimal
-    iceServersConfig = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' }
-      ]
+    // ============================================
+    // ⭐ CONFIGURATION AVEC VALIDATION
+    // ============================================
+    const CONFIG = {
+        socketUrl: window.location.origin,
+        socketPath: '/socket/socket.io',
+        roomId: window.roomId || null,
+        currentUser: window.currentUser && typeof window.currentUser === 'object' 
+            ? window.currentUser 
+            : { id: 'me', name: 'Moi', avatar: '/assets/img/default-avatar.png' },
+        otherUser: window.otherUser && typeof window.otherUser === 'object'
+            ? window.otherUser 
+            : { id: 'other', name: 'Autre', avatar: '/assets/img/default-avatar.png' },
+        currentRole: window.currentRole || 'participant',
+        consultationId: window.consultationId || null,
+        maxReconnectionAttempts: 10,
+        iceServers: null,
+        debug: true // Mettre à false en production
     };
-    return iceServersConfig;
-  }
-}
 
-// ============================================
-// ⭐ GESTION DES MÉDIAS
-// ============================================
-async function initMedia() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ 
-      video: { 
-        width: { ideal: 1280 }, 
-        height: { ideal: 720 } 
-      },
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
-    });
-    
-    if (localVideo) {
-      localVideo.srcObject = localStream;
-      localVideo.muted = true;
+    // ============================================
+    // ⭐ ÉTAT DE L'APPLICATION
+    // ============================================
+    const state = {
+        socket: null,
+        peerConnection: null,
+        dataChannel: null,
+        localStream: null,
+        otherSocketId: null,
+        isInitiator: false,
+        isConnected: false,
+        usingRelay: false,
+        pendingIceCandidates: [],
+        audioEnabled: true,
+        videoEnabled: true,
+        connectionQuality: 'unknown',
+        reconnectionAttempts: 0,
+        initializationComplete: false
+    };
+
+    // ============================================
+    // ⭐ ÉLÉMENTS DOM AVEC VÉRIFICATION
+    // ============================================
+    const elements = {
+        localVideo: document.getElementById('local-video'),
+        remoteVideo: document.getElementById('remote-video'),
+        chatMessages: document.getElementById('chat-messages'),
+        chatInput: document.getElementById('chat-input'),
+        chatSend: document.getElementById('chat-send'),
+        fileInput: document.getElementById('file-input'),
+        muteAudioBtn: document.getElementById('mute-audio'),
+        muteVideoBtn: document.getElementById('mute-video'),
+        leaveBtn: document.getElementById('leave-call'),
+        toggleChatBtn: document.getElementById('toggle-chat'),
+        chatCloseBtn: document.getElementById('chat-close'),
+        chatArea: document.getElementById('chat-area'),
+        otherStatus: document.getElementById('other-status'),
+        waitingOverlay: document.getElementById('waiting-overlay'),
+        offlineIndicator: document.getElementById('offline-indicator'),
+        toastContainer: document.getElementById('toast-container')
+    };
+
+    // Vérification des éléments critiques
+    if (!elements.localVideo) console.warn('⚠️ Élément #local-video non trouvé');
+    if (!elements.remoteVideo) console.warn('⚠️ Élément #remote-video non trouvé');
+    if (!CONFIG.roomId) console.error('❌ roomId mannant - la consultation ne fonctionnera pas');
+
+    // ============================================
+    // ⭐ UTILITAIRES AMÉLIORÉS
+    // ============================================
+    const utils = {
+        log: function(level, ...args) {
+            if (!CONFIG.debug && level !== 'error') return;
+            
+            const prefix = `[${new Date().toLocaleTimeString()}]`;
+            const emoji = {
+                error: '❌',
+                warn: '⚠️',
+                success: '✅',
+                info: 'ℹ️',
+                debug: '🔍'
+            }[level] || '';
+            
+            const logFn = level === 'error' ? console.error : 
+                         level === 'warn' ? console.warn : 
+                         console.log;
+            
+            logFn(prefix, emoji, ...args);
+        },
+
+        showToast: function(message, type = 'info', duration = 4000) {
+            if (!elements.toastContainer) {
+                console.warn('Toast container non trouvé');
+                return;
+            }
+            
+            try {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                
+                const icon = {
+                    success: 'check-circle',
+                    error: 'exclamation-circle',
+                    warning: 'exclamation-triangle',
+                    info: 'info-circle'
+                }[type] || 'info-circle';
+                
+                toast.innerHTML = `<i class="fas fa-${icon}"></i><span>${this.escapeHtml(message)}</span>`;
+                elements.toastContainer.appendChild(toast);
+                
+                setTimeout(() => {
+                    if (toast.parentNode) toast.remove();
+                }, duration);
+            } catch (error) {
+                console.error('Erreur toast:', error);
+            }
+        },
+
+        escapeHtml: function(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+
+        formatTime: function(timestamp) {
+            try {
+                const date = new Date(timestamp);
+                if (isNaN(date.getTime())) return '--:--';
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch {
+                return '--:--';
+            }
+        },
+
+        getCurrentUserId: function() {
+            return CONFIG.currentUser?.id || 'me';
+        },
+
+        updateOtherStatus: function(online) {
+            if (!elements.otherStatus) return;
+            
+            elements.otherStatus.textContent = online ? 'En ligne' : 'Hors ligne';
+            elements.otherStatus.style.color = online ? '#00a884' : '#8696a0';
+            
+            if (elements.offlineIndicator) {
+                if (!online && state.isConnected) {
+                    elements.offlineIndicator.classList.add('show');
+                } else {
+                    elements.offlineIndicator.classList.remove('show');
+                }
+            }
+        },
+
+        closeWaitingOverlay: function() {
+            if (elements.waitingOverlay) {
+                elements.waitingOverlay.style.display = 'none';
+            }
+        },
+
+        showWaitingOverlay: function() {
+            if (elements.waitingOverlay) {
+                elements.waitingOverlay.style.display = 'flex';
+            }
+        },
+
+        resetRemoteVideo: function() {
+            if (elements.remoteVideo) {
+                elements.remoteVideo.srcObject = null;
+                elements.remoteVideo.load();
+            }
+        },
+
+        checkBrowserCompatibility: function() {
+            const issues = [];
+            
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                issues.push('getUserMedia non supporté');
+            }
+            
+            if (!window.RTCPeerConnection) {
+                issues.push('WebRTC non supporté');
+            }
+            
+            if (!window.io) {
+                issues.push('Socket.IO non chargé');
+            }
+            
+            if (issues.length > 0) {
+                this.log('error', 'Problèmes de compatibilité:', issues);
+                this.showToast('Navigateur non compatible', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+    };
+
+    // ============================================
+    // ⭐ GESTIONNAIRE WEBRTC OPTIMISÉ
+    // ============================================
+    const webrtc = {
+        async loadIceServers() {
+            try {
+                utils.log('info', '🌐 Chargement des serveurs ICE...');
+                
+                // Timeout pour éviter une attente trop longue
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch('/socket/api/ice-servers', {
+                    headers: { 'Accept': 'application/json' },
+                    signal: controller.signal
+                }).finally(() => clearTimeout(timeoutId));
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                CONFIG.iceServers = await response.json();
+                utils.log('success', '✅ Serveurs ICE chargés');
+                return CONFIG.iceServers;
+            } catch (error) {
+                utils.log('error', '❌ Erreur chargement ICE:', error.message);
+                
+                // Configuration de secours avec plusieurs STUN
+                CONFIG.iceServers = {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' }
+                    ]
+                };
+                
+                utils.showToast('Utilisation des serveurs STUN publics', 'info');
+                return CONFIG.iceServers;
+            }
+        },
+
+        async initMedia() {
+            try {
+                utils.log('info', '📹 Initialisation des médias...');
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('getUserMedia non supporté');
+                }
+
+                state.localStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user',
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                if (elements.localVideo) {
+                    elements.localVideo.srcObject = state.localStream;
+                    elements.localVideo.muted = true;
+                    elements.localVideo.play().catch(e => utils.log('warn', 'Erreur play local:', e));
+                }
+
+                utils.log('success', '✅ Médias initialisés');
+                return state.localStream;
+            } catch (error) {
+                utils.log('error', '❌ Erreur média:', error.message);
+                
+                let message = 'Impossible d\'accéder à la caméra/micro';
+                if (error.name === 'NotAllowedError') {
+                    message = 'Autorisation caméra/micro refusée';
+                } else if (error.name === 'NotFoundError') {
+                    message = 'Aucun périphérique trouvé';
+                }
+                
+                utils.showToast(message, 'error');
+                throw error;
+            }
+        },
+
+        async createPeerConnection() {
+            try {
+                if (state.peerConnection) {
+                    state.peerConnection.close();
+                    state.peerConnection = null;
+                }
+
+                if (!CONFIG.iceServers) {
+                    await this.loadIceServers();
+                }
+
+                const config = {
+                    ...CONFIG.iceServers,
+                    iceTransportPolicy: 'all',
+                    iceCandidatePoolSize: 10,
+                    bundlePolicy: 'max-bundle',
+                    rtcpMuxPolicy: 'require'
+                };
+
+                state.peerConnection = new RTCPeerConnection(config);
+                
+                this.setupPeerConnectionListeners();
+                this.addLocalTracks();
+
+                utils.log('info', '🔄 Connexion WebRTC créée');
+                return state.peerConnection;
+            } catch (error) {
+                utils.log('error', '❌ Erreur création PeerConnection:', error);
+                utils.showToast('Erreur de connexion WebRTC', 'error');
+                throw error;
+            }
+        },
+
+        setupPeerConnectionListeners() {
+            const startTime = Date.now();
+
+            state.peerConnection.onicecandidate = (event) => {
+                if (event.candidate && state.otherSocketId && state.socket) {
+                    try {
+                        const candidateStr = event.candidate.candidate;
+                        if (candidateStr.includes('relay')) {
+                            state.usingRelay = true;
+                            utils.log('info', '🔄 Utilisation TURN (relais)');
+                        }
+
+                        state.socket.emit('ice-candidate', {
+                            target: state.otherSocketId,
+                            candidate: event.candidate
+                        });
+                    } catch (error) {
+                        utils.log('error', 'Erreur envoi candidat ICE:', error);
+                    }
+                }
+            };
+
+            state.peerConnection.oniceconnectionstatechange = () => {
+                const iceState = state.peerConnection.iceConnectionState;
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                utils.log('info', `📊 ICE ${iceState} (${duration}s)`);
+
+                switch(iceState) {
+                    case 'connected':
+                    case 'completed':
+                        state.isConnected = true;
+                        utils.closeWaitingOverlay();
+                        utils.updateOtherStatus(true);
+                        
+                        if (state.socket) {
+                            state.socket.emit('connection-quality', {
+                                quality: state.usingRelay ? 'relay' : 'direct',
+                                duration: duration
+                            });
+                        }
+                        break;
+                        
+                    case 'failed':
+                    case 'disconnected':
+                        state.isConnected = false;
+                        utils.updateOtherStatus(false);
+                        utils.showToast('Problème de connexion détecté', 'warning');
+                        break;
+                        
+                    case 'closed':
+                        state.isConnected = false;
+                        break;
+                }
+            };
+
+            state.peerConnection.ontrack = (event) => {
+                utils.log('info', `📹 Track reçu: ${event.track.kind}`);
+                
+                if (elements.remoteVideo && event.streams[0]) {
+                    elements.remoteVideo.srcObject = event.streams[0];
+                    elements.remoteVideo.play().catch(e => utils.log('warn', 'Erreur play remote:', e));
+                    state.isConnected = true;
+                    utils.closeWaitingOverlay();
+                    utils.updateOtherStatus(true);
+                }
+            };
+
+            state.peerConnection.ondatachannel = (event) => {
+                utils.log('info', '📡 Canal de données reçu');
+                chat.setDataChannel(event.channel);
+            };
+
+            state.peerConnection.onicegatheringstatechange = () => {
+                utils.log('debug', '🔄 ICE gathering:', state.peerConnection.iceGatheringState);
+            };
+
+            state.peerConnection.onsignalingstatechange = () => {
+                utils.log('debug', '🔄 Signalement:', state.peerConnection.signalingState);
+            };
+        },
+
+        addLocalTracks() {
+            if (!state.localStream || !state.peerConnection) return;
+
+            state.localStream.getTracks().forEach(track => {
+                try {
+                    state.peerConnection.addTrack(track, state.localStream);
+                    utils.log('debug', `➕ Track ajouté: ${track.kind}`);
+                } catch (error) {
+                    utils.log('error', `Erreur ajout track ${track.kind}:`, error);
+                }
+            });
+        },
+
+        async createOffer() {
+            try {
+                utils.log('info', '🎯 Création offre...');
+                
+                if (!state.peerConnection) {
+                    await this.createPeerConnection();
+                }
+
+                if (!state.peerConnection) {
+                    throw new Error('PeerConnection non créée');
+                }
+
+                const dataChannel = state.peerConnection.createDataChannel('chat', {
+                    ordered: true,
+                    maxRetransmits: 3
+                });
+                chat.setDataChannel(dataChannel);
+
+                const offer = await state.peerConnection.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: true,
+                    iceRestart: false
+                });
+
+                await state.peerConnection.setLocalDescription(offer);
+
+                if (!state.otherSocketId || !state.socket) {
+                    throw new Error('Socket non disponible');
+                }
+
+                utils.log('info', `📤 Envoi offre à: ${state.otherSocketId}`);
+                state.socket.emit('offer', {
+                    target: state.otherSocketId,
+                    sdp: offer
+                });
+            } catch (error) {
+                utils.log('error', '❌ Erreur création offre:', error);
+                utils.showToast('Erreur de connexion', 'error');
+            }
+        },
+
+        async handleOffer(data) {
+            if (!data?.sdp || !data?.sender) {
+                utils.log('error', 'Offre invalide');
+                return;
+            }
+
+            utils.log('info', `📩 Offre reçue de: ${data.sender}`);
+
+            try {
+                if (!state.peerConnection) {
+                    await this.createPeerConnection();
+                }
+
+                if (!state.peerConnection) {
+                    throw new Error('PeerConnection non créée');
+                }
+
+                await state.peerConnection.setRemoteDescription(
+                    new RTCSessionDescription(data.sdp)
+                );
+
+                await this.processPendingCandidates();
+
+                const answer = await state.peerConnection.createAnswer();
+                await state.peerConnection.setLocalDescription(answer);
+
+                utils.log('info', `📤 Envoi réponse à: ${data.sender}`);
+                if (state.socket) {
+                    state.socket.emit('answer', {
+                        target: data.sender,
+                        sdp: answer
+                    });
+                }
+            } catch (error) {
+                utils.log('error', '❌ Erreur traitement offre:', error);
+            }
+        },
+
+        async handleAnswer(data) {
+            if (!data?.sdp || !data?.sender) {
+                utils.log('error', 'Réponse invalide');
+                return;
+            }
+
+            utils.log('info', `📩 Réponse reçue de: ${data.sender}`);
+
+            if (!state.peerConnection) {
+                utils.log('error', 'Pas de PeerConnection');
+                return;
+            }
+
+            try {
+                if (state.peerConnection.signalingState === 'have-local-offer') {
+                    await state.peerConnection.setRemoteDescription(
+                        new RTCSessionDescription(data.sdp)
+                    );
+                    utils.log('success', '✅ Réponse appliquée');
+                    
+                    await this.processPendingCandidates();
+                }
+            } catch (error) {
+                utils.log('error', '❌ Erreur traitement réponse:', error);
+            }
+        },
+
+        async handleIceCandidate(data) {
+            if (!data?.candidate) return;
+
+            try {
+                if (state.peerConnection && state.peerConnection.remoteDescription) {
+                    await state.peerConnection.addIceCandidate(
+                        new RTCIceCandidate(data.candidate)
+                    );
+                    utils.log('debug', '✅ Candidat ICE ajouté');
+                } else {
+                    state.pendingIceCandidates.push(data.candidate);
+                    utils.log('debug', `⏳ Candidat mis en attente (${state.pendingIceCandidates.length})`);
+                }
+            } catch (error) {
+                utils.log('error', '❌ Erreur ajout ICE:', error);
+            }
+        },
+
+        async processPendingCandidates() {
+            if (!state.peerConnection) return;
+
+            while (state.pendingIceCandidates.length > 0) {
+                const candidate = state.pendingIceCandidates.shift();
+                try {
+                    await state.peerConnection.addIceCandidate(
+                        new RTCIceCandidate(candidate)
+                    );
+                } catch (error) {
+                    utils.log('error', '❌ Erreur ajout candidat:', error);
+                }
+            }
+        },
+
+        toggleAudio: function(enabled) {
+            if (!state.localStream) {
+                utils.showToast('Aucun flux audio disponible', 'warning');
+                return false;
+            }
+            
+            state.audioEnabled = enabled !== undefined ? enabled : !state.audioEnabled;
+            
+            state.localStream.getAudioTracks().forEach(track => {
+                track.enabled = state.audioEnabled;
+                utils.log('debug', `🎤 Audio ${track.enabled ? 'activé' : 'désactivé'}`);
+            });
+            
+            if (elements.muteAudioBtn) {
+                elements.muteAudioBtn.classList.toggle('active', state.audioEnabled);
+                elements.muteAudioBtn.innerHTML = state.audioEnabled 
+                    ? '<i class="fas fa-microphone"></i>' 
+                    : '<i class="fas fa-microphone-slash"></i>';
+            }
+            
+            return state.audioEnabled;
+        },
+
+        toggleVideo: function(enabled) {
+            if (!state.localStream) {
+                utils.showToast('Aucun flux vidéo disponible', 'warning');
+                return false;
+            }
+            
+            state.videoEnabled = enabled !== undefined ? enabled : !state.videoEnabled;
+            
+            state.localStream.getVideoTracks().forEach(track => {
+                track.enabled = state.videoEnabled;
+                utils.log('debug', `📹 Vidéo ${track.enabled ? 'activée' : 'désactivée'}`);
+            });
+            
+            if (elements.muteVideoBtn) {
+                elements.muteVideoBtn.classList.toggle('active', state.videoEnabled);
+                elements.muteVideoBtn.innerHTML = state.videoEnabled 
+                    ? '<i class="fas fa-video"></i>' 
+                    : '<i class="fas fa-video-slash"></i>';
+            }
+            
+            return state.videoEnabled;
+        },
+
+        cleanup: function() {
+            if (state.peerConnection) {
+                state.peerConnection.close();
+                state.peerConnection = null;
+            }
+            
+            utils.resetRemoteVideo();
+            state.pendingIceCandidates = [];
+            state.usingRelay = false;
+            state.isConnected = false;
+            state.otherSocketId = null;
+            
+            utils.log('info', '🧹 Nettoyage WebRTC effectué');
+        },
+
+        disconnect: function() {
+            this.cleanup();
+            
+            if (state.localStream) {
+                state.localStream.getTracks().forEach(track => {
+                    track.stop();
+                    utils.log('debug', `🛑 Track arrêté: ${track.kind}`);
+                });
+                state.localStream = null;
+            }
+        }
+    };
+
+    // ============================================
+    // ⭐ GESTIONNAIRE DE CHAT OPTIMISÉ
+    // ============================================
+    const chat = {
+        setDataChannel: function(channel) {
+            if (!channel) {
+                utils.log('error', 'Tentative de setDataChannel avec null');
+                return;
+            }
+            
+            state.dataChannel = channel;
+            this.setupDataChannelListeners();
+        },
+
+        setupDataChannelListeners: function() {
+            if (!state.dataChannel) return;
+
+            state.dataChannel.onopen = () => {
+                utils.log('success', '✅ Canal de données ouvert');
+                utils.showToast('Chat connecté', 'success');
+            };
+
+            state.dataChannel.onclose = () => {
+                utils.log('warn', '❌ Canal de données fermé');
+            };
+
+            state.dataChannel.onerror = (error) => {
+                utils.log('error', '⚠️ Erreur data channel:', error);
+                utils.showToast('Erreur de chat', 'error');
+            };
+
+            state.dataChannel.onmessage = (event) => {
+                this.handleIncomingMessage(event.data);
+            };
+        },
+
+        handleIncomingMessage: function(data) {
+            try {
+                const message = JSON.parse(data);
+                
+                if (!message || !message.type) {
+                    utils.log('warn', 'Message invalide reçu');
+                    return;
+                }
+                
+                switch (message.type) {
+                    case 'chat':
+                        this.displayMessage(
+                            message.message || '',
+                            message.sender,
+                            message.timestamp || Date.now()
+                        );
+                        break;
+                        
+                    case 'file':
+                        this.displayFile(
+                            message.file || {},
+                            message.sender,
+                            message.timestamp || Date.now()
+                        );
+                        break;
+                        
+                    default:
+                        utils.log('debug', 'Type de message inconnu:', message.type);
+                }
+            } catch (error) {
+                utils.log('error', 'Erreur parsing message:', error);
+            }
+        },
+
+        sendMessage: function() {
+            if (!state.dataChannel || state.dataChannel.readyState !== 'open') {
+                utils.showToast('Le chat n\'est pas encore connecté', 'warning');
+                return false;
+            }
+
+            if (!elements.chatInput) return false;
+            
+            const text = elements.chatInput.value.trim();
+            if (!text) return false;
+
+            const message = {
+                type: 'chat',
+                sender: utils.getCurrentUserId(),
+                timestamp: Date.now(),
+                message: text.substring(0, 500) // Limite de sécurité
+            };
+
+            try {
+                state.dataChannel.send(JSON.stringify(message));
+                this.displayMessage(text, message.sender, message.timestamp);
+                
+                elements.chatInput.value = '';
+                return true;
+            } catch (error) {
+                utils.log('error', 'Erreur envoi message:', error);
+                utils.showToast('Échec de l\'envoi', 'error');
+                return false;
+            }
+        },
+
+        sendFiles: function(files) {
+            if (!files || files.length === 0) return;
+
+            if (!state.dataChannel || state.dataChannel.readyState !== 'open') {
+                utils.showToast('Le chat n\'est pas connecté', 'warning');
+                return;
+            }
+
+            // Limiter le nombre de fichiers
+            const filesArray = Array.from(files).slice(0, 5);
+            
+            filesArray.forEach(file => {
+                // Vérifier la taille (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    utils.showToast(`Fichier trop volumineux: ${file.name}`, 'warning');
+                    return;
+                }
+
+                try {
+                    const fileUrl = URL.createObjectURL(file);
+                    
+                    const fileInfo = {
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        url: fileUrl
+                    };
+
+                    const message = {
+                        type: 'file',
+                        sender: utils.getCurrentUserId(),
+                        timestamp: Date.now(),
+                        file: fileInfo
+                    };
+
+                    state.dataChannel.send(JSON.stringify(message));
+                    this.displayFile(fileInfo, message.sender, message.timestamp);
+                } catch (error) {
+                    utils.log('error', 'Erreur envoi fichier:', error);
+                    utils.showToast(`Échec de l'envoi de ${file.name}`, 'error');
+                }
+            });
+        },
+
+        displayMessage: function(text, senderId, timestamp) {
+            if (!elements.chatMessages) return;
+
+            const isOwn = senderId === utils.getCurrentUserId();
+            const sender = isOwn ? CONFIG.currentUser : CONFIG.otherUser;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+
+            if (!isOwn && sender?.name) {
+                const senderName = document.createElement('div');
+                senderName.className = 'sender';
+                senderName.textContent = sender.name;
+                bubble.appendChild(senderName);
+            }
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'text';
+            textDiv.textContent = text;
+            bubble.appendChild(textDiv);
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'time';
+            timeDiv.textContent = utils.formatTime(timestamp);
+            bubble.appendChild(timeDiv);
+
+            const avatar = document.createElement('img');
+            avatar.src = sender?.avatar || '/assets/img/default-avatar.png';
+            avatar.className = 'avatar';
+            avatar.alt = '';
+            avatar.onerror = () => { avatar.src = '/assets/img/default-avatar.png'; };
+
+            if (isOwn) {
+                messageDiv.appendChild(bubble);
+                messageDiv.appendChild(avatar);
+            } else {
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(bubble);
+            }
+
+            elements.chatMessages.appendChild(messageDiv);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+        },
+
+        displayFile: function(file, senderId, timestamp) {
+            if (!elements.chatMessages) return;
+
+            const isOwn = senderId === utils.getCurrentUserId();
+            const sender = isOwn ? CONFIG.currentUser : CONFIG.otherUser;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+
+            if (!isOwn && sender?.name) {
+                const senderName = document.createElement('div');
+                senderName.className = 'sender';
+                senderName.textContent = sender.name;
+                bubble.appendChild(senderName);
+            }
+
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'file';
+
+            const icon = document.createElement('i');
+            icon.className = file.type?.startsWith('image/') ? 'fas fa-image' : 'fas fa-file';
+            fileDiv.appendChild(icon);
+
+            const link = document.createElement('a');
+            link.href = file.url || '#';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = file.name || 'Fichier';
+            link.style.color = 'white';
+            fileDiv.appendChild(link);
+
+            bubble.appendChild(fileDiv);
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'time';
+            timeDiv.textContent = utils.formatTime(timestamp);
+            bubble.appendChild(timeDiv);
+
+            const avatar = document.createElement('img');
+            avatar.src = sender?.avatar || '/assets/img/default-avatar.png';
+            avatar.className = 'avatar';
+            avatar.alt = '';
+            avatar.onerror = () => { avatar.src = '/assets/img/default-avatar.png'; };
+
+            if (isOwn) {
+                messageDiv.appendChild(bubble);
+                messageDiv.appendChild(avatar);
+            } else {
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(bubble);
+            }
+
+            elements.chatMessages.appendChild(messageDiv);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+        }
+    };
+
+    // ============================================
+    // ⭐ GESTIONNAIRE SOCKET.IO AMÉLIORÉ
+    // ============================================
+    function initSocket() {
+        if (!window.io) {
+            utils.log('error', 'Socket.IO non chargé');
+            utils.showToast('Erreur de chargement du chat', 'error');
+            return;
+        }
+
+        utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
+
+        try {
+            state.socket = io(CONFIG.socketUrl, {
+                path: CONFIG.socketPath,
+                transports: ['websocket', 'polling'],
+                withCredentials: true,
+                reconnection: true,
+                reconnectionAttempts: CONFIG.maxReconnectionAttempts,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                timeout: 20000,
+                autoConnect: true
+            });
+
+            setupSocketListeners();
+        } catch (error) {
+            utils.log('error', '❌ Erreur création socket:', error);
+            utils.showToast('Erreur de connexion', 'error');
+        }
     }
-    console.log('✅ Médias locaux initialisés');
-  } catch (err) {
-    console.error('❌ Erreur média:', err);
-    showToast('Impossible d\'accéder à la caméra/micro.', 'error');
-    throw err;
-  }
-}
 
-// ============================================
-// ⭐ CONNEXION WEBRTC OPTIMISÉE
-// ============================================
-async function createPeerConnection() {
-  if (peerConnection) {
-    peerConnection.close();
-  }
-  
-  // Charger configuration ICE si nécessaire
-  if (!iceServersConfig) {
-    await loadIceServers();
-  }
-  
-  const connectionStart = Date.now();
-  
-  // Configuration avec STUN/TURN
-  const config = {
-    ...iceServersConfig,
-    iceTransportPolicy: 'all',
-    iceCandidatePoolSize: 10
-  };
-  
-  peerConnection = new RTCPeerConnection(config);
+    function setupSocketListeners() {
+        if (!state.socket) return;
 
-  // Ajout des tracks locaux
-  if (localStream) {
-    localStream.getTracks().forEach(track => {
-      peerConnection.addTrack(track, localStream);
-    });
-  }
+        state.socket.on('connect', () => {
+            utils.log('success', `✅ Socket connecté: ${state.socket.id}`);
+            
+            if (CONFIG.roomId) {
+                utils.log('info', `📤 Rejoindre salle: ${CONFIG.roomId}`);
+                state.socket.emit('join-room', CONFIG.roomId);
+            }
+        });
 
-  // Gestion des candidats ICE
-  peerConnection.onicecandidate = (event) => {
-    if (event.candidate && otherSocketId) {
-      // Détection du type de candidat
-      const candidateStr = event.candidate.candidate;
-      if (candidateStr.includes('relay')) {
-        usingRelay = true;
-        console.log('🔄 Utilisation TURN');
-      } else if (candidateStr.includes('srflx')) {
-        console.log('🌍 Utilisation STUN');
-      }
-      
-      socket.emit('ice-candidate', { 
-        target: otherSocketId, 
-        candidate: event.candidate 
-      });
-    }
-  };
+        state.socket.on('connect_error', (error) => {
+            utils.log('error', '❌ Erreur socket:', error.message);
+            utils.showToast('Problème de connexion au serveur', 'warning');
+        });
 
-  // Surveillance état connexion
-  peerConnection.oniceconnectionstatechange = () => {
-    const state = peerConnection.iceConnectionState;
-    const duration = ((Date.now() - connectionStart) / 1000).toFixed(1);
-    console.log(`📊 ICE ${state} (${duration}s)`);
-    
-    if (state === 'connected') {
-      connectionEstablished = true;
-      closeWaitingOverlay();
-      updateOtherStatus(true);
-      
-      // Envoyer stats au serveur
-      socket.emit('connection-quality', {
-        quality: usingRelay ? 'relay' : 'direct',
-        duration: duration
-      });
-    } else if (state === 'failed' || state === 'disconnected') {
-      connectionEstablished = false;
-      updateOtherStatus(false);
-    }
-  };
+        state.socket.on('disconnect', (reason) => {
+            utils.log('warn', `❌ Déconnecté: ${reason}`);
+            utils.updateOtherStatus(false);
+        });
 
-  peerConnection.onconnectionstatechange = () => {
-    console.log('État connexion:', peerConnection.connectionState);
-  };
+        state.socket.on('reconnect', (attemptNumber) => {
+            utils.log('info', `🔄 Reconnecté après ${attemptNumber} tentatives`);
+            if (CONFIG.roomId && state.socket) {
+                state.socket.emit('join-room', CONFIG.roomId);
+            }
+        });
 
-  peerConnection.ontrack = (event) => {
-    console.log('📹 Track reçu:', event.track.kind);
-    if (remoteVideo && event.streams[0]) {
-      remoteVideo.srcObject = event.streams[0];
-      connectionEstablished = true;
-      closeWaitingOverlay();
-      updateOtherStatus(true);
-    }
-  };
+        state.socket.on('reconnect_error', (error) => {
+            utils.log('error', '❌ Erreur reconnexion:', error);
+        });
 
-  peerConnection.ondatachannel = (event) => {
-    console.log('📡 Data channel reçu');
-    dataChannel = event.channel;
-    setupDataChannel();
-  };
+        state.socket.on('room-full', (data) => {
+            utils.showToast(data?.message || 'Salle pleine', 'error');
+            setTimeout(() => window.location.href = '/', 3000);
+        });
 
-  return peerConnection;
-}
+        state.socket.on('user-connected', (data) => {
+            const socketId = data?.id || data;
+            if (!socketId) return;
+            
+            utils.log('info', `👤 Utilisateur connecté: ${socketId}`);
 
-function setupDataChannel() {
-  if (!dataChannel) return;
+            if (state.otherSocketId === socketId) return;
 
-  dataChannel.onopen = () => {
-    console.log('✅ Data channel ouvert');
-    closeWaitingOverlay();
-  };
-  
-  dataChannel.onclose = () => {
-    console.log('❌ Data channel fermé');
-  };
-  
-  dataChannel.onerror = (err) => {
-    console.error('⚠️ Erreur data channel:', err);
-  };
-  
-  dataChannel.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log('📨 Message reçu:', data.type);
-      
-      if (data.type === 'chat') {
-        displayMessage(data.message, data.sender, data.timestamp);
-      } else if (data.type === 'file') {
-        displayMessage(data.file.name, data.sender, data.timestamp, data.file);
-      }
-    } catch (e) {
-      console.error('Erreur parsing message:', e);
-    }
-  };
-}
+            state.otherSocketId = socketId;
+            utils.updateOtherStatus(true);
+            
+            utils.showToast(`${CONFIG.otherUser.name || 'Participant'} a rejoint la consultation.`, 'success');
 
-// ============================================
-// ⭐ ÉVÉNEMENTS SOCKET.IO
-// ============================================
-socket.on('connect', () => {
-  console.log('✅ Connecté au serveur:', socket.id);
-  console.log('📡 Transport utilisé:', socket.io.engine.transport.name);
-  
-  if (typeof roomId !== 'undefined' && roomId) {
-    console.log('📤 Rejoindre salle:', roomId);
-    socket.emit('join-room', roomId);
-  } else {
-    console.error('❌ roomId non défini');
-    showToast('Erreur: ID de salle manquant', 'error');
-  }
-});
+            if (!state.peerConnection && !state.isInitiator) {
+                state.isInitiator = true;
+                webrtc.createOffer();
+            }
+        });
 
-socket.on('connect_error', (err) => {
-  console.error('❌ Erreur connexion socket:', err.message);
-  showToast('Problème de connexion au serveur', 'warning');
-});
+        state.socket.on('user-disconnected', (data) => {
+            const socketId = data?.id || data;
+            if (!socketId) return;
+            
+            utils.log('info', `👤 Utilisateur déconnecté: ${socketId}`);
 
-socket.on('disconnect', (reason) => {
-  console.log('❌ Déconnecté:', reason);
-  updateOtherStatus(false);
-});
+            if (socketId === state.otherSocketId) {
+                state.otherSocketId = null;
+                state.isInitiator = false;
+                utils.updateOtherStatus(false);
+                utils.showToast(`${CONFIG.otherUser.name || 'Participant'} a quitté la consultation.`, 'warning');
+                
+                webrtc.cleanup();
+                utils.showWaitingOverlay();
+            }
+        });
 
-socket.on('reconnect', (attemptNumber) => {
-  console.log('🔄 Reconnecté après', attemptNumber, 'tentatives');
-  if (roomId) {
-    socket.emit('join-room', roomId);
-  }
-});
+        state.socket.on('ice-servers', (servers) => {
+            if (servers) {
+                CONFIG.iceServers = servers;
+                utils.log('info', '📡 Configuration ICE mise à jour');
+            }
+        });
 
-socket.on('ice-servers', (servers) => {
-  console.log('📡 Configuration ICE reçue du serveur');
-  iceServersConfig = servers;
-});
+        state.socket.on('offer', (data) => {
+            webrtc.handleOffer(data);
+        });
 
-socket.on('room-full', (msg) => {
-  showToast(msg.message || 'Salle pleine', 'error');
-  setTimeout(() => window.location.href = '/', 3000);
-});
+        state.socket.on('answer', (data) => {
+            webrtc.handleAnswer(data);
+        });
 
-socket.on('user-connected', async (data) => {
-  const socketId = data.id || data;
-  console.log('👤 Autre utilisateur connecté:', socketId);
-  
-  if (otherSocketId === socketId) {
-    console.log('Déjà connecté à cet utilisateur');
-    return;
-  }
-  
-  otherSocketId = socketId;
-  updateOtherStatus(true);
-  
-  const otherName = (typeof otherUser !== 'undefined' && otherUser.name) 
-    ? otherUser.name 
-    : 'L\'autre utilisateur';
-  showToast(`${otherName} a rejoint la consultation.`, 'success');
-
-  if (!peerConnection && !isInitiator) {
-    isInitiator = true;
-    console.log('🎯 Création de l\'offre...');
-    
-    try {
-      await createPeerConnection();
-      
-      dataChannel = peerConnection.createDataChannel('chat', {
-        ordered: true
-      });
-      setupDataChannel();
-      
-      const offer = await peerConnection.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true
-      });
-      await peerConnection.setLocalDescription(offer);
-      
-      console.log('📤 Envoi offre à:', otherSocketId);
-      socket.emit('offer', { target: otherSocketId, sdp: offer });
-    } catch (err) {
-      console.error('❌ Erreur création offre:', err);
-      showToast('Erreur de connexion WebRTC', 'error');
-    }
-  }
-});
-
-socket.on('offer', async (data) => {
-  console.log('📩 Offre reçue de:', data.sender);
-  
-  if (!data.sdp) {
-    console.error('Offre invalide');
-    return;
-  }
-  
-  otherSocketId = data.sender;
-  isInitiator = false;
-
-  try {
-    if (!peerConnection) {
-      await createPeerConnection();
+        state.socket.on('ice-candidate', (data) => {
+            webrtc.handleIceCandidate(data);
+        });
     }
 
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-    
-    // Traiter candidats en attente
-    while (pendingIceCandidates.length > 0) {
-      const candidate = pendingIceCandidates.shift();
-      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    // ============================================
+    // ⭐ INITIALISATION DES ÉVÉNEMENTS UI
+    // ============================================
+    function initEventListeners() {
+        // Chat
+        if (elements.chatSend && elements.chatInput) {
+            elements.chatSend.addEventListener('click', (e) => {
+                e.preventDefault();
+                chat.sendMessage();
+            });
+            
+            elements.chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chat.sendMessage();
+                }
+            });
+        }
+
+        // Fichiers
+        if (elements.fileInput) {
+            elements.fileInput.addEventListener('change', (e) => {
+                chat.sendFiles(e.target.files);
+                elements.fileInput.value = '';
+            });
+        }
+
+        // Contrôles audio/vidéo
+        if (elements.muteAudioBtn) {
+            elements.muteAudioBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                webrtc.toggleAudio();
+            });
+        }
+
+        if (elements.muteVideoBtn) {
+            elements.muteVideoBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                webrtc.toggleVideo();
+            });
+        }
+
+        // Quitter l'appel
+        if (elements.leaveBtn) {
+            elements.leaveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                if (confirm('Voulez-vous vraiment quitter la consultation ?')) {
+                    webrtc.disconnect();
+                    
+                    // Appel API pour terminer la consultation
+                    if (CONFIG.consultationId) {
+                        fetch(`/Joinconsultation/endConsultationApi/${CONFIG.consultationId}`, {
+                            method: 'POST',
+                            headers: { 
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Content-Type': 'application/json'
+                            }
+                        }).catch(err => utils.log('error', 'Erreur API fin consultation:', err));
+                    }
+                    
+                    if (state.socket) {
+                        state.socket.disconnect();
+                    }
+                    
+                    window.location.href = '/';
+                }
+            });
+        }
+
+        // Chat toggle
+        if (elements.toggleChatBtn && elements.chatArea) {
+            elements.toggleChatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                elements.chatArea.classList.add('chat-visible');
+            });
+        }
+
+        if (elements.chatCloseBtn && elements.chatArea) {
+            elements.chatCloseBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                elements.chatArea.classList.remove('chat-visible');
+            });
+        }
+
+        // Gestion de la déconnexion avant fermeture de l'onglet
+        window.addEventListener('beforeunload', () => {
+            webrtc.disconnect();
+            if (state.socket) {
+                state.socket.disconnect();
+            }
+        });
+
+        // Gestion du redimensionnement pour mobile
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768 && elements.chatArea) {
+                elements.chatArea.classList.remove('chat-visible');
+            }
+        });
     }
 
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    
-    console.log('📤 Envoi réponse à:', otherSocketId);
-    socket.emit('answer', { target: otherSocketId, sdp: answer });
-  } catch (err) {
-    console.error('❌ Erreur traitement offre:', err);
-  }
-});
+    // ============================================
+    // ⭐ INITIALISATION PRINCIPALE
+    // ============================================
+    async function init() {
+        try {
+            utils.log('info', '🚀 Initialisation de la consultation...');
+            
+            // Vérifier la compatibilité du navigateur
+            if (!utils.checkBrowserCompatibility()) {
+                return;
+            }
 
-socket.on('answer', async (data) => {
-  console.log('📩 Réponse reçue de:', data.sender);
-  
-  if (!peerConnection) {
-    console.error('Pas de peerConnection');
-    return;
-  }
+            // Vérifier roomId
+            if (!CONFIG.roomId) {
+                throw new Error('roomId manquant');
+            }
 
-  try {
-    if (peerConnection.signalingState === 'have-local-offer') {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-      console.log('✅ Réponse appliquée');
-      
-      while (pendingIceCandidates.length > 0) {
-        const candidate = pendingIceCandidates.shift();
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      }
+            // Initialiser la socket en premier
+            initSocket();
+            
+            // Charger les serveurs ICE
+            await webrtc.loadIceServers();
+            
+            // Initialiser les médias
+            await webrtc.initMedia();
+            
+            // Initialiser les événements UI
+            initEventListeners();
+            
+            state.initializationComplete = true;
+            utils.log('success', '✅ Consultation prête');
+            
+        } catch (error) {
+            utils.log('error', '❌ Échec initialisation:', error.message);
+            utils.showToast('Erreur de démarrage', 'error');
+        }
     }
-  } catch (err) {
-    console.error('❌ Erreur traitement réponse:', err);
-  }
-});
 
-socket.on('ice-candidate', async (data) => {
-  console.log('📩 Candidat ICE reçu');
-  
-  if (!data.candidate) return;
-
-  if (peerConnection && peerConnection.remoteDescription) {
-    try {
-      await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-      console.log('✅ Candidat ICE ajouté');
-    } catch (err) {
-      console.error('❌ Erreur ajout ICE:', err);
+    // Démarrage quand le DOM est chargé
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
-  } else {
-    console.log('⏳ Candidat ICE mis en attente');
-    pendingIceCandidates.push(data.candidate);
-  }
-});
 
-socket.on('user-disconnected', (data) => {
-  const socketId = data.id || data;
-  console.log('👤 Utilisateur déconnecté:', socketId);
-  
-  if (socketId === otherSocketId) {
-    otherSocketId = null;
-    isInitiator = false;
-    updateOtherStatus(false);
-    
-    const otherName = (typeof otherUser !== 'undefined' && otherUser.name) 
-      ? otherUser.name 
-      : 'L\'autre utilisateur';
-    showToast(`${otherName} a quitté la consultation.`, 'warning');
-    
-    if (remoteVideo) remoteVideo.srcObject = null;
-    connectionEstablished = false;
-    showWaitingOverlay();
-    
-    if (peerConnection) {
-      peerConnection.close();
-      peerConnection = null;
-    }
-    dataChannel = null;
-  }
-});
+    // Exposer l'API pour les tests (optionnel)
+    window.consultation = {
+        state: state,
+        utils: utils,
+        webrtc: webrtc,
+        chat: chat,
+        CONFIG: CONFIG,
+        version: '4.1.0'
+    };
 
-// ============================================
-// ⭐ GESTION DU CHAT
-// ============================================
-function displayMessage(text, senderId, timestamp, file = null) {
-  if (!chatMessages) return;
-  
-  const currentUserId = (typeof currentUser !== 'undefined' && currentUser.id) 
-    ? currentUser.id 
-    : 'me';
-  const isOwn = senderId === currentUserId;
-  const sender = isOwn 
-    ? (currentUser || { name: 'Moi', avatar: '' }) 
-    : (otherUser || { name: 'Autre', avatar: '' });
-
-  const messageDiv = document.createElement('div');
-  messageDiv.classList.add('message', isOwn ? 'own' : 'other');
-
-  const avatar = document.createElement('img');
-  avatar.src = sender.avatar || 'default-avatar.png';
-  avatar.alt = '';
-  avatar.classList.add('avatar');
-  avatar.onerror = () => { avatar.src = 'default-avatar.png'; };
-
-  const bubble = document.createElement('div');
-  bubble.classList.add('bubble');
-
-  if (!isOwn) {
-    const senderName = document.createElement('div');
-    senderName.classList.add('sender');
-    senderName.textContent = sender.name || 'Inconnu';
-    bubble.appendChild(senderName);
-  }
-
-  if (file) {
-    const fileDiv = document.createElement('div');
-    fileDiv.classList.add('file');
-    const icon = document.createElement('i');
-    icon.className = file.type && file.type.startsWith('image/') 
-      ? 'fas fa-image' 
-      : 'fas fa-file';
-    fileDiv.appendChild(icon);
-    const link = document.createElement('a');
-    link.href = file.url || '#';
-    link.target = '_blank';
-    link.textContent = file.name || 'Fichier';
-    link.style.color = 'white';
-    fileDiv.appendChild(link);
-    bubble.appendChild(fileDiv);
-  } else {
-    const textDiv = document.createElement('div');
-    textDiv.classList.add('text');
-    textDiv.textContent = text;
-    bubble.appendChild(textDiv);
-  }
-
-  const timeDiv = document.createElement('div');
-  timeDiv.classList.add('time');
-  timeDiv.textContent = new Date(timestamp).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-  bubble.appendChild(timeDiv);
-
-  if (isOwn) {
-    messageDiv.appendChild(bubble);
-    messageDiv.appendChild(avatar);
-  } else {
-    messageDiv.appendChild(avatar);
-    messageDiv.appendChild(bubble);
-  }
-
-  chatMessages.appendChild(messageDiv);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-function sendMessage(text, file = null) {
-  if (!dataChannel || dataChannel.readyState !== 'open') {
-    showToast('La connexion chat n\'est pas encore établie.', 'warning');
-    return;
-  }
-  
-  const currentUserId = (typeof currentUser !== 'undefined' && currentUser.id) 
-    ? currentUser.id 
-    : 'me';
-  
-  const message = {
-    type: file ? 'file' : 'chat',
-    sender: currentUserId,
-    timestamp: Date.now(),
-    message: text,
-    file: file
-  };
-  
-  try {
-    dataChannel.send(JSON.stringify(message));
-    displayMessage(text, currentUserId, Date.now(), file);
-  } catch (err) {
-    console.error('Erreur envoi message:', err);
-    showToast('Erreur d\'envoi du message', 'error');
-  }
-}
-
-// ============================================
-// ⭐ EVENT LISTENERS
-// ============================================
-if (chatSend && chatInput) {
-  chatSend.addEventListener('click', () => {
-    const text = chatInput.value.trim();
-    if (text) {
-      sendMessage(text);
-      chatInput.value = '';
-    }
-  });
-
-  chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') chatSend.click();
-  });
-}
-
-if (fileInput) {
-  fileInput.addEventListener('change', (e) => {
-    Array.from(e.target.files).forEach(file => {
-      const fileInfo = {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        url: URL.createObjectURL(file)
-      };
-      sendMessage('', fileInfo);
-    });
-    fileInput.value = '';
-  });
-}
-
-if (muteAudioBtn) {
-  muteAudioBtn.addEventListener('click', () => {
-    if (!localStream) return;
-    audioEnabled = !audioEnabled;
-    localStream.getAudioTracks().forEach(track => track.enabled = audioEnabled);
-    muteAudioBtn.classList.toggle('active', audioEnabled);
-    muteAudioBtn.innerHTML = audioEnabled 
-      ? '<i class="fas fa-microphone"></i>' 
-      : '<i class="fas fa-microphone-slash"></i>';
-  });
-}
-
-if (muteVideoBtn) {
-  muteVideoBtn.addEventListener('click', () => {
-    if (!localStream) return;
-    videoEnabled = !videoEnabled;
-    localStream.getVideoTracks().forEach(track => track.enabled = videoEnabled);
-    muteVideoBtn.classList.toggle('active', videoEnabled);
-    muteVideoBtn.innerHTML = videoEnabled 
-      ? '<i class="fas fa-video"></i>' 
-      : '<i class="fas fa-video-slash"></i>';
-  });
-}
-
-if (leaveBtn) {
-  leaveBtn.addEventListener('click', () => {
-    if (peerConnection) peerConnection.close();
-    if (localStream) localStream.getTracks().forEach(track => track.stop());
-    socket.disconnect();
-    window.location.href = '/';
-  });
-}
-
-if (toggleChatBtn && chatArea) {
-  toggleChatBtn.addEventListener('click', () => chatArea.classList.add('chat-visible'));
-}
-
-if (chatCloseBtn && chatArea) {
-  chatCloseBtn.addEventListener('click', () => chatArea.classList.remove('chat-visible'));
-}
-
-// ============================================
-// ⭐ INITIALISATION
-// ============================================
-(async function init() {
-  try {
-    // Charger configuration ICE d'abord
-    await loadIceServers();
-    
-    // Puis initialiser médias
-    await initMedia();
-    
-    console.log('🚀 Initialisation terminée');
-    console.log('📡 Serveur:', SOCKET_URL);
-    console.log('🔌 Path:', SOCKET_PATH);
-  } catch (err) {
-    console.error('Échec initialisation:', err);
-  }
 })();
