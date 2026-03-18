@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const os = require('os');
+const path = require('path'); // AJOUTÉ pour les chemins
 
 const app = express();
 const server = http.createServer(app);
@@ -11,21 +12,22 @@ const server = http.createServer(app);
 // ============================================
 const cors = require('cors');
 
-// Option 1: CORS complet pour tous les domaines
+// Configuration CORS complète
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: false,
+  credentials: true, // CHANGÉ à true pour les WebSockets
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
 
-// Option 2: Middleware CORS manuel supplémentaire (double sécurité)
+// Middleware CORS manuel supplémentaire
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true'); // AJOUTÉ
   res.header('Access-Control-Max-Age', '86400');
   
   // Anti-cache
@@ -39,7 +41,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================
-// ⭐ BODY PARSER (nécessaire pour POST/PUT)
+// ⭐ BODY PARSER
 // ============================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -51,55 +53,92 @@ const TURN_CONFIG = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
-  ]
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.voipbuster.com:3478' }
+  ],
+  iceTransportPolicy: 'all',
+  iceCandidatePoolSize: 10
 };
 
 // ============================================
-// ⭐ SOCKET.IO AVEC CORS CORRECT
+// ⭐ SOCKET.IO - CONFIGURATION CRITIQUE POUR /socket/
 // ============================================
 const io = socketIo(server, {
+  path: '/socket/socket.io', // ⚠️ CRITIQUE - correspond au .htaccess
   cors: { 
     origin: "*",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
-    credentials: false
+    credentials: true, // IMPORTANT pour les cookies/sessions
   },
   pingTimeout: 60000,
   pingInterval: 25000,
-  transports: ['polling', 'websocket'],
-  allowUpgrades: true
+  transports: ['websocket', 'polling'], // websocket en PRIORITÉ
+  allowUpgrades: true,
+  connectTimeout: 45000
 });
 
 // ============================================
-// ⭐ ROUTES API
+// ⭐ ROUTES API - AVEC PREFIXE /socket
 // ============================================
 
-// Test simple
+// Route de test - accessible via /socket/
 app.get('/', (req, res) => {
   res.json({ 
     status: 'OK',
     server: 'NUFOTEC Consultation',
+    path: '/socket/',
     time: new Date().toISOString()
   });
 });
 
-// ICE servers - CORRIGÉ avec CORS explicite
+// ICE servers - accessible via /socket/api/ice-servers
 app.get('/api/ice-servers', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.json(TURN_CONFIG);
 });
 
-// Health check
+// Health check - accessible via /socket/health
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', uptime: process.uptime() });
+  res.json({ 
+    status: 'healthy', 
+    uptime: process.uptime(),
+    connections: io.engine.clientsCount
+  });
+});
+
+// Stats - accessible via /socket/api/stats
+app.get('/api/stats', (req, res) => {
+  res.json({
+    connections: io.engine.clientsCount,
+    uptime: Date.now() - stats.startTime,
+    memory: process.memoryUsage(),
+    cpu: os.loadavg()
+  });
+});
+
+// ============================================
+// ⭐ STATISTIQUES
+// ============================================
+const stats = {
+  connections: 0,
+  startTime: Date.now()
+};
+
+io.engine.on('connection', () => {
+  stats.connections++;
 });
 
 // ============================================
 // ⭐ SOCKET.IO EVENTS
 // ============================================
 io.on('connection', (socket) => {
-  console.log('✅ Connecté:', socket.id);
+  console.log(`✅ Connecté: ${socket.id} (${socket.conn.transport.name})`);
+
+  // Envoyer configuration ICE au client
+  socket.emit('ice-servers', TURN_CONFIG);
 
   socket.on('join-room', (roomId) => {
     const rooms = io.sockets.adapter.rooms;
@@ -107,12 +146,12 @@ io.on('connection', (socket) => {
     const numClients = room ? room.size : 0;
 
     if (numClients >= 2) {
-      socket.emit('room-full', { message: 'Salle pleine' });
+      socket.emit('room-full', { message: 'Salle pleine (max 2)' });
       return;
     }
 
     socket.join(roomId);
-    console.log(`📌 ${socket.id} → ${roomId}`);
+    console.log(`📌 ${socket.id} → ${roomId} (${numClients + 1}/2)`);
     
     socket.to(roomId).emit('user-connected', {
       id: socket.id,
@@ -123,29 +162,41 @@ io.on('connection', (socket) => {
   socket.on('offer', (data) => {
     socket.to(data.target).emit('offer', { 
       sdp: data.sdp, 
-      sender: socket.id 
+      sender: socket.id,
+      timestamp: Date.now()
     });
   });
 
   socket.on('answer', (data) => {
     socket.to(data.target).emit('answer', { 
       sdp: data.sdp, 
-      sender: socket.id 
+      sender: socket.id,
+      timestamp: Date.now()
     });
   });
 
   socket.on('ice-candidate', (data) => {
     socket.to(data.target).emit('ice-candidate', { 
       candidate: data.candidate, 
-      sender: socket.id 
+      sender: socket.id,
+      timestamp: Date.now()
     });
   });
 
-  socket.on('disconnect', () => {
-    console.log('❌ Déconnecté:', socket.id);
+  socket.on('connection-quality', (data) => {
+    console.log(`📶 Qualité ${socket.id}: ${data.quality}`);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log(`❌ Déconnecté: ${socket.id} (${reason})`);
+    
     socket.rooms.forEach(room => {
       if (room !== socket.id) {
-        socket.to(room).emit('user-disconnected', { id: socket.id });
+        socket.to(room).emit('user-disconnected', {
+          id: socket.id,
+          reason: reason,
+          timestamp: Date.now()
+        });
       }
     });
   });
@@ -158,11 +209,23 @@ const port = process.env.PORT || 3002;
 
 server.listen(port, () => {
   console.log(`
-╔════════════════════════════════════════╗
-║  🚀 NUFOTEC CONSULTATION              ║
-╠════════════════════════════════════════╣
-║  Port: ${port}                          ║
-║  CORS: * (tous domaines)               ║
-╚════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════╗
+║  🚀 NUFOTEC CONSULTATION - SIGNALING SERVER               ║
+╠════════════════════════════════════════════════════════════╣
+║  📡 Port: ${port.toString().padEnd(45)}║
+║  🔌 Socket.IO Path: /socket/socket.io${' '.repeat(30)}║
+║  🌐 Public URL: https://nufotec.com/socket/${' '.repeat(27)}║
+║  🔧 CORS: * (tous domaines)${' '.repeat(32)}║
+║  📊 STUN: 6 serveurs actifs${' '.repeat(31)}║
+╚════════════════════════════════════════════════════════════╝
   `);
+});
+
+// Gestion des erreurs
+process.on('uncaughtException', (err) => {
+  console.error('❌ Exception non catchée:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('❌ Rejection non gérée:', reason);
 });

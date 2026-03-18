@@ -1,4 +1,16 @@
 RewriteEngine On
+
+# ============================================================
+# 1. PONT VERS NODE.JS (Priorité Maximale)
+# ============================================================
+<IfModule mod_proxy.c>
+    RewriteRule ^socket/(.*) http://127.0.0.1:3002/$1 [P,L]
+    ProxyPassReverse /socket/ http://127.0.0.1:3002/
+</IfModule>
+
+# ============================================================
+# 2. RÈGLES CODEIGNITER (Votre code actuel)
+# ============================================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [L]

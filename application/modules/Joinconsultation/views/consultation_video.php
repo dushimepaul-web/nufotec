@@ -248,46 +248,96 @@ $otherRoleLabel = ($current_role === 'patient') ? 'Dr. ' : '';
 <!-- Conteneur de notifications toast -->
 <div id="toast-container"></div>
 
-<!-- CORRECTION: Charger Socket.IO depuis le CDN avec version spécifique -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HFklTJBj/gBOV8G3HcKn4NfQblz" crossorigin="anonymous"></script>
+<!-- ============================================ -->
+<!-- ⭐ CHARGEMENT SOCKET.IO DEPUIS CDN -->
+<!-- ============================================ -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" 
+        integrity="sha384-mZLF4Urtxi/qmjR/Wtjq+67uzs2Y6oqfGb1A4W66LX/ZNLkIqL6Jf5bqU6wW1qI" 
+        crossorigin="anonymous"></script>
 
 <script>
-    // CORRECTION: Variables globales avec validation et valeurs par défaut sécurisées
-    const roomId = <?= json_encode($room_id ?? null) ?>;
-    const currentUser = <?= json_encode([
-        'id' => $current_id,
-        'name' => trim(($current_user['prenom'] ?? '') . ' ' . ($current_user['nom'] ?? '')) ?: 'Utilisateur',
-        'avatar' => $current_avatar_url,
-        'role' => $current_role
-    ]) ?>;
-    const otherUser = <?= json_encode([
-        'id' => $other_id,
-        'name' => trim($other_prenom . ' ' . $other_nom) ?: 'Participant',
-        'avatar' => $other_avatar_url,
-        'role' => $current_role === 'patient' ? 'medecin' : 'patient'
-    ]) ?>;
-    const currentRole = <?= json_encode($current_role) ?>;
-    
-    // Validation critique
-    if (!roomId) {
-        console.error('❌ ERREUR CRITIQUE: roomId non défini');
-        alert('Erreur: Identifiant de salle manquant. Veuillez recharger la page.');
-    }
-    
-    // URL du serveur de signalisation Node.js
-    const SIGNALING_SERVER = "https://consultation.nufotec.com";
-    
-    // Debug info
-    console.log('🔧 Configuration:', {
-        roomId: roomId,
-        currentUser: currentUser,
-        otherUser: otherUser,
-        role: currentRole,
-        server: SIGNALING_SERVER
+// ============================================
+// ⭐ CONFIGURATION GLOBALE - CORRIGÉE POUR /socket/
+// ============================================
+// Variables globales avec validation et valeurs par défaut sécurisées
+const roomId = <?= json_encode($room_id ?? null) ?>;
+const currentUser = <?= json_encode([
+    'id' => $current_id ?? 'unknown',
+    'name' => trim(($current_user['prenom'] ?? '') . ' ' . ($current_user['nom'] ?? '')) ?: 'Utilisateur',
+    'avatar' => $current_avatar_url ?? '/assets/img/default-avatar.png',
+    'role' => $current_role ?? 'participant'
+]) ?>;
+const otherUser = <?= json_encode([
+    'id' => $other_id ?? 'other',
+    'name' => trim(($other_prenom ?? '') . ' ' . ($other_nom ?? '')) ?: 'Participant',
+    'avatar' => $other_avatar_url ?? '/assets/img/default-avatar.png',
+    'role' => $current_role === 'patient' ? 'medecin' : 'patient'
+]) ?>;
+const currentRole = <?= json_encode($current_role ?? 'participant') ?>;
+
+// ============================================
+// ⭐ URL DU SERVEUR DE SIGNALISATION - CORRIGÉE
+// ============================================
+// ✅ Important: On utilise le domaine principal avec le chemin virtuel /socket/
+const SIGNALING_SERVER = window.location.origin;  // https://nufotec.com (auto-détection)
+
+// Configuration Socket.IO - Ces variables seront utilisées par consultation.js
+const SOCKET_CONFIG = {
+    url: SIGNALING_SERVER,
+    path: '/socket/socket.io',           // ⚠️ CRITIQUE - correspond au .htaccess
+    transports: ['websocket', 'polling'], // websocket en priorité
+    withCredentials: true
+};
+
+// ============================================
+// ⭐ VALIDATION CRITIQUE
+// ============================================
+if (!roomId) {
+    console.error('❌ ERREUR CRITIQUE: roomId non défini');
+    alert('Erreur: Identifiant de salle manquant. Veuillez recharger la page.');
+}
+
+// ============================================
+// ⭐ DEBUG INFO
+// ============================================
+console.log('🔧 Configuration NUFOTEC:', {
+    roomId: roomId,
+    currentUser: currentUser,
+    otherUser: otherUser,
+    role: currentRole,
+    signalingServer: SIGNALING_SERVER,
+    socketPath: SOCKET_CONFIG.path,
+    timestamp: new Date().toISOString()
+});
+
+// ============================================
+// ⭐ TEST DE CONNEXION AU SERVEUR
+// ============================================
+// Test rapide pour vérifier que le serveur Node.js est accessible
+fetch(SIGNALING_SERVER + '/socket/health')
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Serveur de signalisation opérationnel:', data);
+    })
+    .catch(err => {
+        console.warn('⚠️ Serveur de signalisation non joignable:', err.message);
+        console.warn('   Vérifiez que le serveur Node.js tourne sur le port 3002');
     });
+
+// ============================================
+// ⭐ FONCTION UTILITAIRE POUR TEST MANUEL
+// ============================================
+window.testSignalingServer = function() {
+    fetch(SIGNALING_SERVER + '/socket/health')
+        .then(res => res.json())
+        .then(data => console.log('✅ Test OK:', data))
+        .catch(err => console.error('❌ Test échoué:', err));
+};
 </script>
 
-<!-- CORRECTION: S'assurer que le chemin vers consultation.js est correct -->
+<!-- ============================================ -->
+<!-- ⭐ CHARGEMENT DU CLIENT CONSULTATION -->
+<!-- ============================================ -->
 <script src="<?= base_url('assets/js/consultation.js?v=' . time()) ?>"></script>
 
 </body>

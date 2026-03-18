@@ -33,17 +33,21 @@ let connectionEstablished = false;
 let usingRelay = false;
 
 // ============================================
-// ⭐ CONFIGURATION SOCKET.IO AVANCÉE
+// ⭐ CONFIGURATION SOCKET.IO CORRIGÉE
 // ============================================
-const socket = io('https://consultation.nufotec.com', {
-  transports: ['polling', 'websocket'],
-  withCredentials: false,
-  path: '/socket.io/',
+const SOCKET_URL = 'https://nufotec.com';  // Domaine principal
+const SOCKET_PATH = '/socket/socket.io';    // Chemin corrigé
+
+const socket = io(SOCKET_URL, {
+  path: SOCKET_PATH,                          // ⚠️ CRITIQUE - correspond au serveur
+  transports: ['websocket', 'polling'],       // websocket en PRIORITÉ
+  withCredentials: true,                       // IMPORTANT pour les cookies
   reconnection: true,
   reconnectionAttempts: 10,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  timeout: 20000
+  timeout: 20000,
+  autoConnect: true
 });
 
 // ============================================
@@ -80,12 +84,22 @@ function showWaitingOverlay() {
 }
 
 // ============================================
-// ⭐ CHARGEMENT CONFIGURATION ICE
+// ⭐ CHARGEMENT CONFIGURATION ICE - CORRIGÉ
 // ============================================
 async function loadIceServers() {
   try {
     console.log('🌐 Chargement configuration ICE...');
-    const response = await fetch('/api/ice-servers');
+    // URL corrigée avec /socket/
+    const response = await fetch('/socket/api/ice-servers', {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
     const config = await response.json();
     iceServersConfig = config;
     console.log('✅ Configuration ICE chargée:', iceServersConfig);
@@ -96,7 +110,9 @@ async function loadIceServers() {
     iceServersConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' }
       ]
     };
     return iceServersConfig;
@@ -146,7 +162,15 @@ async function createPeerConnection() {
   }
   
   const connectionStart = Date.now();
-  peerConnection = new RTCPeerConnection(iceServersConfig);
+  
+  // Configuration avec STUN/TURN
+  const config = {
+    ...iceServersConfig,
+    iceTransportPolicy: 'all',
+    iceCandidatePoolSize: 10
+  };
+  
+  peerConnection = new RTCPeerConnection(config);
 
   // Ajout des tracks locaux
   if (localStream) {
@@ -256,6 +280,7 @@ function setupDataChannel() {
 // ============================================
 socket.on('connect', () => {
   console.log('✅ Connecté au serveur:', socket.id);
+  console.log('📡 Transport utilisé:', socket.io.engine.transport.name);
   
   if (typeof roomId !== 'undefined' && roomId) {
     console.log('📤 Rejoindre salle:', roomId);
@@ -625,6 +650,8 @@ if (chatCloseBtn && chatArea) {
     await initMedia();
     
     console.log('🚀 Initialisation terminée');
+    console.log('📡 Serveur:', SOCKET_URL);
+    console.log('🔌 Path:', SOCKET_PATH);
   } catch (err) {
     console.error('Échec initialisation:', err);
   }
