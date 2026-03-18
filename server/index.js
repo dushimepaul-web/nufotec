@@ -2,13 +2,21 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const os = require('os');
-const path = require('path'); // AJOUTÉ pour les chemins
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 
 // ============================================
-// ⭐ CORS ULTRA-PERMISSIF - CORRECTION MAXIMALE
+// ⭐ STATISTIQUES - DÉCLARÉES EN PREMIER
+// ============================================
+const stats = {
+  connections: 0,
+  startTime: Date.now()
+};
+
+// ============================================
+// ⭐ CORS ULTRA-PERMISSIF
 // ============================================
 const cors = require('cors');
 
@@ -17,7 +25,7 @@ app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true, // CHANGÉ à true pour les WebSockets
+  credentials: true,
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
@@ -27,7 +35,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true'); // AJOUTÉ
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Max-Age', '86400');
   
   // Anti-cache
@@ -63,25 +71,32 @@ const TURN_CONFIG = {
 };
 
 // ============================================
-// ⭐ SOCKET.IO - CONFIGURATION CRITIQUE POUR /socket/
+// ⭐ SOCKET.IO - CONFIGURATION POUR /socket/
 // ============================================
 const io = socketIo(server, {
-  path: '/socket/socket.io', // ⚠️ CRITIQUE - correspond au .htaccess
+  path: '/socket/socket.io',
   cors: { 
     origin: "*",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
-    credentials: true, // IMPORTANT pour les cookies/sessions
+    credentials: true,
   },
   pingTimeout: 60000,
   pingInterval: 25000,
-  transports: ['websocket', 'polling'], // websocket en PRIORITÉ
+  transports: ['websocket', 'polling'],
   allowUpgrades: true,
   connectTimeout: 45000
 });
 
 // ============================================
-// ⭐ ROUTES API - AVEC PREFIXE /socket
+// ⭐ INCREMENTATION DES STATS
+// ============================================
+io.engine.on('connection', () => {
+  stats.connections++;
+});
+
+// ============================================
+// ⭐ ROUTES API
 // ============================================
 
 // Route de test - accessible via /socket/
@@ -89,6 +104,7 @@ app.get('/', (req, res) => {
   res.json({ 
     status: 'OK',
     server: 'NUFOTEC Consultation',
+    message: 'Serveur de signalisation opérationnel',
     path: '/socket/',
     time: new Date().toISOString()
   });
@@ -105,7 +121,9 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     uptime: process.uptime(),
-    connections: io.engine.clientsCount
+    connections: io.engine.clientsCount,
+    totalConnections: stats.connections,
+    timestamp: Date.now()
   });
 });
 
@@ -113,22 +131,28 @@ app.get('/health', (req, res) => {
 app.get('/api/stats', (req, res) => {
   res.json({
     connections: io.engine.clientsCount,
+    totalConnections: stats.connections,
     uptime: Date.now() - stats.startTime,
     memory: process.memoryUsage(),
     cpu: os.loadavg()
   });
 });
 
-// ============================================
-// ⭐ STATISTIQUES
-// ============================================
-const stats = {
-  connections: 0,
-  startTime: Date.now()
-};
+// Version - accessible via /socket/api/version
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: '3.0',
+    node: process.version,
+    environment: process.env.NODE_ENV || 'production'
+  });
+});
 
-io.engine.on('connection', () => {
-  stats.connections++;
+// Test simple - accessible via /socket/api/test
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'API fonctionnelle',
+    timestamp: Date.now()
+  });
 });
 
 // ============================================
@@ -217,6 +241,13 @@ server.listen(port, () => {
 ║  🌐 Public URL: https://nufotec.com/socket/${' '.repeat(27)}║
 ║  🔧 CORS: * (tous domaines)${' '.repeat(32)}║
 ║  📊 STUN: 6 serveurs actifs${' '.repeat(31)}║
+║  📋 Routes disponibles:                                    ║
+║     • /                                                    ║
+║     • /api/ice-servers                                     ║
+║     • /health                                              ║
+║     • /api/stats                                           ║
+║     • /api/version                                         ║
+║     • /api/test                                            ║
 ╚════════════════════════════════════════════════════════════╝
   `);
 });
