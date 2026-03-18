@@ -1,15 +1,16 @@
 RewriteEngine On
 
 # ============================================================
-# 1. PONT VERS NODE.JS (Priorité Maximale)
+# 1. PONT VERS NODE.JS - VERSION CORRIGÉE
 # ============================================================
 <IfModule mod_proxy.c>
-    RewriteRule ^socket/(.*) http://127.0.0.1:3002/$1 [P,L]
-    ProxyPassReverse /socket/ http://127.0.0.1:3002/
+    # Conserver le chemin complet /socket/
+    RewriteRule ^socket/(.*) http://127.0.0.1:3002/socket/$1 [P,L]
+    ProxyPassReverse /socket/ http://127.0.0.1:3002/socket/
 </IfModule>
 
 # ============================================================
-# 2. RÈGLES CODEIGNITER (Votre code actuel)
+# 2. RÈGLES CODEIGNITER
 # ============================================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
