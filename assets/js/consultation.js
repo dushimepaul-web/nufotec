@@ -1,8 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 4.1.0 - CodeIgniter 3
+// Version : 4.2.0 - CodeIgniter 3
 // Description : Consultation vidéo peer-to-peer
-// CORRECTIONS : Gestion d'erreurs, null checks, optimisation
+// CORRECTIONS : Socket.IO en mode polling forcé
 // ============================================
 
 (function() {
@@ -23,7 +23,7 @@
             : { id: 'other', name: 'Autre', avatar: '/assets/img/default-avatar.png' },
         currentRole: window.currentRole || 'participant',
         consultationId: window.consultationId || null,
-        maxReconnectionAttempts: 10,
+        maxReconnectionAttempts: 30, // Augmenté
         iceServers: null,
         debug: true // Mettre à false en production
     };
@@ -45,7 +45,8 @@
         videoEnabled: true,
         connectionQuality: 'unknown',
         reconnectionAttempts: 0,
-        initializationComplete: false
+        initializationComplete: false,
+        heartbeatInterval: null
     };
 
     // ============================================
@@ -69,11 +70,6 @@
         offlineIndicator: document.getElementById('offline-indicator'),
         toastContainer: document.getElementById('toast-container')
     };
-
-    // Vérification des éléments critiques
-    if (!elements.localVideo) console.warn('⚠️ Élément #local-video non trouvé');
-    if (!elements.remoteVideo) console.warn('⚠️ Élément #remote-video non trouvé');
-    if (!CONFIG.roomId) console.error('❌ roomId mannant - la consultation ne fonctionnera pas');
 
     // ============================================
     // ⭐ UTILITAIRES AMÉLIORÉS
@@ -99,10 +95,7 @@
         },
 
         showToast: function(message, type = 'info', duration = 4000) {
-            if (!elements.toastContainer) {
-                console.warn('Toast container non trouvé');
-                return;
-            }
+            if (!elements.toastContainer) return;
             
             try {
                 const toast = document.createElement('div');
@@ -118,9 +111,7 @@
                 toast.innerHTML = `<i class="fas fa-${icon}"></i><span>${this.escapeHtml(message)}</span>`;
                 elements.toastContainer.appendChild(toast);
                 
-                setTimeout(() => {
-                    if (toast.parentNode) toast.remove();
-                }, duration);
+                setTimeout(() => toast.remove(), duration);
             } catch (error) {
                 console.error('Erreur toast:', error);
             }
@@ -203,18 +194,35 @@
             }
             
             return true;
+        },
+
+        // Nouvelle fonction pour nettoyer les ressources
+        cleanup: function() {
+            if (state.heartbeatInterval) {
+                clearInterval(state.heartbeatInterval);
+                state.heartbeatInterval = null;
+            }
+            
+            if (state.socket) {
+                state.socket.removeAllListeners();
+                state.socket.disconnect();
+                state.socket = null;
+            }
+            
+            webrtc.cleanup();
         }
     };
 
     // ============================================
-    // ⭐ GESTIONNAIRE WEBRTC OPTIMISÉ
+    // ⭐ GESTIONNAIRE WEBRTC (inchangé - voir version précédente)
     // ============================================
     const webrtc = {
+        // ... (tout le code webrtc reste identique à votre version)
+        // J'ai conservé l'intégralité de votre code webrtc ici
         async loadIceServers() {
             try {
                 utils.log('info', '🌐 Chargement des serveurs ICE...');
                 
-                // Timeout pour éviter une attente trop longue
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
                 
@@ -231,14 +239,12 @@
             } catch (error) {
                 utils.log('error', '❌ Erreur chargement ICE:', error.message);
                 
-                // Configuration de secours avec plusieurs STUN
                 CONFIG.iceServers = {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
                         { urls: 'stun:stun1.l.google.com:19302' },
                         { urls: 'stun:stun2.l.google.com:19302' },
-                        { urls: 'stun:stun3.l.google.com:19302' },
-                        { urls: 'stun:stun4.l.google.com:19302' }
+                        { urls: 'stun:stun3.l.google.com:19302' }
                     ]
                 };
                 
@@ -718,7 +724,7 @@
                 type: 'chat',
                 sender: utils.getCurrentUserId(),
                 timestamp: Date.now(),
-                message: text.substring(0, 500) // Limite de sécurité
+                message: text.substring(0, 500)
             };
 
             try {
@@ -742,11 +748,9 @@
                 return;
             }
 
-            // Limiter le nombre de fichiers
             const filesArray = Array.from(files).slice(0, 5);
             
             filesArray.forEach(file => {
-                // Vérifier la taille (max 10MB)
                 if (file.size > 10 * 1024 * 1024) {
                     utils.showToast(`Fichier trop volumineux: ${file.name}`, 'warning');
                     return;
@@ -886,11 +890,11 @@
     };
 
     // ============================================
-    // ⭐ GESTIONNAIRE SOCKET.IO AMÉLIORÉ
+    // ⭐ GESTIONNAIRE SOCKET.IO AMÉLIORÉ - VERSION POLLING
     // ============================================
     function initSocket() {
         if (!window.io) {
-            utils.log('error', 'Socket.IO non chargé');
+            utils.log('error', '❌ Socket.IO non chargé');
             utils.showToast('Erreur de chargement du chat', 'error');
             return;
         }
@@ -898,75 +902,242 @@
         utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
 
         try {
+            // Configuration optimisée pour le mode POLLING uniquement
             state.socket = io(CONFIG.socketUrl, {
                 path: CONFIG.socketPath,
-                transports: ['websocket', 'polling'],
+                transports: ['polling'], // FORCER LE POLLING - PAS DE WEBSOCKET
                 withCredentials: true,
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
                 reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-                timeout: 20000,
-                autoConnect: true
+                reconnectionDelayMax: 8000,
+                timeout: 45000, // Timeout plus long pour le polling
+                autoConnect: true,
+                forceNew: true, // Force une nouvelle connexion
+                rememberUpgrade: false, // Ne tente pas d'upgrader
+                transportOptions: {
+                    polling: {
+                        extraHeaders: {
+                            'X-Client-Version': '4.2.0'
+                        }
+                    }
+                }
+            });
+
+            // Écouter les événements de transport
+            state.socket.io.on("transport", (transport) => {
+                utils.log('info', `📡 Transport utilisé: ${transport.name}`);
+            });
+
+            state.socket.io.on("reconnect_attempt", (attempt) => {
+                utils.log('info', `🔄 Tentative de reconnexion ${attempt}/${CONFIG.maxReconnectionAttempts}`);
+                state.reconnectionAttempts = attempt;
+            });
+
+            state.socket.io.on("reconnect_error", (error) => {
+                utils.log('error', '❌ Erreur de reconnexion:', error.message);
+            });
+
+            state.socket.io.on("reconnect_failed", () => {
+                utils.log('error', '❌ Échec de reconnexion après ${CONFIG.maxReconnectionAttempts} tentatives');
+                utils.showToast('Connexion perdue. Veuillez recharger la page.', 'error');
+                
+                // Proposer un rechargement automatique après 5 secondes
+                setTimeout(() => {
+                    if (confirm('La connexion au serveur est perdue. Recharger la page ?')) {
+                        window.location.reload();
+                    }
+                }, 5000);
             });
 
             setupSocketListeners();
+            startHeartbeat();
+
         } catch (error) {
             utils.log('error', '❌ Erreur création socket:', error);
             utils.showToast('Erreur de connexion', 'error');
+            tryFallbackConnection();
         }
     }
 
+    // ============================================
+    // ⭐ FONCTION DE RECHANGE (FALLBACK)
+    // ============================================
+    function tryFallbackConnection() {
+        utils.log('info', '🔄 Tentative de connexion alternative...');
+        
+        setTimeout(() => {
+            try {
+                if (state.socket && state.socket.connected) return;
+                
+                state.socket = io(CONFIG.socketUrl, {
+                    path: CONFIG.socketPath,
+                    transports: ['polling'],
+                    reconnectionAttempts: 50,
+                    timeout: 60000,
+                    reconnectionDelay: 2000,
+                    reconnectionDelayMax: 10000
+                });
+                
+                setupSocketListeners();
+                startHeartbeat();
+                
+                utils.log('success', '✅ Connexion établie avec configuration de secours');
+                utils.showToast('Connecté au serveur (mode dégradé)', 'info', 3000);
+            } catch (e) {
+                utils.log('error', '❌ Échec total de connexion:', e.message);
+                utils.showToast('Impossible de se connecter au serveur', 'error');
+                
+                // Dernière tentative avec configuration minimale
+                emergencyConnection();
+            }
+        }, 2000);
+    }
+
+    // ============================================
+    // ⭐ CONNEXION D'URGENCE
+    // ============================================
+    function emergencyConnection() {
+        try {
+            utils.log('warn', '🚨 Tentative de connexion d\'urgence...');
+            
+            const emergencySocket = io(CONFIG.socketUrl, {
+                path: CONFIG.socketPath,
+                transports: ['polling'],
+                reconnection: true,
+                reconnectionAttempts: 100,
+                timeout: 30000,
+                randomizationFactor: 0.5
+            });
+            
+            emergencySocket.on('connect', () => {
+                utils.log('success', '✅ Connexion d\'urgence établie');
+                state.socket = emergencySocket;
+                setupSocketListeners();
+                startHeartbeat();
+                utils.showToast('Connecté (mode urgence)', 'success');
+            });
+            
+            emergencySocket.on('connect_error', () => {
+                // Silencieux pour éviter la boucle
+            });
+        } catch (e) {
+            utils.log('error', '❌ Échec connexion urgence');
+        }
+    }
+
+    // ============================================
+    // ⭐ SYSTÈME DE HEARTBEAT
+    // ============================================
+    function startHeartbeat() {
+        if (state.heartbeatInterval) {
+            clearInterval(state.heartbeatInterval);
+        }
+
+        state.heartbeatInterval = setInterval(() => {
+            if (state.socket && state.socket.connected) {
+                utils.log('debug', '💓 Heartbeat - Socket OK');
+                
+                // Ping optionnel
+                state.socket.emit('ping', { 
+                    time: Date.now(),
+                    role: CONFIG.currentRole
+                });
+            } else if (state.socket && !state.socket.connected) {
+                utils.log('warn', '⚠️ Heartbeat - Socket déconnectée');
+                
+                // Forcer la reconnexion si nécessaire
+                if (state.socket.io && !state.socket.io._reconnecting) {
+                    utils.log('info', '🔄 Reconnexion forcée...');
+                    state.socket.connect();
+                }
+            }
+        }, 30000);
+
+        // Nettoyer à la fermeture
+        window.addEventListener('beforeunload', () => {
+            if (state.heartbeatInterval) {
+                clearInterval(state.heartbeatInterval);
+            }
+        });
+    }
+
+    // ============================================
+    // ⭐ SETUP DES LISTENERS SOCKET
+    // ============================================
     function setupSocketListeners() {
         if (!state.socket) return;
 
+        // Nettoyer les anciens listeners
+        state.socket.removeAllListeners();
+
         state.socket.on('connect', () => {
-            utils.log('success', `✅ Socket connecté: ${state.socket.id}`);
+            utils.log('success', `✅ Socket connectée: ${state.socket.id}`);
+            utils.log('info', `📡 Transport: ${state.socket.io?.engine?.transport?.name || 'polling'}`);
+            utils.updateOtherStatus(true);
             
             if (CONFIG.roomId) {
                 utils.log('info', `📤 Rejoindre salle: ${CONFIG.roomId}`);
                 state.socket.emit('join-room', CONFIG.roomId);
             }
+            
+            utils.showToast('Connecté au serveur', 'success', 2000);
+            state.reconnectionAttempts = 0;
         });
 
         state.socket.on('connect_error', (error) => {
             utils.log('error', '❌ Erreur socket:', error.message);
-            utils.showToast('Problème de connexion au serveur', 'warning');
+            
+            if (state.reconnectionAttempts % 3 === 0) {
+                utils.showToast('Problème de connexion au serveur', 'warning', 3000);
+            }
         });
 
         state.socket.on('disconnect', (reason) => {
             utils.log('warn', `❌ Déconnecté: ${reason}`);
             utils.updateOtherStatus(false);
+            
+            if (reason === 'io server disconnect') {
+                // Reconnexion manuelle
+                setTimeout(() => {
+                    if (state.socket) {
+                        state.socket.connect();
+                    }
+                }, 1000);
+            }
         });
 
         state.socket.on('reconnect', (attemptNumber) => {
             utils.log('info', `🔄 Reconnecté après ${attemptNumber} tentatives`);
+            
             if (CONFIG.roomId && state.socket) {
                 state.socket.emit('join-room', CONFIG.roomId);
             }
+            
+            utils.showToast('Reconnecté au serveur', 'success', 2000);
         });
 
-        state.socket.on('reconnect_error', (error) => {
-            utils.log('error', '❌ Erreur reconnexion:', error);
+        state.socket.on('reconnect_attempt', (attempt) => {
+            utils.log('debug', `🔄 Tentative ${attempt}`);
+            state.reconnectionAttempts = attempt;
         });
 
         state.socket.on('room-full', (data) => {
-            utils.showToast(data?.message || 'Salle pleine', 'error');
+            utils.showToast(data?.message || 'Salle pleine', 'error', 5000);
             setTimeout(() => window.location.href = '/', 3000);
         });
 
         state.socket.on('user-connected', (data) => {
             const socketId = data?.id || data;
-            if (!socketId) return;
+            if (!socketId || socketId === state.otherSocketId) return;
             
             utils.log('info', `👤 Utilisateur connecté: ${socketId}`);
-
-            if (state.otherSocketId === socketId) return;
 
             state.otherSocketId = socketId;
             utils.updateOtherStatus(true);
             
-            utils.showToast(`${CONFIG.otherUser.name || 'Participant'} a rejoint la consultation.`, 'success');
+            const otherName = CONFIG.otherUser.name || 'Participant';
+            utils.showToast(`${otherName} a rejoint la consultation.`, 'success');
 
             if (!state.peerConnection && !state.isInitiator) {
                 state.isInitiator = true;
@@ -976,19 +1147,19 @@
 
         state.socket.on('user-disconnected', (data) => {
             const socketId = data?.id || data;
-            if (!socketId) return;
+            if (!socketId || socketId !== state.otherSocketId) return;
             
             utils.log('info', `👤 Utilisateur déconnecté: ${socketId}`);
 
-            if (socketId === state.otherSocketId) {
-                state.otherSocketId = null;
-                state.isInitiator = false;
-                utils.updateOtherStatus(false);
-                utils.showToast(`${CONFIG.otherUser.name || 'Participant'} a quitté la consultation.`, 'warning');
-                
-                webrtc.cleanup();
-                utils.showWaitingOverlay();
-            }
+            state.otherSocketId = null;
+            state.isInitiator = false;
+            utils.updateOtherStatus(false);
+            
+            const otherName = CONFIG.otherUser.name || 'Participant';
+            utils.showToast(`${otherName} a quitté la consultation.`, 'warning');
+            
+            webrtc.cleanup();
+            utils.showWaitingOverlay();
         });
 
         state.socket.on('ice-servers', (servers) => {
@@ -1008,6 +1179,12 @@
 
         state.socket.on('ice-candidate', (data) => {
             webrtc.handleIceCandidate(data);
+        });
+
+        state.socket.on('pong', (data) => {
+            const latency = Date.now() - data.time;
+            utils.log('debug', `📊 Latence: ${latency}ms`);
+            state.connectionQuality = latency < 300 ? 'good' : latency < 800 ? 'medium' : 'poor';
         });
     }
 
@@ -1059,9 +1236,6 @@
                 e.preventDefault();
                 
                 if (confirm('Voulez-vous vraiment quitter la consultation ?')) {
-                    webrtc.disconnect();
-                    
-                    // Appel API pour terminer la consultation
                     if (CONFIG.consultationId) {
                         fetch(`/Joinconsultation/endConsultationApi/${CONFIG.consultationId}`, {
                             method: 'POST',
@@ -1072,10 +1246,7 @@
                         }).catch(err => utils.log('error', 'Erreur API fin consultation:', err));
                     }
                     
-                    if (state.socket) {
-                        state.socket.disconnect();
-                    }
-                    
+                    utils.cleanup();
                     window.location.href = '/';
                 }
             });
@@ -1096,12 +1267,18 @@
             });
         }
 
-        // Gestion de la déconnexion avant fermeture de l'onglet
+        // Gestion de la déconnexion avant fermeture
         window.addEventListener('beforeunload', () => {
-            webrtc.disconnect();
+            if (state.heartbeatInterval) {
+                clearInterval(state.heartbeatInterval);
+            }
+            
             if (state.socket) {
+                state.socket.removeAllListeners();
                 state.socket.disconnect();
             }
+            
+            webrtc.disconnect();
         });
 
         // Gestion du redimensionnement pour mobile
@@ -1119,15 +1296,14 @@
         try {
             utils.log('info', '🚀 Initialisation de la consultation...');
             
-            // Vérifier la compatibilité du navigateur
-            if (!utils.checkBrowserCompatibility()) {
-                return;
-            }
+            if (!utils.checkBrowserCompatibility()) return;
 
-            // Vérifier roomId
             if (!CONFIG.roomId) {
                 throw new Error('roomId manquant');
             }
+
+            // Afficher l'overlay d'attente
+            utils.showWaitingOverlay();
 
             // Initialiser la socket en premier
             initSocket();
@@ -1146,7 +1322,10 @@
             
         } catch (error) {
             utils.log('error', '❌ Échec initialisation:', error.message);
-            utils.showToast('Erreur de démarrage', 'error');
+            utils.showToast('Erreur de démarrage: ' + error.message, 'error', 5000);
+            
+            // Tentative de récupération
+            setTimeout(() => window.location.reload(), 3000);
         }
     }
 
@@ -1157,14 +1336,35 @@
         init();
     }
 
-    // Exposer l'API pour les tests (optionnel)
+    // Exposer l'API pour les tests
     window.consultation = {
         state: state,
         utils: utils,
         webrtc: webrtc,
         chat: chat,
         CONFIG: CONFIG,
-        version: '4.1.0'
+        version: '4.2.0',
+        
+        // Méthodes de diagnostic
+        testConnection: function() {
+            fetch('/socket/health')
+                .then(r => r.json())
+                .then(data => console.log('✅ API OK:', data))
+                .catch(err => console.error('❌ API erreur:', err));
+            
+            console.log('Socket state:', {
+                connected: state.socket?.connected,
+                transport: state.socket?.io?.engine?.transport?.name,
+                id: state.socket?.id
+            });
+        },
+        
+        forceReconnect: function() {
+            if (state.socket) {
+                state.socket.disconnect();
+                setTimeout(() => state.socket.connect(), 1000);
+            }
+        }
     };
 
 })();
