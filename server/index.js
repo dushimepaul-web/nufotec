@@ -1,7 +1,3 @@
-// ============================================
-// NUFOTEC SIGNALING - VERSION CORRIGÉE
-// ============================================
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -29,8 +25,7 @@ app.get(BASE_PATH + '/api/ice-servers', (req, res) => {
     res.json({
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun1.l.google.com:19302' }
         ]
     });
 });
@@ -44,7 +39,7 @@ const io = socketIo(server, {
 
 io.on('connection', (socket) => {
     console.log(`✅ Client connecté: ${socket.id}`);
-
+    
     socket.on('join-room', (roomId) => {
         socket.join(roomId);
         socket.to(roomId).emit('user-connected', socket.id);
@@ -52,24 +47,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('offer', (data) => {
-        socket.to(data.target).emit('offer', {
-            sdp: data.sdp,
-            sender: socket.id
-        });
+        socket.to(data.target).emit('offer', { sdp: data.sdp, sender: socket.id });
     });
 
     socket.on('answer', (data) => {
-        socket.to(data.target).emit('answer', {
-            sdp: data.sdp,
-            sender: socket.id
-        });
+        socket.to(data.target).emit('answer', { sdp: data.sdp, sender: socket.id });
     });
 
     socket.on('ice-candidate', (data) => {
-        socket.to(data.target).emit('ice-candidate', {
-            candidate: data.candidate,
-            sender: socket.id
-        });
+        socket.to(data.target).emit('ice-candidate', { candidate: data.candidate, sender: socket.id });
     });
 
     socket.on('disconnect', () => {
@@ -78,14 +64,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// UN SEUL listen() - celui-ci
+// UN SEUL listen()
 server.listen(PORT, '127.0.0.1', () => {
-    console.log(`
-╔════════════════════════════════════════╗
-║  🚀 SERVEUR DÉMARRÉ                    ║
-╠════════════════════════════════════════╣
-║  📡 Port: ${PORT}                        ║
-║  🔍 Test: curl localhost:${PORT}${BASE_PATH}/health ║
-╚════════════════════════════════════════╝
-    `);
+    console.log(`✅ Serveur démarré sur le port ${PORT}`);
 });
