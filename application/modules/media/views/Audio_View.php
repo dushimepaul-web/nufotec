@@ -13,7 +13,7 @@
                     <ol class="breadcrumb mb-0 p-0">
                         <li class="breadcrumb-item"><a href="<?= base_url('Dashboard') ?>"><i class="bx bx-home-alt"></i></a></li>
                         <li class="breadcrumb-item"><a href="javascript:;">Galerie</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Gestion Audio Intelligente</li>
+                        <li class="breadcrumb-item active" aria-current="page">Gestion Audio Pro v5.0</li>
                     </ol>
                 </nav>
             </div>
@@ -22,7 +22,10 @@
                     <i class="bx bx-plus"></i> Nouvel Audio
                 </a>
                 <a class="btn btn-outline-info btn-sm ms-2" href="<?= base_url('audio/diagnostics') ?>" target="_blank">
-                    <i class="bx bx-test-tube"></i> Diagnostic Système
+                    <i class="bx bx-test-tube"></i> Diagnostic
+                </a>
+                <a class="btn btn-outline-success btn-sm ms-2" href="<?= base_url('audio/stats') ?>" target="_blank">
+                    <i class="bx bx-stats"></i> Stats
                 </a>
             </div>
         </div>
@@ -68,10 +71,14 @@
                 <div class="card border-0 shadow-sm bg-info text-white">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
-                            <div class="fs-1 me-3"><i class="bx bx-brain"></i></div>
+                            <div class="fs-1 me-3"><i class="bx bx-broadcast"></i></div>
                             <div>
-                                <h6 class="mb-0">Auto-Détection</h6>
-                                <h3 class="mb-0">Active</h3>
+                                <h6 class="mb-0">Streaming HLS</h6>
+                                <h3 class="mb-0">
+                                    <?= count(array_filter($audios, function($a) { 
+                                        return !empty($a['hls_playlist']); 
+                                    })) ?>
+                                </h3>
                             </div>
                         </div>
                     </div>
@@ -81,12 +88,12 @@
                 <div class="card border-0 shadow-sm bg-warning text-dark">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
-                            <div class="fs-1 me-3"><i class="bx bx-image"></i></div>
+                            <div class="fs-1 me-3"><i class="bx bx-layer"></i></div>
                             <div>
-                                <h6 class="mb-0">Avec Cover</h6>
+                                <h6 class="mb-0">Multi-Qualité</h6>
                                 <h3 class="mb-0">
                                     <?= count(array_filter($audios, function($a) { 
-                                        return !empty($a['miniature']); 
+                                        return !empty($a['converted_versions']); 
                                     })) ?>
                                 </h3>
                             </div>
@@ -103,11 +110,11 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <div class="d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0 text-primary"><i class="bx bx-music me-2"></i>Bibliothèque Audio Intelligente</h5>
+                    <h5 class="mb-0 text-primary"><i class="bx bx-music me-2"></i>Bibliothèque Audio Pro</h5>
                     <div class="d-flex gap-2">
-                        <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Upload Illimité</span>
-                        <span class="badge bg-info"><i class="bx bx-brain me-1"></i>IA Détection</span>
-                        <span class="badge bg-warning"><i class="bx bx-image me-1"></i>Covers Auto</span>
+                        <span class="badge bg-success"><i class="bx bx-infinity me-1"></i>Upload Chunked</span>
+                        <span class="badge bg-info"><i class="bx bx-brain me-1"></i>FFmpeg Auto</span>
+                        <span class="badge bg-warning"><i class="bx bx-broadcast me-1"></i>HLS Ready</span>
                     </div>
                 </div>
             </div>
@@ -118,23 +125,26 @@
                             <tr>
                                 <th width="5%">#</th>
                                 <th width="8%">Cover</th>
-                                <th width="22%">Titre & Infos</th>
-                                <th width="10%">Qualité</th>
+                                <th width="20%">Titre & Infos</th>
+                                <th width="12%">Qualités</th>
                                 <th width="8%">Durée</th>
                                 <th width="8%">Taille</th>
                                 <th width="8%">Statut</th>
                                 <th width="8%">WhatsApp</th>
                                 <th width="8%">Site</th>
-                                <th width="13%">Actions</th>
+                                <th width="15%">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                         <?php if (!empty($audios)): $i = 1; foreach ($audios as $value): 
                             $is_upload = !empty($value['fichier']);
                             $is_link = !empty($value['lien']);
+                            $has_hls = !empty($value['hls_playlist']);
+                            $has_versions = !empty($value['converted_versions']);
                             
                             // Parse metadata JSON
                             $metadata = !empty($value['metadata_id3']) ? json_decode($value['metadata_id3'], true) : [];
+                            $versions = !empty($value['converted_versions']) ? json_decode($value['converted_versions'], true) : [];
                             
                             // Formatage durée
                             $duree_formatee = '-';
@@ -158,17 +168,23 @@
                                     : number_format($taille / 1024, 1) . ' KB';
                             }
                             
-                            // Qualité audio
-                            $quality_info = [];
+                            // Qualité audio avec badge coloré
+                            $quality_badge = '';
                             if (!empty($value['bitrate'])) {
-                                $quality_info[] = round($value['bitrate'] / 1000) . 'kbps';
+                                $kbps = round($value['bitrate'] / 1000);
+                                $color = $kbps >= 320 ? 'success' : ($kbps >= 192 ? 'primary' : ($kbps >= 128 ? 'info' : 'secondary'));
+                                $quality_badge = '<span class="badge bg-' . $color . '">' . $kbps . 'kbps</span>';
                             }
-                            if (!empty($value['sample_rate'])) {
-                                $quality_info[] = round($value['sample_rate'] / 1000, 1) . 'kHz';
+                            
+                            // Multi-qualité indicator
+                            $multi_quality = '';
+                            if (!empty($versions)) {
+                                $qualities = array_keys($versions);
+                                $multi_quality = '<br><small class="text-muted">' . implode(', ', $qualities) . '</small>';
                             }
-                            $quality_badge = !empty($quality_info) 
-                                ? '<span class="badge bg-light text-dark border">' . implode(' • ', $quality_info) . '</span>'
-                                : '-';
+                            
+                            // HLS badge
+                            $hls_badge = $has_hls ? '<span class="badge bg-warning text-dark ms-1">HLS</span>' : '';
                             
                             // Cover/Thumbnail
                             $cover_html = '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bx bx-music text-muted fs-2"></i></div>';
@@ -183,6 +199,11 @@
                             if (!empty($value['waveform_data']) && file_exists(FCPATH . $value['waveform_data'])) {
                                 $waveform_data = file_get_contents(FCPATH . $value['waveform_data']);
                             }
+                            
+                            // Source URL (HLS prioritaire, sinon fichier original)
+                            $stream_url = $has_hls 
+                                ? base_url('audio/hls/' . $value['id_media'])
+                                : ($is_upload ? base_url('audio/stream/' . basename($value['fichier'])) : ($value['lien'] ?? ''));
                         ?>
                             <tr data-audio-id="<?= $value['id_media'] ?>">
                                 <td><?= $i++ ?></td>
@@ -201,9 +222,13 @@
                                             <small class="text-muted mb-1"><i class="bx bx-album me-1"></i><?= htmlspecialchars($value['album']) ?></small>
                                         <?php endif; ?>
                                         
-                                        <!-- Mini Player -->
+                                        <!-- Mini Player avec HLS support -->
                                         <?php if ($is_upload && !empty($value['fichier'])): ?>
-                                            <div class="audio-player-mini mt-2" data-src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>" data-waveform='<?= $waveform_data ?: '[]' ?>'>
+                                            <div class="audio-player-mini mt-2" 
+                                                 data-src="<?= $stream_url ?>" 
+                                                 data-hls="<?= $has_hls ? 'true' : 'false' ?>"
+                                                 data-waveform='<?= $waveform_data ?: '[]' ?>'
+                                                 data-versions='<?= json_encode($versions) ?>'>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <button class="btn btn-sm btn-primary play-btn rounded-circle" style="width: 32px; height: 32px;">
                                                         <i class="bx bx-play"></i>
@@ -214,16 +239,27 @@
                                                     </div>
                                                     <span class="time-display small text-muted" style="min-width: 45px; font-size: 11px;">0:00</span>
                                                 </div>
+                                                <!-- Qualité selector si multi-versions -->
+                                                <?php if (!empty($versions)): ?>
+                                                <select class="form-select form-select-sm quality-selector mt-1" style="font-size: 10px; padding: 2px 20px 2px 5px;">
+                                                    <?php foreach ($versions as $quality => $info): ?>
+                                                        <option value="<?= base_url($info['path']) ?>" data-bitrate="<?= $info['bitrate'] ?>">
+                                                            <?= ucfirst($quality) ?> (<?= $info['bitrate'] ?>)
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                    <option value="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>" selected>Original</option>
+                                                </select>
+                                                <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
                                         
                                         <?php if (!empty($value['categorie'])): ?>
-                                            <small class="mt-1"><span class="badge bg-light text-dark border"><?= htmlspecialchars($value['categorie']) ?></span></small>
+                                            <small class="mt-1"><span class="badge bg-light text-dark border"><?= htmlspecialchars($value['categorie']) ?></span><?= $hls_badge ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </td>
 
-                                <td><?= $quality_badge ?></td>
+                                <td><?= $quality_badge ?><?= $multi_quality ?></td>
                                 <td><span class="badge bg-dark"><?= $duree_formatee ?></span></td>
                                 <td><?= $taille_formatee ?></td>
 
@@ -273,7 +309,7 @@
                                             </li>
                                             <?php if ($is_upload): ?>
                                             <li>
-                                                <a class="dropdown-item" href="<?= base_url('audio/reanalyze/' . $value['id_media']) ?>" class="reanalyze-btn">
+                                                <a class="dropdown-item" href="<?= base_url('audio/reanalyze/' . $value['id_media']) ?>">
                                                     <i class="bx bx-refresh me-2 text-warning"></i>Ré-analyser
                                                 </a>
                                             </li>
@@ -282,6 +318,13 @@
                                                     <i class="bx bx-download me-2 text-info"></i>Télécharger
                                                 </a>
                                             </li>
+                                            <?php if (!empty($versions)): ?>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#versions_<?= $value['id_media'] ?>">
+                                                    <i class="bx bx-layer me-2 text-secondary"></i>Versions (<?= count($versions) ?>)
+                                                </a>
+                                            </li>
+                                            <?php endif; ?>
                                             <?php endif; ?>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
@@ -294,7 +337,41 @@
                                 </td>
                             </tr>
 
-                            <!-- Modal Player -->
+                            <!-- Modal Versions Multi-Bitrate -->
+                            <?php if (!empty($versions)): ?>
+                            <div class="modal fade" id="versions_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-secondary text-white">
+                                            <h5 class="modal-title"><i class="bx bx-layer me-2"></i>Versions disponibles</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="list-group">
+                                                <?php foreach ($versions as $quality => $info): 
+                                                    $quality_label = [
+                                                        'low' => 'Basse qualité (64k)',
+                                                        'medium' => 'Qualité standard (128k)',
+                                                        'high' => 'Haute qualité (192k)',
+                                                        'max' => 'Qualité maximale (320k)'
+                                                    ][$quality] ?? ucfirst($quality);
+                                                ?>
+                                                <a href="<?= base_url($info['path']) ?>" download class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-1"><?= $quality_label ?></h6>
+                                                        <small class="text-muted"><?= $info['size_formatted'] ?> • <?= $info['bitrate'] ?></small>
+                                                    </div>
+                                                    <span class="badge bg-primary rounded-pill"><i class="bx bx-download"></i></span>
+                                                </a>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Modal Player Pro avec HLS -->
                             <div class="modal fade audio-player-modal" id="view_<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-lg modal-dialog-centered">
                                     <div class="modal-content">
@@ -304,7 +381,12 @@
                                         </div>
                                         <div class="modal-body p-0">
                                             <?php if ($is_upload && !empty($value['fichier'])): ?>
-                                                <div class="audio-full-player" data-audio-id="<?= $value['id_media'] ?>" data-src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>">
+                                                <div class="audio-full-player" 
+                                                     data-audio-id="<?= $value['id_media'] ?>" 
+                                                     data-src="<?= $stream_url ?>"
+                                                     data-hls="<?= $has_hls ? 'true' : 'false' ?>"
+                                                     data-versions='<?= json_encode($versions) ?>'>
+                                                    
                                                     <!-- Cover Art -->
                                                     <div class="player-visualization text-center p-4 bg-light">
                                                         <?php if (!empty($value['miniature'])): ?>
@@ -328,6 +410,21 @@
                                                     
                                                     <!-- Contrôles -->
                                                     <div class="p-4">
+                                                        <!-- Sélecteur qualité -->
+                                                        <?php if (!empty($versions)): ?>
+                                                        <div class="mb-3">
+                                                            <label class="form-label small text-muted">Qualité audio</label>
+                                                            <select class="form-select quality-selector-main">
+                                                                <?php foreach ($versions as $quality => $info): ?>
+                                                                    <option value="<?= base_url($info['path']) ?>" data-bitrate="<?= $info['bitrate'] ?>">
+                                                                        <?= ucfirst($quality) ?> (<?= $info['bitrate'] ?>)
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                                <option value="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>" selected>Original (<?= round($value['bitrate']/1000) ?>kbps)</option>
+                                                            </select>
+                                                        </div>
+                                                        <?php endif; ?>
+                                                        
                                                         <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
                                                             <button class="btn btn-outline-secondary btn-sm skip-back"><i class="bx bx-skip-previous"></i></button>
                                                             <button class="btn btn-primary btn-lg rounded-circle play-pause-btn" style="width: 70px; height: 70px;">
@@ -358,24 +455,29 @@
                                                         <!-- Infos techniques -->
                                                         <div class="mt-3 pt-3 border-top">
                                                             <div class="row text-center small text-muted">
-                                                                <div class="col-4">
+                                                                <div class="col-3">
                                                                     <i class="bx bx-tachometer d-block mb-1"></i>
                                                                     <?= !empty($value['bitrate']) ? round($value['bitrate']/1000) . ' kbps' : '-' ?>
                                                                 </div>
-                                                                <div class="col-4">
+                                                                <div class="col-3">
                                                                     <i class="bx bx-wave d-block mb-1"></i>
                                                                     <?= !empty($value['sample_rate']) ? round($value['sample_rate']/1000, 1) . ' kHz' : '-' ?>
                                                                 </div>
-                                                                <div class="col-4">
+                                                                <div class="col-3">
                                                                     <i class="bx bx-speaker d-block mb-1"></i>
                                                                     <?= !empty($value['channels']) ? ($value['channels'] == 1 ? 'Mono' : ($value['channels'] == 2 ? 'Stéréo' : $value['channels'] . ' canaux')) : '-' ?>
+                                                                </div>
+                                                                <div class="col-3">
+                                                                    <i class="bx bx-broadcast d-block mb-1"></i>
+                                                                    <?= $has_hls ? 'HLS' : 'Direct' ?>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     
-                                                    <audio preload="metadata">
-                                                        <source src="<?= base_url('audio/stream/' . basename($value['fichier'])) ?>" type="<?= $value['mime_type'] ?? 'audio/mpeg' ?>">
+                                                    <!-- Audio element (sera remplacé par HLS.js si nécessaire) -->
+                                                    <audio preload="metadata" style="display: none;">
+                                                        <source src="<?= $stream_url ?>" type="<?= $value['mime_type'] ?? 'audio/mpeg' ?>">
                                                     </audio>
                                                 </div>
                                             <?php elseif ($is_link && !empty($value['embed_code'])): ?>
@@ -462,14 +564,18 @@
                                                         <input type="file" class="form-control d-none file-input" accept="audio/*" data-upload-id="edit_<?= $value['id_media'] ?>">
                                                         <input type="hidden" name="uploaded_file_path" class="uploaded-path">
                                                         
-                                                        <!-- Progress -->
+                                                        <!-- Progress avec phases -->
                                                         <div class="upload-progress mt-3 d-none">
-                                                            <div class="progress" style="height: 8px;">
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span class="upload-phase fw-bold text-primary">Initialisation...</span>
+                                                                <span class="upload-percent">0%</span>
+                                                            </div>
+                                                            <div class="progress" style="height: 10px;">
                                                                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
                                                             </div>
-                                                            <div class="d-flex justify-content-between small mt-1">
-                                                                <span class="upload-status">Préparation...</span>
-                                                                <span class="upload-percent">0%</span>
+                                                            <div class="d-flex justify-content-between small text-muted mt-1">
+                                                                <span class="upload-detail">Préparation...</span>
+                                                                <span class="upload-speed">0 MB/s</span>
                                                             </div>
                                                         </div>
                                                         
@@ -552,7 +658,7 @@
                                                 <p class="text-muted"><?= htmlspecialchars($value['titre']) ?></p>
                                                 <div class="alert alert-warning">
                                                     <i class="bx bx-info-circle me-2"></i>
-                                                    Le fichier, les visualisations et la miniature seront supprimés.
+                                                    Le fichier, les visualisations, la miniature et les versions converties seront supprimés.
                                                 </div>
                                                 <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
                                             </div>
@@ -609,12 +715,12 @@
 
     </div>
 
-    <!-- ==================== MODAL CRÉATION INTELLIGENTE ==================== -->
+    <!-- ==================== MODAL CRÉATION ULTRA-INTELLIGENTE v5.0 ==================== -->
     <div class="modal fade" id="create_audio_modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouvel Audio - Détection Intelligente</h5>
+                    <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouvel Audio Pro - Upload Chunked + Détection IA</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 
@@ -630,31 +736,46 @@
                                 <!-- Zone Upload Audio -->
                                 <div class="card border-0 bg-light mb-3">
                                     <div class="card-body">
-                                        <h6 class="card-title"><i class="bx bx-upload me-2"></i>1. Upload Audio</h6>
+                                        <h6 class="card-title"><i class="bx bx-upload me-2"></i>1. Upload Audio (Chunked 2MB)</h6>
                                         
                                         <div class="upload-zone border-2 border-dashed rounded p-4 text-center" id="main_upload_zone" style="border-style: dashed; border-color: #dee2e6; cursor: pointer; transition: all 0.3s;">
                                             <div class="upload-placeholder">
                                                 <i class="bx bx-cloud-upload fs-1 text-muted mb-2"></i>
                                                 <p class="mb-1 fw-bold">Glissez votre fichier audio ici</p>
                                                 <p class="text-muted small mb-2">ou cliquez pour parcourir</p>
-                                                <span class="badge bg-secondary">MP3, WAV, FLAC, AAC, OGG, M4A...</span>
-                                                <p class="text-success small mt-2 mb-0"><i class="bx bx-infinity me-1"></i>Pas de limite de taille</p>
+                                                <span class="badge bg-secondary">MP3, WAV, FLAC, AAC, OGG, M4A, WEBA...</span>
+                                                <p class="text-success small mt-2 mb-0"><i class="bx bx-check-shield me-1"></i>Reprise auto si coupure</p>
                                             </div>
                                             
                                             <input type="file" id="audio_file_input" class="d-none" accept="audio/*">
                                             
-                                            <!-- Progress Upload -->
+                                            <!-- Progress Upload AVANCÉ avec phases -->
                                             <div class="upload-progress d-none mt-3">
+                                                <!-- Phase indicator -->
+                                                <div class="d-flex justify-content-center gap-2 mb-2">
+                                                    <span class="badge bg-secondary phase-upload"><i class="bx bx-upload"></i> Upload</span>
+                                                    <i class="bx bx-chevron-right text-muted"></i>
+                                                    <span class="badge bg-secondary phase-processing"><i class="bx bx-brain"></i> Analyse</span>
+                                                    <i class="bx bx-chevron-right text-muted"></i>
+                                                    <span class="badge bg-secondary phase-conversion"><i class="bx bx-layer"></i> Conversion</span>
+                                                </div>
+                                                
                                                 <div class="d-flex justify-content-between small mb-1">
                                                     <span id="upload_status" class="fw-bold text-primary">Préparation...</span>
                                                     <span id="upload_percent">0%</span>
                                                 </div>
-                                                <div class="progress" style="height: 10px;">
+                                                <div class="progress" style="height: 12px;">
                                                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="upload_progress_bar" style="width: 0%"></div>
                                                 </div>
                                                 <div class="d-flex justify-content-between small text-muted mt-1">
                                                     <span id="chunks_info">Chunk 0/0</span>
                                                     <span id="upload_speed">0 MB/s</span>
+                                                    <span id="upload_eta">~0s restantes</span>
+                                                </div>
+                                                
+                                                <!-- Détail de la phase -->
+                                                <div id="phase_detail" class="text-center small text-info mt-1 fst-italic">
+                                                    En attente de fichier...
                                                 </div>
                                             </div>
                                             
@@ -688,7 +809,7 @@
                                 <!-- Résultats Analyse -->
                                 <div class="card border-0 bg-light d-none" id="analysis_card">
                                     <div class="card-body">
-                                        <h6 class="card-title text-success"><i class="bx bx-brain me-2"></i>2. Métadonnées Auto-Détectées</h6>
+                                        <h6 class="card-title text-success"><i class="bx bx-brain me-2"></i>2. Métadonnées Auto-Détectées (FFmpeg)</h6>
                                         
                                         <div class="row g-2">
                                             <div class="col-6">
@@ -729,16 +850,27 @@
                                             </div>
                                             <div class="col-12">
                                                 <div class="p-2 bg-white rounded">
-                                                    <small class="text-muted d-block">Genre</small>
+                                                    <small class="text-muted d-block">Genre détecté</small>
                                                     <span id="detected_genre" class="badge bg-light text-dark">-</span>
                                                     <span id="detected_category" class="badge bg-info ms-1">-</span>
                                                 </div>
                                             </div>
                                         </div>
                                         
+                                        <!-- Versions converties -->
+                                        <div id="converted_versions_info" class="mt-2 d-none">
+                                            <small class="text-muted d-block mb-1">Versions générées :</small>
+                                            <div id="versions_list" class="d-flex gap-1 flex-wrap"></div>
+                                        </div>
+                                        
+                                        <!-- HLS info -->
+                                        <div id="hls_info" class="mt-2 d-none">
+                                            <span class="badge bg-warning text-dark"><i class="bx bx-broadcast me-1"></i>HLS Streaming disponible</span>
+                                        </div>
+                                        
                                         <div class="alert alert-warning mt-2 mb-0 py-2 small">
                                             <i class="bx bx-info-circle me-1"></i>
-                                            Ces valeurs seront utilisées automatiquement. Vous pouvez les modifier après création si nécessaire.
+                                            Ces valeurs sont extraites automatiquement via FFmpeg. Vous pouvez les modifier après création.
                                         </div>
                                     </div>
                                 </div>
@@ -777,7 +909,7 @@
                                         
                                         <div class="mt-2 small text-muted">
                                             <i class="bx bx-info-circle me-1"></i>
-                                            Ordre de priorité: 1. Image uploadée 2. Cover extraite du fichier 3. Générée depuis le waveform
+                                            Priorité: 1. Image uploadée 2. Cover ID3 3. Waveform générée
                                         </div>
                                     </div>
                                 </div>
@@ -790,12 +922,28 @@
                                         <div class="mb-3">
                                             <label class="form-label fw-bold">Description de l'audio <span class="text-danger">*</span></label>
                                             <textarea class="form-control" name="description" rows="6" placeholder="Décrivez le contenu de cet audio... Quel est le sujet ? Qui parle ? Contexte ?" required></textarea>
-                                            <small class="text-muted">C'est le seul champ que vous devez remplir. Tout le reste est détecté automatiquement !</small>
+                                            <small class="text-muted">C'est le seul champ requis. Tout le reste est détecté automatiquement !</small>
                                         </div>
                                         
                                         <div class="mb-3">
                                             <label class="form-label">Catégorie (auto-suggérée)</label>
                                             <input type="text" class="form-control" name="categorie" id="suggested_category" list="categories_list" placeholder="Sera détectée automatiquement...">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Options avancées</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="generate_hls" name="generate_hls" value="1" checked>
+                                                <label class="form-check-label small" for="generate_hls">
+                                                    Générer playlist HLS pour streaming adaptatif
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="multi_bitrate" name="multi_bitrate" value="1" checked>
+                                                <label class="form-check-label small" for="multi_bitrate">
+                                                    Créer versions multi-bitrate (64k, 128k, 192k, 320k)
+                                                </label>
+                                            </div>
                                         </div>
                                         
                                         <div class="row">
@@ -875,11 +1023,14 @@
 
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
+<!-- HLS.js pour streaming adaptatif -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
 <script>
 /**
  * =============================================================================
- * AUDIO MANAGER ULTRA-INTELLIGENT v4.0
- * Auto-detection complète, Upload chunked, Miniature intelligente
+ * AUDIO MANAGER ULTRA-PRO v5.0
+ * Chunked upload, Real-time progress polling, HLS support, Multi-quality
  * =============================================================================
  */
 
@@ -888,13 +1039,15 @@ class AudioUploadManager {
         this.baseUrl = '<?= base_url('audio/') ?>';
         this.chunkSize = 2 * 1024 * 1024; // 2MB
         this.maxRetries = 3;
+        this.progressPollingInterval = null;
         
         this.state = {
             file: null,
             uploadId: null,
             isUploading: false,
             isPaused: false,
-            uploader: null,
+            currentChunk: 0,
+            totalChunks: 0,
             detectedData: null
         };
         
@@ -915,18 +1068,15 @@ class AudioUploadManager {
         zone.addEventListener('click', () => fileInput.click());
         zone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            zone.style.borderColor = '#0d6efd';
-            zone.style.background = '#f8f9fa';
+            zone.classList.add('drag-active');
         });
         zone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            zone.style.borderColor = '#dee2e6';
-            zone.style.background = '';
+            zone.classList.remove('drag-active');
         });
         zone.addEventListener('drop', (e) => {
             e.preventDefault();
-            zone.style.borderColor = '#dee2e6';
-            zone.style.background = '';
+            zone.classList.remove('drag-active');
             if (e.dataTransfer.files.length > 0) {
                 this.handleFileSelect(e.dataTransfer.files[0]);
             }
@@ -956,7 +1106,7 @@ class AudioUploadManager {
         document.getElementById('create_audio_form')?.addEventListener('submit', (e) => {
             if (!document.getElementById('uploaded_file_path').value) {
                 e.preventDefault();
-                alert('Veuillez attendre la fin de l\'upload audio.');
+                alert('Veuillez attendre la fin de l\'upload et du traitement audio.');
                 return false;
             }
         });
@@ -978,25 +1128,52 @@ class AudioUploadManager {
         document.querySelector('.upload-controls').classList.remove('d-none');
         document.getElementById('submit_btn').disabled = true;
         
-        // Démarrer upload chunked
+        // Reset phases
+        this.resetPhaseIndicators();
+        
+        // Démarrer upload chunked avec polling de progression
         await this.startChunkedUpload(file);
+    }
+    
+    resetPhaseIndicators() {
+        document.querySelectorAll('.phase-upload, .phase-processing, .phase-conversion').forEach(el => {
+            el.classList.remove('bg-primary', 'bg-success');
+            el.classList.add('bg-secondary');
+        });
+    }
+    
+    updatePhaseIndicator(phase) {
+        this.resetPhaseIndicators();
+        const mapping = {
+            'upload': '.phase-upload',
+            'processing': '.phase-processing',
+            'conversion': '.phase-conversion'
+        };
+        
+        if (mapping[phase]) {
+            document.querySelector(mapping[phase])?.classList.remove('bg-secondary');
+            document.querySelector(mapping[phase])?.classList.add('bg-primary');
+        }
     }
     
     async startChunkedUpload(file) {
         this.state.isUploading = true;
+        this.updatePhaseIndicator('upload');
         
         try {
             // 1. Initialiser
             const initData = await this.initUpload(file);
             this.state.uploadId = initData.upload_id;
+            this.state.totalChunks = initData.total_chunks;
+            this.state.currentChunk = 0;
             
-            // 2. Upload chunks
-            const totalChunks = initData.total_chunks;
-            let uploadedChunks = 0;
+            // 2. Démarrer polling de progression en parallèle
+            this.startProgressPolling();
             
+            // 3. Upload chunks
             this.showProgress();
             
-            for (let i = 0; i < totalChunks; i++) {
+            for (let i = 0; i < this.state.totalChunks; i++) {
                 if (this.state.isPaused) {
                     await this.waitForResume();
                 }
@@ -1009,17 +1186,21 @@ class AudioUploadManager {
                 const end = Math.min(start + this.chunkSize, file.size);
                 const chunk = file.slice(start, end);
                 
-                await this.uploadChunk(i, chunk, totalChunks);
-                uploadedChunks++;
+                const chunkStartTime = performance.now();
+                await this.uploadChunk(i, chunk);
+                this.state.currentChunk = i + 1;
                 
-                this.updateProgress(uploadedChunks, totalChunks, file.size);
+                // Update local progress (sera aussi mis à jour par polling)
+                this.updateLocalProgress(i + 1, this.state.totalChunks, file.size, performance.now() - chunkStartTime);
             }
             
-            // 3. Finaliser
+            // 4. Arrêter polling et finaliser
+            this.stopProgressPolling();
             await this.completeUpload();
             
         } catch (error) {
             console.error('Upload error:', error);
+            this.stopProgressPolling();
             alert('Erreur upload: ' + error.message);
             this.resetUpload();
         }
@@ -1041,21 +1222,101 @@ class AudioUploadManager {
         return data;
     }
     
-    async uploadChunk(index, chunk, total) {
+    async uploadChunk(index, chunk) {
         const formData = new FormData();
         formData.append('upload_id', this.state.uploadId);
         formData.append('chunk_index', index);
+        formData.append('chunk_start_time', performance.now());
         formData.append('chunk', chunk);
         
-        const response = await fetch(this.baseUrl + 'uploadChunk', {
-            method: 'POST',
-            body: formData
-        });
+        let retries = 0;
+        while (retries < this.maxRetries) {
+            try {
+                const response = await fetch(this.baseUrl + 'uploadChunk', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (data.success) return data;
+                
+                throw new Error(data.message);
+            } catch (error) {
+                retries++;
+                if (retries >= this.maxRetries) throw error;
+                await this.sleep(1000 * retries); // Backoff exponentiel
+            }
+        }
+    }
+    
+    startProgressPolling() {
+        // Poll toutes les 500ms pour progression temps réel
+        this.progressPollingInterval = setInterval(async () => {
+            if (!this.state.uploadId || !this.state.isUploading) return;
+            
+            try {
+                const response = await fetch(`${this.baseUrl}getProgress?upload_id=${this.state.uploadId}`);
+                const data = await response.json();
+                
+                if (data.success && data.phase) {
+                    this.updateProgressFromServer(data);
+                }
+            } catch (e) {
+                // Silencieux - le polling continue
+            }
+        }, 500);
+    }
+    
+    stopProgressPolling() {
+        if (this.progressPollingInterval) {
+            clearInterval(this.progressPollingInterval);
+            this.progressPollingInterval = null;
+        }
+    }
+    
+    updateProgressFromServer(data) {
+        const percent = data.percent || 0;
+        document.getElementById('upload_progress_bar').style.width = percent + '%';
+        document.getElementById('upload_percent').textContent = Math.round(percent) + '%';
         
-        const data = await response.json();
-        if (!data.success) throw new Error(data.message);
+        // Mettre à jour phase visuelle
+        if (data.phase) {
+            this.updatePhaseIndicator(data.phase);
+            
+            const phaseNames = {
+                'upload': 'Upload en cours...',
+                'processing': 'Analyse FFmpeg...',
+                'conversion': 'Conversion multi-bitrate...',
+                'complete': 'Finalisation...'
+            };
+            
+            document.getElementById('upload_status').textContent = phaseNames[data.phase] || data.message;
+        }
         
-        return data;
+        // Détails supplémentaires
+        if (data.uploaded_chunks !== undefined && data.total_chunks !== undefined) {
+            document.getElementById('chunks_info').textContent = `Chunk ${data.uploaded_chunks}/${data.total_chunks}`;
+        }
+        
+        if (data.speed_formatted) {
+            document.getElementById('upload_speed').textContent = data.speed_formatted;
+        }
+        
+        if (data.eta_formatted) {
+            document.getElementById('upload_eta').textContent = data.eta_formatted + ' restantes';
+        }
+        
+        if (data.detail) {
+            document.getElementById('phase_detail').textContent = data.detail;
+        }
+    }
+    
+    updateLocalProgress(uploaded, total, fileSize, chunkTimeMs) {
+        // Fallback si polling échoue
+        const percent = (uploaded / total) * 100;
+        document.getElementById('upload_progress_bar').style.width = percent + '%';
+        document.getElementById('upload_percent').textContent = Math.round(percent) + '%';
+        document.getElementById('chunks_info').textContent = `Chunk ${uploaded}/${total}`;
     }
     
     async completeUpload() {
@@ -1064,7 +1325,14 @@ class AudioUploadManager {
         formData.append('description', document.querySelector('textarea[name="description"]').value);
         formData.append('custom_thumbnail', document.getElementById('custom_thumbnail_path').value);
         
-        document.getElementById('upload_status').textContent = 'Analyse en cours...';
+        // Options avancées
+        const generateHls = document.getElementById('generate_hls')?.checked ? '1' : '';
+        const multiBitrate = document.getElementById('multi_bitrate')?.checked ? '1' : '';
+        formData.append('generate_hls', generateHls);
+        formData.append('multi_bitrate', multiBitrate);
+        
+        this.updatePhaseIndicator('processing');
+        document.getElementById('upload_status').textContent = 'Analyse complète...';
         
         const response = await fetch(this.baseUrl + 'completeUpload', {
             method: 'POST',
@@ -1092,12 +1360,22 @@ class AudioUploadManager {
         if (data.thumbnail && !document.getElementById('custom_thumbnail_path').value) {
             this.updateThumbnailPreview(data.thumbnail);
         }
+        
+        // Marquer phases comme complètes
+        document.querySelector('.phase-upload')?.classList.remove('bg-primary');
+        document.querySelector('.phase-upload')?.classList.add('bg-success');
+        document.querySelector('.phase-processing')?.classList.remove('bg-secondary');
+        document.querySelector('.phase-processing')?.classList.add('bg-success');
+        if (data.converted_versions && Object.keys(data.converted_versions).length > 0) {
+            document.querySelector('.phase-conversion')?.classList.remove('bg-secondary');
+            document.querySelector('.phase-conversion')?.classList.add('bg-success');
+        }
     }
     
     displayDetectedData(data) {
         document.getElementById('analysis_card').classList.remove('d-none');
         
-        document.getElementById('detected_title').textContent = data.suggested_data.titre || '-';
+        document.getElementById('detected_title').textContent = data.suggested_data.titre || data.title || '-';
         document.getElementById('detected_artist').textContent = data.artist || data.suggested_data.credits || '-';
         document.getElementById('detected_album').textContent = data.album || '-';
         document.getElementById('detected_year').textContent = data.year || '-';
@@ -1108,9 +1386,29 @@ class AudioUploadManager {
         
         // Suggérer catégorie dans champ
         document.getElementById('suggested_category').value = data.suggested_data.categorie || 'Musique';
+        
+        // Afficher versions converties
+        if (data.converted_versions && Object.keys(data.converted_versions).length > 0) {
+            const versionsDiv = document.getElementById('converted_versions_info');
+            const versionsList = document.getElementById('versions_list');
+            versionsDiv.classList.remove('d-none');
+            
+            const qualityLabels = {
+                'low': '64k', 'medium': '128k', 'high': '192k', 'max': '320k'
+            };
+            
+            versionsList.innerHTML = Object.entries(data.converted_versions).map(([quality, info]) => 
+                `<span class="badge bg-success">${qualityLabels[quality] || quality}</span>`
+            ).join('');
+        }
+        
+        // Afficher badge HLS
+        if (data.hls_playlist) {
+            document.getElementById('hls_info').classList.remove('d-none');
+        }
     }
     
-    storeFormData(data) {
+        storeFormData(data) {
         document.getElementById('uploaded_file_path').value = data.file_path;
         
         const autoData = {
@@ -1128,7 +1426,9 @@ class AudioUploadManager {
             thumbnail: data.thumbnail,
             waveform: data.waveform,
             spectrogram: data.spectrogram,
-            waveform_data: data.waveform_data
+            waveform_data: data.waveform_data,
+            converted_versions: data.converted_versions,
+            hls_playlist: data.hls_playlist
         };
         
         document.getElementById('auto_detected_data').value = JSON.stringify(autoData);
@@ -1138,21 +1438,33 @@ class AudioUploadManager {
         document.getElementById('visualizations_row').classList.remove('d-none');
         
         if (data.waveform) {
-            document.getElementById('generated_waveform').src = '<?= base_url() ?>' + data.waveform;
-            document.getElementById('generated_waveform').style.display = 'block';
-            document.getElementById('waveform_placeholder').style.display = 'none';
+            const img = document.getElementById('generated_waveform');
+            img.src = '<?= base_url() ?>' + data.waveform;
+            img.style.display = 'block';
+            img.onload = () => {
+                document.getElementById('waveform_placeholder').style.display = 'none';
+            };
         }
         
         if (data.spectrogram) {
-            document.getElementById('generated_spectrogram').src = '<?= base_url() ?>' + data.spectrogram;
-            document.getElementById('generated_spectrogram').style.display = 'block';
-            document.getElementById('spectrogram_placeholder').style.display = 'none';
+            const img = document.getElementById('generated_spectrogram');
+            img.src = '<?= base_url() ?>' + data.spectrogram;
+            img.style.display = 'block';
+            img.onload = () => {
+                document.getElementById('spectrogram_placeholder').style.display = 'none';
+            };
         }
     }
     
     async handleThumbnailUpload(file) {
         if (!file.type.startsWith('image/')) {
-            alert('Veuillez sélectionner une image valide.');
+            alert('Veuillez sélectionner une image valide (JPG, PNG, GIF, WEBP).');
+            return;
+        }
+        
+        // Vérifier taille (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image trop grande (max 5MB).');
             return;
         }
         
@@ -1171,6 +1483,12 @@ class AudioUploadManager {
             document.getElementById('custom_thumbnail_path').value = data.thumbnail_path;
             this.updateThumbnailPreview(data.thumbnail_path);
             
+            // Feedback visuel
+            const btn = document.getElementById('upload_thumbnail_btn');
+            btn.innerHTML = '<i class="bx bx-check me-1"></i>Image uploadée';
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-success');
+            
         } catch (error) {
             alert('Erreur upload miniature: ' + error.message);
         }
@@ -1186,24 +1504,18 @@ class AudioUploadManager {
         document.querySelector('.upload-progress').classList.remove('d-none');
     }
     
-    updateProgress(uploaded, total, fileSize) {
-        const percent = Math.round((uploaded / total) * 100);
-        document.getElementById('upload_progress_bar').style.width = percent + '%';
-        document.getElementById('upload_percent').textContent = percent + '%';
-        document.getElementById('chunks_info').textContent = `Chunk ${uploaded}/${total}`;
-        document.getElementById('upload_status').textContent = percent === 100 ? 'Finalisation...' : 'Upload en cours...';
-    }
-    
     pauseUpload() {
         this.state.isPaused = true;
         document.getElementById('pause_upload').classList.add('d-none');
         document.getElementById('resume_upload').classList.remove('d-none');
+        document.getElementById('upload_status').textContent = 'Upload en pause';
     }
     
     resumeUpload() {
         this.state.isPaused = false;
         document.getElementById('resume_upload').classList.add('d-none');
         document.getElementById('pause_upload').classList.remove('d-none');
+        document.getElementById('upload_status').textContent = 'Upload en cours...';
     }
     
     waitForResume() {
@@ -1217,16 +1529,24 @@ class AudioUploadManager {
         });
     }
     
-    cancelUpload() {
-        if (!confirm('Annuler l\'upload ?')) return;
+    async cancelUpload() {
+        if (!confirm('Êtes-vous sûr de vouloir annuler l\'upload ?')) return;
         
         this.state.isUploading = false;
+        this.stopProgressPolling();
         
         if (this.state.uploadId) {
-            fetch(this.baseUrl + 'cancelUpload', {
-                method: 'POST',
-                body: JSON.stringify({upload_id: this.state.uploadId})
-            });
+            try {
+                await fetch(this.baseUrl + 'cancelUpload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `upload_id=${this.state.uploadId}`
+                });
+            } catch (e) {
+                // Ignorer erreur
+            }
         }
         
         this.resetUpload();
@@ -1238,31 +1558,64 @@ class AudioUploadManager {
             uploadId: null,
             isUploading: false,
             isPaused: false,
-            uploader: null,
+            currentChunk: 0,
+            totalChunks: 0,
             detectedData: null
         };
         
+        this.stopProgressPolling();
+        
+        // Reset UI
         document.querySelector('.upload-placeholder').classList.remove('d-none');
         document.querySelector('.file-selected').classList.add('d-none');
         document.querySelector('.upload-progress').classList.add('d-none');
         document.querySelector('.upload-controls').classList.add('d-none');
         document.getElementById('analysis_card').classList.add('d-none');
         document.getElementById('visualizations_row').classList.add('d-none');
+        document.getElementById('converted_versions_info')?.classList.add('d-none');
+        document.getElementById('hls_info')?.classList.add('d-none');
         document.getElementById('submit_btn').disabled = true;
         document.getElementById('uploaded_file_path').value = '';
         document.getElementById('auto_detected_data').value = '';
         document.getElementById('audio_file_input').value = '';
+        document.getElementById('custom_thumbnail_path').value = '';
+        
+        // Reset phases
+        this.resetPhaseIndicators();
+        
+        // Reset thumbnail
+        const preview = document.getElementById('thumbnail_preview');
+        preview.innerHTML = `
+            <div class="text-center p-3">
+                <i class="bx bx-image-add fs-1 text-muted mb-2"></i>
+                <p class="small text-muted mb-0">Aperçu miniature</p>
+            </div>
+        `;
+        preview.style.border = '2px dashed #dee2e6';
+        
+        // Reset button thumbnail
+        const btn = document.getElementById('upload_thumbnail_btn');
+        if (btn) {
+            btn.innerHTML = '<i class="bx bx-upload me-1"></i>Uploader une image';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }
     }
     
-    formatBytes(bytes) {
+    formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 B';
         const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
     
-    // ==================== MINI PLAYERS ====================
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // ==================== MINI PLAYERS AVEC HLS ====================
     
     initMiniPlayers() {
         document.querySelectorAll('.audio-player-mini').forEach(container => {
@@ -1270,17 +1623,45 @@ class AudioUploadManager {
             const ctx = canvas.getContext('2d');
             const waveformData = JSON.parse(container.dataset.waveform || '[]');
             const audioSrc = container.dataset.src;
+            const isHls = container.dataset.hls === 'true';
+            const versions = JSON.parse(container.dataset.versions || '{}');
             
             // Dessiner waveform
             this.drawWaveform(ctx, canvas, waveformData);
             
-            // Setup audio
-            const audio = new Audio(audioSrc);
+            // Setup audio avec HLS support
+            let audio;
+            let hls;
+            
+            if (isHls && Hls.isSupported()) {
+                hls = new Hls();
+                hls.loadSource(audioSrc);
+                hls.attachMedia(audio = new Audio());
+            } else {
+                audio = new Audio(audioSrc);
+            }
+            
             let isPlaying = false;
             
             const playBtn = container.querySelector('.play-btn');
             const progressOverlay = container.querySelector('.progress-overlay');
             const timeDisplay = container.querySelector('.time-display');
+            const qualitySelector = container.querySelector('.quality-selector');
+            
+            // Quality selector change
+            if (qualitySelector) {
+                qualitySelector.addEventListener('change', () => {
+                    const wasPlaying = !audio.paused;
+                    const currentTime = audio.currentTime;
+                    
+                    audio.src = qualitySelector.value;
+                    audio.currentTime = currentTime;
+                    
+                    if (wasPlaying) {
+                        audio.play();
+                    }
+                });
+            }
             
             playBtn.addEventListener('click', () => {
                 if (isPlaying) {
@@ -1289,8 +1670,18 @@ class AudioUploadManager {
                     isPlaying = false;
                 } else {
                     // Stop autres players
-                    document.querySelectorAll('.audio-player-mini audio').forEach(a => a.pause());
-                    document.querySelectorAll('.audio-player-mini .play-btn').forEach(b => b.innerHTML = '<i class="bx bx-play"></i>');
+                    document.querySelectorAll('.audio-player-mini audio').forEach(a => {
+                        if (a !== audio) {
+                            a.pause();
+                            a.currentTime = 0;
+                        }
+                    });
+                    document.querySelectorAll('.audio-player-mini .play-btn').forEach(b => {
+                        if (b !== playBtn) b.innerHTML = '<i class="bx bx-play"></i>';
+                    });
+                    document.querySelectorAll('.audio-player-mini .progress-overlay').forEach(p => {
+                        if (p !== progressOverlay) p.style.width = '0%';
+                    });
                     
                     audio.play();
                     playBtn.innerHTML = '<i class="bx bx-pause"></i>';
@@ -1299,15 +1690,33 @@ class AudioUploadManager {
             });
             
             audio.addEventListener('timeupdate', () => {
-                const percent = (audio.currentTime / audio.duration) * 100;
-                progressOverlay.style.width = percent + '%';
-                timeDisplay.textContent = this.formatTime(audio.currentTime);
+                if (audio.duration) {
+                    const percent = (audio.currentTime / audio.duration) * 100;
+                    progressOverlay.style.width = percent + '%';
+                    timeDisplay.textContent = this.formatTime(audio.currentTime);
+                }
             });
             
             audio.addEventListener('ended', () => {
                 isPlaying = false;
                 playBtn.innerHTML = '<i class="bx bx-play"></i>';
                 progressOverlay.style.width = '0%';
+                timeDisplay.textContent = '0:00';
+            });
+            
+            audio.addEventListener('error', (e) => {
+                console.error('Audio error:', e);
+                isPlaying = false;
+                playBtn.innerHTML = '<i class="bx bx-play"></i>';
+            });
+            
+            // Click sur waveform pour seek
+            container.querySelector('.waveform-container').addEventListener('click', (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                if (audio.duration) {
+                    audio.currentTime = percent * audio.duration;
+                }
             });
         });
     }
@@ -1318,23 +1727,31 @@ class AudioUploadManager {
         const barWidth = 2;
         const gap = 1;
         const bars = Math.floor(width / (barWidth + gap));
-        const step = Math.ceil(data.length / bars);
+        const step = Math.max(1, Math.floor(data.length / bars));
         
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = '#6c757d';
+        
+        // Dégradé
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#0d6efd');
+        gradient.addColorStop(1, '#0dcaf0');
+        ctx.fillStyle = gradient;
         
         for (let i = 0; i < bars; i++) {
             const idx = i * step;
             const value = data[idx] || 0;
-            const barHeight = value * height * 0.8;
+            const barHeight = Math.max(2, value * height * 0.8);
             const x = i * (barWidth + gap);
             const y = (height - barHeight) / 2;
             
-            ctx.fillRect(x, y, barWidth, barHeight);
+            // Coins arrondis
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 1);
+            ctx.fill();
         }
     }
     
-    // ==================== FULL PLAYERS ====================
+    // ==================== FULL PLAYERS AVEC HLS ====================
     
     initFullPlayers() {
         document.querySelectorAll('.audio-player-modal').forEach(modal => {
@@ -1345,19 +1762,84 @@ class AudioUploadManager {
                 this.setupFullPlayer(player);
                 player.dataset.initialized = 'true';
             });
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                const player = modal.querySelector('.audio-full-player');
+                if (player) {
+                    const audio = player.querySelector('audio');
+                    if (audio) {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    }
+                    // Destroy HLS instance si existe
+                    if (player.hls) {
+                        player.hls.destroy();
+                        player.hls = null;
+                    }
+                }
+            });
         });
     }
     
     setupFullPlayer(container) {
-        const audio = container.querySelector('audio');
+        const audioSrc = container.dataset.src;
+        const isHls = container.dataset.hls === 'true';
+        const versions = JSON.parse(container.dataset.versions || '{}');
+        
+        let audio;
+        let hls;
+        
+        // Créer ou récupérer l'élément audio
+        audio = container.querySelector('audio');
+        if (!audio) {
+            audio = new Audio();
+            container.appendChild(audio);
+        }
+        
+        // Setup HLS si supporté
+        if (isHls && Hls.isSupported()) {
+            hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+            });
+            hls.loadSource(audioSrc);
+            hls.attachMedia(audio);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                console.log('HLS manifest loaded');
+            });
+            container.hls = hls;
+        } else {
+            audio.src = audioSrc;
+        }
+        
         const playBtn = container.querySelector('.play-pause-btn');
         const progressBar = container.querySelector('.progress-bar');
         const progressContainer = container.querySelector('.progress');
         const currentTime = container.querySelector('.current-time');
         const totalTime = container.querySelector('.total-time');
         const volumeSlider = container.querySelector('.volume-slider');
+        const qualitySelector = container.querySelector('.quality-selector-main');
         
         let isPlaying = false;
+        
+        // Quality selector
+        if (qualitySelector && Object.keys(versions).length > 0) {
+            qualitySelector.addEventListener('change', () => {
+                const wasPlaying = !audio.paused;
+                const currentTime = audio.currentTime;
+                
+                if (container.hls) {
+                    container.hls.destroy();
+                }
+                
+                audio.src = qualitySelector.value;
+                audio.currentTime = currentTime;
+                
+                if (wasPlaying) {
+                    audio.play();
+                }
+            });
+        }
         
         playBtn.addEventListener('click', () => {
             if (isPlaying) {
@@ -1372,9 +1854,11 @@ class AudioUploadManager {
         });
         
         audio.addEventListener('timeupdate', () => {
-            const percent = (audio.currentTime / audio.duration) * 100;
-            progressBar.style.width = percent + '%';
-            currentTime.textContent = this.formatTime(audio.currentTime);
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = percent + '%';
+                currentTime.textContent = this.formatTime(audio.currentTime);
+            }
         });
         
         audio.addEventListener('loadedmetadata', () => {
@@ -1390,7 +1874,9 @@ class AudioUploadManager {
         progressContainer.addEventListener('click', (e) => {
             const rect = progressContainer.getBoundingClientRect();
             const percent = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = percent * audio.duration;
+            if (audio.duration) {
+                audio.currentTime = percent * audio.duration;
+            }
         });
         
         volumeSlider.addEventListener('input', (e) => {
@@ -1403,12 +1889,26 @@ class AudioUploadManager {
         });
         
         container.querySelector('.skip-forward')?.addEventListener('click', () => {
-            audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+            audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (!document.querySelector('.audio-player-modal.show')) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                playBtn.click();
+            } else if (e.code === 'ArrowLeft') {
+                audio.currentTime = Math.max(0, audio.currentTime - 5);
+            } else if (e.code === 'ArrowRight') {
+                audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
+            }
         });
     }
     
     formatTime(seconds) {
-        if (!seconds || isNaN(seconds)) return '0:00';
+        if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -1427,23 +1927,27 @@ document.addEventListener('DOMContentLoaded', () => {
             this.disabled = true;
             
             try {
+                const formData = new FormData();
+                formData.append('id', this.dataset.id);
+                formData.append('field', this.dataset.field);
+                formData.append('value', this.checked ? 1 : 0);
+                
                 const response = await fetch('<?= base_url('audio/toggleField') ?>', {
                     method: 'POST',
+                    body: formData,
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
                         'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: `id=${this.dataset.id}&field=${this.dataset.field}&value=${this.checked ? 1 : 0}&<?= $this->security->get_csrf_token_name() ?>=<?= $this->security->get_csrf_hash() ?>`
+                    }
                 });
                 
                 const data = await response.json();
                 if (!data.success) {
                     this.checked = !this.checked;
-                    alert('Erreur mise à jour');
+                    alert('Erreur mise à jour du statut');
                 }
             } catch (error) {
                 this.checked = !this.checked;
-                alert('Erreur connexion');
+                alert('Erreur de connexion');
             } finally {
                 this.disabled = false;
             }
@@ -1456,12 +1960,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = this.dataset.target;
             const isUpload = this.value === 'upload';
             
-            document.getElementById(`upload_section_${target}`).style.display = isUpload ? 'block' : 'none';
-            document.getElementById(`link_section_${target}`).style.display = isUpload ? 'none' : 'block';
+            const uploadSection = document.getElementById(`upload_section_${target}`);
+            const linkSection = document.getElementById(`link_section_${target}`);
+            
+            if (uploadSection) uploadSection.style.display = isUpload ? 'block' : 'none';
+            if (linkSection) linkSection.style.display = isUpload ? 'none' : 'block';
         });
     });
     
-    // DataTable
+    // DataTable avec options avancées
     if (typeof $.fn.DataTable !== 'undefined') {
         $('#audioTable').DataTable({
             language: { 
@@ -1471,8 +1978,14 @@ document.addEventListener('DOMContentLoaded', () => {
             pageLength: 25,
             responsive: true,
             columnDefs: [
-                { orderable: false, targets: [1, 9] } // Cover et Actions non triables
-            ]
+                { orderable: false, targets: [1, 9] },
+                { responsivePriority: 1, targets: [0, 2, 9] },
+                { responsivePriority: 2, targets: [4, 5] }
+            ],
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                 '<"row"<"col-sm-12"tr>>' +
+                 '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            buttons: ['copy', 'excel', 'pdf']
         });
     }
     
@@ -1480,21 +1993,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('create_audio_modal')?.addEventListener('hidden.bs.modal', () => {
         window.audioManager.resetUpload();
         document.getElementById('create_audio_form').reset();
-        document.getElementById('thumbnail_preview').innerHTML = `
-            <div class="text-center p-3">
-                <i class="bx bx-image-add fs-1 text-muted mb-2"></i>
-                <p class="small text-muted mb-0">Aperçu miniature</p>
-            </div>
-        `;
-        document.getElementById('thumbnail_preview').style.border = '2px dashed #dee2e6';
     });
+    
+    // Auto-focus description quand analyse terminée
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.target.id === 'analysis_card' && !mutation.target.classList.contains('d-none')) {
+                document.querySelector('textarea[name="description"]')?.focus();
+            }
+        });
+    });
+    
+    const analysisCard = document.getElementById('analysis_card');
+    if (analysisCard) {
+        observer.observe(analysisCard, { attributes: true, attributeFilter: ['class'] });
+    }
 });
 </script>
 
 <style>
-/* Styles Audio Ultra-Modernes */
+/* Styles Audio Ultra-Modernes v5.0 */
+
 .upload-zone {
     transition: all 0.3s ease;
+    border: 2px dashed #dee2e6;
 }
 
 .upload-zone:hover {
@@ -1506,19 +2028,48 @@ document.addEventListener('DOMContentLoaded', () => {
     border-color: #0d6efd !important;
     background-color: #e7f1ff !important;
     transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(13, 110, 253, 0.2);
+}
+
+/* Phase indicators */
+.phase-upload, .phase-processing, .phase-conversion {
+    transition: all 0.3s ease;
+    font-size: 0.75rem;
+    padding: 0.4em 0.8em;
+}
+
+.phase-upload.bg-success, .phase-processing.bg-success, .phase-conversion.bg-success {
+    animation: pulse-success 2s infinite;
+}
+
+@keyframes pulse-success {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 /* Mini Player */
 .audio-player-mini {
-    background: #f8f9fa;
-    padding: 6px;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.audio-player-mini:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
 }
 
 .waveform-container {
     position: relative;
     cursor: pointer;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.waveform-container:hover {
+    background: #e9ecef;
 }
 
 .waveform-canvas {
@@ -1529,6 +2080,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 .progress-overlay {
     transition: width 0.1s linear;
+    background: linear-gradient(90deg, rgba(13, 110, 253, 0.3) 0%, rgba(13, 202, 240, 0.3) 100%);
+}
+
+/* Quality selector */
+.quality-selector {
+    background-image: none;
+    text-align: center;
+    cursor: pointer;
+}
+
+.quality-selector option {
+    font-size: 10px;
 }
 
 /* Full Player */
@@ -1538,16 +2101,33 @@ document.addEventListener('DOMContentLoaded', () => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-/* Animations */
-@keyframes pulse-audio {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+.audio-full-player .play-pause-btn {
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
 }
 
-.play-pause-btn:active {
-    animation: pulse-audio 0.2s;
+.audio-full-player .play-pause-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4);
+}
+
+.audio-full-player .play-pause-btn:active {
+    transform: scale(0.95);
+}
+
+/* Progress bar animation */
+.progress-bar-striped {
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% { background-position: 1rem 0; }
+    100% { background-position: 0 0; }
 }
 
 /* Cards */
@@ -1563,6 +2143,16 @@ document.addEventListener('DOMContentLoaded', () => {
 /* Badges */
 .badge {
     font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Table */
+#audioTable tbody tr {
+    transition: background-color 0.2s;
+}
+
+#audioTable tbody tr:hover {
+    background-color: #f8f9fa;
 }
 
 /* Responsive */
@@ -1573,6 +2163,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     .player-visualization img {
         max-height: 200px !important;
+    }
+    
+    .phase-upload, .phase-processing, .phase-conversion {
+        font-size: 0.65rem;
+        padding: 0.3em 0.5em;
     }
 }
 
@@ -1590,6 +2185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 ::-webkit-scrollbar-track {
     background: #f1f1f1;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -1599,5 +2195,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+/* Animations */
+@keyframes pulse-audio {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+}
+
+.playing .play-btn {
+    animation: pulse-audio 2s infinite;
+}
+
+/* Alert animations */
+.alert {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Focus styles */
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #86b7fe;
+}
+
+/* Toggle switches */
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Tooltips custom */
+[data-bs-toggle="tooltip"] {
+    cursor: help;
 }
 </style>

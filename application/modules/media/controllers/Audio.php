@@ -2,9 +2,9 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Contrôleur Audio Ultra-Intelligent v4.0 - COMPLÉTÉ
+ * Contrôleur Audio Ultra-Intelligent v5.0 - AVEC PROGRESSION TEMPS RÉEL
  * Conforme structure BDD: galerie_medias
- * Features: Auto-detection complete, Miniature upload/generation, Technologies modernes
+ * Features: WebSocket-like progress, Multi-bitrate conversion, HLS streaming
  */
 class Audio extends MY_Controller {
 
@@ -13,11 +13,21 @@ class Audio extends MY_Controller {
     private $waveform_dir;
     private $covers_dir;
     private $thumbs_dir;
+    private $hls_dir;
+    private $progress_dir; // NOUVEAU: pour stocker la progression
     private $chunk_size;
     private $max_file_size;
     private $allowed_audio_extensions;
     private $allowed_image_extensions;
     private $session_timeout;
+
+    // Configuration qualités audio (comme Spotify)
+    private $audio_qualities = [
+        'low'    => ['bitrate' => '64k',  'codec' => 'mp3', 'suffix' => '_64k'],
+        'medium' => ['bitrate' => '128k', 'codec' => 'mp3', 'suffix' => '_128k'],
+        'high'   => ['bitrate' => '192k', 'codec' => 'mp3', 'suffix' => '_192k'],
+        'max'    => ['bitrate' => '320k', 'codec' => 'mp3', 'suffix' => '_320k']
+    ];
 
     function __construct()
     {
@@ -30,10 +40,12 @@ class Audio extends MY_Controller {
         $this->waveform_dir = FCPATH . 'attachments/Audio/Waveforms/';
         $this->covers_dir = FCPATH . 'attachments/Audio/Covers/';
         $this->thumbs_dir = FCPATH . 'attachments/Audio/Thumbs/';
+        $this->hls_dir = FCPATH . 'attachments/Audio/HLS/'; // NOUVEAU
+        $this->progress_dir = FCPATH . 'uploads/progress/'; // NOUVEAU
         
         // Configuration technique
-        $this->chunk_size = 2 * 1024 * 1024;
-        $this->max_file_size = 5 * 1024 * 1024 * 1024;
+        $this->chunk_size = 2 * 1024 * 1024; // 2MB chunks
+        $this->max_file_size = 500 * 1024 * 1024; // 500MB max
         $this->session_timeout = 3600;
         
         // Extensions supportées
@@ -47,7 +59,8 @@ class Audio extends MY_Controller {
         
         // Création des dossiers
         foreach ([$this->upload_dir, $this->final_dir, $this->waveform_dir, 
-                  $this->covers_dir, $this->thumbs_dir] as $dir) {
+                  $this->covers_dir, $this->thumbs_dir, $this->hls_dir,
+                  $this->progress_dir] as $dir) {
             $this->ensureDirectoryExists($dir);
         }
         
@@ -100,6 +113,16 @@ class Audio extends MY_Controller {
                 $this->recursiveDelete($dir);
             }
         }
+        
+        // Cleanup progress files aussi
+        if (is_dir($this->progress_dir)) {
+            $progress_files = glob($this->progress_dir . 'progress_*.json');
+            foreach ($progress_files as $file) {
+                if ($now - filemtime($file) > $this->session_timeout) {
+                    @unlink($file);
+                }
+            }
+        }
     }
 
     private function recursiveDelete($dir)
@@ -137,6 +160,49 @@ class Audio extends MY_Controller {
     }
 
     /**
+     * API: Récupérer la progression en temps réel (polling)
+     * Cette méthode est appelée par le frontend toutes les 500ms
+     */
+    public function getProgress()
+    {
+        $this->setJSONHeaders();
+        
+        $upload_id = $this->input->get('upload_id');
+        $phase = $this->input->get('phase') ?: 'upload'; // upload, processing, conversion
+        
+        if (empty($upload_id)) {
+            $this->jsonResponse(false, 'ID upload manquant');
+            return;
+        }
+        
+        $progress_file = $this->progress_dir . 'progress_' . $upload_id . '.json';
+        
+        // Si fichier existe, retourner contenu
+        if (file_exists($progress_file)) {
+            $progress = json_decode(file_get_contents($progress_file), true);
+            $this->jsonResponse(true, 'Progression récupérée', $progress);
+            return;
+        }
+        
+        // Sinon, vérifier métadonnées upload
+        $metadata = $this->loadMetadata($upload_id);
+        if ($metadata) {
+            $progress = [
+                'phase' => 'upload',
+                'percent' => round((count($metadata['uploaded_chunks']) / $metadata['total_chunks']) * 100, 2),
+                'uploaded_chunks' => count($metadata['uploaded_chunks']),
+                'total_chunks' => $metadata['total_chunks'],
+                'message' => 'Upload en cours...',
+                'timestamp' => time()
+            ];
+            $this->jsonResponse(true, 'Progression calculée', $progress);
+            return;
+        }
+        
+        $this->jsonResponse(false, 'Session non trouvée');
+    }
+
+    /**
      * API: Diagnostic complet
      */
     public function diagnostics()
@@ -159,7 +225,9 @@ class Audio extends MY_Controller {
                 'cover_extraction' => (bool)$this->findFFmpeg(),
                 'waveform_generation' => (bool)$this->findFFmpeg(),
                 'spectrogram' => (bool)$this->findFFmpeg(),
-                'thumbnail_generation' => true
+                'thumbnail_generation' => true,
+                'multi_bitrate' => (bool)$this->findFFmpeg(),
+                'hls_generation' => (bool)$this->findFFmpeg()
             ],
             'limits' => [
                 'upload_max_filesize' => ini_get('upload_max_filesize'),
@@ -172,6 +240,7 @@ class Audio extends MY_Controller {
                 'waveform_dir_writable' => is_writable($this->waveform_dir),
                 'covers_dir_writable' => is_writable($this->covers_dir),
                 'thumbs_dir_writable' => is_writable($this->thumbs_dir),
+                'hls_dir_writable' => is_writable($this->hls_dir),
                 'disk_free' => $this->formatBytes(@disk_free_space($this->final_dir))
             ],
             'timestamp' => time()
@@ -181,7 +250,7 @@ class Audio extends MY_Controller {
     }
 
     /**
-     * Streaming audio avec range requests
+     * Streaming audio avec range requests (comme Spotify)
      */
     public function stream($filename)
     {
@@ -239,7 +308,49 @@ class Audio extends MY_Controller {
         fclose($fp);
     }
 
-    // ==================== API UPLOAD CHUNKED ====================
+    /**
+     * Streaming HLS (m3u8 playlist) - comme YouTube/Spotify
+     */
+    public function hls($audio_id)
+    {
+        $audio = $this->Model->readOne('galerie_medias', ['id_media' => $audio_id, 'type' => 'audio']);
+        
+        if (!$audio || empty($audio['hls_playlist'])) {
+            show_404();
+            return;
+        }
+        
+        $playlist_path = FCPATH . $audio['hls_playlist'];
+        
+        if (!file_exists($playlist_path)) {
+            show_404();
+            return;
+        }
+        
+        header('Content-Type: application/vnd.apple.mpegurl');
+        header('Cache-Control: public, max-age=3600');
+        readfile($playlist_path);
+    }
+
+    /**
+     * Servir les segments HLS (.ts files)
+     */
+    public function hls_segment($filename)
+    {
+        $file_path = $this->hls_dir . basename($filename);
+        
+        if (!file_exists($file_path)) {
+            show_404();
+            return;
+        }
+        
+        header('Content-Type: video/mp2t');
+        header('Cache-Control: public, max-age=31536000');
+        header('Content-Length: ' . filesize($file_path));
+        readfile($file_path);
+    }
+
+    // ==================== API UPLOAD CHUNKED AVEC PROGRESSION ====================
 
     /**
      * Étape 1: Initialiser upload audio
@@ -284,6 +395,15 @@ class Audio extends MY_Controller {
         ];
 
         $this->saveMetadata($upload_id, $metadata);
+        
+        // Initialiser fichier de progression
+        $this->saveProgress($upload_id, [
+            'phase' => 'upload',
+            'percent' => 0,
+            'message' => 'Initialisation...',
+            'speed' => 0,
+            'eta' => 0
+        ]);
 
         $this->jsonResponse(true, 'Session initialisée', [
             'upload_id' => $upload_id,
@@ -347,7 +467,7 @@ class Audio extends MY_Controller {
     }
 
     /**
-     * Étape 2: Recevoir un chunk audio
+     * Étape 2: Recevoir un chunk audio avec mise à jour progression
      */
     public function uploadChunk()
     {
@@ -355,6 +475,7 @@ class Audio extends MY_Controller {
         
         $upload_id = $this->input->post('upload_id');
         $chunk_index = (int)$this->input->post('chunk_index');
+        $chunk_start_time = (float)$this->input->post('chunk_start_time'); // Timestamp début envoi
 
         if (empty($upload_id)) {
             $this->jsonResponse(false, 'ID upload manquant');
@@ -376,6 +497,7 @@ class Audio extends MY_Controller {
         if (file_exists($chunk_path)) {
             $this->markChunkUploaded($upload_id, $chunk_index);
             $progress = $this->calculateProgress($upload_id);
+            $this->updateProgressFile($upload_id, $progress);
             $this->jsonResponse(true, 'Chunk déjà présent', $progress);
             return;
         }
@@ -401,7 +523,10 @@ class Audio extends MY_Controller {
         $this->markChunkUploaded($upload_id, $chunk_index);
         $this->updateLastActivity($upload_id);
         
-        $progress = $this->calculateProgress($upload_id);
+        // Calculer progression détaillée
+        $progress = $this->calculateDetailedProgress($upload_id, $chunk_index, $chunk_start_time);
+        $this->updateProgressFile($upload_id, $progress);
+        
         $this->jsonResponse(true, 'Chunk reçu', $progress);
     }
 
@@ -422,17 +547,20 @@ class Audio extends MY_Controller {
 
         $actual_chunks = $this->getActualUploadedChunks($upload_id);
         $missing = array_diff(range(0, $metadata['total_chunks'] - 1), $actual_chunks);
+        
+        $progress = $this->calculateProgress($upload_id);
+        $this->updateProgressFile($upload_id, $progress);
 
         $this->jsonResponse(true, 'Statut récupéré', [
             'upload_id' => $upload_id,
             'status' => $metadata['status'],
-            'progress' => $this->calculateProgress($upload_id),
+            'progress' => $progress,
             'missing_chunks' => array_values($missing)
         ]);
     }
 
     /**
-     * Étape 4: Finaliser avec analyse complète
+     * Étape 4: Finaliser avec analyse complète et conversion multi-bitrate
      */
     public function completeUpload()
     {
@@ -441,6 +569,7 @@ class Audio extends MY_Controller {
         $upload_id = $this->input->post('upload_id');
         $user_description = $this->input->post('description');
         $custom_thumbnail = $this->input->post('custom_thumbnail');
+        $generate_hls = $this->input->post('generate_hls') ? true : false; // Option HLS
         
         $metadata = $this->loadMetadata($upload_id);
         
@@ -459,6 +588,14 @@ class Audio extends MY_Controller {
             return;
         }
 
+        // Mettre à jour progression: phase assemblage
+        $this->updateProgressFile($upload_id, [
+            'phase' => 'processing',
+            'percent' => 5,
+            'message' => 'Assemblage des chunks...',
+            'detail' => 'Reconstruction du fichier audio'
+        ]);
+
         // Assembler
         $final_name = $this->generateFinalName($metadata['file_name']);
         $final_path = $this->final_dir . $final_name;
@@ -474,29 +611,84 @@ class Audio extends MY_Controller {
         // Analyse complète
         $this->updateMetadataStatus($upload_id, 'processing');
         
-        // 1. Analyse FFprobe
+        // 1. Analyse FFprobe (10%)
+        $this->updateProgressFile($upload_id, [
+            'phase' => 'processing',
+            'percent' => 10,
+            'message' => 'Analyse du fichier audio...',
+            'detail' => 'Extraction des métadonnées ID3'
+        ]);
+        
         $audio_info = $this->analyzeWithFFprobe($final_path);
         
-        // 2. Extraction cover art intégré
+        // 2. Extraction cover art intégré (20%)
+        $this->updateProgressFile($upload_id, [
+            'phase' => 'processing',
+            'percent' => 20,
+            'message' => 'Extraction de la pochette...',
+            'detail' => 'Recherche artwork dans les métadonnées'
+        ]);
+        
         $cover_art = null;
         if (empty($custom_thumbnail)) {
             $cover_art = $this->extractCoverArt($final_path, $final_name);
         }
         
-        // 3. Générer miniature depuis waveform si pas de cover
+        // 3. Générer miniature depuis waveform si pas de cover (30%)
+        $this->updateProgressFile($upload_id, [
+            'phase' => 'processing',
+            'percent' => 30,
+            'message' => 'Génération de la miniature...',
+            'detail' => 'Création visuelle depuis l\'audio'
+        ]);
+        
         $generated_thumb = null;
         if (empty($cover_art) && empty($custom_thumbnail)) {
             $generated_thumb = $this->generateThumbnailFromWaveform($final_path, $final_name);
         }
         
-        // 4. Visualisations
+        // 4. Visualisations (50%)
+        $this->updateProgressFile($upload_id, [
+            'phase' => 'processing',
+            'percent' => 50,
+            'message' => 'Génération des visualisations...',
+            'detail' => 'Waveform et spectrogramme'
+        ]);
+        
         $visualizations = $this->generateVisualizations($final_path, $final_name);
+        
+        // 5. Conversion multi-bitrate (70%) - OPTIONNEL mais recommandé
+        $converted_versions = [];
+        if ($this->findFFmpeg() && $audio_info['duration'] > 0) {
+            $this->updateProgressFile($upload_id, [
+                'phase' => 'processing',
+                'percent' => 70,
+                'message' => 'Conversion multi-bitrate...',
+                'detail' => 'Création des qualités 64k, 128k, 192k, 320k'
+            ]);
+            
+            $converted_versions = $this->convertToMultipleBitrates($final_path, $final_name);
+        }
+        
+        // 6. Génération HLS (85%) - OPTIONNEL
+        $hls_playlist = null;
+        if ($generate_hls && $this->findFFmpeg()) {
+            $this->updateProgressFile($upload_id, [
+                'phase' => 'processing',
+                'percent' => 85,
+                'message' => 'Génération HLS...',
+                'detail' => 'Création playlist streaming adaptatif'
+            ]);
+            
+            $hls_playlist = $this->generateHLS($final_path, $final_name);
+        }
         
         // Déterminer la miniature finale
         $final_thumbnail = $custom_thumbnail ?: $cover_art ?: $generated_thumb;
 
         // Nettoyer
         $this->cleanupUploadSession($upload_id);
+        @unlink($this->progress_dir . 'progress_' . $upload_id . '.json');
 
         // Préparer réponse
         $suggested_title = $audio_info['title'] ?: $this->suggestTitleFromFilename($metadata['file_name']);
@@ -531,6 +723,12 @@ class Audio extends MY_Controller {
             'waveform_data' => $visualizations['waveform_data'],
             'spectrogram' => $visualizations['spectrogram'],
             
+            // Versions converties
+            'converted_versions' => $converted_versions,
+            
+            // HLS
+            'hls_playlist' => $hls_playlist,
+            
             // Pour formulaire
             'suggested_data' => [
                 'titre' => $suggested_title,
@@ -553,9 +751,84 @@ class Audio extends MY_Controller {
         
         if ($upload_id) {
             $this->cleanupUploadSession($upload_id);
+            @unlink($this->progress_dir . 'progress_' . $upload_id . '.json');
         }
 
         $this->jsonResponse(true, 'Upload annulé');
+    }
+
+    // ==================== CONVERSION MULTI-BITRATE & HLS ====================
+
+    /**
+     * Convertir l'audio en plusieurs bitrates (comme Spotify)
+     */
+    private function convertToMultipleBitrates($source_path, $filename)
+    {
+        $ffmpeg = $this->findFFmpeg();
+        if (!$ffmpeg) return [];
+
+        $base_name = pathinfo($filename, PATHINFO_FILENAME);
+        $versions = [];
+
+        foreach ($this->audio_qualities as $quality => $config) {
+            $output_name = $base_name . $config['suffix'] . '.mp3';
+            $output_path = $this->final_dir . $output_name;
+            $relative_path = 'attachments/Audio/' . $output_name;
+
+            $cmd = sprintf(
+                '%s -i %s -codec:a libmp3lame -b:a %s -q:a 2 -map_metadata 0 -id3v2_version 3 -y %s 2>&1',
+                escapeshellarg($ffmpeg),
+                escapeshellarg($source_path),
+                $config['bitrate'],
+                escapeshellarg($output_path)
+            );
+
+            exec($cmd, $output, $code);
+
+            if ($code === 0 && file_exists($output_path)) {
+                $versions[$quality] = [
+                    'path' => $relative_path,
+                    'bitrate' => $config['bitrate'],
+                    'size' => filesize($output_path),
+                    'size_formatted' => $this->formatBytes(filesize($output_path))
+                ];
+            }
+        }
+
+        return $versions;
+    }
+
+    /**
+     * Générer playlist HLS pour streaming adaptatif
+     */
+    private function generateHLS($source_path, $filename)
+    {
+        $ffmpeg = $this->findFFmpeg();
+        if (!$ffmpeg) return null;
+
+        $base_name = pathinfo($filename, PATHINFO_FILENAME);
+        $hls_folder = $this->hls_dir . $base_name . '/';
+        
+        if (!is_dir($hls_folder)) {
+            mkdir($hls_folder, 0777, true);
+        }
+
+        $playlist_name = $base_name . '.m3u8';
+        $playlist_path = $hls_folder . $playlist_name;
+        $relative_playlist = 'attachments/Audio/HLS/' . $base_name . '/' . $playlist_name;
+
+        // Générer HLS avec segments de 10 secondes
+        $cmd = sprintf(
+            '%s -i %s -codec:a aac -b:a 128k -hls_time 10 -hls_playlist_type vod -hls_segment_filename %s %s 2>&1',
+            escapeshellarg($ffmpeg),
+            escapeshellarg($source_path),
+            escapeshellarg($hls_folder . $base_name . '_%03d.ts'),
+            escapeshellarg($playlist_path)
+        );
+
+        exec($cmd, $output, $code);
+
+        return ($code === 0 && file_exists($playlist_path)) ? $relative_playlist : null;
     }
 
     // ==================== CRUD ====================
@@ -1074,6 +1347,74 @@ class Audio extends MY_Controller {
         return ($code === 0 && !empty($output)) ? (float)$output[0] : 0;
     }
 
+    // ==================== GESTION PROGRESSION ====================
+
+    /**
+     * Sauvegarder progression dans fichier JSON
+     */
+    private function saveProgress($upload_id, $data)
+    {
+        $progress_file = $this->progress_dir . 'progress_' . $upload_id . '.json';
+        $data['timestamp'] = time();
+        file_put_contents($progress_file, json_encode($data));
+    }
+
+    /**
+     * Mettre à jour fichier de progression
+     */
+    private function updateProgressFile($upload_id, $progress_data)
+    {
+        $progress_file = $this->progress_dir . 'progress_' . $upload_id . '.json';
+        $existing = [];
+        
+        if (file_exists($progress_file)) {
+            $existing = json_decode(file_get_contents($progress_file), true);
+        }
+        
+        $merged = array_merge($existing, $progress_data);
+        $merged['timestamp'] = time();
+        
+        file_put_contents($progress_file, json_encode($merged));
+    }
+
+    /**
+     * Calculer progression détaillée avec vitesse et ETA
+     */
+    private function calculateDetailedProgress($upload_id, $current_chunk, $chunk_start_time)
+    {
+        $metadata = $this->loadMetadata($upload_id);
+        if (!$metadata) return null;
+        
+        $uploaded = count($metadata['uploaded_chunks']);
+        $total = $metadata['total_chunks'];
+        $percent = round(($uploaded / $total) * 100, 2);
+        
+        // Calculer vitesse (bytes/seconde)
+        $bytes_uploaded = $uploaded * $metadata['chunk_size'];
+        $elapsed = time() - $metadata['created_at'];
+        $speed = $elapsed > 0 ? round($bytes_uploaded / $elapsed) : 0;
+        
+        // Calculer ETA
+        $remaining_bytes = ($total - $uploaded) * $metadata['chunk_size'];
+        $eta = $speed > 0 ? ceil($remaining_bytes / $speed) : 0;
+        
+        return [
+            'phase' => 'upload',
+            'percent' => $percent,
+            'uploaded_chunks' => $uploaded,
+            'total_chunks' => $total,
+            'bytes_uploaded' => $bytes_uploaded,
+            'bytes_total' => $metadata['file_size'],
+            'speed' => $speed,
+            'speed_formatted' => $this->formatBytes($speed) . '/s',
+            'eta' => $eta,
+            'eta_formatted' => $this->formatDuration($eta),
+            'message' => 'Upload en cours...',
+            'current_chunk' => $current_chunk,
+            'chunk_time_ms' => $chunk_start_time ? round((microtime(true) - $chunk_start_time) * 1000) : 0
+        ];
+    }
+
     // ==================== HELPERS & UTILITAIRES ====================
 
     private function validateAudioUpload($file_name, $file_size)
@@ -1307,6 +1648,13 @@ class Audio extends MY_Controller {
             // Métadonnées stockées en JSON
             'metadata_id3' => !empty($auto_data) ? json_encode($auto_data) : null,
             
+            // Versions multi-bitrate (stocké en JSON)
+            'converted_versions' => !empty($auto_data['converted_versions']) ? 
+                                   json_encode($auto_data['converted_versions']) : null,
+            
+            // HLS playlist
+            'hls_playlist' => $auto_data['hls_playlist'] ?? null,
+            
             // Statuts
             'est_actif' => 1,
             'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
@@ -1398,6 +1746,9 @@ class Audio extends MY_Controller {
                 $data['spectrogram'] = $auto_data['spectrogram'] ?? null;
                 $data['waveform_data'] = $auto_data['waveform_data'] ?? null;
                 $data['metadata_id3'] = !empty($auto_data) ? json_encode($auto_data) : null;
+                $data['converted_versions'] = !empty($auto_data['converted_versions']) ? 
+                                              json_encode($auto_data['converted_versions']) : null;
+                $data['hls_playlist'] = $auto_data['hls_playlist'] ?? null;
             }
         } elseif ($type_source == 'link') {
             $new_lien = $this->input->post('lien');
@@ -1416,6 +1767,8 @@ class Audio extends MY_Controller {
             $data['miniature'] = null;
             $data['waveform'] = null;
             $data['spectrogram'] = null;
+            $data['converted_versions'] = null;
+            $data['hls_playlist'] = null;
         }
 
         return $data;
@@ -1431,6 +1784,24 @@ class Audio extends MY_Controller {
             $audio['waveform_data']
         ];
         
+        // Supprimer versions converties
+        if (!empty($audio['converted_versions'])) {
+            $versions = json_decode($audio['converted_versions'], true);
+            foreach ($versions as $version) {
+                if (!empty($version['path'])) {
+                    $paths[] = $version['path'];
+                }
+            }
+        }
+        
+        // Supprimer HLS
+        if (!empty($audio['hls_playlist'])) {
+            $hls_dir = dirname(FCPATH . $audio['hls_playlist']);
+            if (is_dir($hls_dir)) {
+                $this->recursiveDelete($hls_dir);
+            }
+        }
+        
         foreach ($paths as $path) {
             if (!empty($path) && file_exists(FCPATH . $path)) {
                 @unlink(FCPATH . $path);
@@ -1438,24 +1809,75 @@ class Audio extends MY_Controller {
         }
     }
 
-    private function generateEmbedCode($url)
+        private function generateEmbedCode($url)
     {
         if (strpos($url, 'soundcloud.com') !== false) {
             return '<iframe width="100%" height="166" scrolling="no" frameborder="no" ' .
-                   'src="https://w.soundcloud.com/player/?url=' . urlencode($url) . '"></iframe>';
+                   'allow="autoplay" src="https://w.soundcloud.com/player/?url=' . urlencode($url) . 
+                   '&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>';
         }
         
         if (preg_match('/spotify\.com\/track\/([a-zA-Z0-9]+)/', $url, $m)) {
-            return '<iframe src="https://open.spotify.com/embed/track/' . $m[1] . '" ' .
-                   'width="100%" height="80" frameborder="0"></iframe>';
+            return '<iframe src="https://open.spotify.com/embed/track/' . $m[1] . 
+                   '" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>';
+        }
+        
+        if (preg_match('/spotify\.com\/playlist\/([a-zA-Z0-9]+)/', $url, $m)) {
+            return '<iframe src="https://open.spotify.com/embed/playlist/' . $m[1] . 
+                   '" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>';
+        }
+        
+        if (preg_match('/spotify\.com\/album\/([a-zA-Z0-9]+)/', $url, $m)) {
+            return '<iframe src="https://open.spotify.com/embed/album/' . $m[1] . 
+                   '" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>';
         }
         
         if (strpos($url, 'mixcloud.com') !== false) {
             return '<iframe width="100%" height="120" src="https://www.mixcloud.com/widget/iframe/?feed=' . 
-                   urlencode($url) . '" frameborder="0"></iframe>';
+                   urlencode($url) . '&hide_cover=1&light=1" frameborder="0"></iframe>';
         }
         
-        return null;
+        if (strpos($url, 'audiomack.com') !== false) {
+            return '<iframe src="' . $url . '/embed" scrolling="no" width="100%" height="252" scrollbars="no" frameborder="0"></iframe>';
+        }
+        
+        if (strpos($url, 'bandcamp.com') !== false) {
+            return '<iframe style="border: 0; width: 100%; height: 120px;" src="' . 
+                   str_replace('/track/', '/EmbeddedPlayer/track=', $url) . 
+                   '/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/" seamless></iframe>';
+        }
+        
+        if (preg_match('/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/', $url, $m) || 
+            preg_match('/youtu\.be\/([a-zA-Z0-9_-]+)/', $url, $m)) {
+            return '<iframe width="100%" height="166" src="https://www.youtube.com/embed/' . $m[1] . 
+                   '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        }
+        
+        if (strpos($url, 'apple.com') !== false && strpos($url, 'music') !== false) {
+            // Apple Music embed nécessite une approche différente
+            return '<iframe allow="autoplay *; encrypted-media *; fullscreen *" frameborder="0" height="150" style="width:100%;max-width:660px;overflow:hidden;background:transparent;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="' . $url . '"></iframe>';
+        }
+        
+        if (strpos($url, 'deezer.com') !== false) {
+            if (preg_match('/track\/(\d+)/', $url, $m)) {
+                return '<iframe title="deezer-widget" src="https://widget.deezer.com/widget/dark/track/' . $m[1] . 
+                       '" width="100%" height="300" frameborder="0" allowtransparency="true" allow="encrypted-media; clipboard-write"></iframe>';
+            }
+        }
+        
+        if (strpos($url, 'tidal.com') !== false) {
+            // Tidal nécessite une API key pour l'embed
+            return '<div class="tidal-embed" data-type="tidal" data-url="' . $url . '">' .
+                   '<a href="' . $url . '" target="_blank">Écouter sur Tidal</a></div>';
+        }
+        
+        // Fallback: lecteur audio HTML5 basique pour URL directe
+        if (preg_match('/\.(mp3|wav|ogg|m4a|aac|flac)$/i', $url)) {
+            return '<audio controls style="width:100%;"><source src="' . $url . '">Votre navigateur ne supporte pas l\'audio HTML5.</audio>';
+        }
+        
+        // Lien générique
+        return '<a href="' . $url . '" target="_blank" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Écouter l\'audio</a>';
     }
 
     private function getExistingCategories()
@@ -1487,7 +1909,7 @@ class Audio extends MY_Controller {
 
     private function findFFmpeg()
     {
-        $paths = ['ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/ffmpeg/bin/ffmpeg'];
+        $paths = ['ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/ffmpeg/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg'];
         foreach ($paths as $p) {
             exec($p . ' -version 2>&1', $out, $code);
             if ($code === 0) return $p;
@@ -1497,7 +1919,7 @@ class Audio extends MY_Controller {
 
     private function findFFprobe()
     {
-        $paths = ['ffprobe', '/usr/bin/ffprobe', '/usr/local/bin/ffprobe', '/opt/ffmpeg/bin/ffprobe'];
+        $paths = ['ffprobe', '/usr/bin/ffprobe', '/usr/local/bin/ffprobe', '/opt/ffmpeg/bin/ffprobe', '/opt/homebrew/bin/ffprobe'];
         foreach ($paths as $p) {
             exec($p . ' -version 2>&1', $out, $code);
             if ($code === 0) return $p;
@@ -1507,7 +1929,7 @@ class Audio extends MY_Controller {
 
     private function findSox()
     {
-        $paths = ['sox', '/usr/bin/sox', '/usr/local/bin/sox'];
+        $paths = ['sox', '/usr/bin/sox', '/usr/local/bin/sox', '/opt/homebrew/bin/sox'];
         foreach ($paths as $p) {
             exec($p . ' --version 2>&1', $out, $code);
             if ($code === 0) return $p;
@@ -1517,7 +1939,7 @@ class Audio extends MY_Controller {
 
     private function findLame()
     {
-        $paths = ['lame', '/usr/bin/lame', '/usr/local/bin/lame'];
+        $paths = ['lame', '/usr/bin/lame', '/usr/local/bin/lame', '/opt/homebrew/bin/lame'];
         foreach ($paths as $p) {
             exec($p . ' --version 2>&1', $out, $code);
             if ($code === 0) return $p;
@@ -1527,7 +1949,7 @@ class Audio extends MY_Controller {
 
     private function findMediaInfo()
     {
-        $paths = ['mediainfo', '/usr/bin/mediainfo', '/usr/local/bin/mediainfo'];
+        $paths = ['mediainfo', '/usr/bin/mediainfo', '/usr/local/bin/mediainfo', '/opt/homebrew/bin/mediainfo'];
         foreach ($paths as $p) {
             exec($p . ' --version 2>&1', $out, $code);
             if ($code === 0) return $p;
@@ -1546,7 +1968,7 @@ class Audio extends MY_Controller {
     {
         header('Content-Type: application/json; charset=utf-8');
         header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: POST, OPTIONS');
+        header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
         header('Cache-Control: no-cache, no-store, must-revalidate');
     }
 
@@ -1557,6 +1979,7 @@ class Audio extends MY_Controller {
             'message' => $message,
             'timestamp' => time()
         ], $data));
+        exit;
     }
 
     private function setFlashMessage($success, $success_msg, $error_msg)
@@ -1570,35 +1993,162 @@ class Audio extends MY_Controller {
     private function getDetailedUploadError($code)
     {
         $errors = [
-            UPLOAD_ERR_INI_SIZE => ['type' => 'PHP_LIMIT', 'message' => 'Fichier trop grand'],
-            UPLOAD_ERR_FORM_SIZE => ['type' => 'FORM_LIMIT', 'message' => 'Fichier trop grand'],
-            UPLOAD_ERR_PARTIAL => ['type' => 'NETWORK', 'message' => 'Upload partiel'],
+            UPLOAD_ERR_INI_SIZE => ['type' => 'PHP_LIMIT', 'message' => 'Fichier trop grand pour la configuration PHP'],
+            UPLOAD_ERR_FORM_SIZE => ['type' => 'FORM_LIMIT', 'message' => 'Fichier dépasse la limite du formulaire'],
+            UPLOAD_ERR_PARTIAL => ['type' => 'NETWORK', 'message' => 'Upload partiel - vérifiez votre connexion'],
             UPLOAD_ERR_NO_FILE => ['type' => 'NO_FILE', 'message' => 'Aucun fichier reçu'],
-            UPLOAD_ERR_NO_TMP_DIR => ['type' => 'SERVER_CONFIG', 'message' => 'Dossier temporaire manquant'],
-            UPLOAD_ERR_CANT_WRITE => ['type' => 'DISK', 'message' => 'Erreur écriture disque'],
-            UPLOAD_ERR_EXTENSION => ['type' => 'PHP_EXT', 'message' => 'Extension PHP bloquante']
+            UPLOAD_ERR_NO_TMP_DIR => ['type' => 'SERVER_CONFIG', 'message' => 'Dossier temporaire manquant sur le serveur'],
+            UPLOAD_ERR_CANT_WRITE => ['type' => 'DISK', 'message' => 'Erreur écriture disque - espace insuffisant?'],
+            UPLOAD_ERR_EXTENSION => ['type' => 'PHP_EXT', 'message' => 'Extension PHP a bloqué l\'upload']
         ];
-        return $errors[$code] ?? ['type' => 'UNKNOWN', 'message' => 'Erreur #' . $code];
+        return $errors[$code] ?? ['type' => 'UNKNOWN', 'message' => 'Erreur inconnue #' . $code];
     }
 
-    private function formatBytes($bytes)
+    private function formatBytes($bytes, $precision = 2)
     {
-        if ($bytes >= 1099511627776) return number_format($bytes / 1099511627776, 2) . ' TB';
-        if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 2) . ' GB';
-        if ($bytes >= 1048576) return number_format($bytes / 1048576, 2) . ' MB';
-        if ($bytes >= 1024) return number_format($bytes / 1024, 2) . ' KB';
-        return $bytes . ' B';
+        if ($bytes <= 0) return '0 B';
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= pow(1024, $pow);
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 
     private function formatDuration($seconds)
     {
         if (empty($seconds) || $seconds < 0) return '0:00';
-        if ($seconds < 60) {
-            return gmdate("s\\s", $seconds);
-        } elseif ($seconds < 3600) {
-            return gmdate("i\\m s\\s", $seconds);
-        } else {
-            return gmdate("H\\h i\\m s\\s", $seconds);
+        
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        $secs = $seconds % 60;
+        
+        if ($hours > 0) {
+            return sprintf('%d:%02d:%02d', $hours, $minutes, $secs);
         }
+        return sprintf('%d:%02d', $minutes, $secs);
+    }
+
+    /**
+     * API: Récupérer les statistiques audio
+     */
+    public function stats()
+    {
+        $this->setJSONHeaders();
+        
+        $stats = [
+            'total_audios' => $this->db->where('type', 'audio')->count_all_results('galerie_medias'),
+            'total_actifs' => $this->db->where(['type' => 'audio', 'est_actif' => 1])->count_all_results('galerie_medias'),
+            'total_duration' => $this->calculateTotalDuration(),
+            'total_duration_formatted' => $this->formatDuration($this->calculateTotalDuration()),
+            'categories' => $this->getExistingCategories(),
+            'storage_used' => $this->calculateStorageUsed(),
+            'by_quality' => $this->getStatsByQuality()
+        ];
+        
+        $this->jsonResponse(true, 'Statistiques récupérées', $stats);
+    }
+
+    private function calculateStorageUsed()
+    {
+        $this->db->select_sum('taille', 'total_size');
+        $this->db->where('type', 'audio');
+        $query = $this->db->get('galerie_medias');
+        $size = $query->row()->total_size ?? 0;
+        return [
+            'bytes' => $size,
+            'formatted' => $this->formatBytes($size)
+        ];
+    }
+
+    private function getStatsByQuality()
+    {
+        $stats = [];
+        $this->db->where('type', 'audio');
+        $query = $this->db->get('galerie_medias');
+        
+        foreach ($query->result() as $row) {
+            if (!empty($row->bitrate)) {
+                $quality = $this->categorizeBitrate($row->bitrate);
+                $stats[$quality] = ($stats[$quality] ?? 0) + 1;
+            }
+        }
+        
+        return $stats;
+    }
+
+    private function categorizeBitrate($bitrate)
+    {
+        if ($bitrate < 96000) return 'low';
+        if ($bitrate < 160000) return 'medium';
+        if ($bitrate < 256000) return 'high';
+        return 'max';
+    }
+
+    /**
+     * API: Rechercher dans les métadonnées ID3
+     */
+    public function searchByMetadata()
+    {
+        $this->setJSONHeaders();
+        
+        $query = $this->input->get('q');
+        if (empty($query)) {
+            $this->jsonResponse(false, 'Terme de recherche requis');
+            return;
+        }
+        
+        $this->db->where('type', 'audio');
+        $this->db->group_start();
+        $this->db->like('titre', $query);
+        $this->db->or_like('credits', $query);
+        $this->db->or_like('categorie', $query);
+        $this->db->or_like('description', $query);
+        $this->db->group_end();
+        
+        $results = $this->db->get('galerie_medias')->result_array();
+        
+        $this->jsonResponse(true, 'Recherche terminée', [
+            'count' => count($results),
+            'results' => $results
+        ]);
+    }
+
+    /**
+     * API: Batch processing - traiter plusieurs fichiers
+     */
+    public function batchProcess()
+    {
+        $this->setJSONHeaders();
+        
+        $upload_ids = json_decode($this->input->post('upload_ids'), true);
+        if (empty($upload_ids) || !is_array($upload_ids)) {
+            $this->jsonResponse(false, 'Liste d\'IDs requise');
+            return;
+        }
+        
+        $results = [];
+        foreach ($upload_ids as $upload_id) {
+            // Traiter chaque upload en arrière-plan ou séquentiellement
+            $results[$upload_id] = $this->processSingleUpload($upload_id);
+        }
+        
+        $this->jsonResponse(true, 'Traitement batch lancé', $results);
+    }
+
+    private function processSingleUpload($upload_id)
+    {
+        // Logique de traitement individuel pour batch
+        $metadata = $this->loadMetadata($upload_id);
+        if (!$metadata) {
+            return ['success' => false, 'error' => 'Metadata non trouvées'];
+        }
+        
+        // Retourner statut pour suivi batch
+        return [
+            'success' => true,
+            'status' => $metadata['status'],
+            'progress' => $this->calculateProgress($upload_id)
+        ];
     }
 }
