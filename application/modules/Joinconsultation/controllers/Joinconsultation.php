@@ -74,7 +74,7 @@ class Joinconsultation extends MY_Controller {
         }
     }
 
-    public function room($room_id, $user_id) {
+   public function room($room_id, $user_id) {
     // Vérifier que l'utilisateur est bien connecté et correspond
     if (!$this->session->userdata('logged_in') || $this->session->userdata('user_id') != $user_id) {
         redirect("Joinconsultation/index?room=$room_id&user=$user_id");
@@ -88,8 +88,10 @@ class Joinconsultation extends MY_Controller {
 
     // Gestion robuste des types (objet vs tableau)
     $current_user_id = (int) $user_id;
+    $consultation_id = is_object($consultation) ? $consultation->id : $consultation['id'];
     $patient_user_id = is_object($consultation) ? $consultation->patient_user_id : $consultation['patient_user_id'];
     $medecin_user_id = is_object($consultation) ? $consultation->medecin_user_id : $consultation['medecin_user_id'];
+    $statut_actuel = is_object($consultation) ? $consultation->statut : $consultation['statut'];
 
     // Déterminer qui est l'autre participant et quel est le rôle du courant
     if ($patient_user_id == $current_user_id) {
@@ -102,8 +104,36 @@ class Joinconsultation extends MY_Controller {
         show_error('Vous n\'êtes pas autorisé à accéder à cette consultation.', 403);
     }
 
-    
-    $other_user = $this->Model->get_user_by_id($other_user_id);
+    // NOUVEAU : Mettre à jour le statut de la consultation
+    // Si la consultation est 'confirmee', on la passe à 'en_cours'
+    // et on enregistre la date de début
+    if ($statut_actuel == 'confirmee') {
+        $update_data = [
+            'statut' => 'en_cours',
+            'date_debut' => date('Y-m-d H:i:s')
+        ];
+        
+        $updated = $this->JoinConsultation_model->update_consultation($consultation_id, $update_data);
+        
+        if ($updated) {
+            log_message('info', "Consultation $consultation_id démarrée - Passage de 'confirmee' à 'en_cours'");
+        } else {
+            log_message('error', "Erreur lors du démarrage de la consultation $consultation_id");
+        }
+    } elseif ($statut_actuel == 'en_cours') {
+        // Si déjà en cours, on ne fait rien
+        log_message('debug', "Consultation $consultation_id déjà en cours");
+    } elseif ($statut_actuel == 'terminee') {
+        // Si déjà terminée, on bloque l'accès
+        show_error('Cette consultation est déjà terminée.', 403);
+    } elseif ($statut_actuel == 'annulee') {
+        // Si annulée, on bloque l'accès
+        show_error('Cette consultation a été annulée.', 403);
+    }
+
+    // Charger les infos de l'autre participant
+    $this->load->model('User_model');
+    $other_user = $this->User_model->get_user_by_id($other_user_id);
 
     if (!$other_user) {
         show_error('L\'autre participant est introuvable.', 404);
@@ -113,12 +143,7 @@ class Joinconsultation extends MY_Controller {
     $current_user_data = $this->session->userdata();
     $current_user_data['id'] = $current_user_data['user_id'];
 
-    // DEBUG - Ajoutez ce log pour vérifier
-    log_message('debug', '=== CONSULTATION DEBUG ===');
-    log_message('debug', 'Room ID: ' . $room_id);
-    log_message('debug', 'Current User ID: ' . $current_user_id);
-    log_message('debug', 'Other User ID: ' . $other_user_id);
-    log_message('debug', 'Current Role: ' . $current_role);
+    
 
     $data = array(
         'room_id'       => $room_id,
@@ -130,7 +155,6 @@ class Joinconsultation extends MY_Controller {
 
     $this->load->view('consultation_video', $data);
 }
-
 
 /**
  * API pour terminer une consultation

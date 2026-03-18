@@ -1,0 +1,20 @@
+{
+    "upload_id": "avc_69bafb1c05479_4cef5172",
+    "file_name": "HAR'INTUMBERO_BY_PRAISE_FOR_THE_VICTORY.mp4",
+    "file_size": 622099560,
+    "file_hash": "HAR'INTUMBERO_BY_PRAISE_FOR_THE_VICTORY.mp46220995601742209738000",
+    "total_chunks": 119,
+    "uploaded_chunks": [],
+    "created_at": 1773861660,
+    "status": "uploading",
+    "avc_config": {
+        "target_profiles": [
+            "baseline",
+            "main",
+            "high"
+        ],
+        "generate_dash": true,
+        "generate_hls": true,
+        "generate_progressive": true
+    }
+}

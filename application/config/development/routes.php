@@ -182,7 +182,7 @@ $route['video/cancelUpload'] = 'media/Video/cancelUpload';
 
 
 // Routes pour le contrôleur Autre (media/Autre.php)
-$route['autre'] = 'media/Autre';
+$route['autre'] = 'media/Autre/index';
 $route['autre/(:any)'] = 'media/Autre/$1';
 $route['autre/index'] = 'media/Autre/index';
 $route['autre/Create'] = 'media/Autre/Create';

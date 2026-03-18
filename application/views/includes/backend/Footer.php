@@ -19,22 +19,31 @@
 <!-- Summernote -->
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-bs4.min.js"></script>
 
-<!-- TinyMCE (API Key nécessaire) -->
-<script src="https://cdn.tiny.cloud/1/VOTRE_CLE_API_ICI/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<!-- ============================================ -->
+<!-- ÉDITEURS TEXTE - VERSION SANS CLÉ API       -->
+<!-- ============================================ -->
+
+<!-- TinyMCE (version Community - pas de clé nécessaire) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+
+<!-- OU utiliser Summernote (plus simple et sans clé) -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.js"></script>
 
 <!-- App JS -->
 <script src="<?= base_url() ?>assets/backend/js/app.js"></script>
-<script src="<?= base_url() ?>assets/backend/js/index.js"></script>
+<!-- <script src="<?= base_url() ?>assets/backend/js/index.js"></script> --> <!-- Commenté si erreurs ApexCharts -->
 
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function() {
 
-    // === DataTables sécurisées ===
+    // === DataTables sécurisées avec fallback local ===
     ['table','example'].forEach(function(id){
         if (document.getElementById(id)) {
             $('#' + id).DataTable({
                 language: { 
-                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+                    // Fallback: si le CDN échoue, utiliser traduction locale
+                    url: '<?= base_url("assets/datatables/fr-FR.json") ?>'
                 },
                 pageLength: 25,
                 responsive: true
@@ -42,35 +51,69 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // === ApexCharts exemple ===
+    // === ApexCharts avec vérification d'existence ===
     if (document.querySelector("#chart1")) {
-        var chart1 = new ApexCharts(document.querySelector("#chart1"), {
-            chart: { type: 'line' },
-            series: [{ name: 'Exemple', data: [10,20,30,40] }],
-            xaxis: { categories: ['Jan','Feb','Mar','Apr'] }
-        });
-        chart1.render();
+        try {
+            var chart1 = new ApexCharts(document.querySelector("#chart1"), {
+                chart: { type: 'line' },
+                series: [{ name: 'Exemple', data: [10,20,30,40] }],
+                xaxis: { categories: ['Jan','Feb','Mar','Apr'] }
+            });
+            chart1.render();
+        } catch(e) {
+            console.log('⚠️ Graphique non initialisé:', e);
+        }
     }
 
-    // === Summernote ===
+    // === Summernote (recommandé - pas de clé API) ===
     if ($('#summernote').length) {
         $('#summernote').summernote({
-            height: 200
+            height: 200,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'underline', 'clear']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
         });
     }
 
-    // === TinyMCE ===
+    // === TinyMCE sans clé API (version Community) ===
     if (document.querySelector("#mytextarea")) {
         tinymce.init({
             selector: '#mytextarea',
-            apiKey: 'VOTRE_CLE_API_ICI',  // Remplacer par votre clé TinyMCE
-            plugins: 'lists link image',
-            toolbar: 'undo redo | bold italic | alignleft aligncenter alignright'
+            // PAS de apiKey nécessaire avec version CDN
+            plugins: 'lists link image preview code',
+            toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | link image | code preview',
+            height: 300,
+            menubar: false,
+            branding: false, // Enlever le branding Tiny
+            promotion: false // Enlever la promotion IA
         });
+    }
+
+    // === Alternative à TinyMCE - CKEditor (pas de clé) ===
+    if (document.querySelector("#ckeditor")) {
+        // Décommentez si besoin
+        // ClassicEditor.create(document.querySelector('#ckeditor')).catch(console.error);
     }
 
     // === Auto-hide alerts ===
     setTimeout(function(){ $('.alert').fadeOut('slow'); }, 5000);
 
+    // === Vérifier les éléments manquants ===
+    console.log('✅ Scripts chargés avec succès');
+    
+
 });
 </script>
+
+<!-- ============================================ -->
+<!-- CHARGEMENT DES FICHIERS DE TRADUCTION LOCAUX -->
+<!-- ============================================ -->
+<!-- Téléchargez et placez ce fichier dans assets/datatables/fr-FR.json
+     wget https://cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json -O assets/datatables/fr-FR.json
+-->

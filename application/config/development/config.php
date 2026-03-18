@@ -564,6 +564,11 @@ $config['twilio_auth_token']  = 'VOTRE_AUTH_TOKEN';
 $config['twilio_phone_number'] = '+1234567890';     // Votre numéro Twilio pour SMS
 $config['twilio_whatsapp_number'] = '+1234567890';   // Votre numéro Twilio pour WhatsApp (généralement le même)
 
+// Twilio Configuration (pour WhatsApp)
+$config['twilio_sid'] = 'VOTRE_TWILIO_SID';
+$config['twilio_token'] = 'VOTRE_TWILIO_TOKEN';
+$config['twilio_whatsapp_from'] = 'whatsapp:+14155238886'; // Numéro Twilio WhatsApp
+
 
 $config['csrf_exclude_uris'] = array(
     'panier/ajouter',

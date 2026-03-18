@@ -13,7 +13,7 @@ class Contact extends Public_Controller
     {
         parent::__construct();
         $this->load->library('form_validation');
-        $this->load->library('email');
+        $this->load->library('sendgrid_lib'); // ✅ Utilisation de votre librairie personnalisée
         $this->load->database();
         
         // Charger le modèle pour les settings si nécessaire
@@ -169,11 +169,16 @@ class Contact extends Public_Controller
 
         $insert_id = $this->db->insert_id();
         
-        // Envoi des emails (ne bloque pas la réponse en cas d'échec)
+        // ✅ ENVOI DES EMAILS AVEC VOTRE LIBRAIRIE SENDGRID
         $email_sent = $this->_send_notification_emails($contact_data);
         
         if (!$email_sent) {
             log_message('error', 'Contact: Échec envoi email pour le message ID: ' . $insert_id);
+        }
+
+        // ✅ ENVOI WHATSAPP SI NUMÉRO FOURNI (optionnel)
+        if (!empty($phone)) {
+            $this->_send_whatsapp_notification($contact_data);
         }
 
         $this->db->trans_complete();
@@ -203,36 +208,15 @@ class Contact extends Public_Controller
     }
 
     /**
-     * Envoyer les emails de notification
+     * ✅ Envoyer les emails de notification avec SendGrid
      */
     private function _send_notification_emails($data)
     {    
         try {
-            $smtp_pass = $this->Model->get_setting('smtp_password', '');
-            $smtp_email = $this->Model->get_setting('smtp_email', 'noreply@nufotec.com');
             $site_name = $this->Model->get_setting('site_name', 'Nufotec');
-
-            // Configuration SMTP
-            $config = [
-                'protocol'    => 'smtp',
-                'smtp_host'   => 'smtp.gmail.com',
-                'smtp_port'   => 587,
-                'smtp_user'   => $smtp_email,
-                'smtp_pass'   => $smtp_pass,
-                'smtp_crypto' => 'tls',
-                'mailtype'    => 'html',
-                'charset'     => 'utf-8',
-                'newline'     => "\r\n"
-            ];
-
-            $this->email->initialize($config);
+            $admin_email = $this->Model->get_setting('admin_email', 'info@nufotec.com');
 
             // 1. Email à l'administrateur
-            $this->email->from($smtp_email, $site_name);
-            $this->email->reply_to($data['Email'], $data['FullName']);
-            $this->email->to($smtp_email);
-            $this->email->subject("Nouveau message - " . $data['Subject']);
-            
             $admin_message = "
                 <h2>Nouveau message de contact</h2>
                 <p><strong>De:</strong> {$data['FullName']} ({$data['Email']})</p>
@@ -245,18 +229,14 @@ class Contact extends Public_Controller
                 <p><strong>IP:</strong> {$data['ip_address']}</p>
                 <p><strong>Date:</strong> {$data['Date_creation']}</p>
             ";
-            
-            $this->email->message($admin_message);
-            $admin_sent = $this->email->send();
 
-            // Réinitialiser pour le prochain email
-            $this->email->clear();
+            $admin_result = $this->sendgrid_lib->send_email(
+                $admin_email,
+                "Nouveau message de contact - " . $data['Subject'],
+                $admin_message
+            );
 
             // 2. Email de confirmation au visiteur
-            $this->email->from($smtp_email, $site_name);
-            $this->email->to($data['Email']);
-            $this->email->subject('Confirmation - Votre message a bien été reçu');
-            
             $user_message = "
                 <div style='max-width:600px;margin:0 auto;font-family:Arial,sans-serif;color:#333;'>
                     <div style='background:linear-gradient(135deg, #0B4F2E, #1B7B4B);padding:30px;text-align:center;color:white;border-radius:16px 16px 0 0;'>
@@ -282,14 +262,46 @@ class Contact extends Public_Controller
                     </div>
                 </div>
             ";
-            
-            $this->email->message($user_message);
-            $user_sent = $this->email->send();
+
+            $user_result = $this->sendgrid_lib->send_email(
+                $data['Email'],
+                "Confirmation - Votre message a bien été reçu",
+                $user_message
+            );
+
+            // Vérifier si les deux emails ont été envoyés avec succès
+            $admin_sent = ($admin_result['status'] >= 200 && $admin_result['status'] < 300);
+            $user_sent = ($user_result['status'] >= 200 && $user_result['status'] < 300);
 
             return ($admin_sent && $user_sent);
 
         } catch (Exception $e) {
-            log_message('error', 'Contact: Erreur envoi email - ' . $e->getMessage());
+            log_message('error', 'Contact: Erreur envoi email SendGrid - ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * ✅ Envoyer une notification WhatsApp (optionnel)
+     */
+    private function _send_whatsapp_notification($data)
+    {
+        try {
+            // Numéro formaté sans espace
+            $phone = preg_replace('/[^0-9]/', '', $data['PhoneNumber']);
+            
+            if (strlen($phone) >= 10) {
+                $message = "Bonjour {$data['FullName']},\n\n";
+                $message .= "Nous avons bien reçu votre message concernant '{$data['Subject']}'. ";
+                $message .= "Nous vous répondrons dans les plus brefs délais.\n\n";
+                $message .= "Merci de nous avoir contactés.\n";
+                $message .= "L'équipe Nufotec";
+                
+                return $this->sendgrid_lib->send_whatsapp($phone, $message);
+            }
+            return false;
+        } catch (Exception $e) {
+            log_message('error', 'Contact: Erreur WhatsApp - ' . $e->getMessage());
             return false;
         }
     }
