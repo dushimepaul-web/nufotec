@@ -1613,10 +1613,72 @@
                 </div>
             </li>
 
-            <li class="nav-item">
-                <a href="<?= base_url('Home/Media') ?>" class="nav-link">
-                    <span>News</span>
+
+             <li class="nav-item mega-menu">
+                <a href="#" class="nav-link">
+                    <span>News & Media</span>
+                    <i class="bi bi-chevron-down"></i>
                 </a>
+                <div class="mega-dropdown">
+                    <div class="mega-grid">
+                        <div class="mega-column">
+    <h3><i class="bi bi-collection-play"></i> Médias</h3>
+    <ul class="mega-list">
+        <li class="<?= ($current_filter ?? 'all') === 'all' ? 'active' : '' ?>">
+            <a href="<?= base_url('Media') ?>">
+                <i class="bi bi-chevron-right"></i> 
+                Tous les médias
+                <?php if (!empty($total_medias['all'])): ?>
+                    <span class="badge bg-primary ms-1"><?= $total_medias['all'] ?></span>
+                <?php endif; ?>
+            </a>
+        </li>
+        <li class="<?= ($current_filter ?? '') === 'video' ? 'active' : '' ?>">
+            <a href="<?= base_url('Media/view/video') ?>">
+                <i class="bi bi-chevron-right"></i> 
+                Vidéos & Liens
+                <?php if (!empty($total_medias['video'])): ?>
+                    <span class="badge bg-primary ms-1"><?= $total_medias['video'] ?></span>
+                <?php endif; ?>
+            </a>
+        </li>
+        <li class="<?= ($current_filter ?? '') === 'audio' ? 'active' : '' ?>">
+            <a href="<?= base_url('Media/view/audio') ?>">
+                <i class="bi bi-chevron-right"></i> 
+                Audio
+                <?php if (!empty($total_medias['audio'])): ?>
+                    <span class="badge bg-primary ms-1"><?= $total_medias['audio'] ?></span>
+                <?php endif; ?>
+            </a>
+        </li>
+        <li class="<?= ($current_filter ?? '') === 'image' ? 'active' : '' ?>">
+            <a href="<?= base_url('Media/view/image') ?>">
+                <i class="bi bi-chevron-right"></i> 
+                Images
+                <?php if (!empty($total_medias['image'])): ?>
+                    <span class="badge bg-primary ms-1"><?= $total_medias['image'] ?></span>
+                <?php endif; ?>
+            </a>
+        </li>
+        <li class="<?= ($current_filter ?? '') === 'book' ? 'active' : '' ?>">
+            <a href="<?= base_url('Media/view/book') ?>">
+                <i class="bi bi-chevron-right"></i> 
+                Livres & E-books
+                <?php if (!empty($total_medias['book'])): ?>
+                    <span class="badge bg-primary ms-1"><?= $total_medias['book'] ?></span>
+                <?php endif; ?>
+            </a>
+        </li>
+    </ul>
+</div>
+                        <div class="mega-column">
+                            <h3><i class="bi bi-handshake">News</i></h3>
+                            <ul class="mega-list">
+                                <li><a href="<?= base_url('blog') ?>"><i class="bi bi-chevron-right"></i> News</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </li>
         </ul>
 

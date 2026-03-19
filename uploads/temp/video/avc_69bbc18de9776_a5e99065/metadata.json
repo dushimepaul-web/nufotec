@@ -1,0 +1,20 @@
+{
+    "upload_id": "avc_69bbc18de9776_a5e99065",
+    "file_name": "Enregistrement de l'\u00e9cran 2026-03-12 132944.mp4",
+    "file_size": 571593,
+    "file_hash": "Enregistrement de l'\u00e9cran 2026-03-12 132944.mp45715931773314984521",
+    "total_chunks": 1,
+    "uploaded_chunks": [],
+    "created_at": 1773912462,
+    "status": "uploading",
+    "avc_config": {
+        "target_profiles": [
+            "baseline",
+            "main",
+            "high"
+        ],
+        "generate_dash": true,
+        "generate_hls": true,
+        "generate_progressive": true
+    }
+}

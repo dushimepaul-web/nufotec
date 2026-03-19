@@ -162,9 +162,7 @@ $route['users-create'] = 'users/Users/Create';
  
 
  
-/// Video Controller (dans media/Video.php)
-$route['video'] = 'media/Video';
-$route['video/(:any)'] = 'media/Video/$1';
+// Routes vidéo
 $route['video'] = 'media/Video/index';
 $route['video/index'] = 'media/Video/index';
 $route['video/Create'] = 'media/Video/Create';
@@ -177,6 +175,9 @@ $route['video/uploadChunk'] = 'media/Video/uploadChunk';
 $route['video/checkStatus'] = 'media/Video/checkStatus';
 $route['video/completeUpload'] = 'media/Video/completeUpload';
 $route['video/cancelUpload'] = 'media/Video/cancelUpload';
+$route['video/stream/progressive/(:num)'] = 'media/Video/stream/progressive/$1'; 
+
+$route['video/uploadThumbnail'] = 'media/Video/uploadThumbnail';
 
 
 
@@ -191,35 +192,36 @@ $route['autre/Delete'] = 'media/Autre/Delete';
 $route['autre/ChangeStatus'] = 'media/Autre/ChangeStatus';
 $route['autre/toggleField'] = 'media/Autre/toggleField';
 
+// ==========================================
+// AUDIO ROUTES - CORRIGÉES ET OPTIMISÉES
+// ==========================================
 
-/// Audio Controller (dans media/Audio.php)
-$route['audio'] = 'media/Audio';
-$route['audio/(:any)'] = 'media/Audio/$1';
+// Route principale (DOIT ÊTRE AVANT les routes avec paramètres)
 $route['audio'] = 'media/Audio/index';
-$route['audio/index'] = 'media/Audio/index';
+
+// ==================== CRUD ROUTES ====================
 $route['audio/Create'] = 'media/Audio/Create';
 $route['audio/Update'] = 'media/Audio/Update';
 $route['audio/Delete'] = 'media/Audio/Delete';
+
+// ==================== API/AJAX ROUTES ====================
 $route['audio/ChangeStatus'] = 'media/Audio/ChangeStatus';
 $route['audio/toggleField'] = 'media/Audio/toggleField';
 
 // ==================== CHUNKED UPLOAD ROUTES ====================
 $route['audio/initUpload'] = 'media/Audio/initUpload';
 $route['audio/uploadChunk'] = 'media/Audio/uploadChunk';
-$route['audio/checkStatus'] = 'media/Audio/checkStatus';
 $route['audio/completeUpload'] = 'media/Audio/completeUpload';
-$route['audio/cancelUpload'] = 'media/Audio/cancelUpload';
 
-// ==================== WEBRTC RECORDING ROUTES ====================
-$route['audio/saveRecording'] = 'media/Audio/saveRecording';
+// ==================== THUMBNAIL ROUTES ====================
+$route['audio/uploadThumbnail'] = 'media/Audio/uploadThumbnail';
 
+// ==================== STREAMING ROUTES ====================
+$route['audio/stream/(:num)'] = 'media/Audio/stream/$1';
 
-
-$route['audio/diagnostics'] = 'media/Audio/diagnostics';
-
-$route['audio/getWaveform/(:num)'] = 'media/Audio/getWaveform/$1';
-$route['audio/stream/(:any)'] = 'media/Audio/stream/$1';
-$route['audio/convert'] = 'media/Audio/convert';
+// ==================== CATCH-ALL (DOIT ÊTRE DERNIER) ====================
+// Pour toute autre méthode du contrôleur non définie ci-dessus
+$route['audio/(:any)'] = 'media/Audio/$1';
 
 
 $route['patient-fallowed'] = 'Consultations/Entente/confirme/';
@@ -239,3 +241,17 @@ $route['media/getRecommended/(:num)'] = 'Home/Media/getRecommended/$1';
 $route['media/getCategories'] = 'Home/Media/getCategories';
 $route['media/getStats'] = 'Home/Media/getStats';
 $route['media/checkUserLike'] = 'Home/Media/checkUserLike';
+$route['Media/view/(:any)'] = 'Home/Media/view/$1';
+$route['Media'] = 'Home/Media/index';
+// routes.php
+$route['media/searchAjax'] = 'Home/Media/searchAjax';
+$route['Media/searchAjax'] = 'Home/Media/searchAjax';
+
+
+
+// Blog routes
+$route['blog'] = 'Home/Blog';
+$route['blog/index'] = 'Home/Blog/index';
+$route['blog/categorie/(:any)'] = 'Home/Blog/categorie/$1';
+$route['blog/recherche'] = 'Home/Blog/recherche';
+$route['actualite/(:any)'] = 'Home/Blog/article/$1';

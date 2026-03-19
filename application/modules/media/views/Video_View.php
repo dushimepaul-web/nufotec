@@ -60,6 +60,25 @@ if (!function_exists('get_streaming_status')) {
         return $status;
     }
 }
+
+if (!function_exists('extract_youtube_id')) {
+    function extract_youtube_id($url) {
+        if (empty($url)) return null;
+        $patterns = [
+            '/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/',
+            '/youtu\.be\/([a-zA-Z0-9_-]{11})/',
+            '/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/',
+            '/youtube\.com\/v\/([a-zA-Z0-9_-]{11})/'
+        ];
+        
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $url, $matches)) {
+                return $matches[1];
+            }
+        }
+        return null;
+    }
+}
 ?>
 
 <div class="page-wrapper">
@@ -149,7 +168,7 @@ if (!function_exists('get_streaming_status')) {
                             <div>
                                 <h6 class="text-muted mb-1">Encodage AVC</h6>
                                 <h3 class="mb-0 fw-bold">
-                                    <?= $avc_capabilities['features']['hardware_encoding'] ? '<span class="text-success"><i class="bx bx-check"></i> GPU</span>' : '<span class="text-muted">CPU</span>' ?>
+                                    <?= !empty($avc_capabilities['features']['hardware_encoding']) ? '<span class="text-success"><i class="bx bx-check"></i> GPU</span>' : '<span class="text-muted">CPU</span>' ?>
                                 </h3>
                             </div>
                         </div>
@@ -238,15 +257,16 @@ if (!function_exists('get_streaming_status')) {
                             }
 
                             // Thumbnail with YouTube-style overlay
-                            $thumb_url = base_url('assets/images/video-placeholder.jpg');
+                            $thumb_url = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjkwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Vmlkw6lvPC90ZXh0Pjwvc3ZnPg==';
                             $poster_url = null;
+                            
                             if (!empty($value['miniature'])) {
                                 $thumb_url = (strpos($value['miniature'], 'http') === 0) ? $value['miniature'] : base_url($value['miniature']);
-                            } elseif ($is_link && preg_match('/youtube\.com|youtu\.be/', $value['lien'])) {
-                                preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/', $value['lien'], $matches);
-                                if (!empty($matches[1])) {
-                                    $thumb_url = "https://img.youtube.com/vi/{$matches[1]}/mqdefault.jpg";
-                                    $poster_url = "https://img.youtube.com/vi/{$matches[1]}/maxresdefault.jpg";
+                            } elseif ($is_link) {
+                                $yt_id = extract_youtube_id($value['lien']);
+                                if ($yt_id) {
+                                    $thumb_url = "https://img.youtube.com/vi/{$yt_id}/mqdefault.jpg";
+                                    $poster_url = "https://img.youtube.com/vi/{$yt_id}/maxresdefault.jpg";
                                 }
                             }
                             
@@ -254,6 +274,9 @@ if (!function_exists('get_streaming_status')) {
                             if (!empty($meta['thumbnails']['poster'])) {
                                 $poster_url = base_url($meta['thumbnails']['poster']);
                             }
+                            
+                            // Escape title for JS
+                            $js_title = htmlspecialchars($value['titre'] ?? 'Sans titre', ENT_QUOTES, 'UTF-8');
                         ?>
                             <tr data-id="<?= $value['id_media'] ?>" data-quality="<?= $quality_info['height'] ?>">
                                 <td>
@@ -275,7 +298,7 @@ if (!function_exists('get_streaming_status')) {
                                         
                                         <!-- Play Overlay -->
                                         <div class="video-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-                                             onclick="openPlayer(<?= $value['id_media'] ?>, '<?= htmlspecialchars(addslashes($value['titre'] ?? ''), ENT_QUOTES) ?>')"
+                                             onclick="openPlayer(<?= $value['id_media'] ?>, '<?= $js_title ?>')"
                                              style="background: rgba(0,0,0,0); transition: all 0.3s; cursor: pointer;">
                                             <i class="bx bx-play-circle text-white fs-1 opacity-0" style="transition: all 0.3s;"></i>
                                         </div>
@@ -435,7 +458,7 @@ if (!function_exists('get_streaming_status')) {
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
                                             <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" onclick="openPlayer(<?= $value['id_media'] ?>, '<?= htmlspecialchars(addslashes($value['titre'] ?? ''), ENT_QUOTES) ?>')">
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="openPlayer(<?= $value['id_media'] ?>, '<?= $js_title ?>')">
                                                     <i class="bx bx-play me-2 text-success"></i>Lire
                                                 </a>
                                             </li>
@@ -453,7 +476,7 @@ if (!function_exists('get_streaming_status')) {
                                             <?php endif; ?>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(<?= $value['id_media'] ?>, '<?= htmlspecialchars(addslashes($value['titre'] ?? ''), ENT_QUOTES) ?>')">
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(<?= $value['id_media'] ?>, '<?= $js_title ?>')">
                                                     <i class="bx bx-trash me-2"></i>Supprimer
                                                 </a>
                                             </li>
@@ -463,103 +486,192 @@ if (!function_exists('get_streaming_status')) {
                             </tr>
 
                             <!-- Edit Modal -->
-                            <div class="modal fade" id="editModal<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                                <div class="modal-dialog modal-xl">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-primary text-white">
-                                            <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier la vidéo</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form action="<?= base_url('video/Update') ?>" method="POST">
-                                            <div class="modal-body">
-                                                <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
+                            <!-- Edit Modal -->
+<div class="modal fade" id="editModal<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier la vidéo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="<?= base_url('video/Update') ?>" method="POST" enctype="multipart/form-data" id="editForm<?= $value['id_media'] ?>">
+                <div class="modal-body">
+                    <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg" name="titre" 
+                                       value="<?= htmlspecialchars($value['titre'] ?? '') ?>" required maxlength="255">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Description</label>
+                                <textarea class="form-control" name="description" rows="4"><?= htmlspecialchars($value['description'] ?? '') ?></textarea>
+                            </div>
+
+                            <!-- SECTION MINIATURE MODIFIABLE -->
+                            <div class="card border mb-3">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="bx bx-image me-2"></i>Miniature</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-5">
+                                            <!-- Miniature actuelle -->
+                                            <label class="form-label small text-muted">Miniature actuelle</label>
+                                            <div class="position-relative">
+                                                <?php 
+                                                $current_thumb = $value['miniature'] ?? '';
+                                                $thumb_display = $current_thumb ? base_url($current_thumb) : base_url('assets/images/video-placeholder.jpg');
+                                                ?>
+                                                <img src="<?= $thumb_display ?>" 
+                                                     class="rounded w-100" 
+                                                     style="height: 120px; object-fit: cover;"
+                                                     id="currentThumb<?= $value['id_media'] ?>"
+                                                     onerror="this.src='<?= base_url('assets/images/video-placeholder.jpg') ?>'">
                                                 
-                                                <div class="row">
-                                                    <div class="col-md-8">
-                                                        <div class="mb-3">
-                                                            <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control form-control-lg" name="titre" 
-                                                                   value="<?= htmlspecialchars($value['titre'] ?? '') ?>" required maxlength="255">
-                                                        </div>
-
-                                                        <div class="mb-3">
-                                                            <label class="form-label fw-bold">Description</label>
-                                                            <textarea class="form-control" name="description" rows="4"><?= htmlspecialchars($value['description'] ?? '') ?></textarea>
-                                                        </div>
-
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label fw-bold">Catégorie</label>
-                                                                <input type="text" class="form-control" name="categorie" 
-                                                                       value="<?= htmlspecialchars($value['categorie'] ?? '') ?>" list="categoriesList">
-                                                            </div>
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label fw-bold">Date</label>
-                                                                <input type="date" class="form-control" name="date_media" value="<?= $value['date_media'] ?? '' ?>">
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="mb-3">
-                                                            <label class="form-label fw-bold">Crédits / Auteur</label>
-                                                            <input type="text" class="form-control" name="credits" 
-                                                                   value="<?= htmlspecialchars($value['credits'] ?? '') ?>">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-4">
-                                                        <div class="card border h-100">
-                                                            <div class="card-header bg-light">
-                                                                <h6 class="mb-0"><i class="bx bx-cog me-2"></i>Paramètres</h6>
-                                                            </div>
-                                                            <div class="card-body">
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="est_actif" value="1" 
-                                                                               <?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label fw-bold">Vidéo publique</label>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1"
-                                                                               <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label"><i class="bx bxl-whatsapp text-success me-1"></i>WhatsApp</label>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="is_for_website" value="1"
-                                                                               <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label"><i class="bx bx-globe text-primary me-1"></i>Site Web</label>
-                                                                    </div>
-                                                                </div>
-
-                                                                <?php if (!empty($meta['analysis'])): ?>
-                                                                <hr>
-                                                                <h6 class="mb-2"><i class="bx bx-info-circle me-1"></i>Métadonnées AVC</h6>
-                                                                <ul class="list-unstyled small text-muted mb-0">
-                                                                    <li><strong>Durée:</strong> <?= $meta['analysis']['duration_formatted'] ?? 'N/A' ?></li>
-                                                                    <li><strong>Résolution:</strong> <?= $meta['analysis']['resolution'] ?? 'N/A' ?></li>
-                                                                    <li><strong>Codec:</strong> <?= strtoupper($meta['analysis']['codec_original'] ?? 'N/A') ?></li>
-                                                                    <li><strong>FPS:</strong> <?= $meta['analysis']['fps'] ?? 'N/A' ?></li>
-                                                                    <li><strong>Bitrate:</strong> <?= $meta['analysis']['bitrate'] ?? 'N/A' ?></li>
-                                                                </ul>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
+                                                <?php if ($is_upload && !empty($meta['thumbnails'])): ?>
+                                                <div class="mt-2">
+                                                    <label class="form-label small text-muted">Changer pour :</label>
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <?php if (!empty($meta['thumbnails']['default'])): ?>
+                                                        <img src="<?= base_url($meta['thumbnails']['default']) ?>" 
+                                                             class="rounded cursor-pointer edit-thumb-option" 
+                                                             style="width: 80px; height: 45px; object-fit: cover; border: 2px solid transparent;"
+                                                             onclick="selectEditThumbnail(<?= $value['id_media'] ?>, '<?= $meta['thumbnails']['default'] ?>', this)"
+                                                             data-thumb="<?= $meta['thumbnails']['default'] ?>">
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($meta['thumbnails']['poster'])): ?>
+                                                        <img src="<?= base_url($meta['thumbnails']['poster']) ?>" 
+                                                             class="rounded cursor-pointer edit-thumb-option" 
+                                                             style="width: 80px; height: 45px; object-fit: cover; border: 2px solid transparent;"
+                                                             onclick="selectEditThumbnail(<?= $value['id_media'] ?>, '<?= $meta['thumbnails']['poster'] ?>', this)"
+                                                             data-thumb="<?= $meta['thumbnails']['poster'] ?>">
+                                                        <?php endif; ?>
                                                     </div>
                                                 </div>
+                                                <?php endif; ?>
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                <button type="submit" class="btn btn-primary"><i class="bx bx-save me-1"></i>Enregistrer</button>
+                                        </div>
+                                        
+                                        <div class="col-md-7">
+                                            <!-- Upload nouvelle miniature -->
+                                            <label class="form-label small text-muted">Ou uploader une nouvelle</label>
+                                            <div class="upload-thumbnail-zone border rounded p-3 text-center mb-2" 
+                                                 style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;"
+                                                 onclick="document.getElementById('editThumbInput<?= $value['id_media'] ?>').click()">
+                                                <i class="bx bx-cloud-upload fs-3 text-muted mb-2"></i>
+                                                <p class="mb-0 small text-muted">Cliquez pour uploader</p>
+                                                <p class="mb-0" style="font-size: 0.7rem; color: #999;">JPG, PNG, WEBP (max 2MB)</p>
                                             </div>
-                                        </form>
+                                            <input type="file" 
+                                                   id="editThumbInput<?= $value['id_media'] ?>" 
+                                                   class="d-none" 
+                                                   accept="image/*"
+                                                   onchange="uploadEditThumbnail(<?= $value['id_media'] ?>, this.files[0])">
+                                            
+                                            <!-- Preview nouvelle miniature -->
+                                            <div id="editThumbPreview<?= $value['id_media'] ?>" class="d-none position-relative">
+                                                <img src="" class="rounded w-100" style="height: 120px; object-fit: cover;" id="editThumbImg<?= $value['id_media'] ?>">
+                                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
+                                                        onclick="removeEditThumbnail(<?= $value['id_media'] ?>)">
+                                                    <i class="bx bx-x"></i>
+                                                </button>
+                                                <div class="position-absolute bottom-0 start-0 w-100 bg-success text-white text-center small">
+                                                    <i class="bx bx-check me-1"></i>Nouvelle miniature
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Progress -->
+                                            <div id="editThumbProgress<?= $value['id_media'] ?>" class="d-none mt-2">
+                                                <div class="progress" style="height: 4px;">
+                                                    <div class="progress-bar bg-success" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Champ caché pour la miniature sélectionnée -->
+                                            <input type="hidden" name="thumbnail" id="editThumbSelected<?= $value['id_media'] ?>" value="<?= htmlspecialchars($current_thumb) ?>">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- FIN SECTION MINIATURE -->
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Catégorie</label>
+                                    <input type="text" class="form-control" name="categorie" 
+                                           value="<?= htmlspecialchars($value['categorie'] ?? '') ?>" list="categoriesList">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Date</label>
+                                    <input type="date" class="form-control" name="date_media" value="<?= $value['date_media'] ?? '' ?>">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Crédits / Auteur</label>
+                                <input type="text" class="form-control" name="credits" 
+                                       value="<?= htmlspecialchars($value['credits'] ?? '') ?>">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card border h-100">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="bx bx-cog me-2"></i>Paramètres</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="est_actif" value="1" 
+                                                   <?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'checked' : '' ?>>
+                                            <label class="form-check-label fw-bold">Vidéo publique</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1"
+                                                   <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
+                                            <label class="form-check-label"><i class="bx bxl-whatsapp text-success me-1"></i>WhatsApp</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="is_for_website" value="1"
+                                                   <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
+                                            <label class="form-check-label"><i class="bx bx-globe text-primary me-1"></i>Site Web</label>
+                                        </div>
+                                    </div>
+
+                                    <?php if (!empty($meta['analysis'])): ?>
+                                    <hr>
+                                    <h6 class="mb-2"><i class="bx bx-info-circle me-1"></i>Métadonnées AVC</h6>
+                                    <ul class="list-unstyled small text-muted mb-0">
+                                        <li><strong>Durée:</strong> <?= $meta['analysis']['duration_formatted'] ?? 'N/A' ?></li>
+                                        <li><strong>Résolution:</strong> <?= $meta['analysis']['resolution'] ?? 'N/A' ?></li>
+                                        <li><strong>Codec:</strong> <?= strtoupper($meta['analysis']['codec_original'] ?? 'N/A') ?></li>
+                                        <li><strong>FPS:</strong> <?= $meta['analysis']['fps'] ?? 'N/A' ?></li>
+                                        <li><strong>Bitrate:</strong> <?= $meta['analysis']['bitrate'] ?? 'N/A' ?></li>
+                                    </ul>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="bx bx-save me-1"></i>Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
                         <?php endforeach; else: ?>
                             <tr>
@@ -621,7 +733,7 @@ if (!function_exists('get_streaming_status')) {
                             <small class="text-muted">
                                 <i class="bx bx-info-circle me-1"></i>
                                 <strong>Technologie AVC/H.264:</strong> Encodage multi-bitrate automatique, 
-                                streaming DASH/HLS, miniatures intelligentes. Max 50GB.
+                                streaming DASH/HLS, miniatures intelligentes. Max 2GB.
                             </small>
                         </div>
                         
@@ -693,19 +805,79 @@ if (!function_exists('get_streaming_status')) {
                                         <textarea class="form-control" name="description" rows="5" id="videoDescription"></textarea>
                                     </div>
                                     
+                                    <!-- CORRECTION: Structure HTML propre pour Miniature et Catégorie -->
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-bold">Miniature</label>
-                                            <div class="d-flex gap-2 flex-wrap" id="thumbnailSelector">
-                                                <!-- Generated thumbnails -->
+                                            
+                                            <!-- Onglets pour choisir la source -->
+                                            <ul class="nav nav-tabs mb-3" id="thumbnailTab" role="tablist">
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link active" id="generated-tab" data-bs-toggle="tab" data-bs-target="#generated-thumbnails" type="button" role="tab">
+                                                        <i class="bx bx-video me-1"></i>Générées
+                                                    </button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-thumbnail" type="button" role="tab">
+                                                        <i class="bx bx-upload me-1"></i>Upload
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                            
+                                            <div class="tab-content" id="thumbnailTabContent">
+                                                <!-- Miniatures générées automatiquement -->
+                                                <div class="tab-pane fade show active" id="generated-thumbnails" role="tabpanel">
+                                                    <div class="d-flex gap-2 flex-wrap" id="thumbnailSelector">
+                                                        <!-- Generated thumbnails injectées ici -->
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Upload personnalisé -->
+                                                <div class="tab-pane fade" id="upload-thumbnail" role="tabpanel">
+                                                    <div class="upload-thumbnail-zone border rounded p-3 text-center" 
+                                                         style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;"
+                                                         onclick="document.getElementById('customThumbnailInput').click()">
+                                                        <i class="bx bx-image-add fs-2 text-muted mb-2"></i>
+                                                        <p class="mb-1 text-muted small">Cliquez pour uploader une image</p>
+                                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">JPG, PNG, GIF, WEBP (max 2MB)</p>
+                                                    </div>
+                                                    <input type="file" id="customThumbnailInput" class="d-none" accept="image/*">
+                                                    
+                                                    <!-- Preview de l'upload -->
+                                                    <div id="customThumbnailPreview" class="mt-2 d-none">
+                                                        <div class="position-relative d-inline-block">
+                                                            <img src="" class="rounded" style="width: 120px; height: 68px; object-fit: cover;" id="customThumbnailImg">
+                                                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" 
+                                                                    style="padding: 0.1rem 0.3rem; font-size: 0.7rem;"
+                                                                    onclick="removeCustomThumbnail()">
+                                                                <i class="bx bx-x"></i>
+                                                            </button>
+                                                            <div class="position-absolute bottom-0 start-0 w-100 bg-success text-white text-center small" 
+                                                                 style="font-size: 0.65rem;">
+                                                                <i class="bx bx-check me-1"></i>Personnalisée
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Progress upload -->
+                                                    <div id="thumbnailUploadProgress" class="mt-2 d-none">
+                                                        <div class="progress" style="height: 4px;">
+                                                            <div class="progress-bar bg-success" style="width: 0%"></div>
+                                                        </div>
+                                                        <small class="text-muted">Upload...</small>
+                                                    </div>
+                                                </div>
                                             </div>
+                                            
                                             <input type="hidden" name="thumbnail" id="selectedThumbnail">
                                         </div>
+                                        
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-bold">Catégorie</label>
                                             <input type="text" class="form-control" name="categorie" list="categoriesList">
                                         </div>
                                     </div>
+                                    <!-- FIN CORRECTION -->
                                     
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Crédits</label>
@@ -732,7 +904,7 @@ if (!function_exists('get_streaming_status')) {
                                     
                                     <div class="mb-3">
                                         <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
+                                            <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
                                             <label class="form-check-label"><i class="bx bx-globe text-primary me-1"></i>Site Web</label>
                                         </div>
                                     </div>
@@ -851,20 +1023,59 @@ if (!function_exists('get_streaming_status')) {
 
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
+<!-- ========================================== -->
+<!-- SCRIPTS - ORDRE CRITIQUE                   -->
+<!-- ========================================== -->
+
+<!-- 1. jQuery (déjà chargé normalement dans Header.php) -->
+<!-- 2. Bootstrap JS (déjà chargé normalement) -->
+
+<!-- 3. Toastr -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<!-- 4. DataTables avec traduction locale (pas de CORS) -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
 <script>
-// YouTube-Style Upload Configuration
+// ==========================================
+// CONFIGURATION TOASTR
+// ==========================================
+toastr.options = {
+    "closeButton": true,
+    "debug": false,
+    "newestOnTop": true,
+    "progressBar": true,
+    "positionClass": "toast-top-right",
+    "preventDuplicates": false,
+    "onclick": null,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+};
+
+// ==========================================
+// CONFIGURATION UPLOAD YOUTUBE-STYLE (SANS CSRF)
+// ==========================================
 const UPLOAD_CONFIG = {
     baseUrl: '<?= base_url('video/') ?>',
-    chunkSize: 5 * 1024 * 1024, // 5MB chunks as per controller
-    maxFileSize: 50 * 1024 * 1024 * 1024, // 50GB
-    csrfName: '<?= $this->security->get_csrf_token_name() ?>',
-    csrfHash: '<?= $this->security->get_csrf_hash() ?>'
+    chunkSize: 5 * 1024 * 1024, // 5MB chunks
+    maxFileSize: 2 * 1024 * 1024 * 1024 // 2GB
 };
 
 let currentUpload = null;
 let uploadManager = null;
 
-// Utility Classes
+// ==========================================
+// UTILITAIRES
+// ==========================================
 class FileUtils {
     static formatBytes(bytes) {
         if (!bytes || bytes === 0) return '0 B';
@@ -884,7 +1095,9 @@ class FileUtils {
     }
 }
 
-// AVC Upload Manager
+// ==========================================
+// GESTIONNAIRE UPLOAD AVC (SANS CSRF)
+// ==========================================
 class AVCUploadManager {
     constructor() {
         this.reset();
@@ -913,7 +1126,7 @@ class AVCUploadManager {
             this.state.isUploading = true;
             this.state.startTime = Date.now();
             
-            // Validate
+            // Validation
             if (file.size > UPLOAD_CONFIG.maxFileSize) {
                 throw new Error(`Fichier trop grand. Maximum: ${FileUtils.formatBytes(UPLOAD_CONFIG.maxFileSize)}`);
             }
@@ -921,7 +1134,7 @@ class AVCUploadManager {
             // Update UI
             this.updateUI('init', { fileName: file.name, fileSize: FileUtils.formatBytes(file.size) });
             
-            // Initialize upload session
+            // Initialize upload session - PAS DE CSRF
             const initData = await this.apiCall('initUpload', {
                 file_name: file.name,
                 file_size: file.size,
@@ -953,6 +1166,7 @@ class AVCUploadManager {
             this.updateUI('complete', result.data);
             
         } catch (error) {
+            console.error('Upload error:', error);
             this.updateUI('error', { message: error.message });
         } finally {
             this.state.isUploading = false;
@@ -962,17 +1176,40 @@ class AVCUploadManager {
     async apiCall(endpoint, data) {
         const formData = new FormData();
         for (let key in data) formData.append(key, data[key]);
-        formData.append(UPLOAD_CONFIG.csrfName, UPLOAD_CONFIG.csrfHash);
+        // PAS DE CSRF TOKEN
         
-        const response = await fetch(UPLOAD_CONFIG.baseUrl + endpoint, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        
-        const result = await response.json();
-        if (!result.success) throw new Error(result.message || 'Erreur serveur');
-        return result;
+        try {
+            const response = await fetch(UPLOAD_CONFIG.baseUrl + endpoint, {
+                method: 'POST',
+                body: formData,
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest'
+                    // PAS DE X-CSRF-TOKEN
+                }
+            });
+            
+            // Vérifier si la réponse est OK
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Erreur HTTP ${response.status}: ${text.substring(0, 100)}`);
+            }
+            
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                console.error('JSON parse error:', text);
+                throw new Error('Réponse serveur invalide (JSON attendu)');
+            }
+            
+            if (!result.success) throw new Error(result.message || 'Erreur serveur');
+            return result;
+            
+        } catch (error) {
+            console.error('API Call error:', error);
+            throw error;
+        }
     }
     
     async calculateHash(file) {
@@ -986,7 +1223,7 @@ class AVCUploadManager {
             if (!this.state.uploadedChunks.has(i)) queue.push(i);
         }
         
-        // Parallel upload with 3 workers as per controller config
+        // Parallel upload with 3 workers
         const workers = [];
         const maxWorkers = Math.min(3, queue.length);
         for (let w = 0; w < maxWorkers; w++) {
@@ -1016,14 +1253,26 @@ class AVCUploadManager {
             formData.append('upload_id', this.state.uploadId);
             formData.append('chunk_index', index);
             formData.append('chunk', chunk);
-            formData.append(UPLOAD_CONFIG.csrfName, UPLOAD_CONFIG.csrfHash);
+            // PAS DE CSRF TOKEN
             
             const response = await fetch(UPLOAD_CONFIG.baseUrl + 'uploadChunk', {
                 method: 'POST',
                 body: formData
             });
             
-            const data = await response.json();
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
+            }
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Réponse chunk invalide');
+            }
+            
             if (!data.success) throw new Error(data.message);
             
             this.state.uploadedChunks.add(index);
@@ -1061,7 +1310,9 @@ class AVCUploadManager {
         if (this.state.uploadId) {
             try {
                 await this.apiCall('cancelUpload', { upload_id: this.state.uploadId });
-            } catch(e) {}
+            } catch(e) {
+                // Ignorer erreur cancel
+            }
         }
         this.updateUI('cancel');
     }
@@ -1125,29 +1376,38 @@ class AVCUploadManager {
     }
 }
 
-// UI Functions
+// ==========================================
+// FONCTIONS UI - CORRIGÉES ET UNIQUES
+// ==========================================
+
+/**
+ * Remplit le formulaire de détails après upload vidéo
+ * VERSION CORRIGÉE - Gère correctement les miniatures
+ */
 function populateDetailsForm(data) {
-    // Auto-fill form with detected metadata
+    console.log('populateDetailsForm appelé avec:', data);
+    
+    // 1. Auto-fill des métadonnées basiques
     if (data.form_suggestions) {
         $('#videoTitle').val(data.form_suggestions.titre || '');
         $('#videoDescription').val(data.form_suggestions.description || '');
         $('#videoCredits').val(data.form_suggestions.credits || '');
     }
     
-    // Populate video info
+    // 2. Informations vidéo (sidebar droite)
     let infoHtml = '';
     if (data.analysis) {
-        infoHtml += `<li><i class="bx bx-time me-2"></i>Durée: ${data.analysis.duration_formatted}</li>`;
-        infoHtml += `<li><i class="bx bx-tv me-2"></i>Résolution: ${data.analysis.resolution}</li>`;
-        infoHtml += `<li><i class="bx bx-film me-2"></i>FPS: ${data.analysis.fps}</li>`;
-        infoHtml += `<li><i class="bx bx-chip me-2"></i>Codec: ${data.analysis.codec_original}</li>`;
+        infoHtml += `<li><i class="bx bx-time me-2"></i>Durée: ${data.analysis.duration_formatted || 'N/A'}</li>`;
+        infoHtml += `<li><i class="bx bx-tv me-2"></i>Résolution: ${data.analysis.resolution || 'N/A'}</li>`;
+        infoHtml += `<li><i class="bx bx-film me-2"></i>FPS: ${data.analysis.fps || 'N/A'}</li>`;
+        infoHtml += `<li><i class="bx bx-chip me-2"></i>Codec: ${data.analysis.codec_original || 'N/A'}</li>`;
     }
     if (data.file_size) {
         infoHtml += `<li><i class="bx bx-hdd me-2"></i>Taille: ${data.file_size}</li>`;
     }
-    $('#videoInfoList').html(infoHtml);
+    $('#videoInfoList').html(infoHtml || '<li>Aucune information disponible</li>');
     
-    // Show encoding ladder
+    // 3. Encoding ladder
     if (data.encoding_jobs) {
         let ladderHtml = '';
         Object.entries(data.encoding_jobs).forEach(([quality, job]) => {
@@ -1155,7 +1415,7 @@ function populateDetailsForm(data) {
                 <div class="col-6">
                     <div class="d-flex align-items-center p-2 bg-white rounded border">
                         <span class="badge bg-youtube me-2">${quality}</span>
-                        <small class="text-muted">${job.config.video_bitrate}</small>
+                        <small class="text-muted">${job.config?.video_bitrate || ''}</small>
                     </div>
                 </div>
             `;
@@ -1163,37 +1423,377 @@ function populateDetailsForm(data) {
         $('#encodingLadder').html(ladderHtml);
     }
     
-    // Set hidden fields
+    // 4. Champs cachés du formulaire
     $('#uploadedFilePath').val(data.original_file || '');
     $('#autoDetectedData').val(JSON.stringify(data));
     
-    // Thumbnails
-    if (data.thumbnails) {
-        let thumbHtml = '';
-        Object.entries(data.thumbnails).forEach(([type, url]) => {
-            if (url) {
-                thumbHtml += `
-                    <div class="position-relative cursor-pointer thumbnail-option" onclick="selectThumbnail('${url}', this)">
-                        <img src="<?= base_url() ?>${url}" class="rounded" style="width: 120px; height: 68px; object-fit: cover;">
-                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 d-none check-overlay">
-                            <i class="bx bx-check text-white fs-4"></i>
-                        </div>
-                    </div>
-                `;
-            }
+    // 5. === GESTION DES MINIATURES - CORRECTION CRITIQUE ===
+    
+    // Reset complet
+    $('#selectedThumbnail').val('');
+    $('#customThumbnailPreview').addClass('d-none');
+    $('#customThumbnailInput').val('');
+    $('#thumbnailUploadProgress').addClass('d-none');
+    
+    // Reset des onglets vers "Générées"
+    $('#upload-tab').removeClass('active');
+    $('#generated-tab').addClass('active');
+    $('#generated-thumbnails').addClass('show active');
+    $('#upload-thumbnail').removeClass('show active');
+    
+    // CORRECTION: Normaliser thumbnails (objet ou tableau vide)
+    let thumbnails = data.thumbnails || {};
+    
+    // Si c'est un tableau vide ou null, convertir en objet vide
+    if (Array.isArray(thumbnails) && thumbnails.length === 0) {
+        thumbnails = {};
+    }
+    
+    // Convertir tableau associatif en objet si nécessaire
+    if (Array.isArray(thumbnails)) {
+        let tempObj = {};
+        thumbnails.forEach((item, index) => {
+            if (item) tempObj['thumb_' + index] = item;
         });
-        $('#thumbnailSelector').html(thumbHtml);
-        // Select first by default
-        if ($('.thumbnail-option').length) {
-            selectThumbnail(data.thumbnails.default || data.thumbnails.poster, $('.thumbnail-option')[0]);
+        thumbnails = tempObj;
+    }
+    
+    console.log('Thumbnails normalisés:', thumbnails);
+    
+    // Générer les miniatures automatiques
+    let thumbHtml = '';
+    let firstThumbUrl = null;
+    let thumbCount = 0;
+    
+    Object.entries(thumbnails).forEach(([type, url], index) => {
+        if (url && typeof url === 'string') {
+            const fullUrl = url.startsWith('http') ? url : '<?= base_url() ?>' + url;
+            const isFirst = thumbCount === 0;
+            if (isFirst) firstThumbUrl = url;
+            
+            thumbHtml += `
+                <div class="position-relative cursor-pointer thumbnail-option ${isFirst ? 'selected' : ''}" 
+                     onclick="selectThumbnail('${url}', this)"
+                     data-url="${url}">
+                    <img src="${fullUrl}" class="rounded" style="width: 120px; height: 68px; object-fit: cover;" 
+                         onerror="this.src='<?= base_url('assets/images/video-placeholder.jpg') ?>'">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 ${isFirst ? '' : 'd-none'} check-overlay">
+                        <i class="bx bx-check text-white fs-4"></i>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white text-center" style="font-size: 0.6rem;">
+                        ${type === 'default' ? 'Auto' : type}
+                    </div>
+                </div>
+            `;
+            thumbCount++;
         }
+    });
+    
+    $('#thumbnailSelector').html(thumbHtml);
+    
+    // Si aucune miniature générée, afficher un message
+    if (thumbCount === 0) {
+        $('#thumbnailSelector').html(`
+            <div class="alert alert-warning w-100 mb-0">
+                <i class="bx bx-info-circle me-1"></i>
+                Aucune miniature générée. Vous pouvez en uploader une personnalisée.
+            </div>
+        `);
+        console.warn('Aucune miniature générée disponible');
+        
+        // Basculer directement sur l'onglet upload
+        $('#upload-tab').tab('show');
+    } else if (firstThumbUrl) {
+        $('#selectedThumbnail').val(firstThumbUrl);
+        console.log('Miniature par défaut sélectionnée:', firstThumbUrl);
     }
 }
 
+/**
+ * Sélectionne une miniature générée automatiquement
+ */
 function selectThumbnail(url, element) {
+    console.log('Sélection thumbnail:', url);
+    
+    if (!url || typeof url !== 'string') {
+        console.error('URL invalide:', url);
+        return;
+    }
+    
     $('#selectedThumbnail').val(url);
+    
     $('.thumbnail-option .check-overlay').addClass('d-none');
+    $('.thumbnail-option').removeClass('selected');
+    
     $(element).find('.check-overlay').removeClass('d-none');
+    $(element).addClass('selected');
+    
+    $('#customThumbnailPreview').addClass('d-none');
+    $('#customThumbnailInput').val('');
+    
+    $('#generated-tab').tab('show');
+}
+
+/**
+ * Upload d'une miniature personnalisée - VERSION CORRIGÉE
+ */
+function uploadCustomThumbnail(file) {
+    console.log('Upload thumbnail personnalisée:', file.name);
+    
+    // Validation du fichier
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+        toastr.error('Format non supporté. Utilisez: JPG, PNG, GIF, WEBP, SVG');
+        return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) {
+        toastr.error('Fichier trop grand (max 2MB)');
+        return;
+    }
+
+    // Afficher la progress bar
+    $('#thumbnailUploadProgress').removeClass('d-none');
+    $('#thumbnailUploadProgress .progress-bar').css('width', '0%');
+    $('#customThumbnailPreview').addClass('d-none');
+    
+    // Préparer FormData
+    const formData = new FormData();
+    formData.append('thumbnail_file', file);
+    
+    console.log('Envoi AJAX vers:', UPLOAD_CONFIG.baseUrl + 'uploadThumbnail');
+    
+    // Upload AJAX - VERSION CORRIGÉE
+    $.ajax({
+        url: UPLOAD_CONFIG.baseUrl + 'uploadThumbnail',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json', // FORCER le type JSON
+        xhr: function() {
+            const xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    $('#thumbnailUploadProgress .progress-bar').css('width', percent + '%');
+                }
+            }, false);
+            return xhr;
+        },
+        success: function(response) {
+            console.log('Réponse serveur (success):', response);
+            $('#thumbnailUploadProgress').addClass('d-none');
+            
+            if (response.success && response.file_path) {
+                $('#customThumbnailImg').attr('src', response.preview_url);
+                $('#customThumbnailPreview').removeClass('d-none');
+                
+                $('#selectedThumbnail').val(response.file_path);
+                console.log('Thumbnail personnalisée sélectionnée:', response.file_path);
+                
+                $('.thumbnail-option').removeClass('selected');
+                $('.thumbnail-option .check-overlay').addClass('d-none');
+                
+                $('#upload-tab').tab('show');
+                
+                toastr.success(response.message || 'Miniature uploadée avec succès');
+            } else {
+                toastr.error(response.message || 'Erreur upload miniature');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('=== ERREUR AJAX ===');
+            console.error('Status:', status);
+            console.error('Error:', error);
+            console.error('Status HTTP:', xhr.status);
+            console.error('Response Text:', xhr.responseText);
+            
+            $('#thumbnailUploadProgress').addClass('d-none');
+            
+            // Essayer d'afficher l'erreur du serveur
+            let errorMsg = 'Erreur réseau lors de l\'upload';
+            if (xhr.responseText) {
+                // Si c'est du HTML, extraire le message
+                if (xhr.responseText.indexOf('<') === 0) {
+                    // C'est du HTML, chercher un message d'erreur
+                    const match = xhr.responseText.match(/<p>(.*?)<\/p>/);
+                    if (match) {
+                        errorMsg += ': ' + match[1];
+                    } else {
+                        errorMsg += ' (voir console)';
+                    }
+                } else {
+                    // Essayer de parser comme JSON
+                    try {
+                        const json = JSON.parse(xhr.responseText);
+                        errorMsg = json.message || errorMsg;
+                    } catch(e) {
+                        errorMsg += ': ' + xhr.responseText.substring(0, 100);
+                    }
+                }
+            }
+            
+            toastr.error(errorMsg);
+        }
+    });
+}
+
+/**
+ * Supprime la miniature personnalisée et retourne aux générées
+ */
+function removeCustomThumbnail() {
+    $('#customThumbnailPreview').addClass('d-none');
+    $('#customThumbnailInput').val('');
+    
+    const firstThumb = $('.thumbnail-option').first();
+    if (firstThumb.length) {
+        const url = firstThumb.data('url');
+        if (url) {
+            selectThumbnail(url, firstThumb[0]);
+        } else {
+            $('#selectedThumbnail').val('');
+        }
+    } else {
+        $('#selectedThumbnail').val('');
+    }
+    
+    $('#generated-tab').tab('show');
+}
+
+
+
+// ==========================================
+// FONCTIONS POUR MODIFICATION MINIATURE (MODE ÉDITION)
+// ==========================================
+
+/**
+ * Sélectionne une miniature existante dans le mode édition
+ */
+function selectEditThumbnail(videoId, thumbUrl, element) {
+    console.log('Sélection miniature édition:', videoId, thumbUrl);
+    
+    // Mettre à jour le champ caché
+    $('#editThumbSelected' + videoId).val(thumbUrl);
+    
+    // Mettre à jour l'image principale
+    const fullUrl = thumbUrl.startsWith('http') ? thumbUrl : '<?= base_url() ?>' + thumbUrl;
+    $('#currentThumb' + videoId).attr('src', fullUrl);
+    
+    // UI: désélectionner toutes les options
+    $('#editModal' + videoId + ' .edit-thumb-option').css('border-color', 'transparent');
+    
+    // UI: sélectionner l'option cliquée
+    $(element).css('border-color', '#FF0000');
+    
+    // Cacher la preview d'upload si visible
+    $('#editThumbPreview' + videoId).addClass('d-none');
+    
+    toastr.info('Miniature sélectionnée. Enregistrez pour appliquer.');
+}
+
+/**
+ * Upload une nouvelle miniature dans le mode édition
+ */
+function uploadEditThumbnail(videoId, file) {
+    console.log('Upload miniature édition:', videoId, file.name);
+    
+    if (!file) return;
+    
+    // Validation
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        toastr.error('Format non supporté. Utilisez: JPG, PNG, GIF, WEBP');
+        return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) {
+        toastr.error('Fichier trop grand (max 2MB)');
+        return;
+    }
+
+    // Afficher progress
+    $('#editThumbProgress' + videoId).removeClass('d-none');
+    $('#editThumbProgress' + videoId + ' .progress-bar').css('width', '0%');
+    
+    // Préparer FormData
+    const formData = new FormData();
+    formData.append('thumbnail_file', file);
+    
+    // Upload AJAX
+    $.ajax({
+        url: UPLOAD_CONFIG.baseUrl + 'uploadThumbnail',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        xhr: function() {
+            const xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    $('#editThumbProgress' + videoId + ' .progress-bar').css('width', percent + '%');
+                }
+            }, false);
+            return xhr;
+        },
+        success: function(response) {
+            console.log('Réponse upload édition:', response);
+            $('#editThumbProgress' + videoId).addClass('d-none');
+            
+            if (response.success && response.file_path) {
+                // Afficher la preview
+                $('#editThumbImg' + videoId).attr('src', response.preview_url);
+                $('#editThumbPreview' + videoId).removeClass('d-none');
+                
+                // Mettre à jour le champ caché
+                $('#editThumbSelected' + videoId).val(response.file_path);
+                
+                // Mettre à jour l'image principale aussi
+                $('#currentThumb' + videoId).attr('src', response.preview_url);
+                
+                // Désélectionner les miniatures générées
+                $('#editModal' + videoId + ' .edit-thumb-option').css('border-color', 'transparent');
+                
+                toastr.success('Nouvelle miniature prête. Enregistrez pour appliquer.');
+            } else {
+                toastr.error(response.message || 'Erreur upload');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Erreur upload édition:', error);
+            $('#editThumbProgress' + videoId).addClass('d-none');
+            
+            let errorMsg = 'Erreur upload';
+            if (xhr.responseText) {
+                try {
+                    const json = JSON.parse(xhr.responseText);
+                    errorMsg = json.message || errorMsg;
+                } catch(e) {
+                    errorMsg += ': ' + xhr.responseText.substring(0, 100);
+                }
+            }
+            toastr.error(errorMsg);
+        }
+    });
+}
+
+/**
+ * Supprime la nouvelle miniature uploadée en mode édition
+ */
+function removeEditThumbnail(videoId) {
+    $('#editThumbPreview' + videoId).addClass('d-none');
+    
+    // Restaurer la valeur originale
+    const originalThumb = $('#currentThumb' + videoId).attr('src');
+    // Extraire le chemin relatif de l'URL complète si nécessaire
+    $('#editThumbSelected' + videoId).val(originalThumb.replace('<?= base_url() ?>', ''));
+    
+    // Réinitialiser l'input file
+    $('#editThumbInput' + videoId).val('');
+    
+    toastr.info('Miniature restaurée. Enregistrez pour appliquer.');
 }
 
 function resetUpload() {
@@ -1205,11 +1805,99 @@ function resetUpload() {
     $('#uploadProgressBar').css('width', '0%');
     $('#uploadPercent').text('0%');
     $('#videoDetailsForm')[0].reset();
+    $('#thumbnailSelector').empty();
+    $('#customThumbnailPreview').addClass('d-none');
+    $('#customThumbnailInput').val('');
+    $('#selectedThumbnail').val('');
 }
 
-// Event Listeners
+
+
+
+
+
+
+
+
+
+
+// ==========================================
+// FONCTIONS GLOBALES - CORRIGÉES POUR BOOTSTRAP 5
+// ==========================================
+
+function openPlayer(id, title) {
+    $('#playerTitle').text(title || 'Lecture vidéo');
+    
+    // Utiliser l'API Bootstrap 5 native (pas jQuery)
+    const modalElement = document.getElementById('playerModal');
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+    
+    // Load video via streaming endpoint
+    const videoUrl = UPLOAD_CONFIG.baseUrl + 'stream/progressive/' + id;
+    
+    $('#playerContainer').html(`
+        <video controls autoplay class="w-100 h-100">
+            <source src="${videoUrl}" type="video/mp4">
+            Votre navigateur ne supporte pas la lecture vidéo.
+        </video>
+    `);
+}
+
+function confirmDelete(id, title) {
+    $('#deleteVideoId').val(id);
+    $('#deleteVideoTitle').text(title);
+    
+    // Utiliser l'API Bootstrap 5 native
+    const modalElement = document.getElementById('deleteModal');
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+}
+
+function toggleStatus(id, status) {
+    $.ajax({
+        url: UPLOAD_CONFIG.baseUrl + 'ChangeStatus',
+        type: 'POST',
+        data: {
+            id: id,
+            est_actif: status
+        },
+        dataType: 'json',
+        success: function(r) {
+            if (r && r.success) {
+                location.reload();
+            } else {
+                toastr.error('Erreur lors du changement de statut');
+            }
+        },
+        error: function() {
+            toastr.error('Erreur réseau');
+        }
+    });
+}
+
+function toggleFullscreen() {
+    const elem = document.getElementById('playerContainer');
+    if (!document.fullscreenElement) {
+        elem.requestFullscreen().catch(err => {
+            toastr.error(`Erreur fullscreen: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// ==========================================
+// EVENT LISTENERS - TOUT DANS $(document).ready()
+// ==========================================
 $(document).ready(function() {
-    // File input change
+    console.log('✅ Document ready - Initialisation...');
+    
+    // File input change pour vidéo
     $('#fileInput').on('change', function(e) {
         if (this.files.length > 0) {
             uploadManager = new AVCUploadManager();
@@ -1217,30 +1905,38 @@ $(document).ready(function() {
         }
     });
     
-    // Drag and drop
-    const dropZone = $('#uploadStep1')[0];
-    
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drag-active');
-    });
-    
-    dropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-active');
-    });
-    
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-active');
-        const files = e.dataTransfer.files;
-        if (files.length > 0 && files[0].type.startsWith('video/')) {
-            uploadManager = new AVCUploadManager();
-            uploadManager.start(files[0]);
-        } else {
-            toastr.error('Veuillez déposer un fichier vidéo');
+    // Gestion du file input pour thumbnail personnalisé
+    $(document).on('change', '#customThumbnailInput', function(e) {
+        if (this.files && this.files[0]) {
+            uploadCustomThumbnail(this.files[0]);
         }
     });
+    
+    // Drag and drop
+    const dropZone = $('#uploadStep1')[0];
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-active');
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-active');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-active');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('video/')) {
+                uploadManager = new AVCUploadManager();
+                uploadManager.start(files[0]);
+            } else {
+                toastr.error('Veuillez déposer un fichier vidéo');
+            }
+        });
+    }
     
     // Cancel upload
     $('#cancelUploadBtn').on('click', function() {
@@ -1260,7 +1956,7 @@ $(document).ready(function() {
         }
     });
     
-    // Toggle switches AJAX
+    // Toggle switches AJAX - SANS CSRF
     $(document).on('change', '.form-check-input[data-field]', function() {
         const $cb = $(this);
         const id = $cb.data('id');
@@ -1269,31 +1965,59 @@ $(document).ready(function() {
         
         $cb.prop('disabled', true);
         
-        $.post(UPLOAD_CONFIG.baseUrl + 'toggleField', {
-            id: id,
-            field: field,
-            value: value,
-            [UPLOAD_CONFIG.csrfName]: UPLOAD_CONFIG.csrfHash
-        }, function(r) {
-            if (r && r.success) {
-                toastr.success('Paramètre mis à jour');
-            } else {
+        $.ajax({
+            url: UPLOAD_CONFIG.baseUrl + 'toggleField',
+            type: 'POST',
+            data: {
+                id: id,
+                field: field,
+                value: value
+            },
+            dataType: 'json',
+            success: function(r) {
+                if (r && r.success) {
+                    toastr.success('Paramètre mis à jour');
+                } else {
+                    $cb.prop('checked', !value);
+                    toastr.error('Erreur de mise à jour');
+                }
+            },
+            error: function(xhr, status, error) {
                 $cb.prop('checked', !value);
-                toastr.error('Erreur de mise à jour');
+                console.error('AJAX Error:', error);
+                toastr.error('Erreur réseau');
+            },
+            complete: function() {
+                $cb.prop('disabled', false);
             }
-        }, 'json').fail(function() {
-            $cb.prop('checked', !value);
-            toastr.error('Erreur réseau');
-        }).always(function() {
-            $cb.prop('disabled', false);
         });
     });
     
-    // DataTable
+    // DataTables avec traduction locale (pas de CORS)
     if ($.fn.DataTable) {
         $('#videosTable').DataTable({
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+                "sEmptyTable": "Aucune donnée disponible",
+                "sInfo": "Affichage de _START_ à _END_ sur _TOTAL_ entrées",
+                "sInfoEmpty": "Affichage de 0 à 0 sur 0 entrées",
+                "sInfoFiltered": "(filtré de _MAX_ entrées totales)",
+                "sInfoPostFix": "",
+                "sInfoThousands": " ",
+                "sLengthMenu": "Afficher _MENU_ entrées",
+                "sLoadingRecords": "Chargement...",
+                "sProcessing": "Traitement...",
+                "sSearch": "Rechercher :",
+                "sZeroRecords": "Aucun résultat trouvé",
+                "oPaginate": {
+                    "sFirst": "Premier",
+                    "sLast": "Dernier",
+                    "sNext": "Suivant",
+                    "sPrevious": "Précédent"
+                },
+                "oAria": {
+                    "sSortAscending": ": activer pour trier la colonne par ordre croissant",
+                    "sSortDescending": ": activer pour trier la colonne par ordre décroissant"
+                }
             },
             order: [[0, 'desc']],
             pageLength: 25,
@@ -1324,56 +2048,18 @@ $(document).ready(function() {
             $('#videosTable tbody tr').show();
         }
     });
+    
+    console.log('✅ Scripts chargés avec succès - Mode SANS CSRF');
 });
 
-// Global functions
-function openPlayer(id, title) {
-    $('#playerTitle').text(title || 'Lecture vidéo');
-    $('#playerModal').modal('show');
-    
-    // Load video via streaming endpoint
-    const videoUrl = UPLOAD_CONFIG.baseUrl + 'stream/progressive/' + id;
-    
-    $('#playerContainer').html(`
-        <video controls autoplay class="w-100 h-100">
-            <source src="${videoUrl}" type="video/mp4">
-            Votre navigateur ne supporte pas la lecture vidéo.
-        </video>
-    `);
-}
-
-function confirmDelete(id, title) {
-    $('#deleteVideoId').val(id);
-    $('#deleteVideoTitle').text(title);
-    $('#deleteModal').modal('show');
-}
-
-function toggleStatus(id, status) {
-    $.post(UPLOAD_CONFIG.baseUrl + 'ChangeStatus', {
-        id: id,
-        est_actif: status,
-        [UPLOAD_CONFIG.csrfName]: UPLOAD_CONFIG.csrfHash
-    }, function(r) {
-        if (r) {
-            location.reload();
-        }
-    });
-}
-
-function toggleFullscreen() {
-    const elem = document.getElementById('playerContainer');
-    if (!document.fullscreenElement) {
-        elem.requestFullscreen().catch(err => {
-            toastr.error(`Erreur fullscreen: ${err.message}`);
+// Fermer le player quand le modal se ferme
+document.addEventListener('DOMContentLoaded', function() {
+    const playerModal = document.getElementById('playerModal');
+    if (playerModal) {
+        playerModal.addEventListener('hidden.bs.modal', function() {
+            $('#playerContainer').html('');
         });
-    } else {
-        document.exitFullscreen();
     }
-}
-
-// Close player on modal hide
-$('#playerModal').on('hidden.bs.modal', function() {
-    $('#playerContainer').html('');
 });
 </script>
 
@@ -1462,6 +2148,7 @@ $('#playerModal').on('hidden.bs.modal', function() {
 .thumbnail-option {
     transition: all 0.2s;
     border: 2px solid transparent;
+    border-radius: 4px;
 }
 .thumbnail-option:hover {
     border-color: #FF0000;
@@ -1485,5 +2172,57 @@ $('#playerModal').on('hidden.bs.modal', function() {
         height: auto !important;
         aspect-ratio: 16/9;
     }
+}
+
+/* Toastr Custom Position */
+#toast-container > div {
+    opacity: 0.95;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Fix CORS warning suppression */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.3em 0.8em;
+}
+/* Upload Thumbnail Zone */
+.upload-thumbnail-zone {
+    transition: all 0.3s ease;
+}
+.upload-thumbnail-zone:hover {
+    background: #e9ecef !important;
+    border-color: #FF0000 !important;
+}
+
+/* Thumbnail Option Selected State */
+.thumbnail-option.selected {
+    border-color: #FF0000;
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3);
+}
+
+/* Custom Thumbnail Badge */
+.custom-thumbnail-badge {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(40, 167, 69, 0.9);
+    color: white;
+    font-size: 0.65rem;
+    text-align: center;
+    padding: 2px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+/* Tab styling */
+.nav-tabs .nav-link {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+}
+.nav-tabs .nav-link.active {
+    font-weight: bold;
+    color: #FF0000;
+    border-bottom-color: #FF0000;
 }
 </style>

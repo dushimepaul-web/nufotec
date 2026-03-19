@@ -10,6 +10,9 @@ class Media extends Public_Controller {
         $this->load->helper('cookie');
     }
 
+    /**
+     * Index - Affiche tous les médias
+     */
     public function index()
     {
         // Récupérer tous les médias actifs
@@ -48,8 +51,169 @@ class Media extends Public_Controller {
         // Récupérer les derniers commentaires
         $data['recent_comments'] = $this->getRecentComments(5);
         
+        // Pour le menu - compteurs par type
+        $data['total_medias'] = $this->countMediasByType();
+        $data['current_filter'] = 'all';
+        
         $this->load->view('Media_View', $data);
     }
+
+    /**
+     * ============================================================
+     * NOUVELLE FONCTION: Vue filtrée par type de média
+     * URL: Media/view/video  |  Media/view/audio  |  Media/view/image
+     *      Media/view/book   |  Media/view/link   |  Media/view/document
+     * ============================================================
+     */
+    public function view($type = null)
+{
+    // Types valides et leurs correspondances SQL
+    $valid_types = [
+        'video'     => ['video', 'link'],    // ← 'link' ajouté ici pour video
+        'audio'     => ['audio'],
+        'image'     => ['image'],
+        'document'  => ['document'],
+        'book'      => ['document'],         // document avec sous_type = 'book'
+        'link'      => ['link'],
+        'autre'     => ['autre']
+    ];
+
+    // Si type invalide, rediriger vers tous les médias
+    if (empty($type) || !isset($valid_types[$type])) {
+        redirect('Media');
+        return;
+    }
+
+    // Construire la requête avec filtre
+    $this->db->where('est_actif', 1);
+    
+    // Pour 'book', on filtre aussi par sous_type
+    if ($type === 'book') {
+        $this->db->where('type', 'document');
+        $this->db->where('sous_type', 'book');
+    } 
+    // Pour 'video', on prend aussi les liens (YouTube, etc.)
+    elseif ($type === 'video') {
+        $this->db->where_in('type', ['video', 'link']);
+    }
+    // Pour 'link' seul (liens non-video)
+    elseif ($type === 'link') {
+        $this->db->where('type', 'link');
+    }
+    // Les autres types normalement
+    else {
+        $this->db->where_in('type', $valid_types[$type]);
+    }
+    
+    $this->db->order_by('created_at', 'DESC');
+    $medias = $this->db->get('galerie_medias')->result_array();
+
+    // Préparer les données avec statistiques
+    $data['medias'] = [];
+    foreach ($medias as $media) {
+        $media_array = (array)$media;
+        
+        $media_array['views_count'] = $this->getViewsCount($media_array['id_media']);
+        $media_array['likes_count'] = $this->getLikesCount($media_array['id_media'], 'like');
+        $media_array['dislikes_count'] = $this->getLikesCount($media_array['id_media'], 'dislike');
+        $media_array['plays_count'] = $this->getPlaysCount($media_array['id_media']);
+        $media_array['comments_count'] = $this->getCommentsCount($media_array['id_media']);
+        $media_array['rating_avg'] = $this->getAverageRating($media_array['id_media']);
+        $media_array['total_ratings'] = $this->getRatingsCount($media_array['id_media']);
+        $media_array['youtube_id'] = $this->getYoutubeId($media_array['lien'] ?? '');
+        $media_array['duration'] = $this->formatDuration($media_array['duree'] ?? 0);
+        
+        $data['medias'][] = $media_array;
+    }
+
+    // Données communes
+    $data['categories'] = $this->getUniqueCategories();
+    $data['popular_medias'] = $this->getPopularMedias(5);
+    $data['recent_comments'] = $this->getRecentComments(5);
+    
+    // Pour le menu
+    $data['total_medias'] = $this->countMediasByType();
+    $data['current_filter'] = $type;
+    $data['filter_title'] = $this->getFilterTitle($type);
+    $data['filter_icon'] = $this->getFilterIcon($type);
+
+    // Charger la même vue
+    $this->load->view('Media_View', $data);
+}
+
+    /**
+     * Obtenir le titre selon le filtre
+     */
+    private function getFilterTitle($type)
+    {
+        $titles = [
+            'all'       => 'Tous les médias',
+            'video'     => 'Vidéos & Liens',
+            'audio'     => 'Musique & Audio',
+            'image'     => 'Galerie d\'images',
+            'document'  => 'Documents',
+            'book'      => 'Livres & E-books',
+            'link'      => 'Liens externes',
+            'autre'     => 'Autres médias'
+        ];
+        return $titles[$type] ?? 'Médias';
+    }
+
+    /**
+     * Obtenir l'icône selon le filtre
+     */
+    private function getFilterIcon($type)
+    {
+        $icons = [
+            'all'       => 'bi-collection-play',
+            'video'     => 'bi-camera-video',
+            'audio'     => 'bi-music-note-beamed',
+            'image'     => 'bi-images',
+            'document'  => 'bi-file-earmark-text',
+            'book'      => 'bi-book',
+            'link'      => 'bi-link-45deg',
+            'autre'     => 'bi-folder'
+        ];
+        return $icons[$type] ?? 'bi-collection';
+    }
+
+    /**
+     * Compter les médias par type pour le menu
+     */
+    private function countMediasByType()
+    {
+        $counts = [
+            'all' => 0,
+            'video' => 0,
+            'audio' => 0,
+            'image' => 0,
+            'document' => 0,
+            'link' => 0,
+            'autre' => 0,
+            'book' => 0
+        ];
+
+        $this->db->where('est_actif', 1);
+        $results = $this->db->get('galerie_medias')->result_array();
+
+        foreach ($results as $row) {
+            $counts['all']++;
+            
+            if (isset($counts[$row['type']])) {
+                $counts[$row['type']]++;
+            }
+        }
+
+        // Compter les books (documents avec sous_type = 'book')
+        $this->db->where('est_actif', 1);
+        $this->db->where('type', 'document');
+        $this->db->where('sous_type', 'book');
+        $counts['book'] = $this->db->count_all_results('galerie_medias');
+
+        return $counts;
+    }
+
+   
     
     /**
      * API: Enregistrer une vue
@@ -601,4 +765,118 @@ class Media extends Public_Controller {
             'liked' => $like ? $like->action : null
         ]);
     }
+
+
+
+    /**
+ * API: Recherche AJAX en temps réel (pour autocomplete)
+ * Retourne les résultats au format JSON sans rechargement
+ */
+public function searchAjax()
+{
+    // Récupérer le terme de recherche
+    $query = $this->input->get('q') ?: $this->input->post('q');
+    $query = trim($query);
+    
+    // Si recherche vide, retourner tableau vide
+    if (empty($query) || strlen($query) < 2) {
+        echo json_encode([
+            'success' => true,
+            'medias' => [],
+            'total' => 0,
+            'query' => $query
+        ]);
+        return;
+    }
+    
+    // Recherche dans titre, description, crédits et catégorie
+    $this->db->select('g.*');
+    $this->db->from('galerie_medias g');
+    $this->db->where('g.est_actif', 1);
+    
+    // Recherche sur plusieurs champs avec LIKE
+    $this->db->group_start();
+    $this->db->like('g.titre', $query);
+    $this->db->or_like('g.description', $query);
+    $this->db->or_like('g.credits', $query);
+    $this->db->or_like('g.categorie', $query);
+    $this->db->group_end();
+    
+    // Limiter les résultats pour l'autocomplete
+    $this->db->limit(10);
+    $this->db->order_by('g.created_at', 'DESC');
+    
+    $medias = $this->db->get()->result_array();
+    
+    // Formater les résultats pour le JSON
+    $results = [];
+    foreach ($medias as $media) {
+        // Miniature
+        $thumb_url = '';
+        $youtube_id = $this->getYoutubeId($media['lien'] ?? '');
+        
+        if (!empty($youtube_id)) {
+            $thumb_url = "https://img.youtube.com/vi/{$youtube_id}/mqdefault.jpg";
+        } elseif (!empty($media['miniature'])) {
+            $thumb_url = base_url($media['miniature']);
+        } elseif ($media['type'] === 'image' && !empty($media['fichier'])) {
+            $thumb_url = base_url($media['fichier']);
+        } else {
+            $thumb_url = base_url('assets/images/default_thumbnail.jpg');
+        }
+        
+        $results[] = [
+            'id_media' => $media['id_media'],
+            'titre' => $media['titre'],
+            'type' => $media['type'],
+            'sous_type' => $media['sous_type'],
+            'categorie' => $media['categorie'],
+            'description' => substr(strip_tags($media['description'] ?? ''), 0, 100) . '...',
+            'thumb_url' => $thumb_url,
+            'youtube_id' => $youtube_id,
+            'url' => base_url('media/view/' . $media['id_media']),
+            'date' => date('d/m/Y', strtotime($media['created_at'] ?? 'now'))
+        ];
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'medias' => $results,
+        'total' => count($results),
+        'query' => $query
+    ]);
+}
+
+
+
+/**
+ * API: Récupérer un média spécifique
+ */
+public function getMedia($id_media)
+{
+    $media = $this->db->where('id_media', $id_media)
+                      ->where('est_actif', 1)
+                      ->get('galerie_medias')
+                      ->row_array();
+    
+    if (!$media) {
+        echo json_encode(['success' => false, 'message' => 'Média non trouvé']);
+        return;
+    }
+    
+    // Ajouter les statistiques
+    $media['views_count'] = $this->getViewsCount($media['id_media']);
+    $media['likes_count'] = $this->getLikesCount($media['id_media'], 'like');
+    $media['dislikes_count'] = $this->getLikesCount($media['id_media'], 'dislike');
+    $media['plays_count'] = $this->getPlaysCount($media['id_media']);
+    $media['comments_count'] = $this->getCommentsCount($media['id_media']);
+    $media['rating_avg'] = $this->getAverageRating($media['id_media']);
+    $media['youtube_id'] = $this->getYoutubeId($media['lien'] ?? '');
+    $media['thumbnail_url'] = $this->getThumbnailUrl($media);
+    
+    echo json_encode([
+        'success' => true,
+        'media' => $media
+    ]);
+}
 }

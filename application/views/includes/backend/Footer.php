@@ -30,9 +30,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.js"></script>
 
-<!-- App JS -->
-<script src="<?= base_url() ?>assets/backend/js/app.js"></script>
-<!-- <script src="<?= base_url() ?>assets/backend/js/index.js"></script> --> <!-- Commenté si erreurs ApexCharts -->
+
 
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function() {
