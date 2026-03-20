@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Audio Controller - YouTube-Style Upload
- * SANS CSRF - Upload chunked, miniatures modifiables, interface moderne
+ * Adapté pour serveur avec limites: upload_max_filesize=2M, post_max_size=8M
  */
 class Audio extends MX_Controller {
 
@@ -56,8 +56,12 @@ class Audio extends MX_Controller {
 
     private function initializeConfig()
     {
+        // Adapté aux limites serveur: upload_max_filesize=2M
+        // On utilise des chunks de 1.5MB pour être safe (en dessous de 2M)
+        $chunk_size = 1.5 * 1024 * 1024; // 1.5 MB (1,572,864 bytes)
+        
         $this->audio_config = [
-            'chunk_size'        => 5 * 1024 * 1024,  // 5MB chunks (comme vidéo)
+            'chunk_size'        => $chunk_size,  // 1.5MB chunks
             'max_file_size'     => 500 * 1024 * 1024, // 500MB max
             'allowed_extensions' => ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff', 'opus', 'weba'],
             'qualities' => [
@@ -67,6 +71,9 @@ class Audio extends MX_Controller {
                 'max'    => ['bitrate' => '320k', 'suffix' => '_320k']
             ]
         ];
+        
+        // Log pour debug
+        log_message('debug', 'Audio config - chunk_size: ' . $this->audio_config['chunk_size'] . ' bytes (' . round($this->audio_config['chunk_size'] / 1024 / 1024, 2) . ' MB)');
     }
 
     private function detectFFmpegTools()
@@ -162,13 +169,18 @@ class Audio extends MX_Controller {
             return;
         }
 
-        $total_chunks = (int)ceil($file_size / $this->audio_config['chunk_size']);
+        $chunk_size = $this->audio_config['chunk_size'];
+        $total_chunks = (int)ceil($file_size / $chunk_size);
+        
+        // Log pour debug
+        log_message('debug', 'initUpload - file: ' . $file_name . ', size: ' . $file_size . ', total_chunks: ' . $total_chunks . ', chunk_size: ' . $chunk_size);
         
         $metadata = [
             'upload_id'       => $upload_id,
             'file_name'       => $file_name,
             'file_size'       => $file_size,
             'total_chunks'    => $total_chunks,
+            'chunk_size'      => $chunk_size,
             'uploaded_chunks' => [],
             'created_at'      => time(),
             'status'          => 'uploading'
@@ -179,173 +191,138 @@ class Audio extends MX_Controller {
         echo json_encode([
             'success'      => true,
             'upload_id'    => $upload_id,
-            'chunk_size'   => $this->audio_config['chunk_size'],
+            'chunk_size'   => $chunk_size,
             'total_chunks' => $total_chunks,
             'ffmpeg_ready' => (bool)$this->ffmpeg_path
         ]);
         return;
     }
 
-   public function uploadChunk()
-{
-    $this->_csrf_off();
-    $this->output->set_content_type('application/json');
-    
-    // LOG DE DÉBUT
-    log_message('debug', '=== UPLOAD CHUNK START ===');
-    log_message('debug', 'POST data: ' . print_r($this->input->post(), true));
-    log_message('debug', 'FILES: ' . print_r($_FILES, true));
-    
-    $upload_id   = $this->input->post('upload_id');
-    $chunk_index = (int)$this->input->post('chunk_index');
+    public function uploadChunk()
+    {
+        $this->_csrf_off();
+        $this->output->set_content_type('application/json');
+        
+        $upload_id   = $this->input->post('upload_id');
+        $chunk_index = (int)$this->input->post('chunk_index');
 
-    if (empty($upload_id)) {
-        log_message('error', 'Upload ID manquant');
-        echo json_encode(['success' => false, 'message' => 'Upload ID manquant']);
-        return;
-    }
+        if (empty($upload_id)) {
+            echo json_encode(['success' => false, 'message' => 'Upload ID manquant']);
+            return;
+        }
 
-    $temp_dir      = $this->paths['temp'] . $upload_id . '/';
-    $metadata_file = $temp_dir . 'metadata.json';
-    
-    // Vérification détaillée du dossier
-    log_message('debug', 'Temp dir: ' . $temp_dir);
-    log_message('debug', 'Is dir? ' . (is_dir($temp_dir) ? 'YES' : 'NO'));
-    
-    if (!is_dir($temp_dir)) {
-        if (!@mkdir($temp_dir, 0777, true)) {
-            $error = error_get_last();
-            log_message('error', 'Failed to create dir: ' . ($error['message'] ?? 'unknown'));
+        $temp_dir      = $this->paths['temp'] . $upload_id . '/';
+        $metadata_file = $temp_dir . 'metadata.json';
+        
+        if (!file_exists($metadata_file)) {
+            echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
+            return;
+        }
+
+        $metadata = json_decode(file_get_contents($metadata_file), true);
+        $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
+        
+        // Vérification détaillée du fichier uploadé
+        if (!isset($_FILES['chunk'])) {
+            echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
+            return;
+        }
+        
+        $file_error = $_FILES['chunk']['error'];
+        
+        if ($file_error !== UPLOAD_ERR_OK) {
+            $error_msg = $this->getUploadErrorMessage($file_error);
+            echo json_encode(['success' => false, 'message' => $error_msg]);
+            return;
+        }
+        
+        // Vérifier la taille du chunk (ne doit pas dépasser chunk_size)
+        $chunk_size = $_FILES['chunk']['size'];
+        $max_allowed = $metadata['chunk_size'] + 1024; // Marge 1KB
+        
+        if ($chunk_size > $max_allowed) {
             echo json_encode([
                 'success' => false, 
-                'message' => 'Impossible de créer le dossier: ' . $temp_dir,
-                'debug' => $error['message'] ?? 'unknown'
+                'message' => 'Chunk trop grand: ' . $chunk_size . ' bytes (max: ' . $metadata['chunk_size'] . ')'
             ]);
             return;
         }
-        log_message('debug', 'Directory created successfully');
-    }
-    
-    if (!file_exists($metadata_file)) {
-        log_message('error', 'Metadata file not found: ' . $metadata_file);
+        
+        // Vérifier que le fichier temporaire existe
+        if (!file_exists($_FILES['chunk']['tmp_name'])) {
+            echo json_encode(['success' => false, 'message' => 'Fichier temporaire introuvable']);
+            return;
+        }
+        
+        $temp_size = filesize($_FILES['chunk']['tmp_name']);
+        
+        if ($temp_size == 0) {
+            echo json_encode(['success' => false, 'message' => 'Fichier vide reçu']);
+            return;
+        }
+        
+        // Sauvegarder le chunk
+        $move_result = @move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path);
+        
+        if (!$move_result) {
+            echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde chunk']);
+            return;
+        }
+        
+        // Vérifier que le fichier a bien été créé
+        if (!file_exists($chunk_path)) {
+            echo json_encode(['success' => false, 'message' => 'Chunk non créé']);
+            return;
+        }
+        
+        $saved_size = filesize($chunk_path);
+        
+        if ($saved_size != $temp_size) {
+            echo json_encode(['success' => false, 'message' => 'Taille incohérente']);
+            return;
+        }
+
+        // Mettre à jour metadata
+        if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
+            $metadata['uploaded_chunks'][] = $chunk_index;
+            sort($metadata['uploaded_chunks']);
+            file_put_contents($metadata_file, json_encode($metadata));
+        }
+
+        $uploaded = count($metadata['uploaded_chunks']);
         echo json_encode([
-            'success' => false, 
-            'message' => 'Session non trouvée',
-            'debug' => 'Missing: ' . $metadata_file
+            'success'  => true,
+            'message'  => 'Chunk reçu',
+            'progress' => [
+                'uploaded_chunks' => $uploaded,
+                'total_chunks'    => $metadata['total_chunks'],
+                'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
+            ]
         ]);
-        return;
     }
 
-    $metadata = json_decode(file_get_contents($metadata_file), true);
-    log_message('debug', 'Metadata loaded: ' . json_encode($metadata));
-    
-    $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
-    
-    // Vérification détaillée du fichier uploadé
-    if (!isset($_FILES['chunk'])) {
-        log_message('error', 'No chunk in FILES');
-        echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
-        return;
+    private function getUploadErrorMessage($error_code)
+    {
+        switch ($error_code) {
+            case UPLOAD_ERR_INI_SIZE:
+                return 'Le chunk dépasse la limite du serveur (2MB max)';
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'Le chunk dépasse la taille MAX_FILE_SIZE';
+            case UPLOAD_ERR_PARTIAL:
+                return 'Upload partiel - Réessayez';
+            case UPLOAD_ERR_NO_FILE:
+                return 'Aucun fichier reçu';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'Dossier temporaire manquant';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'Erreur d\'écriture disque';
+            case UPLOAD_ERR_EXTENSION:
+                return 'Extension PHP bloquée';
+            default:
+                return 'Erreur inconnue: ' . $error_code;
+        }
     }
     
-    $file_error = $_FILES['chunk']['error'];
-    log_message('debug', 'File error code: ' . $file_error);
-    
-    if ($file_error !== UPLOAD_ERR_OK) {
-        $error_msg = $this->getUploadErrorMessage($file_error);
-        log_message('error', 'Upload error: ' . $error_msg);
-        echo json_encode(['success' => false, 'message' => $error_msg]);
-        return;
-    }
-    
-    // Vérifier que le fichier temporaire existe
-    if (!file_exists($_FILES['chunk']['tmp_name'])) {
-        log_message('error', 'Temp file does not exist: ' . $_FILES['chunk']['tmp_name']);
-        echo json_encode(['success' => false, 'message' => 'Fichier temporaire introuvable']);
-        return;
-    }
-    
-    $temp_size = filesize($_FILES['chunk']['tmp_name']);
-    log_message('debug', 'Temp file size: ' . $temp_size . ' bytes');
-    
-    if ($temp_size == 0) {
-        log_message('error', 'Empty file uploaded');
-        echo json_encode(['success' => false, 'message' => 'Fichier vide reçu']);
-        return;
-    }
-    
-    // Sauvegarder le chunk
-    $move_result = @move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path);
-    
-    if (!$move_result) {
-        $error = error_get_last();
-        log_message('error', 'Move failed: ' . ($error['message'] ?? 'unknown'));
-        echo json_encode([
-            'success' => false, 
-            'message' => 'Erreur sauvegarde chunk',
-            'debug' => $error['message'] ?? 'unknown',
-            'target' => $chunk_path
-        ]);
-        return;
-    }
-    
-    // Vérifier que le fichier a bien été créé
-    if (!file_exists($chunk_path)) {
-        log_message('error', 'Chunk not created at: ' . $chunk_path);
-        echo json_encode(['success' => false, 'message' => 'Chunk non créé']);
-        return;
-    }
-    
-    $saved_size = filesize($chunk_path);
-    log_message('debug', 'Saved chunk size: ' . $saved_size . ' bytes');
-    
-    if ($saved_size != $temp_size) {
-        log_message('error', 'Size mismatch: temp=' . $temp_size . ', saved=' . $saved_size);
-        echo json_encode(['success' => false, 'message' => 'Taille incohérente']);
-        return;
-    }
-
-    // Mettre à jour metadata
-    if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
-        $metadata['uploaded_chunks'][] = $chunk_index;
-        sort($metadata['uploaded_chunks']);
-        file_put_contents($metadata_file, json_encode($metadata));
-        log_message('debug', 'Metadata updated, chunks: ' . count($metadata['uploaded_chunks']));
-    }
-
-    $uploaded = count($metadata['uploaded_chunks']);
-    echo json_encode([
-        'success'  => true,
-        'message'  => 'Chunk reçu',
-        'progress' => [
-            'uploaded_chunks' => $uploaded,
-            'total_chunks'    => $metadata['total_chunks'],
-            'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
-        ]
-    ]);
-}
-
-private function getUploadErrorMessage($error_code)
-{
-    switch ($error_code) {
-        case UPLOAD_ERR_INI_SIZE:
-            return 'Le fichier dépasse la taille maximum (upload_max_filesize)';
-        case UPLOAD_ERR_FORM_SIZE:
-            return 'Le fichier dépasse la taille maximum (MAX_FILE_SIZE)';
-        case UPLOAD_ERR_PARTIAL:
-            return 'Le fichier n\'a été que partiellement uploadé';
-        case UPLOAD_ERR_NO_FILE:
-            return 'Aucun fichier n\'a été uploadé';
-        case UPLOAD_ERR_NO_TMP_DIR:
-            return 'Dossier temporaire manquant';
-        case UPLOAD_ERR_CANT_WRITE:
-            return 'Erreur d\'écriture sur le disque';
-        case UPLOAD_ERR_EXTENSION:
-            return 'Une extension PHP a arrêté l\'upload';
-        default:
-            return 'Erreur inconnue: ' . $error_code;
-    }
-}
     public function completeUpload()
     {
         $this->_csrf_off();
@@ -379,7 +356,7 @@ private function getUploadErrorMessage($error_code)
         if (!empty($missing)) {
             echo json_encode([
                 'success' => false,
-                'message' => 'Chunks manquants',
+                'message' => 'Chunks manquants: ' . count($missing),
                 'missing' => $missing
             ]);
             return;
@@ -688,20 +665,15 @@ private function getUploadErrorMessage($error_code)
 
     // ==================== UPLOAD MINIATURE PERSONNALISÉE ====================
 
-    /**
-     * Upload d'une miniature personnalisée pour un audio
-     * IDENTIQUE à Video.php
-     */
     public function uploadThumbnail()
     {
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        // Vérifier si un fichier a été envoyé
         if (empty($_FILES['thumbnail_file']) || $_FILES['thumbnail_file']['error'] !== UPLOAD_ERR_OK) {
             echo json_encode([
                 'success' => false, 
-                'message' => 'Aucun fichier reçu ou erreur upload: ' . ($_FILES['thumbnail_file']['error'] ?? 'unknown')
+                'message' => 'Aucun fichier reçu'
             ]);
             return;
         }
@@ -710,62 +682,50 @@ private function getUploadErrorMessage($error_code)
         $nom_champ = $file['name'];
         $nom_file = $file['tmp_name'];
         
-        // Dossier spécifique pour les miniatures audio
         $ref_folder = FCPATH . 'attachments/Audio/Thumbnails/Custom/';
         $code = date("YmdHis") . uniqid();
         $fichier = basename($code);
-        $file_extension = pathinfo($nom_champ, PATHINFO_EXTENSION);
-        $file_extension = strtolower($file_extension);
+        $file_extension = strtolower(pathinfo($nom_champ, PATHINFO_EXTENSION));
         $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp', 'svg');
 
-        // Validation extension
         if (!in_array($file_extension, $valid_ext)) {
             echo json_encode([
                 'success' => false, 
-                'message' => 'Format non supporté. Formats acceptés: ' . implode(', ', $valid_ext)
+                'message' => 'Format non supporté'
             ]);
             return;
         }
 
-        // Créer le dossier si nécessaire
         if (!is_dir($ref_folder)) {
             mkdir($ref_folder, 0777, TRUE);
         }
 
-        // Déplacer le fichier
         $final_filename = $fichier . "." . $file_extension;
         $destination = $ref_folder . $final_filename;
         
         if (!move_uploaded_file($nom_file, $destination)) {
             echo json_encode([
                 'success' => false, 
-                'message' => 'Erreur lors du déplacement du fichier'
+                'message' => 'Erreur sauvegarde'
             ]);
             return;
         }
 
-        // Redimensionner si GD disponible
         if ($this->gd_available) {
             $this->resizeThumbnail($destination, 800, 800);
         }
 
-        // Retourner le chemin relatif pour stockage en BDD
         $relative_path = 'attachments/Audio/Thumbnails/Custom/' . $final_filename;
         
         echo json_encode([
             'success' => true,
-            'message' => 'Miniature uploadée avec succès',
+            'message' => 'Miniature uploadée',
             'file_path' => $relative_path,
-            'file_name' => $final_filename,
-            'preview_url' => base_url($relative_path),
-            'gd_used' => $this->gd_available
+            'preview_url' => base_url($relative_path)
         ]);
         return;
     }
 
-    /**
-     * Redimensionne une miniature si elle dépasse les dimensions max
-     */
     private function resizeThumbnail($file_path, $max_width, $max_height)
     {
         if (!$this->gd_available || !function_exists('getimagesize')) {
@@ -778,17 +738,14 @@ private function getUploadErrorMessage($error_code)
             return;
         }
 
-        // Si l'image est plus petite que les dimensions max, ne rien faire
         if ($width <= $max_width && $height <= $max_height) {
             return;
         }
 
-        // Calculer les nouvelles dimensions en conservant le ratio
         $ratio = min($max_width / $width, $max_height / $height);
         $new_width = round($width * $ratio);
         $new_height = round($height * $ratio);
 
-        // Créer l'image source selon le type
         switch ($type) {
             case IMAGETYPE_JPEG:
                 if (!function_exists('imagecreatefromjpeg')) return;
@@ -814,19 +771,15 @@ private function getUploadErrorMessage($error_code)
             return;
         }
 
-        // Créer l'image destination
         $dst_image = imagecreatetruecolor($new_width, $new_height);
         
-        // Préserver la transparence pour PNG
         if ($type == IMAGETYPE_PNG) {
             imagealphablending($dst_image, false);
             imagesavealpha($dst_image, true);
         }
 
-        // Redimensionner
         imagecopyresampled($dst_image, $src_image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
 
-        // Sauvegarder
         switch ($type) {
             case IMAGETYPE_JPEG:
                 imagejpeg($dst_image, $file_path, 90);
@@ -900,7 +853,6 @@ private function getUploadErrorMessage($error_code)
         $tags = $format['tags'] ?? [];
         $duration = (float)($format['duration'] ?? 0);
 
-        // Format duration
         $hours = floor($duration / 3600);
         $mins = floor(($duration % 3600) / 60);
         $secs = floor($duration % 60);
@@ -934,7 +886,6 @@ private function getUploadErrorMessage($error_code)
 
         $base_name  = pathinfo($filename, PATHINFO_FILENAME);
         
-        // 1. Essayer d'extraire la cover art intégrée
         $cover_name = $base_name . '_cover.jpg';
         $cover_path = $this->paths['thumbnails'] . $cover_name;
         
@@ -949,10 +900,9 @@ private function getUploadErrorMessage($error_code)
         if (file_exists($cover_path) && filesize($cover_path) > 1000) {
             $result['cover'] = 'attachments/Audio/Thumbnails/' . $cover_name;
         } else {
-            @unlink($cover_path); // Supprimer si vide ou trop petit
+            @unlink($cover_path);
         }
 
-        // 2. Générer une miniature depuis la waveform si pas de cover
         if (empty($result['cover'])) {
             $generated_name = $base_name . '_waveform.jpg';
             $generated_path = $this->paths['thumbnails'] . $generated_name;
@@ -1001,7 +951,6 @@ private function getUploadErrorMessage($error_code)
         }
 
         $base_name = pathinfo($filename, PATHINFO_FILENAME);
-        $ext = pathinfo($filename, PATHINFO_EXTENSION);
         $conversions = [];
 
         foreach ($this->audio_config['qualities'] as $quality => $config) {
@@ -1131,13 +1080,14 @@ private function getUploadErrorMessage($error_code)
     }
 
     public function checkConfig()
-{
-    echo "<pre>";
-    echo "upload_max_filesize: " . ini_get('upload_max_filesize') . "\n";
-    echo "post_max_size: " . ini_get('post_max_size') . "\n";
-    echo "max_execution_time: " . ini_get('max_execution_time') . "\n";
-    echo "memory_limit: " . ini_get('memory_limit') . "\n";
-    echo "</pre>";
-    exit;
-}
+    {
+        echo "<pre>";
+        echo "upload_max_filesize: " . ini_get('upload_max_filesize') . "\n";
+        echo "post_max_size: " . ini_get('post_max_size') . "\n";
+        echo "max_execution_time: " . ini_get('max_execution_time') . "\n";
+        echo "memory_limit: " . ini_get('memory_limit') . "\n";
+        echo "Chunk size configuré: " . round($this->audio_config['chunk_size'] / 1024 / 1024, 2) . " MB\n";
+        echo "</pre>";
+        exit;
+    }
 }

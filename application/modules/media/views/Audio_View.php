@@ -169,13 +169,11 @@ if (!function_exists('get_quality_badge_audio')) {
                             $meta = !empty($value['metadata_id3']) ? json_decode($value['metadata_id3'], true) : [];
                             $quality_info = get_quality_badge_audio($value['bitrate'] ?? ($meta['analysis']['bitrate'] ?? 0));
                             
-                            // Thumbnail
                             $thumb_url = base_url('assets/images/audio-placeholder.jpg');
                             if (!empty($value['miniature'])) {
                                 $thumb_url = (strpos($value['miniature'], 'http') === 0) ? $value['miniature'] : base_url($value['miniature']);
                             }
                             
-                            // Escape title for JS
                             $js_title = htmlspecialchars($value['titre'] ?? 'Sans titre', ENT_QUOTES, 'UTF-8');
                         ?>
                             <tr data-id="<?= $value['id_media'] ?>" data-bitrate="<?= $value['bitrate'] ?? 0 ?>">
@@ -186,8 +184,6 @@ if (!function_exists('get_quality_badge_audio')) {
                                              style="object-fit: cover; background: #000;"
                                              loading="lazy"
                                              onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
-                                        
-                                        <!-- Play Overlay -->
                                         <div class="audio-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
                                              onclick="openPlayer(<?= $value['id_media'] ?>, '<?= $js_title ?>')"
                                              style="background: rgba(0,0,0,0); transition: all 0.3s; cursor: pointer;">
@@ -195,27 +191,22 @@ if (!function_exists('get_quality_badge_audio')) {
                                         </div>
                                     </div>
                                 </td>
-
                                 <td>
                                     <div class="d-flex flex-column">
                                         <h6 class="mb-1 fw-bold text-truncate" style="max-width: 300px;" title="<?= htmlspecialchars($value['titre'] ?? '') ?>">
                                             <?= htmlspecialchars($value['titre'] ?? 'Sans titre') ?>
                                         </h6>
-                                        
                                         <?php if (!empty($value['credits'])): ?>
                                             <small class="text-muted mb-1"><i class="bx bx-user me-1"></i><?= htmlspecialchars($value['credits']) ?></small>
                                         <?php endif; ?>
-                                        
                                         <?php if (!empty($value['categorie'])): ?>
                                             <span class="badge bg-light text-dark border w-fit-content"><?= htmlspecialchars($value['categorie']) ?></span>
                                         <?php endif; ?>
-                                        
                                         <?php if (!empty($meta['analysis']['album'])): ?>
                                             <small class="text-muted mt-1"><i class="bx bx-album me-1"></i><?= htmlspecialchars($meta['analysis']['album']) ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </td>
-
                                 <td>
                                     <?php if (!empty($meta['conversions'])): ?>
                                         <div class="d-flex flex-wrap gap-1">
@@ -229,13 +220,11 @@ if (!function_exists('get_quality_badge_audio')) {
                                         <span class="badge bg-<?= $quality_info['class'] ?>"><?= $quality_info['label'] ?></span>
                                     <?php endif; ?>
                                 </td>
-
                                 <td>
                                     <span class="badge bg-dark">
                                         <i class="bx bx-time me-1"></i><?= format_duration_audio($value['duree'] ?? 0) ?>
                                     </span>
                                 </td>
-
                                 <td class="text-center">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="text-decoration-none" data-bs-toggle="dropdown">
@@ -246,20 +235,11 @@ if (!function_exists('get_quality_badge_audio')) {
                                             <?php endif; ?>
                                         </a>
                                         <ul class="dropdown-menu">
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" onclick="toggleStatus(<?= $value['id_media'] ?>, 1)">
-                                                    <i class="bx bx-globe me-2 text-success"></i>Public
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" onclick="toggleStatus(<?= $value['id_media'] ?>, 0)">
-                                                    <i class="bx bx-lock me-2 text-secondary"></i>Privé
-                                                </a>
-                                            </li>
+                                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="toggleStatus(<?= $value['id_media'] ?>, 1)"><i class="bx bx-globe me-2 text-success"></i>Public</a></li>
+                                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="toggleStatus(<?= $value['id_media'] ?>, 0)"><i class="bx bx-lock me-2 text-secondary"></i>Privé</a></li>
                                         </ul>
                                     </div>
                                 </td>
-
                                 <td>
                                     <div class="d-flex flex-column gap-2 align-items-center">
                                         <div class="form-check form-switch">
@@ -276,35 +256,22 @@ if (!function_exists('get_quality_badge_audio')) {
                                         </div>
                                     </div>
                                 </td>
-
                                 <td>
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
                                             <i class="bx bx-dots-vertical-rounded"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" onclick="openPlayer(<?= $value['id_media'] ?>, '<?= $js_title ?>')">
-                                                    <i class="bx bx-play me-2 text-success"></i>Lire
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editModal<?= $value['id_media'] ?>">
-                                                    <i class="bx bx-edit me-2 text-primary"></i>Modifier
-                                                </a>
-                                            </li>
+                                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="openPlayer(<?= $value['id_media'] ?>, '<?= $js_title ?>')"><i class="bx bx-play me-2 text-success"></i>Lire</a></li>
+                                            <li><a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editModal<?= $value['id_media'] ?>"><i class="bx bx-edit me-2 text-primary"></i>Modifier</a></li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(<?= $value['id_media'] ?>, '<?= $js_title ?>')">
-                                                    <i class="bx bx-trash me-2"></i>Supprimer
-                                                </a>
-                                            </li>
+                                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(<?= $value['id_media'] ?>, '<?= $js_title ?>')"><i class="bx bx-trash me-2"></i>Supprimer</a></li>
                                         </ul>
                                     </div>
                                 </td>
                             </tr>
 
-                            <!-- Edit Modal avec modification miniature -->
+                            <!-- Edit Modal -->
                             <div class="modal fade" id="editModal<?= $value['id_media'] ?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
                                 <div class="modal-dialog modal-xl">
                                     <div class="modal-content">
@@ -315,164 +282,76 @@ if (!function_exists('get_quality_badge_audio')) {
                                         <form action="<?= base_url('audio/Update') ?>" method="POST" id="editForm<?= $value['id_media'] ?>">
                                             <div class="modal-body">
                                                 <input type="hidden" name="id" value="<?= $value['id_media'] ?>">
-                                                
                                                 <div class="row">
                                                     <div class="col-md-8">
                                                         <div class="mb-3">
                                                             <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control form-control-lg" name="titre" 
-                                                                   value="<?= htmlspecialchars($value['titre'] ?? '') ?>" required maxlength="255">
+                                                            <input type="text" class="form-control form-control-lg" name="titre" value="<?= htmlspecialchars($value['titre'] ?? '') ?>" required maxlength="255">
                                                         </div>
-
                                                         <div class="mb-3">
                                                             <label class="form-label fw-bold">Description</label>
                                                             <textarea class="form-control" name="description" rows="4"><?= htmlspecialchars($value['description'] ?? '') ?></textarea>
                                                         </div>
-
-                                                        <!-- SECTION MINIATURE MODIFIABLE - CORRIGÉE -->
-<div class="card border mb-3">
-    <div class="card-header bg-light">
-        <h6 class="mb-0"><i class="bx bx-image me-2"></i>Miniature</h6>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-5">
-                <label class="form-label small text-muted">Miniature actuelle</label>
-                <div class="position-relative">
-                    <?php 
-                    $current_thumb = $value['miniature'] ?? '';
-                    $thumb_display = $current_thumb ? base_url($current_thumb) : base_url('assets/images/audio-placeholder.jpg');
-                    ?>
-                    <img src="<?= $thumb_display ?>" 
-                         class="rounded w-100" 
-                         style="height: 120px; object-fit: cover;"
-                         id="currentThumb<?= $value['id_media'] ?>"
-                         onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
-                    
-                    <!-- MINIATURES GÉNÉRÉES - CORRIGÉ -->
-                    <?php if (!empty($meta['thumbnails'])): ?>
-                    <div class="mt-2">
-                        <label class="form-label small text-muted">Changer pour :</label>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <?php 
-                            // CORRECTION ICI : Parcourir TOUTES les miniatures disponibles
-                            $thumb_count = 0;
-                            foreach ($meta['thumbnails'] as $thumb_key => $thumb_url): 
-                                if (empty($thumb_url)) continue;
-                                $thumb_count++;
-                            ?>
-                                <img src="<?= base_url($thumb_url) ?>" 
-                                     class="rounded cursor-pointer edit-thumb-option" 
-                                     style="width: 60px; height: 60px; object-fit: cover; border: 2px solid transparent;"
-                                     onclick="selectEditThumbnail(<?= $value['id_media'] ?>, '<?= $thumb_url ?>', this)"
-                                     data-thumb="<?= $thumb_url ?>"
-                                     title="<?= htmlspecialchars($thumb_key) ?>">
-                            <?php endforeach; ?>
-                            
-                            <?php if ($thumb_count === 0): ?>
-                                <p class="text-muted small">Aucune miniature générée</p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php else: ?>
-                        <div class="mt-2 text-muted small">
-                            <i class="bx bx-info-circle me-1"></i>Aucune miniature générée
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-            
-            <div class="col-md-7">
-                <label class="form-label small text-muted">Ou uploader une nouvelle</label>
-                <div class="upload-thumbnail-zone border rounded p-3 text-center mb-2" 
-                     style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;"
-                     onclick="document.getElementById('editThumbInput<?= $value['id_media'] ?>').click()">
-                    <i class="bx bx-cloud-upload fs-3 text-muted mb-2"></i>
-                    <p class="mb-0 small text-muted">Cliquez pour uploader</p>
-                    <p class="mb-0" style="font-size: 0.7rem; color: #999;">JPG, PNG, WEBP (max 2MB)</p>
-                </div>
-                <input type="file" 
-                       id="editThumbInput<?= $value['id_media'] ?>" 
-                       class="d-none" 
-                       accept="image/*"
-                       onchange="uploadEditThumbnail(<?= $value['id_media'] ?>, this.files[0])">
-                
-                <div id="editThumbPreview<?= $value['id_media'] ?>" class="d-none position-relative">
-                    <img src="" class="rounded w-100" style="height: 120px; object-fit: cover;" id="editThumbImg<?= $value['id_media'] ?>">
-                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
-                            onclick="removeEditThumbnail(<?= $value['id_media'] ?>)">
-                        <i class="bx bx-x"></i>
-                    </button>
-                    <div class="position-absolute bottom-0 start-0 w-100 bg-success text-white text-center small">
-                        <i class="bx bx-check me-1"></i>Nouvelle miniature
-                    </div>
-                </div>
-                
-                <div id="editThumbProgress<?= $value['id_media'] ?>" class="d-none mt-2">
-                    <div class="progress" style="height: 4px;">
-                        <div class="progress-bar bg-success" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <input type="hidden" name="thumbnail" id="editThumbSelected<?= $value['id_media'] ?>" value="<?= htmlspecialchars($current_thumb) ?>">
-            </div>
-        </div>
-    </div>
-</div>
-<!-- FIN SECTION MINIATURE CORRIGÉE -->
-
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label fw-bold">Catégorie</label>
-                                                                <input type="text" class="form-control" name="categorie" 
-                                                                       value="<?= htmlspecialchars($value['categorie'] ?? '') ?>" list="categoriesList">
-                                                            </div>
-                                                            <div class="col-md-6 mb-3">
-                                                                <label class="form-label fw-bold">Date</label>
-                                                                <input type="date" class="form-control" name="date_media" value="<?= $value['date_media'] ?? '' ?>">
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="mb-3">
-                                                            <label class="form-label fw-bold">Crédits / Artiste</label>
-                                                            <input type="text" class="form-control" name="credits" 
-                                                                   value="<?= htmlspecialchars($value['credits'] ?? '') ?>">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-4">
-                                                        <div class="card border h-100">
+                                                        <div class="card border mb-3">
                                                             <div class="card-header bg-light">
-                                                                <h6 class="mb-0"><i class="bx bx-cog me-2"></i>Paramètres</h6>
+                                                                <h6 class="mb-0"><i class="bx bx-image me-2"></i>Miniature</h6>
                                                             </div>
                                                             <div class="card-body">
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="est_actif" value="1" 
-                                                                               <?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label fw-bold">Audio public</label>
+                                                                <div class="row">
+                                                                    <div class="col-md-5">
+                                                                        <label class="form-label small text-muted">Miniature actuelle</label>
+                                                                        <div class="position-relative">
+                                                                            <?php 
+                                                                            $current_thumb = $value['miniature'] ?? '';
+                                                                            $thumb_display = $current_thumb ? base_url($current_thumb) : base_url('assets/images/audio-placeholder.jpg');
+                                                                            ?>
+                                                                            <img src="<?= $thumb_display ?>" class="rounded w-100" style="height: 120px; object-fit: cover;" id="currentThumb<?= $value['id_media'] ?>" onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
+                                                                            <?php if (!empty($meta['thumbnails'])): ?>
+                                                                            <div class="mt-2">
+                                                                                <label class="form-label small text-muted">Changer pour :</label>
+                                                                                <div class="d-flex gap-2 flex-wrap">
+                                                                                    <?php foreach ($meta['thumbnails'] as $thumb_key => $thumb_url): if (empty($thumb_url)) continue; ?>
+                                                                                        <img src="<?= base_url($thumb_url) ?>" class="rounded cursor-pointer edit-thumb-option" style="width: 60px; height: 60px; object-fit: cover; border: 2px solid transparent;" onclick="selectEditThumbnail(<?= $value['id_media'] ?>, '<?= $thumb_url ?>', this)" data-thumb="<?= $thumb_url ?>" title="<?= htmlspecialchars($thumb_key) ?>">
+                                                                                    <?php endforeach; ?>
+                                                                                </div>
+                                                                            </div>
+                                                                            <?php endif; ?>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-7">
+                                                                        <label class="form-label small text-muted">Ou uploader une nouvelle</label>
+                                                                        <div class="upload-thumbnail-zone border rounded p-3 text-center mb-2" style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;" onclick="document.getElementById('editThumbInput<?= $value['id_media'] ?>').click()">
+                                                                            <i class="bx bx-cloud-upload fs-3 text-muted mb-2"></i>
+                                                                            <p class="mb-0 small text-muted">Cliquez pour uploader</p>
+                                                                            <p class="mb-0" style="font-size: 0.7rem; color: #999;">JPG, PNG, WEBP (max 2MB)</p>
+                                                                        </div>
+                                                                        <input type="file" id="editThumbInput<?= $value['id_media'] ?>" class="d-none" accept="image/*" onchange="uploadEditThumbnail(<?= $value['id_media'] ?>, this.files[0])">
+                                                                        <div id="editThumbPreview<?= $value['id_media'] ?>" class="d-none position-relative">
+                                                                            <img src="" class="rounded w-100" style="height: 120px; object-fit: cover;" id="editThumbImg<?= $value['id_media'] ?>">
+                                                                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="removeEditThumbnail(<?= $value['id_media'] ?>)"><i class="bx bx-x"></i></button>
+                                                                            <div class="position-absolute bottom-0 start-0 w-100 bg-success text-white text-center small"><i class="bx bx-check me-1"></i>Nouvelle miniature</div>
+                                                                        </div>
+                                                                        <div id="editThumbProgress<?= $value['id_media'] ?>" class="d-none mt-2"><div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 0%"></div></div></div>
+                                                                        <input type="hidden" name="thumbnail" id="editThumbSelected<?= $value['id_media'] ?>" value="<?= htmlspecialchars($current_thumb) ?>">
                                                                     </div>
                                                                 </div>
-                                                                
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1"
-                                                                               <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label"><i class="bx bxl-whatsapp text-success me-1"></i>WhatsApp</label>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="is_for_website" value="1"
-                                                                               <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label"><i class="bx bx-globe text-primary me-1"></i>Site Web</label>
-                                                                    </div>
-                                                                </div>
-
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3"><label class="form-label fw-bold">Catégorie</label><input type="text" class="form-control" name="categorie" value="<?= htmlspecialchars($value['categorie'] ?? '') ?>" list="categoriesList"></div>
+                                                            <div class="col-md-6 mb-3"><label class="form-label fw-bold">Date</label><input type="date" class="form-control" name="date_media" value="<?= $value['date_media'] ?? '' ?>"></div>
+                                                        </div>
+                                                        <div class="mb-3"><label class="form-label fw-bold">Crédits / Artiste</label><input type="text" class="form-control" name="credits" value="<?= htmlspecialchars($value['credits'] ?? '') ?>"></div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="card border h-100">
+                                                            <div class="card-header bg-light"><h6 class="mb-0"><i class="bx bx-cog me-2"></i>Paramètres</h6></div>
+                                                            <div class="card-body">
+                                                                <div class="mb-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="est_actif" value="1" <?= (!empty($value['est_actif']) && $value['est_actif'] == 1) ? 'checked' : '' ?>><label class="form-check-label fw-bold">Audio public</label></div></div>
+                                                                <div class="mb-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1" <?= (!empty($value['is_for_whatsapp']) && $value['is_for_whatsapp'] == 1) ? 'checked' : '' ?>><label class="form-check-label"><i class="bx bxl-whatsapp text-success me-1"></i>WhatsApp</label></div></div>
+                                                                <div class="mb-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="is_for_website" value="1" <?= (!empty($value['is_for_website']) && $value['is_for_website'] == 1) ? 'checked' : '' ?>><label class="form-check-label"><i class="bx bx-globe text-primary me-1"></i>Site Web</label></div></div>
                                                                 <?php if (!empty($meta['analysis'])): ?>
-                                                                <hr>
-                                                                <h6 class="mb-2"><i class="bx bx-info-circle me-1"></i>Métadonnées</h6>
+                                                                <hr><h6 class="mb-2"><i class="bx bx-info-circle me-1"></i>Métadonnées</h6>
                                                                 <ul class="list-unstyled small text-muted mb-0">
                                                                     <li><strong>Durée:</strong> <?= $meta['analysis']['duration_formatted'] ?? 'N/A' ?></li>
                                                                     <li><strong>Bitrate:</strong> <?= round(($meta['analysis']['bitrate'] ?? 0) / 1000) ?> kbps</li>
@@ -494,30 +373,17 @@ if (!function_exists('get_quality_badge_audio')) {
                                     </div>
                                 </div>
                             </div>
-
                         <?php endforeach; else: ?>
-                            <tr>
-                                <td colspan="7" class="text-center py-5">
-                                    <div class="empty-state">
-                                        <i class="bx bx-music fs-1 text-muted mb-3"></i>
-                                        <h5>Aucun audio</h5>
-                                        <p class="text-muted">Commencez par uploader votre premier audio</p>
-                                        <a href="javascript:;" class="btn btn-spotify" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                                            <i class="bx bx-upload me-1"></i>Uploader
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
+                            <tr><td colspan="7" class="text-center py-5"><div class="empty-state"><i class="bx bx-music fs-1 text-muted mb-3"></i><h5>Aucun audio</h5><p class="text-muted">Commencez par uploader votre premier audio</p><a href="javascript:;" class="btn btn-spotify" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="bx bx-upload me-1"></i>Uploader</a></div></td></tr>
                         <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <!-- Upload Modal - YouTube Studio Style -->
+    <!-- Upload Modal -->
     <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
@@ -526,122 +392,31 @@ if (!function_exists('get_quality_badge_audio')) {
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="closeUploadModal"></button>
                 </div>
                 <div class="modal-body p-0">
-                    
                     <!-- Step 1: Select File -->
                     <div id="uploadStep1" class="upload-zone p-5 text-center">
-                        <div class="upload-illustration mb-4">
-                            <div class="position-relative d-inline-block">
-                                <i class="bx bx-cloud-upload text-spotify" style="font-size: 5rem;"></i>
-                                <div class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2">
-                                    <i class="bx bx-plus text-white"></i>
-                                </div>
-                            </div>
-                        </div>
-                        
+                        <div class="upload-illustration mb-4"><div class="position-relative d-inline-block"><i class="bx bx-cloud-upload text-spotify" style="font-size: 5rem;"></i><div class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2"><i class="bx bx-plus text-white"></i></div></div></div>
                         <h4 class="mb-3">Glissez-déposez des fichiers audio</h4>
-                        <p class="text-muted mb-4">
-                            ou <span class="text-spotify fw-bold cursor-pointer" onclick="document.getElementById('fileInput').click()">parcourir</span> pour sélectionner
-                        </p>
-                        
-                        <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
-                            <span class="badge bg-light text-dark border">MP3</span>
-                            <span class="badge bg-light text-dark border">WAV</span>
-                            <span class="badge bg-light text-dark border">FLAC</span>
-                            <span class="badge bg-light text-dark border">AAC</span>
-                            <span class="badge bg-light text-dark border">OGG</span>
-                        </div>
-                        
-                        <div class="alert alert-light border mx-auto" style="max-width: 500px;">
-                            <small class="text-muted">
-                                <i class="bx bx-info-circle me-1"></i>
-                                <strong>Technologie Audio:</strong> Upload chunked 5MB, 
-                                conversion multi-bitrate auto (64k-320k), waveform visuel. Max 500MB.
-                            </small>
-                        </div>
-                        
+                        <p class="text-muted mb-4">ou <span class="text-spotify fw-bold cursor-pointer" onclick="document.getElementById('fileInput').click()">parcourir</span> pour sélectionner</p>
+                        <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap"><span class="badge bg-light text-dark border">MP3</span><span class="badge bg-light text-dark border">WAV</span><span class="badge bg-light text-dark border">FLAC</span><span class="badge bg-light text-dark border">AAC</span><span class="badge bg-light text-dark border">OGG</span></div>
+                        <div class="alert alert-light border mx-auto" style="max-width: 500px;"><small class="text-muted"><i class="bx bx-info-circle me-1"></i><strong>Technologie Audio:</strong> Upload chunked 1.5MB, conversion multi-bitrate auto (64k-320k), waveform visuel. Max 500MB.</small></div>
                         <input type="file" id="fileInput" class="d-none" accept="audio/*" multiple>
                     </div>
 
-                                       <!-- Step 2: Upload Progress -->
+                    <!-- Step 2: Upload Progress -->
                     <div id="uploadStep2" class="d-none p-4">
                         <div class="upload-item mb-4">
                             <div class="d-flex align-items-center mb-3">
-                                <div class="flex-shrink-0">
-                                    <div class="bg-spotify bg-opacity-10 rounded p-2">
-                                        <i class="bx bx-music text-spotify fs-4"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1 fw-bold" id="uploadFileName">audio.mp3</h6>
-                                    <small class="text-muted" id="uploadFileSize">0 MB</small>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <button class="btn btn-sm btn-outline-danger" id="cancelUploadBtn">
-                                        <i class="bx bx-x"></i>
-                                    </button>
-                                </div>
+                                <div class="flex-shrink-0"><div class="bg-spotify bg-opacity-10 rounded p-2"><i class="bx bx-music text-spotify fs-4"></i></div></div>
+                                <div class="flex-grow-1 ms-3"><h6 class="mb-1 fw-bold" id="uploadFileName">audio.mp3</h6><small class="text-muted" id="uploadFileSize">0 MB</small></div>
+                                <div class="flex-shrink-0"><button class="btn btn-sm btn-outline-danger" id="cancelUploadBtn"><i class="bx bx-x"></i></button></div>
                             </div>
-                            
-                            <!-- Progress -->
                             <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="fw-bold text-spotify" id="uploadPhase">Préparation...</span>
-                                    <span class="fw-bold" id="uploadPercent">0%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-spotify progress-bar-striped progress-bar-animated" 
-                                         id="uploadProgressBar" style="width: 0%"></div>
-                                </div>
-                                <div class="d-flex justify-content-between mt-1 small text-muted">
-                                    <span id="uploadSpeed">0 MB/s</span>
-                                    <span id="uploadChunks">0 / 0 chunks</span>
-                                </div>
+                                <div class="d-flex justify-content-between mb-1"><span class="fw-bold text-spotify" id="uploadPhase">Préparation...</span><span class="fw-bold" id="uploadPercent">0%</span></div>
+                                <div class="progress" style="height: 8px;"><div class="progress-bar bg-spotify progress-bar-striped progress-bar-animated" id="uploadProgressBar" style="width: 0%"></div></div>
+                                <div class="d-flex justify-content-between mt-1 small text-muted"><span id="uploadSpeed">0 MB/s</span><span id="uploadChunks">0 / 0 chunks</span></div>
                             </div>
-                            
-                            <!-- Processing Status -->
                             <div id="processingStatus" class="d-none">
-                                <div class="card bg-light border-0">
-                                    <div class="card-body py-3">
-                                        <h6 class="mb-3"><i class="bx bx-cog bx-spin me-2 text-spotify"></i>Traitement Audio...</h6>
-                                        <div class="row g-2" id="processingSteps">
-                                            <div class="col-12">
-                                                <div class="d-flex align-items-center p-2 bg-white rounded border">
-                                                    <i class="bx bx-check-circle text-success me-2" id="step-upload-icon"></i>
-                                                    <span class="flex-grow-1">Upload</span>
-                                                    <span class="badge bg-success" id="step-upload-status">OK</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="d-flex align-items-center p-2 bg-white rounded border">
-                                                    <i class="bx bx-loader-alt bx-spin text-spotify me-2" id="step-analysis-icon"></i>
-                                                    <span class="flex-grow-1">Analyse ID3</span>
-                                                    <span class="badge bg-secondary" id="step-analysis-status">...</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="d-flex align-items-center p-2 bg-white rounded border">
-                                                    <i class="bx bx-circle text-muted me-2" id="step-thumbnail-icon"></i>
-                                                    <span class="flex-grow-1">Extraction miniature</span>
-                                                    <span class="badge bg-secondary" id="step-thumbnail-status">En attente</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="d-flex align-items-center p-2 bg-white rounded border">
-                                                    <i class="bx bx-circle text-muted me-2" id="step-waveform-icon"></i>
-                                                    <span class="flex-grow-1">Génération waveform</span>
-                                                    <span class="badge bg-secondary" id="step-waveform-status">En attente</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="d-flex align-items-center p-2 bg-white rounded border">
-                                                    <i class="bx bx-circle text-muted me-2" id="step-conversion-icon"></i>
-                                                    <span class="flex-grow-1">Conversion multi-bitrate</span>
-                                                    <span class="badge bg-secondary" id="step-conversion-status">En attente</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="card bg-light border-0"><div class="card-body py-3"><h6 class="mb-3"><i class="bx bx-cog bx-spin me-2 text-spotify"></i>Traitement Audio...</h6><div class="row g-2" id="processingSteps"><div class="col-12"><div class="d-flex align-items-center p-2 bg-white rounded border"><i class="bx bx-check-circle text-success me-2" id="step-upload-icon"></i><span class="flex-grow-1">Upload</span><span class="badge bg-success" id="step-upload-status">OK</span></div></div><div class="col-12"><div class="d-flex align-items-center p-2 bg-white rounded border"><i class="bx bx-loader-alt bx-spin text-spotify me-2" id="step-analysis-icon"></i><span class="flex-grow-1">Analyse ID3</span><span class="badge bg-secondary" id="step-analysis-status">...</span></div></div><div class="col-12"><div class="d-flex align-items-center p-2 bg-white rounded border"><i class="bx bx-circle text-muted me-2" id="step-thumbnail-icon"></i><span class="flex-grow-1">Extraction miniature</span><span class="badge bg-secondary" id="step-thumbnail-status">En attente</span></div></div><div class="col-12"><div class="d-flex align-items-center p-2 bg-white rounded border"><i class="bx bx-circle text-muted me-2" id="step-waveform-icon"></i><span class="flex-grow-1">Génération waveform</span><span class="badge bg-secondary" id="step-waveform-status">En attente</span></div></div><div class="col-12"><div class="d-flex align-items-center p-2 bg-white rounded border"><i class="bx bx-circle text-muted me-2" id="step-conversion-icon"></i><span class="flex-grow-1">Conversion multi-bitrate</span><span class="badge bg-secondary" id="step-conversion-status">En attente</span></div></div></div></div></div>
                             </div>
                         </div>
                     </div>
@@ -651,185 +426,55 @@ if (!function_exists('get_quality_badge_audio')) {
                         <form id="audioDetailsForm" action="<?= base_url('audio/Create') ?>" method="POST">
                             <div class="row g-0">
                                 <div class="col-md-8 p-4 border-end">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control form-control-lg" name="titre" id="audioTitle" required maxlength="255">
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Description</label>
-                                        <textarea class="form-control" name="description" rows="5" id="audioDescription"></textarea>
-                                    </div>
-                                    
-                                    <!-- SECTION MINIATURE - IDENTIQUE À VIDÉO -->
+                                    <div class="mb-3"><label class="form-label fw-bold">Titre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-lg" name="titre" id="audioTitle" required maxlength="255"></div>
+                                    <div class="mb-3"><label class="form-label fw-bold">Description</label><textarea class="form-control" name="description" rows="5" id="audioDescription"></textarea></div>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-bold">Miniature</label>
-                                            
-                                            <!-- Onglets pour choisir la source -->
                                             <ul class="nav nav-tabs mb-3" id="thumbnailTab" role="tablist">
-                                                <li class="nav-item" role="presentation">
-                                                    <button class="nav-link active" id="generated-tab" data-bs-toggle="tab" data-bs-target="#generated-thumbnails" type="button" role="tab">
-                                                        <i class="bx bx-music me-1"></i>Générées
-                                                    </button>
-                                                </li>
-                                                <li class="nav-item" role="presentation">
-                                                    <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-thumbnail" type="button" role="tab">
-                                                        <i class="bx bx-upload me-1"></i>Upload
-                                                    </button>
-                                                </li>
+                                                <li class="nav-item"><button class="nav-link active" id="generated-tab" data-bs-toggle="tab" data-bs-target="#generated-thumbnails" type="button" role="tab"><i class="bx bx-music me-1"></i>Générées</button></li>
+                                                <li class="nav-item"><button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-thumbnail" type="button" role="tab"><i class="bx bx-upload me-1"></i>Upload</button></li>
                                             </ul>
-                                            
-                                            <div class="tab-content" id="thumbnailTabContent">
-                                                <!-- Miniatures générées automatiquement -->
-                                                <div class="tab-pane fade show active" id="generated-thumbnails" role="tabpanel">
-                                                    <div class="d-flex gap-2 flex-wrap" id="thumbnailSelector">
-                                                        <!-- Generated thumbnails injectées ici -->
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Upload personnalisé -->
-                                                <div class="tab-pane fade" id="upload-thumbnail" role="tabpanel">
-                                                    <div class="upload-thumbnail-zone border rounded p-3 text-center" 
-                                                         style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;"
-                                                         onclick="document.getElementById('customThumbnailInput').click()">
-                                                        <i class="bx bx-image-add fs-2 text-muted mb-2"></i>
-                                                        <p class="mb-1 text-muted small">Cliquez pour uploader une image</p>
-                                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">JPG, PNG, GIF, WEBP (max 2MB)</p>
-                                                    </div>
+                                            <div class="tab-content">
+                                                <div class="tab-pane fade show active" id="generated-thumbnails"><div class="d-flex gap-2 flex-wrap" id="thumbnailSelector"></div></div>
+                                                <div class="tab-pane fade" id="upload-thumbnail">
+                                                    <div class="upload-thumbnail-zone border rounded p-3 text-center" style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;" onclick="document.getElementById('customThumbnailInput').click()"><i class="bx bx-image-add fs-2 text-muted mb-2"></i><p class="mb-1 text-muted small">Cliquez pour uploader une image</p><p class="mb-0 text-muted" style="font-size: 0.75rem;">JPG, PNG, GIF, WEBP (max 2MB)</p></div>
                                                     <input type="file" id="customThumbnailInput" class="d-none" accept="image/*">
-                                                    
-                                                    <!-- Preview de l'upload -->
-                                                    <div id="customThumbnailPreview" class="mt-2 d-none">
-                                                        <div class="position-relative d-inline-block">
-                                                            <img src="" class="rounded" style="width: 120px; height: 120px; object-fit: cover;" id="customThumbnailImg">
-                                                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" 
-                                                                    style="padding: 0.1rem 0.3rem; font-size: 0.7rem;"
-                                                                    onclick="removeCustomThumbnail()">
-                                                                <i class="bx bx-x"></i>
-                                                            </button>
-                                                            <div class="position-absolute bottom-0 start-0 w-100 bg-success text-white text-center small" 
-                                                                 style="font-size: 0.65rem;">
-                                                                <i class="bx bx-check me-1"></i>Personnalisée
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <!-- Progress upload -->
-                                                    <div id="thumbnailUploadProgress" class="mt-2 d-none">
-                                                        <div class="progress" style="height: 4px;">
-                                                            <div class="progress-bar bg-success" style="width: 0%"></div>
-                                                        </div>
-                                                        <small class="text-muted">Upload...</small>
-                                                    </div>
+                                                    <div id="customThumbnailPreview" class="mt-2 d-none"><div class="position-relative d-inline-block"><img src="" class="rounded" style="width: 120px; height: 120px; object-fit: cover;" id="customThumbnailImg"><button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" style="padding: 0.1rem 0.3rem; font-size: 0.7rem;" onclick="removeCustomThumbnail()"><i class="bx bx-x"></i></button><div class="position-absolute bottom-0 start-0 w-100 bg-success text-white text-center small" style="font-size: 0.65rem;"><i class="bx bx-check me-1"></i>Personnalisée</div></div></div>
+                                                    <div id="thumbnailUploadProgress" class="mt-2 d-none"><div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 0%"></div></div><small class="text-muted">Upload...</small></div>
                                                 </div>
                                             </div>
-                                            
                                             <input type="hidden" name="thumbnail" id="selectedThumbnail">
                                         </div>
-                                        
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label fw-bold">Catégorie</label>
-                                            <input type="text" class="form-control" name="categorie" id="audioCategory" list="categoriesList">
-                                        </div>
+                                        <div class="col-md-6 mb-3"><label class="form-label fw-bold">Catégorie</label><input type="text" class="form-control" name="categorie" id="audioCategory" list="categoriesList"></div>
                                     </div>
-                                    <!-- FIN SECTION MINIATURE -->
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Crédits / Artiste</label>
-                                        <input type="text" class="form-control" name="credits" id="audioCredits">
-                                    </div>
+                                    <div class="mb-3"><label class="form-label fw-bold">Crédits / Artiste</label><input type="text" class="form-control" name="credits" id="audioCredits"></div>
                                 </div>
-                                
                                 <div class="col-md-4 bg-light p-4">
                                     <h6 class="mb-3"><i class="bx bx-cog me-2"></i>Paramètres</h6>
-                                    
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="est_actif" value="1" checked>
-                                            <label class="form-check-label fw-bold">Public</label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1">
-                                            <label class="form-check-label"><i class="bx bxl-whatsapp text-success me-1"></i>WhatsApp</label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked>
-                                            <label class="form-check-label"><i class="bx bx-globe text-primary me-1"></i>Site Web</label>
-                                        </div>
-                                    </div>
-                                    
-                                    <hr class="my-4">
-                                    
-                                    <h6 class="mb-2"><i class="bx bx-info-circle me-2"></i>Informations</h6>
-                                    <ul class="list-unstyled small text-muted mb-0" id="audioInfoList">
-                                        <!-- Dynamic info -->
-                                    </ul>
-                                    
-                                    <input type="hidden" name="uploaded_file_path" id="uploadedFilePath">
-                                    <input type="hidden" name="auto_detected_data" id="autoDetectedData">
-                                    <input type="hidden" name="type_source" value="upload">
+                                    <div class="mb-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="est_actif" value="1" checked><label class="form-check-label fw-bold">Public</label></div></div>
+                                    <div class="mb-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="is_for_whatsapp" value="1"><label class="form-check-label"><i class="bx bxl-whatsapp text-success me-1"></i>WhatsApp</label></div></div>
+                                    <div class="mb-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="is_for_website" value="1" checked><label class="form-check-label"><i class="bx bx-globe text-primary me-1"></i>Site Web</label></div></div>
+                                    <hr class="my-4"><h6 class="mb-2"><i class="bx bx-info-circle me-2"></i>Informations</h6>
+                                    <ul class="list-unstyled small text-muted mb-0" id="audioInfoList"></ul>
+                                    <input type="hidden" name="uploaded_file_path" id="uploadedFilePath"><input type="hidden" name="auto_detected_data" id="autoDetectedData"><input type="hidden" name="type_source" value="upload">
                                 </div>
                             </div>
-                            
-                            <div class="p-4 border-top bg-white">
-                                <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="resetUpload()">
-                                        <i class="bx bx-arrow-back me-1"></i>Annuler
-                                    </button>
-                                    <button type="submit" class="btn btn-spotify btn-lg">
-                                        <i class="bx bx-save me-1"></i>Publier
-                                    </button>
-                                </div>
-                            </div>
+                            <div class="p-4 border-top bg-white"><div class="d-flex justify-content-between"><button type="button" class="btn btn-outline-secondary" onclick="resetUpload()"><i class="bx bx-arrow-back me-1"></i>Annuler</button><button type="submit" class="btn btn-spotify btn-lg"><i class="bx bx-save me-1"></i>Publier</button></div></div>
                         </form>
                     </div>
-
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Audio Player Modal - YouTube Style -->
+    <!-- Audio Player Modal -->
     <div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content bg-dark border-0">
-                <div class="modal-header border-secondary border-bottom-0">
-                    <h5 class="modal-title text-white" id="playerTitle"></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="p-4 text-center">
-                        <!-- Album Art -->
-                        <div id="playerArt" class="mb-4">
-                            <img src="" class="rounded shadow-lg" style="width: 300px; height: 300px; object-fit: cover;" id="playerAlbumArt">
-                        </div>
-                        
-                        <!-- Audio Controls -->
-                        <div class="audio-player-wrapper">
-                            <audio id="mainAudioPlayer" controls class="w-100" style="height: 50px;">
-                                <source src="" type="audio/mpeg">
-                                Votre navigateur ne supporte pas la lecture audio.
-                            </audio>
-                        </div>
-                        
-                        <!-- Waveform Visualization -->
-                        <div id="playerWaveform" class="mt-3" style="height: 60px; background: rgba(255,255,255,0.1); border-radius: 4px;">
-                            <!-- Waveform image injecté ici -->
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-secondary border-top-0 bg-dark justify-content-center">
-                    <div class="text-white-50 small" id="playerStats">
-                        <!-- Stats -->
-                    </div>
-                </div>
+                <div class="modal-header border-secondary border-bottom-0"><h5 class="modal-title text-white" id="playerTitle"></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body p-0"><div class="p-4 text-center"><div id="playerArt" class="mb-4"><img src="" class="rounded shadow-lg" style="width: 300px; height: 300px; object-fit: cover;" id="playerAlbumArt"></div><div class="audio-player-wrapper"><audio id="mainAudioPlayer" controls class="w-100" style="height: 50px;"><source src="" type="audio/mpeg">Votre navigateur ne supporte pas la lecture audio.</audio></div><div id="playerWaveform" class="mt-3" style="height: 60px; background: rgba(255,255,255,0.1); border-radius: 4px;"></div></div></div>
+                <div class="modal-footer border-secondary border-top-0 bg-dark justify-content-center"><div class="text-white-50 small" id="playerStats"></div></div>
             </div>
         </div>
     </div>
@@ -837,105 +482,41 @@ if (!function_exists('get_quality_badge_audio')) {
     <!-- Delete Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title"><i class="bx bx-trash me-2"></i>Supprimer</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <form action="<?= base_url('audio/Delete') ?>" method="POST">
-                    <div class="modal-body text-center py-4">
-                        <i class="bx bx-error-circle text-danger display-4 mb-3"></i>
-                        <h5>Confirmer la suppression</h5>
-                        <p class="text-muted" id="deleteAudioTitle"></p>
-                        <div class="alert alert-warning">
-                            <i class="bx bx-info-circle me-2"></i>
-                            Cette action supprimera définitivement l'audio et tous les fichiers associés.
-                        </div>
-                        <input type="hidden" name="id" id="deleteAudioId">
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bx bx-trash me-1"></i>Supprimer
-                        </button>
-                    </div>
-                </form>
-            </div>
+            <div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title"><i class="bx bx-trash me-2"></i>Supprimer</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="<?= base_url('audio/Delete') ?>" method="POST"><div class="modal-body text-center py-4"><i class="bx bx-error-circle text-danger display-4 mb-3"></i><h5>Confirmer la suppression</h5><p class="text-muted" id="deleteAudioTitle"></p><div class="alert alert-warning"><i class="bx bx-info-circle me-2"></i>Cette action supprimera définitivement l'audio et tous les fichiers associés.</div><input type="hidden" name="id" id="deleteAudioId"></div><div class="modal-footer justify-content-center"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-danger"><i class="bx bx-trash me-1"></i>Supprimer</button></div></form></div>
         </div>
     </div>
 
-    <!-- Datalist -->
     <datalist id="categoriesList">
-        <option value="Musique">
-        <option value="Podcast">
-        <option value="Interview">
-        <option value="Conférence">
-        <option value="Méditation">
-        <option value="Son">
-        <option value="Livre audio">
-        <option value="Radio">
-        <?php if (!empty($categories)): foreach ($categories as $cat): ?>
-            <option value="<?= htmlspecialchars($cat) ?>">
-        <?php endforeach; endif; ?>
+        <option value="Musique"><option value="Podcast"><option value="Interview"><option value="Conférence"><option value="Méditation"><option value="Son"><option value="Livre audio"><option value="Radio">
+        <?php if (!empty($categories)): foreach ($categories as $cat): ?><option value="<?= htmlspecialchars($cat) ?>"><?php endforeach; endif; ?>
     </datalist>
 
 </div>
 
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
-<!-- ========================================== -->
-<!-- SCRIPTS - ORDRE CRITIQUE                   -->
-<!-- ========================================== -->
-<!-- Bootstrap JS doit être chargé -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- 1. jQuery -->
-<!-- 2. Bootstrap JS -->
-<!-- 3. Toastr -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-
-<!-- 4. DataTables -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
 // ==========================================
-// CONFIGURATION TOASTR
+// CONFIGURATION
 // ==========================================
-toastr.options = {
-    "closeButton": true,
-    "debug": false,
-    "newestOnTop": true,
-    "progressBar": true,
-    "positionClass": "toast-top-right",
-    "preventDuplicates": false,
-    "onclick": null,
-    "showDuration": "300",
-    "hideDuration": "1000",
-    "timeOut": "5000",
-    "extendedTimeOut": "1000",
-    "showEasing": "swing",
-    "hideEasing": "linear",
-    "showMethod": "fadeIn",
-    "hideMethod": "fadeOut"
-};
+toastr.options = { "closeButton": true, "debug": false, "newestOnTop": true, "progressBar": true, "positionClass": "toast-top-right", "preventDuplicates": false, "showDuration": "300", "hideDuration": "1000", "timeOut": "5000" };
 
-// ==========================================
-// CONFIGURATION UPLOAD AUDIO (SANS CSRF)
-// ==========================================
 const UPLOAD_CONFIG = {
     baseUrl: '<?= base_url('audio/') ?>',
-    chunkSize: 5 * 1024 * 1024, // 5MB chunks
-    maxFileSize: 500 * 1024 * 1024 // 500MB
+    chunkSize: null,
+    maxFileSize: 500 * 1024 * 1024
 };
 
-let currentUpload = null;
 let uploadManager = null;
 
-// ==========================================
-// UTILITAIRES
-// ==========================================
 class FileUtils {
     static formatBytes(bytes) {
         if (!bytes || bytes === 0) return '0 B';
@@ -944,20 +525,8 @@ class FileUtils {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
-    
-    static formatDuration(seconds) {
-        if (!seconds) return '0:00';
-        const hrs = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-        if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
 }
 
-// ==========================================
-// GESTIONNAIRE UPLOAD AUDIO (SANS CSRF)
-// ==========================================
 class AudioUploadManager {
     constructor() {
         this.reset();
@@ -968,9 +537,9 @@ class AudioUploadManager {
             file: null,
             uploadId: null,
             totalChunks: 0,
+            chunkSize: 0,
             uploadedChunks: new Set(),
             failedChunks: new Map(),
-            isPaused: false,
             isCancelled: false,
             isUploading: false,
             startTime: null,
@@ -986,37 +555,25 @@ class AudioUploadManager {
             this.state.isUploading = true;
             this.state.startTime = Date.now();
             
-            // Validation
-            if (file.size > UPLOAD_CONFIG.maxFileSize) {
-                throw new Error(`Fichier trop grand. Maximum: ${FileUtils.formatBytes(UPLOAD_CONFIG.maxFileSize)}`);
-            }
+            if (file.size > UPLOAD_CONFIG.maxFileSize) throw new Error(`Fichier trop grand. Maximum: 500MB`);
             
-            // Update UI
             this.updateUI('init', { fileName: file.name, fileSize: FileUtils.formatBytes(file.size) });
             
-            // Initialize upload session
-            const initData = await this.apiCall('initUpload', {
-                file_name: file.name,
-                file_size: file.size
-            });
+            const initData = await this.apiCall('initUpload', { file_name: file.name, file_size: file.size });
             
             this.state.uploadId = initData.upload_id;
             this.state.totalChunks = initData.total_chunks;
+            this.state.chunkSize = initData.chunk_size;
             
-            // Start chunk upload
+            console.log(`Upload: ${this.state.totalChunks} chunks de ${FileUtils.formatBytes(this.state.chunkSize)}`);
+            
             this.updateUI('uploading', { percent: 0 });
-            await this.uploadChunks();
+            await this.uploadAllChunks();
             
-            if (this.state.isCancelled) {
-                await this.cancel();
-                return;
-            }
+            if (this.state.isCancelled) return;
             
-            // Complete upload - processing audio
-            this.updateUI('processing', { message: 'Analyse et traitement audio...' });
-            const result = await this.apiCall('completeUpload', {
-                upload_id: this.state.uploadId
-            });
+            this.updateUI('processing', { message: 'Traitement audio...' });
+            const result = await this.apiCall('completeUpload', { upload_id: this.state.uploadId });
             
             this.state.metadata = result.data;
             this.updateUI('complete', result.data);
@@ -1029,242 +586,110 @@ class AudioUploadManager {
         }
     }
     
+    async uploadAllChunks() {
+        for (let i = 0; i < this.state.totalChunks; i++) {
+            if (this.state.isCancelled) break;
+            
+            let attempt = 0;
+            const maxAttempts = 3;
+            let success = false;
+            
+            while (!success && attempt < maxAttempts && !this.state.isCancelled) {
+                try {
+                    await this.uploadSingleChunk(i);
+                    success = true;
+                } catch (error) {
+                    attempt++;
+                    console.error(`Chunk ${i} failed (${attempt}/${maxAttempts}):`, error);
+                    if (attempt < maxAttempts) await new Promise(r => setTimeout(r, 2000));
+                    else throw new Error(`Chunk ${i} échoué après ${maxAttempts} tentatives`);
+                }
+            }
+        }
+    }
+    
+    async uploadSingleChunk(index) {
+        const start = index * this.state.chunkSize;
+        const end = Math.min(start + this.state.chunkSize, this.state.file.size);
+        const chunk = this.state.file.slice(start, end);
+        
+        const formData = new FormData();
+        formData.append('upload_id', this.state.uploadId);
+        formData.append('chunk_index', index);
+        formData.append('chunk', chunk);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        const response = await fetch(UPLOAD_CONFIG.baseUrl + 'uploadChunk', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const text = await response.text();
+        let data;
+        try { data = JSON.parse(text); } catch(e) { throw new Error('Réponse invalide'); }
+        if (!data.success) throw new Error(data.message);
+        
+        this.state.uploadedChunks.add(index);
+        this.state.bytesUploaded += chunk.size;
+        
+        const progress = (this.state.uploadedChunks.size / this.state.totalChunks) * 100;
+        const speed = ((Date.now() - this.state.startTime) / 1000) > 0 ? (this.state.bytesUploaded / ((Date.now() - this.state.startTime) / 1000)) / (1024 * 1024) : 0;
+        
+        this.updateUI('progress', {
+            percent: progress,
+            uploadedChunks: this.state.uploadedChunks.size,
+            totalChunks: this.state.totalChunks,
+            speed: speed
+        });
+    }
+    
     async apiCall(endpoint, data) {
         const formData = new FormData();
         for (let key in data) formData.append(key, data[key]);
         
-        try {
-            const response = await fetch(UPLOAD_CONFIG.baseUrl + endpoint, {
-                method: 'POST',
-                body: formData,
-                headers: { 
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`Erreur HTTP ${response.status}: ${text.substring(0, 100)}`);
-            }
-            
-            const text = await response.text();
-            let result;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                console.error('JSON parse error:', text);
-                throw new Error('Réponse serveur invalide (JSON attendu)');
-            }
-            
-            if (!result.success) throw new Error(result.message || 'Erreur serveur');
-            return result;
-            
-        } catch (error) {
-            console.error('API Call error:', error);
-            throw error;
-        }
-    }
-    
-    async uploadChunks() {
-        const queue = [];
-        for (let i = 0; i < this.state.totalChunks; i++) {
-            if (!this.state.uploadedChunks.has(i)) queue.push(i);
-        }
+        const response = await fetch(UPLOAD_CONFIG.baseUrl + endpoint, { method: 'POST', body: formData });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
-        // Parallel upload with 3 workers
-        const workers = [];
-        const maxWorkers = Math.min(3, queue.length);
-        for (let w = 0; w < maxWorkers; w++) {
-            workers.push(this.worker(queue));
-        }
-        await Promise.all(workers);
-    }
-    
-    async worker(queue) {
-        while (queue.length > 0 && !this.state.isCancelled && !this.state.isPaused) {
-            await this.uploadChunk(queue.shift());
-        }
-    }
-    
-    async uploadChunk(index, attempt = 0) {
-        while (this.state.isPaused && !this.state.isCancelled) {
-            await new Promise(r => setTimeout(r, 100));
-        }
-        if (this.state.isCancelled) return;
-        
-        try {
-            const start = index * UPLOAD_CONFIG.chunkSize;
-            const end = Math.min(start + UPLOAD_CONFIG.chunkSize, this.state.file.size);
-            const chunk = this.state.file.slice(start, end);
-            
-            const formData = new FormData();
-            formData.append('upload_id', this.state.uploadId);
-            formData.append('chunk_index', index);
-            formData.append('chunk', chunk);
-            
-            const response = await fetch(UPLOAD_CONFIG.baseUrl + 'uploadChunk', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
-            }
-            
-            const text = await response.text();
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                throw new Error('Réponse chunk invalide');
-            }
-            
-            if (!data.success) throw new Error(data.message);
-            
-            this.state.uploadedChunks.add(index);
-            this.state.bytesUploaded += chunk.size;
-            
-            const progress = (this.state.uploadedChunks.size / this.state.totalChunks) * 100;
-            const speed = this.calculateSpeed();
-            
-            this.updateUI('progress', {
-                percent: progress,
-                uploadedChunks: this.state.uploadedChunks.size,
-                totalChunks: this.state.totalChunks,
-                speed: speed
-            });
-            
-        } catch (error) {
-            const retries = this.state.failedChunks.get(index) || 0;
-            if (retries < 3 && !this.state.isCancelled) {
-                this.state.failedChunks.set(index, retries + 1);
-                await new Promise(r => setTimeout(r, 1000 * Math.pow(2, retries)));
-                await this.uploadChunk(index, retries + 1);
-            } else {
-                throw error;
-            }
-        }
-    }
-    
-    calculateSpeed() {
-        const elapsed = (Date.now() - this.state.startTime) / 1000;
-        return elapsed > 0 ? (this.state.bytesUploaded / elapsed) / (1024 * 1024) : 0;
+        const text = await response.text();
+        let result;
+        try { result = JSON.parse(text); } catch(e) { throw new Error('Réponse serveur invalide'); }
+        if (!result.success) throw new Error(result.message);
+        return result;
     }
     
     async cancel() {
         this.state.isCancelled = true;
-        if (this.state.uploadId) {
-            try {
-                await this.apiCall('cancelUpload', { upload_id: this.state.uploadId });
-            } catch(e) {
-                // Ignorer erreur cancel
-            }
-        }
         this.updateUI('cancel');
-    }
-    
-    pause() { 
-        this.state.isPaused = true; 
-        this.updateUI('pause');
-    }
-    
-    resume() { 
-        this.state.isPaused = false; 
-        this.updateUI('resume');
     }
     
     updateUI(event, data = {}) {
         const handlers = {
-            init: () => {
-                $('#uploadStep1').addClass('d-none');
-                $('#uploadStep2').removeClass('d-none');
-                $('#uploadFileName').text(data.fileName);
-                $('#uploadFileSize').text(data.fileSize);
-            },
-            uploading: () => {
-                $('#uploadPhase').text('Upload en cours...').addClass('text-spotify');
-                $('#processingStatus').removeClass('d-none');
-                $('#step-upload-icon').removeClass('bx-loader-alt bx-spin').addClass('bx-check-circle text-success');
-                $('#step-upload-status').removeClass('bg-secondary').addClass('bg-success').text('OK');
-            },
-            progress: () => {
-                const pct = Math.round(data.percent);
-                $('#uploadProgressBar').css('width', pct + '%');
-                $('#uploadPercent').text(pct + '%');
-                $('#uploadChunks').text(`${data.uploadedChunks} / ${data.totalChunks} chunks`);
-                $('#uploadSpeed').text(data.speed.toFixed(2) + ' MB/s');
-            },
-            processing: () => {
-                $('#uploadPhase').text('Traitement audio...');
-                $('#uploadProgressBar').removeClass('progress-bar-animated');
-                
-                // Simuler progression des étapes
-                setTimeout(() => {
-                    $('#step-analysis-icon').removeClass('bx-loader-alt bx-spin').addClass('bx-check-circle text-success');
-                    $('#step-analysis-status').removeClass('bg-secondary').addClass('bg-success').text('OK');
-                    $('#step-thumbnail-icon').removeClass('bx-circle text-muted').addClass('bx-loader-alt bx-spin text-spotify');
-                    $('#step-thumbnail-status').text('En cours...');
-                }, 500);
-                
-                setTimeout(() => {
-                    $('#step-thumbnail-icon').removeClass('bx-loader-alt bx-spin').addClass('bx-check-circle text-success');
-                    $('#step-thumbnail-status').removeClass('bg-secondary').addClass('bg-success').text('OK');
-                    $('#step-waveform-icon').removeClass('bx-circle text-muted').addClass('bx-loader-alt bx-spin text-spotify');
-                    $('#step-waveform-status').text('En cours...');
-                }, 1000);
-                
-                setTimeout(() => {
-                    $('#step-waveform-icon').removeClass('bx-loader-alt bx-spin').addClass('bx-check-circle text-success');
-                    $('#step-waveform-status').removeClass('bg-secondary').addClass('bg-success').text('OK');
-                    $('#step-conversion-icon').removeClass('bx-circle text-muted').addClass('bx-loader-alt bx-spin text-spotify');
-                    $('#step-conversion-status').text('En cours...');
-                }, 1500);
-            },
-            complete: () => {
-                $('#uploadStep2').addClass('d-none');
-                $('#uploadStep3').removeClass('d-none');
-                populateDetailsForm(data);
-            },
-            error: () => {
-                toastr.error(data.message, 'Erreur');
-                resetUpload();
-            },
-            cancel: () => {
-                resetUpload();
-            },
-            pause: () => {
-                $('#uploadPhase').text('En pause');
-                $('#uploadProgressBar').removeClass('progress-bar-animated');
-            },
-            resume: () => {
-                $('#uploadPhase').text('Upload en cours...');
-                $('#uploadProgressBar').addClass('progress-bar-animated');
-            }
+            init: () => { $('#uploadStep1').addClass('d-none'); $('#uploadStep2').removeClass('d-none'); $('#uploadFileName').text(data.fileName); $('#uploadFileSize').text(data.fileSize); },
+            uploading: () => { $('#uploadPhase').text('Upload en cours...'); $('#processingStatus').removeClass('d-none'); $('#step-upload-icon').removeClass('bx-loader-alt bx-spin').addClass('bx-check-circle text-success'); $('#step-upload-status').removeClass('bg-secondary').addClass('bg-success').text('OK'); },
+            progress: () => { $('#uploadProgressBar').css('width', Math.round(data.percent) + '%'); $('#uploadPercent').text(Math.round(data.percent) + '%'); $('#uploadChunks').text(`${data.uploadedChunks} / ${data.totalChunks} chunks`); $('#uploadSpeed').text(data.speed.toFixed(2) + ' MB/s'); },
+            processing: () => { $('#uploadPhase').text('Traitement audio...'); $('#uploadProgressBar').removeClass('progress-bar-animated'); setTimeout(() => { $('#step-analysis-icon').removeClass('bx-loader-alt bx-spin').addClass('bx-check-circle text-success'); $('#step-analysis-status').removeClass('bg-secondary').addClass('bg-success').text('OK'); }, 500); },
+            complete: () => { $('#uploadStep2').addClass('d-none'); $('#uploadStep3').removeClass('d-none'); populateDetailsForm(data); },
+            error: () => { toastr.error(data.message, 'Erreur'); resetUpload(); },
+            cancel: () => { resetUpload(); }
         };
-        
         if (handlers[event]) handlers[event]();
     }
 }
 
-// ==========================================
-// FONCTIONS UI - CORRIGÉES ET UNIQUES
-// ==========================================
-
-/**
- * Remplit le formulaire de détails après upload audio
- */
 function populateDetailsForm(data) {
-    console.log('populateDetailsForm appelé avec:', data);
-    
-    // 1. Auto-fill des métadonnées basiques
     if (data.form_suggestions) {
         $('#audioTitle').val(data.form_suggestions.titre || '');
         $('#audioCredits').val(data.form_suggestions.credits || '');
         $('#audioCategory').val(data.form_suggestions.categorie || '');
     }
     
-    // 2. Informations audio (sidebar droite)
     let infoHtml = '';
     if (data.analysis) {
         infoHtml += `<li><i class="bx bx-time me-2"></i>Durée: ${data.analysis.duration_formatted || 'N/A'}</li>`;
@@ -1273,246 +698,92 @@ function populateDetailsForm(data) {
         infoHtml += `<li><i class="bx bx-layer me-2"></i>Canaux: ${data.analysis.channels || 'N/A'}</li>`;
         infoHtml += `<li><i class="bx bx-chip me-2"></i>Codec: ${(data.analysis.codec || 'N/A').toUpperCase()}</li>`;
     }
-    if (data.file_size) {
-        infoHtml += `<li><i class="bx bx-hdd me-2"></i>Taille: ${data.file_size}</li>`;
-    }
+    if (data.file_size) infoHtml += `<li><i class="bx bx-hdd me-2"></i>Taille: ${data.file_size}</li>`;
     $('#audioInfoList').html(infoHtml || '<li>Aucune information disponible</li>');
     
-    // 3. Conversions multi-bitrate (si disponible)
-    if (data.conversions && Object.keys(data.conversions).length > 0) {
-        let convHtml = '';
-        Object.entries(data.conversions).forEach(([quality, conv]) => {
-            convHtml += `
-                <div class="col-6">
-                    <div class="d-flex align-items-center p-2 bg-white rounded border">
-                        <span class="badge bg-spotify me-2">${quality}</span>
-                        <small class="text-muted">${conv.bitrate} - ${conv.size_formatted}</small>
-                    </div>
-                </div>
-            `;
-        });
-    }
-    
-    // 4. Champs cachés du formulaire
     $('#uploadedFilePath').val(data.original_file || '');
     $('#autoDetectedData').val(JSON.stringify(data));
     
-    // 5. === GESTION DES MINIATURES - IDENTIQUE À VIDÉO ===
-    
-    // Reset complet
     $('#selectedThumbnail').val('');
     $('#customThumbnailPreview').addClass('d-none');
     $('#customThumbnailInput').val('');
     $('#thumbnailUploadProgress').addClass('d-none');
-    
-    // Reset des onglets vers "Générées"
     $('#upload-tab').removeClass('active');
     $('#generated-tab').addClass('active');
     $('#generated-thumbnails').addClass('show active');
     $('#upload-thumbnail').removeClass('show active');
     
-    // Normaliser thumbnails (objet ou tableau vide)
     let thumbnails = data.thumbnails || {};
+    if (Array.isArray(thumbnails)) { let t = {}; thumbnails.forEach((item,i) => { if(item) t['thumb_'+i]=item; }); thumbnails = t; }
     
-    if (Array.isArray(thumbnails) && thumbnails.length === 0) {
-        thumbnails = {};
-    }
-    
-    if (Array.isArray(thumbnails)) {
-        let tempObj = {};
-        thumbnails.forEach((item, index) => {
-            if (item) tempObj['thumb_' + index] = item;
-        });
-        thumbnails = tempObj;
-    }
-    
-    console.log('Thumbnails normalisés:', thumbnails);
-    
-    // Générer les miniatures automatiques
-    let thumbHtml = '';
-    let firstThumbUrl = null;
-    let thumbCount = 0;
-    
-    Object.entries(thumbnails).forEach(([type, url], index) => {
+    let thumbHtml = '', firstThumbUrl = null, thumbCount = 0;
+    Object.entries(thumbnails).forEach(([type, url]) => {
         if (url && typeof url === 'string') {
             const fullUrl = url.startsWith('http') ? url : '<?= base_url() ?>' + url;
-            const isFirst = thumbCount === 0;
-            if (isFirst) firstThumbUrl = url;
-            
+            if (thumbCount === 0) firstThumbUrl = url;
             const label = type === 'cover' ? 'Cover' : (type === 'generated' ? 'Waveform' : type);
-            
-            thumbHtml += `
-                <div class="position-relative cursor-pointer thumbnail-option ${isFirst ? 'selected' : ''}" 
-                     onclick="selectThumbnail('${url}', this)"
-                     data-thumb-url="${url}"
-                     style="width: 120px; height: 120px; border: 3px solid ${isFirst ? '#1DB954' : 'transparent'}; border-radius: 8px; overflow: hidden;">
-                    <img src="${fullUrl}" class="w-100 h-100" style="object-fit: cover;">
-                    <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white text-center py-1" style="font-size: 0.75rem;">
-                        ${label}
-                    </div>
-                    ${isFirst ? '<div class="position-absolute top-0 end-0 m-1"><i class="bx bx-check-circle text-success bg-white rounded-circle"></i></div>' : ''}
-                </div>
-            `;
+            thumbHtml += `<div class="position-relative cursor-pointer thumbnail-option ${thumbCount===0?'selected':''}" onclick="selectThumbnail('${url}', this)" data-thumb-url="${url}" style="width:120px;height:120px;border:3px solid ${thumbCount===0?'#1DB954':'transparent'};border-radius:8px;overflow:hidden;"><img src="${fullUrl}" class="w-100 h-100" style="object-fit:cover;"><div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white text-center py-1" style="font-size:0.75rem;">${label}</div>${thumbCount===0?'<div class="position-absolute top-0 end-0 m-1"><i class="bx bx-check-circle text-success bg-white rounded-circle"></i></div>':''}</div>`;
             thumbCount++;
         }
     });
-    
-    // Ajouter placeholder si aucune miniature
-    if (thumbCount === 0) {
-        thumbHtml = `
-            <div class="text-center p-3 bg-light rounded w-100">
-                <i class="bx bx-image fs-2 text-muted mb-2"></i>
-                <p class="small text-muted mb-0">Aucune miniature générée</p>
-                <p class="small text-muted">Utilisez l'onglet "Upload" pour ajouter une image</p>
-            </div>
-        `;
-    }
-    
+    if (thumbCount === 0) thumbHtml = `<div class="text-center p-3 bg-light rounded w-100"><i class="bx bx-image fs-2 text-muted mb-2"></i><p class="small text-muted mb-0">Aucune miniature générée</p><p class="small text-muted">Utilisez l'onglet "Upload" pour ajouter une image</p></div>`;
     $('#thumbnailSelector').html(thumbHtml);
-    
-    // Sélectionner la première miniature par défaut
-    if (firstThumbUrl) {
-        $('#selectedThumbnail').val(firstThumbUrl);
-        console.log('Miniature par défaut sélectionnée:', firstThumbUrl);
-    }
+    if (firstThumbUrl) $('#selectedThumbnail').val(firstThumbUrl);
 }
 
-/**
- * Sélectionne une miniature générée automatiquement
- */
 function selectThumbnail(url, element) {
-    console.log('Sélection miniature:', url);
-    
-    // Mettre à jour le champ caché
     $('#selectedThumbnail').val(url);
-    
-    // Mettre à jour visuellement
     $('.thumbnail-option').css('border', '3px solid transparent').find('.bx-check-circle').remove();
     $(element).css('border', '3px solid #1DB954');
-    
-    // Ajouter l'icône de check
-    if (!$(element).find('.bx-check-circle').length) {
-        $(element).append('<div class="position-absolute top-0 end-0 m-1"><i class="bx bx-check-circle text-success bg-white rounded-circle"></i></div>');
-    }
-    
-    // Supprimer la miniature personnalisée si présente
+    if (!$(element).find('.bx-check-circle').length) $(element).append('<div class="position-absolute top-0 end-0 m-1"><i class="bx bx-check-circle text-success bg-white rounded-circle"></i></div>');
     removeCustomThumbnail();
-    
     toastr.success('Miniature sélectionnée');
 }
 
-/**
- * Upload d'une miniature personnalisée (création)
- */
 function uploadCustomThumbnail(file) {
     if (!file) return;
+    if (!['image/jpeg','image/png','image/gif','image/webp'].includes(file.type)) { toastr.error('Format non supporté'); return; }
+    if (file.size > 2*1024*1024) { toastr.error('Image trop grande (max 2MB)'); return; }
     
-    // Validation
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-        toastr.error('Format non supporté. Utilisez JPG, PNG, GIF ou WEBP');
-        return;
-    }
-    
-    if (file.size > 2 * 1024 * 1024) {
-        toastr.error('Image trop grande. Maximum 2MB');
-        return;
-    }
-    
-    // Afficher la progress bar
     $('#thumbnailUploadProgress').removeClass('d-none');
     $('#thumbnailUploadProgress .progress-bar').css('width', '0%');
     
-    // Préparer l'upload
     const formData = new FormData();
     formData.append('thumbnail_file', file);
     
-    // Upload AJAX
     $.ajax({
-        url: '<?= base_url('audio/uploadThumbnail') ?>',
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        xhr: function() {
-            const xhr = new window.XMLHttpRequest();
-            xhr.upload.addEventListener('progress', function(evt) {
-                if (evt.lengthComputable) {
-                    const percentComplete = (evt.loaded / evt.total) * 100;
-                    $('#thumbnailUploadProgress .progress-bar').css('width', percentComplete + '%');
-                }
-            }, false);
-            return xhr;
-        },
+        url: '<?= base_url('audio/uploadThumbnail') ?>', type: 'POST', data: formData, processData: false, contentType: false,
+        xhr: function() { const xhr = new XMLHttpRequest(); xhr.upload.addEventListener('progress', function(evt) { if (evt.lengthComputable) $('#thumbnailUploadProgress .progress-bar').css('width', (evt.loaded/evt.total*100)+'%'); }, false); return xhr; },
         success: function(response) {
             $('#thumbnailUploadProgress').addClass('d-none');
-            
             if (response.success) {
-                // Afficher la preview
                 $('#customThumbnailImg').attr('src', response.preview_url);
                 $('#customThumbnailPreview').removeClass('d-none');
-                
-                // Mettre à jour le champ caché
                 $('#selectedThumbnail').val(response.file_path);
-                
-                // Désélectionner les miniatures générées
                 $('.thumbnail-option').css('border', '3px solid transparent').find('.bx-check-circle').remove();
-                
-                // Switch vers l'onglet upload
-                $('#generated-tab').removeClass('active');
-                $('#upload-tab').addClass('active');
-                $('#generated-thumbnails').removeClass('show active');
-                $('#upload-thumbnail').addClass('show active');
-                
-                toastr.success('Miniature uploadée avec succès');
-            } else {
-                toastr.error(response.message || 'Erreur upload');
-            }
+                $('#generated-tab').removeClass('active'); $('#upload-tab').addClass('active');
+                $('#generated-thumbnails').removeClass('show active'); $('#upload-thumbnail').addClass('show active');
+                toastr.success('Miniature uploadée');
+            } else toastr.error(response.message || 'Erreur upload');
         },
-        error: function(xhr, status, error) {
-            $('#thumbnailUploadProgress').addClass('d-none');
-            console.error('Erreur upload miniature:', error);
-            toastr.error('Erreur lors de l\'upload de la miniature');
-        }
+        error: function() { $('#thumbnailUploadProgress').addClass('d-none'); toastr.error('Erreur upload'); }
     });
 }
 
-/**
- * Supprime la miniature personnalisée et retourne aux générées
- */
 function removeCustomThumbnail() {
     $('#customThumbnailPreview').addClass('d-none');
     $('#customThumbnailImg').attr('src', '');
     $('#customThumbnailInput').val('');
-    
-    // Si on avait une miniature personnalisée sélectionnée, resélectionner la première générée
     const firstThumb = $('.thumbnail-option').first();
-    if (firstThumb.length) {
-        const url = firstThumb.data('thumb-url');
-        if (url) selectThumbnail(url, firstThumb[0]);
-    } else {
-        $('#selectedThumbnail').val('');
-    }
+    if (firstThumb.length) { const url = firstThumb.data('thumb-url'); if (url) selectThumbnail(url, firstThumb[0]); }
+    else $('#selectedThumbnail').val('');
 }
 
-/**
- * Gestion de l'upload de miniature dans le formulaire d'édition
- */
 function uploadEditThumbnail(id, file) {
     if (!file) return;
+    if (!['image/jpeg','image/png','image/gif','image/webp'].includes(file.type)) { toastr.error('Format non supporté'); return; }
+    if (file.size > 2*1024*1024) { toastr.error('Image trop grande (max 2MB)'); return; }
     
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-        toastr.error('Format non supporté');
-        return;
-    }
-    
-    if (file.size > 2 * 1024 * 1024) {
-        toastr.error('Image trop grande (max 2MB)');
-        return;
-    }
-    
-    // Progress bar
     $(`#editThumbProgress${id}`).removeClass('d-none');
     $(`#editThumbProgress${id} .progress-bar`).css('width', '0%');
     
@@ -1520,367 +791,92 @@ function uploadEditThumbnail(id, file) {
     formData.append('thumbnail_file', file);
     
     $.ajax({
-        url: '<?= base_url('audio/uploadThumbnail') ?>',
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        xhr: function() {
-            const xhr = new window.XMLHttpRequest();
-            xhr.upload.addEventListener('progress', function(evt) {
-                if (evt.lengthComputable) {
-                    const percent = (evt.loaded / evt.total) * 100;
-                    $(`#editThumbProgress${id} .progress-bar`).css('width', percent + '%');
-                }
-            }, false);
-            return xhr;
-        },
+        url: '<?= base_url('audio/uploadThumbnail') ?>', type: 'POST', data: formData, processData: false, contentType: false,
+        xhr: function() { const xhr = new XMLHttpRequest(); xhr.upload.addEventListener('progress', function(evt) { if (evt.lengthComputable) $(`#editThumbProgress${id} .progress-bar`).css('width', (evt.loaded/evt.total*100)+'%'); }, false); return xhr; },
         success: function(response) {
             $(`#editThumbProgress${id}`).addClass('d-none');
-            
             if (response.success) {
-                // Mettre à jour l'image principale
                 $(`#currentThumb${id}`).attr('src', response.preview_url);
-                
-                // Afficher la preview nouvelle
                 $(`#editThumbImg${id}`).attr('src', response.preview_url);
                 $(`#editThumbPreview${id}`).removeClass('d-none');
-                
-                // Mettre à jour le champ caché
                 $(`#editThumbSelected${id}`).val(response.file_path);
-                
-                // Reset les sélections précédentes
                 $(`.edit-thumb-option[data-id="${id}"]`).css('border', '2px solid transparent');
-                
                 toastr.success('Miniature uploadée');
-            } else {
-                toastr.error(response.message);
-            }
+            } else toastr.error(response.message);
         },
-        error: function() {
-            $(`#editThumbProgress${id}`).addClass('d-none');
-            toastr.error('Erreur upload');
-        }
+        error: function() { $(`#editThumbProgress${id}`).addClass('d-none'); toastr.error('Erreur upload'); }
     });
 }
 
-/**
- * Sélectionne une miniature existante dans le modal d'édition
- */
 function selectEditThumbnail(id, url, element) {
-    // Mettre à jour le champ caché
     $(`#editThumbSelected${id}`).val(url);
-    
-    // Mettre à jour l'image principale
     const fullUrl = url.startsWith('http') ? url : '<?= base_url() ?>' + url;
     $(`#currentThumb${id}`).attr('src', fullUrl);
-    
-    // Visuellement marquer la sélection
     $(element).closest('.modal-body').find('.edit-thumb-option').css('border', '2px solid transparent');
     $(element).css('border', '2px solid #1DB954');
-    
-    // Cacher la preview d'upload si présente
     $(`#editThumbPreview${id}`).addClass('d-none');
-    
     toastr.success('Miniature sélectionnée');
 }
 
-/**
- * Supprime la miniature uploadée dans le modal d'édition
- */
 function removeEditThumbnail(id) {
     $(`#editThumbPreview${id}`).addClass('d-none');
     $(`#editThumbImg${id}`).attr('src', '');
-    
-    // Resélectionner la première miniature disponible ou vider
     const firstOption = $(`#editModal${id} .edit-thumb-option`).first();
-    if (firstOption.length) {
-        const url = firstOption.data('thumb');
-        selectEditThumbnail(id, url, firstOption[0]);
-    } else {
-        $(`#editThumbSelected${id}`).val('');
-    }
+    if (firstOption.length) { const url = firstOption.data('thumb'); selectEditThumbnail(id, url, firstOption[0]); }
+    else $(`#editThumbSelected${id}`).val('');
 }
 
-/**
- * Réinitialise l'upload complet
- */
 function resetUpload() {
-    // Reset UI
-    $('#uploadStep1').removeClass('d-none');
-    $('#uploadStep2').addClass('d-none');
-    $('#uploadStep3').addClass('d-none');
-    
-    // Reset form
-    $('#audioDetailsForm')[0].reset();
-    $('#selectedThumbnail').val('');
-    $('#thumbnailSelector').empty();
-    $('#customThumbnailPreview').addClass('d-none');
-    $('#customThumbnailInput').val('');
-    
-    // Reset progress
-    $('#uploadProgressBar').css('width', '0%');
-    $('#uploadPercent').text('0%');
-    $('#uploadChunks').text('0 / 0 chunks');
-    $('#uploadSpeed').text('0 MB/s');
-    
-    // Reset processing steps
-    $('#processingStatus').addClass('d-none');
-    $('.bx-check-circle').removeClass('bx-check-circle text-success').addClass('bx-circle text-muted');
-    $('.bx-loader-alt').removeClass('bx-loader-alt bx-spin text-spotify').addClass('bx-circle text-muted');
-    $('[id$="-status"]').removeClass('bg-success').addClass('bg-secondary').text('En attente');
-    $('#step-upload-status').text('En attente');
-    
-    // Reset file input
-    $('#fileInput').val('');
-    
-    // Reset manager
-    if (uploadManager) {
-        uploadManager.reset();
-    }
+    $('#uploadStep1').removeClass('d-none'); $('#uploadStep2').addClass('d-none'); $('#uploadStep3').addClass('d-none');
+    $('#audioDetailsForm')[0].reset(); $('#selectedThumbnail').val(''); $('#thumbnailSelector').empty(); $('#customThumbnailPreview').addClass('d-none'); $('#customThumbnailInput').val('');
+    $('#uploadProgressBar').css('width', '0%'); $('#uploadPercent').text('0%'); $('#uploadChunks').text('0 / 0 chunks'); $('#uploadSpeed').text('0 MB/s');
+    $('#processingStatus').addClass('d-none'); $('#fileInput').val('');
+    if (uploadManager) uploadManager.reset();
 }
 
-/**
- * Ouvre le lecteur audio
- */
 function openPlayer(id, title) {
-    $('#playerTitle').text(title || 'Lecture audio');
-    
-    // Charger les données de l'audio
+    $('#playerTitle').text(title);
     const row = $(`tr[data-id="${id}"]`);
     const thumbSrc = row.find('img').first().attr('src');
-    
     $('#playerAlbumArt').attr('src', thumbSrc || '<?= base_url('assets/images/audio-placeholder.jpg') ?>');
-    
-    // Configurer la source audio
-    const audioUrl = '<?= base_url('audio/stream/') ?>' + id;
-    $('#mainAudioPlayer').attr('src', audioUrl);
-    
-    // Afficher les stats
+    $('#mainAudioPlayer').attr('src', '<?= base_url('audio/stream/') ?>' + id);
     const duration = row.find('td:eq(3) .badge').text();
     const bitrate = row.find('td:eq(2)').text().trim();
     $('#playerStats').html(`<i class="bx bx-time me-1"></i> ${duration} <span class="mx-2">|</span> ${bitrate}`);
-    
-    // Afficher le modal et jouer
     $('#playerModal').modal('show');
-    
-    // Auto-play quand le modal est ouvert
-    $('#playerModal').on('shown.bs.modal', function() {
-        const player = document.getElementById('mainAudioPlayer');
-        if (player) {
-            player.play().catch(e => console.log('Autoplay prevented:', e));
-        }
-    });
+    $('#playerModal').on('shown.bs.modal', function() { document.getElementById('mainAudioPlayer').play().catch(e => console.log('Autoplay prevented')); });
 }
 
-/**
- * Toggle statut publié/privé
- */
 function toggleStatus(id, status) {
-    $.ajax({
-        url: '<?= base_url('audio/ChangeStatus') ?>',
-        type: 'POST',
-        data: { id: id, est_actif: status },
-        success: function(response) {
-            if (response.success) {
-                toastr.success(status ? 'Audio rendu public' : 'Audio mis en privé');
-                setTimeout(() => location.reload(), 500);
-            } else {
-                toastr.error('Erreur lors du changement de statut');
-            }
-        },
-        error: function() {
-            toastr.error('Erreur serveur');
-        }
-    });
+    $.ajax({ url: '<?= base_url('audio/ChangeStatus') ?>', type: 'POST', data: { id: id, est_actif: status }, success: function(r) { if(r.success) { toastr.success(status ? 'Audio public' : 'Audio privé'); setTimeout(()=>location.reload(),500); } else toastr.error('Erreur'); }, error: () => toastr.error('Erreur serveur') });
 }
 
-/**
- * Confirmation de suppression
- */
-function confirmDelete(id, title) {
-    $('#deleteAudioId').val(id);
-    $('#deleteAudioTitle').text(title || 'Cet audio');
-    $('#deleteModal').modal('show');
-}
-
-// ==========================================
-// INITIALISATION ET EVENT LISTENERS
-// ==========================================
+function confirmDelete(id, title) { $('#deleteAudioId').val(id); $('#deleteAudioTitle').text(title); $('#deleteModal').modal('show'); }
 
 $(document).ready(function() {
-    // Initialiser le DataTable
-    if ($.fn.DataTable) {
-        $('#audiosTable').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
-            },
-            order: [[0, 'desc']],
-            pageLength: 25
-        });
-    }
+    if ($.fn.DataTable) $('#audiosTable').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' }, order: [[0, 'desc']], pageLength: 25 });
     
-    // Initialiser le gestionnaire d'upload
     uploadManager = new AudioUploadManager();
     
-    // === EVENT LISTENERS UPLOAD ===
+    $('#fileInput').on('change', function(e) { if(e.target.files.length > 0) uploadManager.start(e.target.files[0]); });
+    $('.upload-zone').on('dragover', function(e) { e.preventDefault(); $(this).addClass('drag-over'); }).on('dragleave', function(e) { e.preventDefault(); $(this).removeClass('drag-over'); }).on('drop', function(e) { e.preventDefault(); $(this).removeClass('drag-over'); const files = e.originalEvent.dataTransfer.files; if(files.length > 0) uploadManager.start(files[0]); });
+    $('#cancelUploadBtn').on('click', function() { if(confirm('Annuler l\'upload ?')) uploadManager.cancel(); });
+    $('#customThumbnailInput').on('change', function(e) { if(e.target.files[0]) uploadCustomThumbnail(e.target.files[0]); });
     
-    // Click sur la zone d'upload
-    $('#fileInput').on('change', function(e) {
-        const files = e.target.files;
-        if (files.length > 0) {
-            // Pour l'instant, on gère un seul fichier à la fois
-            uploadManager.start(files[0]);
-        }
-    });
+    $('.form-check-input[data-field]').on('change', function() { const id = $(this).data('id'), field = $(this).data('field'), value = $(this).is(':checked') ? 1 : 0; $.ajax({ url: '<?= base_url('audio/toggleField') ?>', type: 'POST', data: { id: id, field: field, value: value }, success: function(r) { if(r.success) toastr.success('Mis à jour'); else toastr.error('Erreur'); } }); });
     
-    // Drag & drop
-    $('.upload-zone').on('dragover', function(e) {
-        e.preventDefault();
-        $(this).addClass('drag-over');
-    }).on('dragleave', function(e) {
-        e.preventDefault();
-        $(this).removeClass('drag-over');
-    }).on('drop', function(e) {
-        e.preventDefault();
-        $(this).removeClass('drag-over');
-        const files = e.originalEvent.dataTransfer.files;
-        if (files.length > 0) {
-            uploadManager.start(files[0]);
-        }
-    });
+    $(document).on('mouseenter', '.audio-thumb-wrapper', function() { $(this).find('.audio-overlay').css('background', 'rgba(0,0,0,0.5)'); $(this).find('.bx-play-circle').removeClass('opacity-0'); }).on('mouseleave', '.audio-thumb-wrapper', function() { $(this).find('.audio-overlay').css('background', 'rgba(0,0,0,0)'); $(this).find('.bx-play-circle').addClass('opacity-0'); });
     
-    // Bouton annuler upload
-    $('#cancelUploadBtn').on('click', function() {
-        if (confirm('Voulez-vous vraiment annuler l\'upload ?')) {
-            uploadManager.cancel();
-        }
-    });
+    $('#closeUploadModal').on('click', function() { if(uploadManager && uploadManager.state.isUploading && !confirm('Upload en cours. Fermer ?')) return false; });
     
-    // Upload miniature personnalisée (création)
-    $('#customThumbnailInput').on('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            uploadCustomThumbnail(file);
-        }
-    });
+    $('#audioDetailsForm').on('submit', function(e) { if(!$('#audioTitle').val().trim()) { e.preventDefault(); toastr.error('Titre obligatoire'); $('#audioTitle').focus(); return false; } });
     
-    // === TOGGLES VISIBILITÉ (WhatsApp/Site Web) ===
+    $('#filterQuality').on('change', function() { const q = $(this).val(); const t = $('#audiosTable').DataTable(); q ? t.column(2).search(q + 'kbps').draw() : t.column(2).search('').draw(); });
     
-    $('.form-check-input[data-field]').on('change', function() {
-        const id = $(this).data('id');
-        const field = $(this).data('field');
-        const value = $(this).is(':checked') ? 1 : 0;
-        
-        $.ajax({
-            url: '<?= base_url('audio/toggleField') ?>',
-            type: 'POST',
-            data: { id: id, field: field, value: value },
-            success: function(response) {
-                if (response.success) {
-                    toastr.success('Paramètre mis à jour');
-                } else {
-                    toastr.error('Erreur mise à jour');
-                }
-            },
-            error: function() {
-                toastr.error('Erreur serveur');
-            }
-        });
-    });
-    
-    // === EFFETS HOVER SUR LES MINIATURES ===
-    
-    $(document).on('mouseenter', '.audio-thumb-wrapper', function() {
-        $(this).find('.audio-overlay').css('background', 'rgba(0,0,0,0.5)');
-        $(this).find('.bx-play-circle').removeClass('opacity-0');
-    }).on('mouseleave', '.audio-thumb-wrapper', function() {
-        $(this).find('.audio-overlay').css('background', 'rgba(0,0,0,0)');
-        $(this).find('.bx-play-circle').addClass('opacity-0');
-    });
-    
-    // === GESTION FERMETURE MODAL UPLOAD ===
-    
-    $('#closeUploadModal').on('click', function() {
-        if (uploadManager && uploadManager.state.isUploading) {
-            if (!confirm('Un upload est en cours. Voulez-vous vraiment fermer ?')) {
-                return false;
-            }
-            uploadManager.cancel();
-        }
-    });
-    
-    // === VALIDATION FORMULAIRE ===
-    
-    $('#audioDetailsForm').on('submit', function(e) {
-        const titre = $('#audioTitle').val().trim();
-        if (!titre) {
-            e.preventDefault();
-            toastr.error('Le titre est obligatoire');
-            $('#audioTitle').focus();
-            return false;
-        }
-        return true;
-    });
-    
-    // === FILTRE QUALITÉ ===
-    
-    $('#filterQuality').on('change', function() {
-        const quality = $(this).val();
-        const table = $('#audiosTable').DataTable();
-        
-        if (quality) {
-            table.column(2).search(quality + 'kbps').draw();
-        } else {
-            table.column(2).search('').draw();
-        }
-    });
-    
-    console.log('Audio Studio v5.0 initialisé');
+    console.log('Audio Studio v5.0 initialisé (limites serveur: 2M chunks)');
 });
 
-// ==========================================
-// STYLES CSS DYNAMIQUES
-// ==========================================
-
-const audioStyles = `
-<style>
-    .bg-spotify { background-color: #1DB954 !important; }
-    .text-spotify { color: #1DB954 !important; }
-    .btn-spotify { 
-        background-color: #1DB954; 
-        border-color: #1DB954; 
-        color: white; 
-    }
-    .btn-spotify:hover { 
-        background-color: #1ed760; 
-        border-color: #1ed760; 
-        color: white; 
-    }
-    .upload-zone.drag-over {
-        background-color: rgba(29, 185, 84, 0.1) !important;
-        border-color: #1DB954 !important;
-    }
-    .thumbnail-option {
-        transition: all 0.2s ease;
-    }
-    .thumbnail-option:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    .cursor-pointer {
-        cursor: pointer;
-    }
-    .w-fit-content {
-        width: fit-content;
-    }
-    .audio-player-wrapper audio::-webkit-media-controls-panel {
-        background-color: #f8f9fa;
-    }
-</style>
-`;
-
-$('head').append(audioStyles);
+$('head').append(`<style>.bg-spotify{background-color:#1DB954!important}.text-spotify{color:#1DB954!important}.btn-spotify{background-color:#1DB954;border-color:#1DB954;color:white}.btn-spotify:hover{background-color:#1ed760;border-color:#1ed760;color:white}.upload-zone.drag-over{background-color:rgba(29,185,84,0.1)!important;border-color:#1DB954!important}.thumbnail-option{transition:all .2s ease}.thumbnail-option:hover{transform:scale(1.05);box-shadow:0 4px 8px rgba(0,0,0,0.2)}.cursor-pointer{cursor:pointer}.w-fit-content{width:fit-content}</style>`);
 </script>
 
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
