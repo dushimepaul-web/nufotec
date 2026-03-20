@@ -458,7 +458,7 @@
                         Questions Fréquemment Posées
                     </h2>
                     <p class="hero-text animate__animated animate__fadeInUp animate__delay-2s">
-                        Trouvez rapidement les réponses à vos questions sur AGF et nos produits.
+                        Trouvez rapidement les réponses à vos questions sur Nufotec et nos produits.
                     </p>
                 </div>
             </div>
