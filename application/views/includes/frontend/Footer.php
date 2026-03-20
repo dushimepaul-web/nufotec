@@ -829,21 +829,22 @@
 
 <!-- Footer Scripts -->
 <script>
-// ============================================
-// FOOTER INTERACTIONS
-// ============================================
-
 (function() {
     'use strict';
-    
-    // Mobile Accordions
+
+    // Empêcher l'initialisation multiple
+    if (window.footerScriptInitialized) return;
+    window.footerScriptInitialized = true;
+
+    // ============================================
+    // FOOTER ACCORDIONS
+    // ============================================
     document.querySelectorAll('.footer-accordion-toggle').forEach(function(toggle) {
         toggle.addEventListener('click', function() {
             const expanded = this.getAttribute('aria-expanded') === 'true';
             const contentId = this.getAttribute('aria-controls');
             const content = document.getElementById(contentId);
-            
-            // Close all others
+
             document.querySelectorAll('.footer-accordion-toggle').forEach(function(other) {
                 if (other !== toggle) {
                     other.setAttribute('aria-expanded', 'false');
@@ -851,89 +852,88 @@
                     if (otherContent) otherContent.classList.remove('open');
                 }
             });
-            
-            // Toggle this one
+
             this.setAttribute('aria-expanded', !expanded);
             if (content) content.classList.toggle('open');
         });
     });
 
-    // Scroll to Top
+    // ============================================
+    // UTILITAIRES
+    // ============================================
     window.scrollToTop = function() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Open Map
     window.openMap = function() {
         const address = "<?= addslashes($this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi')) ?>";
         window.open('https://maps.google.com/?q=' + encodeURIComponent(address), '_blank');
     };
 
     // ============================================
-    // SCRIPT PANIER - BADGE MISE À JOUR
+    // CONFIG BASE URL
     // ============================================
-    
-    // Définir BASE_URL si ce n'est pas déjà fait
     if (typeof BASE_URL === 'undefined') {
         window.BASE_URL = '<?php echo rtrim(base_url(), '/'); ?>/';
     }
 
-    // Fonction unique pour mettre à jour les badges
+    // ============================================
+    // PANIER (ANTI SPAM + SAFE)
+    // ============================================
+    let isFetchingCart = false;
+
     function updateCartBadges() {
+        if (isFetchingCart) return;
+        isFetchingCart = true;
+
         const cartBadge = document.getElementById('cart');
         const cartBadgeFloating = document.getElementById('cartBadge');
-        
-        // Si aucun badge n'existe, ne rien faire
-        if (!cartBadge && !cartBadgeFloating) return;
+
+        if (!cartBadge && !cartBadgeFloating) {
+            isFetchingCart = false;
+            return;
+        }
 
         fetch(BASE_URL + 'panier/get_cart', {
             method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(function(response) {
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            return response.text();
+        .then(response => {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
         })
-        .then(function(text) {
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                // Réponse n'est pas du JSON, ignorer silencieusement
-                return;
-            }
-            
+        .then(data => {
             const count = data.nb_articles || 0;
-            
+
             if (cartBadge) cartBadge.textContent = count;
             if (cartBadgeFloating) cartBadgeFloating.textContent = count;
         })
-        .catch(function(error) {
-            // Erreur silencieuse en production
-            console.warn('Cart update failed:', error.message);
+        .catch(() => {})
+        .finally(() => {
+            isFetchingCart = false;
         });
     }
 
-    // Exposer globalement si nécessaire
+    // Exposer globalement
     window.updateCartBadge = updateCartBadges;
-    window.updateCartBadgecart = updateCartBadges;
 
-    // Première mise à jour au chargement
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateCartBadges);
-    } else {
+    // ============================================
+    // INITIALISATION UNIQUE
+    // ============================================
+    function initCart() {
         updateCartBadges();
+
+        // Empêcher plusieurs intervals
+        if (!window.cartInterval) {
+            window.cartInterval = setInterval(updateCartBadges, 5000);
+        }
     }
 
-    // Mise à jour périodique (toutes les 5 secondes pour réduire la charge)
-    setInterval(updateCartBadges, 5000);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCart);
+    } else {
+        initCart();
+    }
 
 })();
 </script>
