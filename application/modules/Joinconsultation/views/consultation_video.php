@@ -262,7 +262,7 @@ window.roomId = <?= json_encode($room_id ?? null) ?>;
 window.currentUser = <?= json_encode($current_user ?? ['id' => 'me', 'name' => 'Moi']) ?>;
 window.otherUser = <?= json_encode($other_user ?? ['id' => 'other', 'name' => 'Autre']) ?>;
 window.currentRole = <?= json_encode($current_role ?? 'participant') ?>;
-window.consultationId = <?= json_encode($consultation['id'] ?? $consultation->id ?? null) ?>;
+window.consultationId = <?= json_encode($consultation->id ?? $consultation['id'] ?? null) ?>;
 
 // Configuration
 window.SOCKET_CONFIG = {
