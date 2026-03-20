@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Video Controller - YouTube-Style Upload
- * SANS CSRF - API directe
+ * Adapté pour serveur avec limites: upload_max_filesize=2M, post_max_size=8M
  */
 class Video extends MX_Controller {
 
@@ -55,11 +55,18 @@ class Video extends MX_Controller {
 
     private function initializeConfig()
     {
+        // Adapter aux limites serveur: upload_max_filesize=2M
+        // On utilise des chunks de 1.5MB pour être safe (en dessous de 2M)
+        $chunk_size = 1.5 * 1024 * 1024; // 1.5 MB (1,572,864 bytes)
+        
         $this->video_config = [
-            'chunk_size'        => 5 * 1024 * 1024,
-            'max_file_size'     => 2 * 1024 * 1024 * 1024,
+            'chunk_size'        => $chunk_size,  // 1.5MB chunks
+            'max_file_size'     => 2 * 1024 * 1024 * 1024, // 2GB max
             'allowed_extensions' => ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', '3gp', 'flv', 'wmv'],
         ];
+        
+        // Log pour debug
+        log_message('debug', 'Video config - chunk_size: ' . $this->video_config['chunk_size'] . ' bytes (' . round($this->video_config['chunk_size'] / 1024 / 1024, 2) . ' MB)');
     }
 
     private function detectFFmpegTools()
@@ -145,6 +152,7 @@ class Video extends MX_Controller {
             return;
         }
 
+        // Créer session upload
         $upload_id = 'avc_' . uniqid() . '_' . bin2hex(random_bytes(4));
         $temp_dir  = $this->paths['temp'] . $upload_id . '/';
         
@@ -153,13 +161,18 @@ class Video extends MX_Controller {
             return;
         }
 
-        $total_chunks = (int)ceil($file_size / $this->video_config['chunk_size']);
+        $chunk_size = $this->video_config['chunk_size'];
+        $total_chunks = (int)ceil($file_size / $chunk_size);
+        
+        // Log pour debug
+        log_message('debug', 'Video initUpload - file: ' . $file_name . ', size: ' . $file_size . ', total_chunks: ' . $total_chunks . ', chunk_size: ' . $chunk_size);
         
         $metadata = [
             'upload_id'       => $upload_id,
             'file_name'       => $file_name,
             'file_size'       => $file_size,
             'total_chunks'    => $total_chunks,
+            'chunk_size'      => $chunk_size,
             'uploaded_chunks' => [],
             'created_at'      => time(),
             'status'          => 'uploading'
@@ -170,7 +183,7 @@ class Video extends MX_Controller {
         echo json_encode([
             'success'      => true,
             'upload_id'    => $upload_id,
-            'chunk_size'   => $this->video_config['chunk_size'],
+            'chunk_size'   => $chunk_size,
             'total_chunks' => $total_chunks,
             'avc_ready'    => (bool)$this->ffmpeg_path
         ]);
@@ -179,6 +192,9 @@ class Video extends MX_Controller {
 
     public function uploadChunk()
     {
+        // Ignorer le timeout PHP pour les chunks volumineux
+        set_time_limit(0);
+        
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
@@ -201,6 +217,7 @@ class Video extends MX_Controller {
         $metadata   = json_decode(file_get_contents($metadata_file), true);
         $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
         
+        // Vérifier si le chunk existe déjà
         if (file_exists($chunk_path)) {
             if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
                 $metadata['uploaded_chunks'][] = $chunk_index;
@@ -221,20 +238,37 @@ class Video extends MX_Controller {
             return;
         }
 
+        // Vérification du fichier uploadé
         if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-            $error = $_FILES['chunk']['error'] ?? 'unknown';
-            echo json_encode(['success' => false, 'message' => 'Erreur chunk: ' . $error]);
+            $error_msg = $this->getUploadErrorMessage($_FILES['chunk']['error'] ?? null);
+            echo json_encode(['success' => false, 'message' => $error_msg]);
+            return;
+        }
+        
+        // Vérifier la taille du chunk
+        $chunk_size = $_FILES['chunk']['size'];
+        $max_allowed = $metadata['chunk_size'] + 1024; // Marge 1KB
+        
+        if ($chunk_size > $max_allowed) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Chunk trop grand: ' . $chunk_size . ' bytes (max: ' . $metadata['chunk_size'] . ')'
+            ]);
             return;
         }
 
+        // Sauvegarder le chunk
         if (!@move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur écriture disque']);
+            echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde chunk']);
             return;
         }
 
-        $metadata['uploaded_chunks'][] = $chunk_index;
-        sort($metadata['uploaded_chunks']);
-        file_put_contents($metadata_file, json_encode($metadata));
+        // Mettre à jour metadata
+        if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
+            $metadata['uploaded_chunks'][] = $chunk_index;
+            sort($metadata['uploaded_chunks']);
+            file_put_contents($metadata_file, json_encode($metadata));
+        }
 
         $uploaded = count($metadata['uploaded_chunks']);
         echo json_encode([
@@ -249,8 +283,35 @@ class Video extends MX_Controller {
         return;
     }
 
+    private function getUploadErrorMessage($error_code)
+    {
+        if ($error_code === null) return 'Aucun fichier reçu';
+        
+        switch ($error_code) {
+            case UPLOAD_ERR_INI_SIZE:
+                return 'Le chunk dépasse la limite du serveur (2MB max)';
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'Le chunk dépasse la taille MAX_FILE_SIZE';
+            case UPLOAD_ERR_PARTIAL:
+                return 'Upload partiel - Réessayez';
+            case UPLOAD_ERR_NO_FILE:
+                return 'Aucun fichier reçu';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'Dossier temporaire manquant';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'Erreur d\'écriture disque';
+            case UPLOAD_ERR_EXTENSION:
+                return 'Extension PHP bloquée';
+            default:
+                return 'Erreur inconnue: ' . $error_code;
+        }
+    }
+
     public function completeUpload()
     {
+        // Ignorer le timeout PHP pour l'assemblage
+        set_time_limit(0);
+        
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
@@ -271,6 +332,7 @@ class Video extends MX_Controller {
 
         $metadata = json_decode(file_get_contents($metadata_file), true);
 
+        // Vérifier les chunks manquants
         $missing = [];
         for ($i = 0; $i < $metadata['total_chunks']; $i++) {
             if (!file_exists($temp_dir . 'chunk_' . $i)) {
@@ -281,12 +343,13 @@ class Video extends MX_Controller {
         if (!empty($missing)) {
             echo json_encode([
                 'success' => false,
-                'message' => 'Chunks manquants',
+                'message' => 'Chunks manquants: ' . count($missing),
                 'missing' => $missing
             ]);
             return;
         }
 
+        // Assembler le fichier final - version optimisée mémoire
         $safe_name      = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($metadata['file_name'], PATHINFO_FILENAME));
         $original_name  = date('YmdHis') . '_' . $safe_name . '_avc.mp4';
         $original_path  = $this->paths['originals'] . $original_name;
@@ -297,20 +360,37 @@ class Video extends MX_Controller {
             return;
         }
 
+        // Assembler chunk par chunk sans tout charger en mémoire
         for ($i = 0; $i < $metadata['total_chunks']; $i++) {
             $chunk_file = $temp_dir . 'chunk_' . $i;
-            fwrite($out, file_get_contents($chunk_file));
+            $chunk_handle = fopen($chunk_file, 'rb');
+            
+            if ($chunk_handle) {
+                while (!feof($chunk_handle)) {
+                    $buffer = fread($chunk_handle, 8192); // 8KB buffer
+                    fwrite($out, $buffer);
+                }
+                fclose($chunk_handle);
+            }
+            
             unlink($chunk_file);
+            
+            // Libérer la mémoire périodiquement
+            if ($i % 100 == 0) {
+                gc_collect_cycles();
+            }
         }
         fclose($out);
 
+        // Nettoyer temp
         @unlink($metadata_file);
         @rmdir($temp_dir);
 
+        // Analyse et traitements vidéo
         $analysis   = $this->analyzeVideo($original_path);
         $thumbnails = $this->generateThumbnails($original_path, $original_name);
 
-        // CORRECTION: S'assurer que thumbnails est un objet, pas un tableau
+        // CORRECTION: S'assurer que thumbnails est un objet
         $thumbnails_obj = new stdClass();
         if (!empty($thumbnails['default'])) {
             $thumbnails_obj->default = $thumbnails['default'];
@@ -326,7 +406,7 @@ class Video extends MX_Controller {
                 'original_file' => 'attachments/Video/Originals/' . $original_name,
                 'file_size'     => $this->formatBytes(filesize($original_path)),
                 'analysis'      => $analysis,
-                'thumbnails'    => $thumbnails_obj, // CORRECTION: Objet au lieu de tableau
+                'thumbnails'    => $thumbnails_obj,
                 'form_suggestions' => [
                     'titre'   => $this->suggestTitle($metadata['file_name']),
                     'credits' => 'Auteur inconnu'
@@ -358,7 +438,7 @@ class Video extends MX_Controller {
             'fichier'         => $this->input->post('uploaded_file_path'),
             'duree'           => $auto_data['analysis']['duration'] ?? 0,
             'taille'          => $auto_data['analysis']['size'] ?? 0,
-            'miniature'       => $this->input->post('thumbnail') ?: ($auto_data['thumbnails']['default'] ?? null),
+            'miniature'       => $this->input->post('thumbnail') ?: ($auto_data['thumbnails']->default ?? null),
             'metadata_id3'    => json_encode($auto_data),
             'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
             'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
@@ -374,51 +454,45 @@ class Video extends MX_Controller {
     }
 
     public function Update()
-{
-    $id = $this->input->post('id');
-    
-    $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
-    
-    if ($this->form_validation->run() == FALSE) {
-        $this->session->set_flashdata('error', validation_errors());
-        redirect(base_url('media/video'));
-        return;
-    }
-
-    // Récupérer la vidéo actuelle pour comparer
-    $current_video = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
-    
-    // Préparer les données
-    $data = [
-        'titre'           => $this->input->post('titre'),
-        'description'     => $this->input->post('description'),
-        'categorie'       => $this->input->post('categorie'),
-        'date_media'      => $this->input->post('date_media'),
-        'credits'         => $this->input->post('credits'),
-        'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
-        'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-        'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
-        'updated_at'      => date('Y-m-d H:i:s')
-    ];
-
-    // Gestion de la miniature
-    $new_thumbnail = $this->input->post('thumbnail');
-    if (!empty($new_thumbnail) && $new_thumbnail !== ($current_video['miniature'] ?? '')) {
-        // Supprimer l'ancienne miniature personnalisée si elle existe
-        if (!empty($current_video['miniature']) && strpos($current_video['miniature'], 'Custom/') !== false) {
-            @unlink(FCPATH . $current_video['miniature']);
+    {
+        $id = $this->input->post('id');
+        
+        $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
+        
+        if ($this->form_validation->run() == FALSE) {
+            $this->session->set_flashdata('error', validation_errors());
+            redirect(base_url('media/video'));
+            return;
         }
+
+        $current_video = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
         
-        $data['miniature'] = $new_thumbnail;
+        $data = [
+            'titre'           => $this->input->post('titre'),
+            'description'     => $this->input->post('description'),
+            'categorie'       => $this->input->post('categorie'),
+            'date_media'      => $this->input->post('date_media'),
+            'credits'         => $this->input->post('credits'),
+            'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
+            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
+            'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
+            'updated_at'      => date('Y-m-d H:i:s')
+        ];
+
+        $new_thumbnail = $this->input->post('thumbnail');
+        if (!empty($new_thumbnail) && $new_thumbnail !== ($current_video['miniature'] ?? '')) {
+            if (!empty($current_video['miniature']) && strpos($current_video['miniature'], 'Custom/') !== false) {
+                @unlink(FCPATH . $current_video['miniature']);
+            }
+            $data['miniature'] = $new_thumbnail;
+        }
+
+        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
         
-        log_message('debug', 'Miniature mise à jour pour vidéo ' . $id . ': ' . $new_thumbnail);
+        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Vidéo mise à jour' : 'Erreur mise à jour');
+        redirect(base_url('media/video'));
     }
 
-    $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
-    
-    $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Vidéo mise à jour' : 'Erreur mise à jour');
-    redirect(base_url('media/video'));
-}
     public function Delete()
     {
         $id = $this->input->post('id');
@@ -531,7 +605,7 @@ class Video extends MX_Controller {
         }
         
         if (!file_exists($file_path)) {
-            log_message('error', 'Video file not found: ' . $file_path . ' (original: ' . $filename . ')');
+            log_message('error', 'Video file not found: ' . $file_path);
             show_404();
             return;
         }
@@ -588,41 +662,19 @@ class Video extends MX_Controller {
 
     // ==================== UPLOAD MINIATURE PERSONNALISÉE ====================
 
-    /**
-     * Upload d'une miniature personnalisée - VERSION CORRIGÉE
-     */
     public function uploadThumbnail()
     {
-        // IMPORTANT: Désactiver CSRF et mettre le content type AVANT toute sortie
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        // Vérifier si un fichier a été envoyé
         if (empty($_FILES['thumbnail_file'])) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Aucun fichier reçu (thumbnail_file manquant)',
-                'debug' => ['files' => $_FILES, 'post' => $_POST]
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Aucun fichier reçu']);
             return;
         }
 
         if ($_FILES['thumbnail_file']['error'] !== UPLOAD_ERR_OK) {
-            $error_messages = [
-                UPLOAD_ERR_INI_SIZE => 'Fichier trop grand (php.ini)',
-                UPLOAD_ERR_FORM_SIZE => 'Fichier trop grand (formulaire)',
-                UPLOAD_ERR_PARTIAL => 'Upload partiel',
-                UPLOAD_ERR_NO_FILE => 'Aucun fichier uploadé',
-                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant',
-                UPLOAD_ERR_CANT_WRITE => 'Erreur écriture disque',
-                UPLOAD_ERR_EXTENSION => 'Extension PHP a bloqué l\'upload'
-            ];
-            $error_code = $_FILES['thumbnail_file']['error'];
-            
-            echo json_encode([
-                'success' => false, 
-                'message' => $error_messages[$error_code] ?? 'Erreur upload: ' . $error_code
-            ]);
+            $error_msg = $this->getUploadErrorMessage($_FILES['thumbnail_file']['error']);
+            echo json_encode(['success' => false, 'message' => $error_msg]);
             return;
         }
 
@@ -630,116 +682,63 @@ class Video extends MX_Controller {
         $nom_champ = $file['name'];
         $nom_file = $file['tmp_name'];
         
-        // Dossier spécifique pour les miniatures vidéo
         $ref_folder = FCPATH . 'attachments/Video/Thumbnails/Custom/';
         $code = date("YmdHis") . uniqid();
         $fichier = basename($code);
         $file_extension = strtolower(pathinfo($nom_champ, PATHINFO_EXTENSION));
         $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp', 'svg');
 
-        // Validation extension
         if (!in_array($file_extension, $valid_ext)) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Format non supporté. Formats acceptés: ' . implode(', ', $valid_ext)
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Format non supporté']);
             return;
         }
 
-        // Validation type MIME
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime_type = finfo_file($finfo, $nom_file);
-        finfo_close($finfo);
-        
-        $valid_mimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-        if (!in_array($mime_type, $valid_mimes)) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Type de fichier invalide: ' . $mime_type
-            ]);
-            return;
-        }
-
-        // Créer le dossier si nécessaire
         if (!is_dir($ref_folder)) {
-            if (!@mkdir($ref_folder, 0777, TRUE)) {
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Impossible de créer le dossier de destination'
-                ]);
-                return;
-            }
+            @mkdir($ref_folder, 0777, TRUE);
         }
 
-        // Déplacer le fichier
         $final_filename = $fichier . "." . $file_extension;
         $destination = $ref_folder . $final_filename;
         
         if (!@move_uploaded_file($nom_file, $destination)) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Erreur lors du déplacement du fichier vers: ' . $destination
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde']);
             return;
         }
 
-        // Redimensionner si GD disponible
         if ($this->gd_available) {
             $this->resizeThumbnail($destination, 1280, 720);
         }
 
-        // Retourner le chemin relatif pour stockage en BDD
         $relative_path = 'attachments/Video/Thumbnails/Custom/' . $final_filename;
         
         echo json_encode([
             'success' => true,
-            'message' => 'Miniature uploadée avec succès',
+            'message' => 'Miniature uploadée',
             'file_path' => $relative_path,
-            'file_name' => $final_filename,
-            'preview_url' => base_url($relative_path),
-            'gd_used' => $this->gd_available
+            'preview_url' => base_url($relative_path)
         ]);
         return;
     }
 
-    /**
-     * Redimensionne une miniature - VERSION CORRIGÉE ET SÉCURISÉE
-     */
     private function resizeThumbnail($file_path, $max_width, $max_height)
     {
         if (!$this->gd_available || !function_exists('getimagesize')) {
-            log_message('debug', 'GD non disponible pour resizeThumbnail');
-            return false;
-        }
-
-        if (!file_exists($file_path)) {
-            log_message('error', 'Fichier non trouvé: ' . $file_path);
             return false;
         }
 
         $image_info = @getimagesize($file_path);
-        if ($image_info === false) {
-            log_message('error', 'Impossible de lire les dimensions de: ' . $file_path);
-            return false;
-        }
+        if ($image_info === false) return false;
 
         list($width, $height, $type) = $image_info;
         
-        if ($width === 0 || $height === 0) {
-            return false;
-        }
-
-        // Si déjà assez petit, ne rien faire
         if ($width <= $max_width && $height <= $max_height) {
             return true;
         }
 
-        // Calculer nouvelles dimensions
         $ratio = min($max_width / $width, $max_height / $height);
         $new_width = (int)round($width * $ratio);
         $new_height = (int)round($height * $ratio);
 
-        // Créer image source selon type
         $src_image = null;
         switch ($type) {
             case IMAGETYPE_JPEG:
@@ -759,23 +758,13 @@ class Video extends MX_Controller {
                 $src_image = @imagecreatefromwebp($file_path);
                 break;
             default:
-                log_message('warning', 'Type d\'image non supporté: ' . $type);
                 return false;
         }
 
-        if (!$src_image) {
-            log_message('error', 'Impossible de créer l\'image source');
-            return false;
-        }
+        if (!$src_image) return false;
 
-        // Créer image destination
         $dst_image = imagecreatetruecolor($new_width, $new_height);
-        if (!$dst_image) {
-            imagedestroy($src_image);
-            return false;
-        }
         
-        // Préserver transparence PNG
         if ($type == IMAGETYPE_PNG) {
             imagealphablending($dst_image, false);
             imagesavealpha($dst_image, true);
@@ -783,15 +772,8 @@ class Video extends MX_Controller {
             imagefilledrectangle($dst_image, 0, 0, $new_width, $new_height, $transparent);
         }
 
-        // Redimensionner
-        $result = imagecopyresampled($dst_image, $src_image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-        if (!$result) {
-            imagedestroy($src_image);
-            imagedestroy($dst_image);
-            return false;
-        }
+        imagecopyresampled($dst_image, $src_image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
 
-        // Sauvegarder
         $save_success = false;
         switch ($type) {
             case IMAGETYPE_JPEG:
@@ -808,7 +790,6 @@ class Video extends MX_Controller {
                 break;
         }
 
-        // Libérer mémoire
         imagedestroy($src_image);
         imagedestroy($dst_image);
 
@@ -901,7 +882,6 @@ class Video extends MX_Controller {
         $result = ['default' => null, 'poster' => null];
         
         if (!$this->ffmpeg_path) {
-            log_message('debug', 'FFmpeg non disponible pour generateThumbnails');
             return $result;
         }
 
@@ -918,10 +898,7 @@ class Video extends MX_Controller {
             escapeshellarg($video_path),
             escapeshellarg($thumb_path)
         );
-        
-        log_message('debug', 'FFmpeg thumb cmd: ' . $cmd_thumb);
-        exec($cmd_thumb, $output_thumb, $return_thumb);
-        log_message('debug', 'FFmpeg thumb result: ' . $return_thumb . ' - ' . implode("\n", $output_thumb));
+        exec($cmd_thumb);
 
         // Poster à 5 secondes
         $cmd_poster = sprintf(
@@ -930,23 +907,14 @@ class Video extends MX_Controller {
             escapeshellarg($video_path),
             escapeshellarg($poster_path)
         );
-        
-        log_message('debug', 'FFmpeg poster cmd: ' . $cmd_poster);
-        exec($cmd_poster, $output_poster, $return_poster);
-        log_message('debug', 'FFmpeg poster result: ' . $return_poster . ' - ' . implode("\n", $output_poster));
+        exec($cmd_poster);
 
         if (file_exists($thumb_path)) {
             $result['default'] = 'attachments/Video/Thumbnails/' . $thumb_name;
-            log_message('debug', 'Thumb created: ' . $thumb_path);
-        } else {
-            log_message('error', 'Thumb NOT created: ' . $thumb_path);
         }
         
         if (file_exists($poster_path)) {
             $result['poster'] = 'attachments/Video/Posters/' . $poster_name;
-            log_message('debug', 'Poster created: ' . $poster_path);
-        } else {
-            log_message('error', 'Poster NOT created: ' . $poster_path);
         }
         
         return $result;
@@ -1017,5 +985,19 @@ class Video extends MX_Controller {
             $i++;
         }
         return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    public function checkConfig()
+    {
+        echo "<pre>";
+        echo "upload_max_filesize: " . ini_get('upload_max_filesize') . "\n";
+        echo "post_max_size: " . ini_get('post_max_size') . "\n";
+        echo "max_execution_time: " . ini_get('max_execution_time') . "\n";
+        echo "memory_limit: " . ini_get('memory_limit') . "\n";
+        echo "Chunk size configuré: " . round($this->video_config['chunk_size'] / 1024 / 1024, 2) . " MB\n";
+        echo "FFmpeg disponible: " . ($this->ffmpeg_path ? 'OUI' : 'NON') . "\n";
+        echo "GD disponible: " . ($this->gd_available ? 'OUI' : 'NON') . "\n";
+        echo "</pre>";
+        exit;
     }
 }
