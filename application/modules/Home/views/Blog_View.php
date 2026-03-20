@@ -13,15 +13,97 @@ include VIEWPATH.'includes/frontend/Header.php';
 .text-teal { color: var(--primary-teal) !important; }
 .bg-teal { background: var(--primary-teal) !important; }
 
-/* ================= PAGE HEADER ================= */
-.page-header {
-    padding: 130px 0 90px;
-    background: linear-gradient(rgba(0,0,0,.75), rgba(0,0,0,.75)),
-                url('https://images.unsplash.com/photo-1499750310107-5fef28a66643') center/cover no-repeat;
-    background-attachment: fixed;
-    text-align: center;
-    color: white;
-}
+
+ /* ===== HERO SECTION ===== */
+    .hero-section {
+        position: relative;
+        height: 300px;
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    }
+
+    .hero-bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .hero-bg-image img {
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 76, 58, 0.85);
+        z-index: 2;
+    }
+
+    .hero-content-wrapper {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        padding: 20px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        line-height: 1.2;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .hero-subtitle {
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: var(--accent);
+        margin-bottom: 15px;
+        line-height: 1.3;
+    }
+
+    .hero-text {
+        font-size: 1rem;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        opacity: 0.95;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @media (max-width: 991px) {
+        .hero-section { height: 280px; }
+        .hero-title { font-size: 1.8rem; }
+        .hero-subtitle { font-size: 1.1rem; }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section { height: 250px; min-height: 220px; }
+        .hero-title { font-size: 1.5rem; }
+        .hero-subtitle { font-size: 1rem; }
+        .hero-text { font-size: 0.9rem; }
+    }
+
+    @media (max-width: 576px) {
+        .hero-section { height: 220px; min-height: 200px; }
+        .hero-title { font-size: 1.3rem; }
+        .hero-subtitle { font-size: 0.95rem; }
+    }
+
 
 /* ================= ARTICLES ================= */
 .article-card {
@@ -238,27 +320,71 @@ include VIEWPATH.'includes/frontend/Header.php';
 }
 </style>
 
-<!-- ================= PAGE HEADER ================= -->
-<section class="page-header">
-    <div class="container">
-        <h1 class="display-4 fw-bold">
-            <?php if (!empty($categorie_active)): ?>
-                <?= htmlspecialchars($categorie_active) ?>
-            <?php elseif (!empty($search_query)): ?>
-                Recherche: "<?= htmlspecialchars($search_query) ?>"
-            <?php else: ?>
-                Notre Blog
-            <?php endif; ?>
-        </h1>
-        <p class="lead opacity-75">
-            <?php if (!empty($search_query)): ?>
-                <?= $total_results ?> résultat(s) trouvé(s)
-            <?php else: ?>
-                Actualités, réflexions et analyses sur nos actions
-            <?php endif; ?>
-        </p>
+
+<!-- ===== HERO SECTION ===== -->
+<?php if (isset($hero_section) && !empty($hero_section)): ?>
+<div class="hero-section position-relative overflow-hidden">
+    <?php if (!empty($hero_section['image_url'])): ?>
+    <div class="hero-bg-image">
+        <img src="<?php echo base_url($hero_section['image_url']); ?>" 
+             alt="<?php echo isset($hero_section['titre_section']) ? $hero_section['titre_section'] : 'FAQ'; ?>"
+             class="w-100 h-100 object-fit-cover">
     </div>
-</section>
+    <?php endif; ?>
+    <div class="hero-overlay"></div>
+    <div class="hero-content-wrapper">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center text-white">
+                    <?php if (!empty($hero_section['titre_section'])): ?>
+                        <h1 class="hero-title animate__animated animate__fadeInUp">
+                            <?php echo $hero_section['titre_section']; ?>
+                        </h1>
+                    <?php else: ?>
+                        <h1 class="hero-title animate__animated animate__fadeInUp">FAQ</h1>
+                    <?php endif; ?>
+                    <?php if (!empty($hero_section['sous_titre'])): ?>
+                        <h2 class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                            <?php echo $hero_section['sous_titre']; ?>
+                        </h2>
+                    <?php else: ?>
+                        <h2 class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                            Questions Fréquemment Posées
+                        </h2>
+                    <?php endif; ?>
+                    <?php if (!empty($hero_section['contenu_texte'])): ?>
+                        <p class="hero-text animate__animated animate__fadeInUp animate__delay-2s">
+                            <?php echo $hero_section['contenu_texte']; ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<?php else: ?>
+<!-- Hero par défaut si pas de hero_section -->
+<div class="hero-section position-relative overflow-hidden">
+    <div class="hero-overlay"></div>
+    <div class="hero-content-wrapper">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center text-white">
+                    <h1 class="hero-title animate__animated animate__fadeInUp">News & Actualités</h1>
+                    <h2 class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                        L'actualité d'African Green Farmers
+                    </h2>
+                    <p class="hero-text animate__animated animate__fadeInUp animate__delay-2s">
+                        Suivez nos dernières actualités, événements et innovations dans le secteur agro-industriel.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<?php endif; ?>
 
 <!-- ================= CONTENU PRINCIPAL ================= -->
 <section class="py-5">

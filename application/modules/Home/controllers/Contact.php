@@ -26,7 +26,8 @@ class Contact extends Public_Controller
      * Page de contact
      */
     public function index()
-    {
+    {   
+        $data['hero_section'] = $this->get_hero_section();
         $data['csrf'] = [
             'name' => $this->security->get_csrf_token_name(),
             'hash' => $this->security->get_csrf_hash()
@@ -316,5 +317,33 @@ class Contact extends Public_Controller
             'csrf_name' => $this->security->get_csrf_token_name(),
             'csrf_token' => $this->security->get_csrf_hash()
         ]);
+    }
+
+
+    private function get_hero_section()
+    {
+        $page = $this->Model->readOne('pages', ['slug' => 'blog', 'est_publiee' => 1]);
+
+        if (empty($page)) {
+            log_message('debug', 'Page product-categories non trouvée');
+            return null;
+        }
+
+        $hero = $this->Model->readOne('sections_contenu', [
+            'id_page'      => $page['id_page'],
+            'type_section' => 'hero',
+            'est_active'   => 1
+        ]);
+
+        if (empty($hero)) {
+            log_message('debug', 'Section hero non trouvée pour la page ' . $page['id_page']);
+            return null;
+        }
+
+        if (!empty($hero['options_json'])) {
+            $hero['options'] = json_decode($hero['options_json'], true);
+        }
+
+        return $hero;
     }
 }

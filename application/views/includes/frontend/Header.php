@@ -1458,38 +1458,33 @@
                 <span class="d-none d-lg-inline"><?= $logged_in ? 'My account' : 'Sign in' ?></span>
             </a>
 
-
             <div class="lang-selector d-none d-lg-block">
-    <?php 
-    // On récupère la langue actuelle en session (par défaut 'french')
-    $current_lang = $this->session->userdata('site_lang') ?: 'french';
-    $display = [
-        'english' => ['flag' => 'us', 'label' => 'EN'],
-        'french'  => ['flag' => 'fr', 'label' => 'FR'],
-        'swahili' => ['flag' => 'tz', 'label' => 'SW']
-    ];
-    ?>
-
-    <button class="lang-btn" aria-label="Change language">
-        <img src="https://flagcdn.com/w20/<?= $display[$current_lang]['flag'] ?>.png" alt="<?= $display[$current_lang]['label'] ?>">
-        <span><?= $display[$current_lang]['label'] ?></span>
-        <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
-    </button>
-
-    <div class="lang-dropdown">
-        <a href="<?= base_url('Language/switch_lang/english') ?>" class="lang-option">
-            <img src="https://flagcdn.com/w20/us.png" alt="EN"> <span>English</span>
-        </a>
-        <a href="<?= base_url('Language/switch_lang/french') ?>" class="lang-option">
-            <img src="https://flagcdn.com/w20/fr.png" alt="FR"> <span>French</span>
-        </a>
-        <a href="<?= base_url('Language/switch_lang/swahili') ?>" class="lang-option">
-            <img src="https://flagcdn.com/w20/tz.png" alt="SW"> <span>Swahili</span>
-        </a>
-    </div>
-</div>
-
-<div id="google_translate_element" style="display:none"></div>
+                <?php 
+                $current_lang = $this->session->userdata('site_lang') ?: 'french';
+                $display = [
+                    'english' => ['flag' => 'us', 'label' => 'EN'],
+                    'french'  => ['flag' => 'fr', 'label' => 'FR'],
+                    'swahili' => ['flag' => 'tz', 'label' => 'SW']
+                ];
+                ?>
+                <button class="lang-btn" aria-label="Change language">
+                    <img src="https://flagcdn.com/w20/<?= $display[$current_lang]['flag'] ?>.png" alt="<?= $display[$current_lang]['label'] ?>">
+                    <span><?= $display[$current_lang]['label'] ?></span>
+                    <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+                </button>
+                <div class="lang-dropdown">
+                    <a href="<?= base_url('Language/switch_lang/english') ?>" class="lang-option">
+                        <img src="https://flagcdn.com/w20/us.png" alt="EN"> <span>English</span>
+                    </a>
+                    <a href="<?= base_url('Language/switch_lang/french') ?>" class="lang-option">
+                        <img src="https://flagcdn.com/w20/fr.png" alt="FR"> <span>French</span>
+                    </a>
+                    <a href="<?= base_url('Language/switch_lang/swahili') ?>" class="lang-option">
+                        <img src="https://flagcdn.com/w20/tz.png" alt="SW"> <span>Swahili</span>
+                    </a>
+                </div>
+            </div>
+            <div id="google_translate_element" style="display:none"></div>
 
             <!-- Mobile Menu -->
             <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
@@ -1503,13 +1498,15 @@
 <nav class="main-nav" id="mainNav">
     <div class="nav-container">
         <ul class="nav-menu">
+            <!-- Home -->
             <li class="nav-item">
-                <a href="<?= base_url('') ?>" class="nav-link active">
+                <a href="<?= base_url('') ?>" class="nav-link">
                     <i class="bi bi-house-door d-lg-none"></i>
                     <span>Home</span>
                 </a>
             </li>
 
+            <!-- About Mega Menu -->
             <li class="nav-item mega-menu">
                 <a href="#" class="nav-link">
                     <span>About</span>
@@ -1524,8 +1521,6 @@
                                 <li><a href="<?= base_url('background-strategic-rationale') ?>"><i class="bi bi-chevron-right"></i> Background & Strategy</a></li>
                                 <li><a href="<?= base_url('corporate-structure-governance') ?>"><i class="bi bi-chevron-right"></i> Governance</a></li>
                                 <li><a href="<?= base_url('vision-mission') ?>"><i class="bi bi-chevron-right"></i> Vision & Mission</a></li>
-
-
                             </ul>
                         </div>
                         <div class="mega-column">
@@ -1540,19 +1535,21 @@
                             <h3><i class="bi bi-gear-wide-connected"></i> Facilities</h3>
                             <ul class="mega-list">
                                 <li><a href="<?= base_url('agf-phytomed-facility') ?>"><i class="bi bi-chevron-right"></i> AGF-PHYTOMED Facility</a></li>
-                                <li><a href="#"><i class="bi bi-chevron-right"></i> Manufacturing Facility</a></li>
+                                <li><a href="<?= base_url('manufacturing-facility') ?>"><i class="bi bi-chevron-right"></i> Manufacturing Facility</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </li>
 
+            <!-- Shop -->
             <li class="nav-item">
                 <a href="<?= base_url('boutique') ?>" class="nav-link">
                     <span>Shop</span>
                 </a>
             </li>
 
+            <!-- Teleconsultation Mega Menu -->
             <li class="nav-item mega-menu">
                 <a href="#" class="nav-link">
                     <span>Teleconsultation</span>
@@ -1564,8 +1561,8 @@
                             <h3><i class="bi bi-graph-up"></i> Market</h3>
                             <ul class="mega-list">
                                 <li><a href="<?= base_url('market-outlook') ?>"><i class="bi bi-chevron-right"></i> Market Outlook</a></li>
-                                <li><a href="#"><i class="bi bi-chevron-right"></i> Industry Reports</a></li>
-                                <li><a href="#"><i class="bi bi-chevron-right"></i> Publications</a></li>
+                                <li><a href="<?= base_url('industry-reports') ?>"><i class="bi bi-chevron-right"></i> Industry Reports</a></li>
+                                <li><a href="<?= base_url('publications') ?>"><i class="bi bi-chevron-right"></i> Publications</a></li>
                             </ul>
                         </div>
                         <div class="mega-column">
@@ -1573,12 +1570,14 @@
                             <ul class="mega-list">
                                 <li><a href="<?= base_url('digital-growth') ?>"><i class="bi bi-chevron-right"></i> Digital Growth</a></li>
                                 <li><a href="<?= base_url('Medicins') ?>"><i class="bi bi-chevron-right"></i> Health Consultation</a></li>
+                                <li><a href="<?= base_url('telemedicine-platform') ?>"><i class="bi bi-chevron-right"></i> Telemedicine Platform</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </li>
 
+            <!-- Investment Mega Menu -->
             <li class="nav-item mega-menu">
                 <a href="#" class="nav-link">
                     <span>Investment</span>
@@ -1590,8 +1589,8 @@
                             <h3><i class="bi bi-piggy-bank"></i> Capital</h3>
                             <ul class="mega-list">
                                 <li><a href="<?= base_url('investment-projection') ?>"><i class="bi bi-chevron-right"></i> Investment Projection</a></li>
-                                <li><a href="#"><i class="bi bi-chevron-right"></i> Seed Capital Allocation</a></li>
-                                <li><a href="#"><i class="bi bi-chevron-right"></i> Financial Projections</a></li>
+                                <li><a href="<?= base_url('seed-capital-allocation') ?>"><i class="bi bi-chevron-right"></i> Seed Capital Allocation</a></li>
+                                <li><a href="<?= base_url('financial-projections') ?>"><i class="bi bi-chevron-right"></i> Financial Projections</a></li>
                             </ul>
                         </div>
                         <div class="mega-column">
@@ -1613,8 +1612,8 @@
                 </div>
             </li>
 
-
-             <li class="nav-item mega-menu">
+            <!-- News & Media Mega Menu -->
+            <li class="nav-item mega-menu">
                 <a href="#" class="nav-link">
                     <span>News & Media</span>
                     <i class="bi bi-chevron-down"></i>
@@ -1622,63 +1621,39 @@
                 <div class="mega-dropdown">
                     <div class="mega-grid">
                         <div class="mega-column">
-    <h3><i class="bi bi-collection-play"></i> Médias</h3>
-    <ul class="mega-list">
-        <li class="<?= ($current_filter ?? 'all') === 'all' ? 'active' : '' ?>">
-            <a href="<?= base_url('Media') ?>">
-                <i class="bi bi-chevron-right"></i> 
-                Tous les médias
-                <?php if (!empty($total_medias['all'])): ?>
-                    <span class="badge bg-primary ms-1"><?= $total_medias['all'] ?></span>
-                <?php endif; ?>
-            </a>
-        </li>
-        <li class="<?= ($current_filter ?? '') === 'video' ? 'active' : '' ?>">
-            <a href="<?= base_url('Media/view/video') ?>">
-                <i class="bi bi-chevron-right"></i> 
-                Vidéos & Liens
-                <?php if (!empty($total_medias['video'])): ?>
-                    <span class="badge bg-primary ms-1"><?= $total_medias['video'] ?></span>
-                <?php endif; ?>
-            </a>
-        </li>
-        <li class="<?= ($current_filter ?? '') === 'audio' ? 'active' : '' ?>">
-            <a href="<?= base_url('Media/view/audio') ?>">
-                <i class="bi bi-chevron-right"></i> 
-                Audio
-                <?php if (!empty($total_medias['audio'])): ?>
-                    <span class="badge bg-primary ms-1"><?= $total_medias['audio'] ?></span>
-                <?php endif; ?>
-            </a>
-        </li>
-        <li class="<?= ($current_filter ?? '') === 'image' ? 'active' : '' ?>">
-            <a href="<?= base_url('Media/view/image') ?>">
-                <i class="bi bi-chevron-right"></i> 
-                Images
-                <?php if (!empty($total_medias['image'])): ?>
-                    <span class="badge bg-primary ms-1"><?= $total_medias['image'] ?></span>
-                <?php endif; ?>
-            </a>
-        </li>
-        <li class="<?= ($current_filter ?? '') === 'book' ? 'active' : '' ?>">
-            <a href="<?= base_url('Media/view/book') ?>">
-                <i class="bi bi-chevron-right"></i> 
-                Livres & E-books
-                <?php if (!empty($total_medias['book'])): ?>
-                    <span class="badge bg-primary ms-1"><?= $total_medias['book'] ?></span>
-                <?php endif; ?>
-            </a>
-        </li>
-    </ul>
-</div>
-                        <div class="mega-column">
-                            <h3><i class="bi bi-handshake">News</i></h3>
+                            <h3><i class="bi bi-collection-play"></i> Media</h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('blog') ?>"><i class="bi bi-chevron-right"></i> News</a></li>
+                                <li><a href="<?= base_url('Media') ?>"><i class="bi bi-chevron-right"></i> All Media</a></li>
+                                <li><a href="<?= base_url('Media/view/video') ?>"><i class="bi bi-chevron-right"></i> Videos & Links</a></li>
+                                <li><a href="<?= base_url('Media/view/audio') ?>"><i class="bi bi-chevron-right"></i> Audio</a></li>
+                                <li><a href="<?= base_url('Media/view/image') ?>"><i class="bi bi-chevron-right"></i> Images</a></li>
+                                <li><a href="<?= base_url('Media/view/book') ?>"><i class="bi bi-chevron-right"></i> Books & E-books</a></li>
+                            </ul>
+                        </div>
+                        <div class="mega-column">
+                            <h3><i class="bi bi-newspaper"></i> News</h3>
+                            <ul class="mega-list">
+                                <li><a href="<?= base_url('blog') ?>"><i class="bi bi-chevron-right"></i> Latest News</a></li>
+                                <li><a href="<?= base_url('events') ?>"><i class="bi bi-chevron-right"></i> Events</a></li>
+                                <li><a href="<?= base_url('press-releases') ?>"><i class="bi bi-chevron-right"></i> Press Releases</a></li>
+                            </ul>
+                        </div>
+                        <div class="mega-column">
+                            <h3><i class="bi bi-question-circle"></i> Support</h3>
+                            <ul class="mega-list">
+                                <li><a href="<?= base_url('question') ?>"><i class="bi bi-chevron-right"></i> FAQ</a></li>
+                                <li><a href="<?= base_url('Home/Contact') ?>"><i class="bi bi-chevron-right"></i> Contact Us</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
+            </li>
+
+            <!-- Contact direct link -->
+            <li class="nav-item">
+                <a href="<?= base_url('Home/Contact') ?>" class="nav-link">
+                    <span>Contact</span>
+                </a>
             </li>
         </ul>
 
@@ -1699,7 +1674,7 @@
             <i class="bi bi-x-lg"></i>
         </button>
         <div class="mobile-user-info">
-            <?php if ($logged_in && !empty($user_photo)): ?>
+            <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
                 <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="mobile-user-avatar">
             <?php else: ?>
                 <div class="mobile-user-avatar" style="background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700;">
@@ -1717,6 +1692,7 @@
         <div class="mobile-nav-section">
             <div class="mobile-nav-title">Main Menu</div>
             <ul class="mobile-nav-list">
+                <!-- Home -->
                 <li class="mobile-nav-item">
                     <a href="<?= base_url('') ?>" class="mobile-nav-link">
                         <i class="bi bi-house-door"></i>
@@ -1724,6 +1700,7 @@
                     </a>
                 </li>
                 
+                <!-- About with submenu -->
                 <li class="mobile-nav-item">
                     <button class="mobile-nav-link has-submenu" data-submenu="about">
                         <i class="bi bi-building"></i>
@@ -1736,10 +1713,14 @@
                         <a href="<?= base_url('corporate-structure-governance') ?>" class="mobile-submenu-item">Governance</a>
                         <a href="<?= base_url('vision-mission') ?>" class="mobile-submenu-item">Vision & Mission</a>
                         <a href="<?= base_url('Frontend/Esg_Sustainability') ?>" class="mobile-submenu-item">ESG & Sustainability</a>
-                        <a href="<?= base_url('agf-phytomed-facility') ?>" class="mobile-submenu-item">Our Facilities</a>
+                        <a href="<?= base_url('risk-analysis') ?>" class="mobile-submenu-item">Risk Analysis</a>
+                        <a href="<?= base_url('Frontend/Research_Innovation') ?>" class="mobile-submenu-item">Research & Innovation</a>
+                        <a href="<?= base_url('agf-phytomed-facility') ?>" class="mobile-submenu-item">AGF-PHYTOMED Facility</a>
+                        <a href="<?= base_url('manufacturing-facility') ?>" class="mobile-submenu-item">Manufacturing Facility</a>
                     </div>
                 </li>
 
+                <!-- Shop -->
                 <li class="mobile-nav-item">
                     <a href="<?= base_url('boutique') ?>" class="mobile-nav-link">
                         <i class="bi bi-shop"></i>
@@ -1747,6 +1728,7 @@
                     </a>
                 </li>
 
+                <!-- Teleconsultation with submenu -->
                 <li class="mobile-nav-item">
                     <button class="mobile-nav-link has-submenu" data-submenu="teleconsultation">
                         <i class="bi bi-camera-video"></i>
@@ -1754,12 +1736,16 @@
                         <i class="bi bi-chevron-right chevron"></i>
                     </button>
                     <div class="mobile-submenu" id="submenu-teleconsultation">
-                        <a href="<?= base_url('Medicins') ?>" class="mobile-submenu-item">Medical Consultation</a>
+                        <a href="<?= base_url('Medicins') ?>" class="mobile-submenu-item">Health Consultation</a>
                         <a href="<?= base_url('digital-growth') ?>" class="mobile-submenu-item">Digital Growth</a>
                         <a href="<?= base_url('market-outlook') ?>" class="mobile-submenu-item">Market Outlook</a>
+                        <a href="<?= base_url('industry-reports') ?>" class="mobile-submenu-item">Industry Reports</a>
+                        <a href="<?= base_url('publications') ?>" class="mobile-submenu-item">Publications</a>
+                        <a href="<?= base_url('telemedicine-platform') ?>" class="mobile-submenu-item">Telemedicine Platform</a>
                     </div>
                 </li>
 
+                <!-- Investment with submenu -->
                 <li class="mobile-nav-item">
                     <button class="mobile-nav-link has-submenu" data-submenu="investment">
                         <i class="bi bi-graph-up-arrow"></i>
@@ -1767,18 +1753,42 @@
                         <i class="bi bi-chevron-right chevron"></i>
                     </button>
                     <div class="mobile-submenu" id="submenu-investment">
-                        <a href="<?= base_url('investment-projection') ?>" class="mobile-submenu-item">Projections</a>
+                        <a href="<?= base_url('investment-projection') ?>" class="mobile-submenu-item">Investment Projection</a>
+                        <a href="<?= base_url('seed-capital-allocation') ?>" class="mobile-submenu-item">Seed Capital Allocation</a>
+                        <a href="<?= base_url('financial-projections') ?>" class="mobile-submenu-item">Financial Projections</a>
                         <a href="<?= base_url('investor-commitment') ?>" class="mobile-submenu-item">Investor Commitment</a>
-                        <a href="<?= base_url('strategic-partnerships') ?>" class="mobile-submenu-item">Partnerships</a>
+                        <a href="<?= base_url('strategic-partnerships') ?>" class="mobile-submenu-item">Strategic Partnerships</a>
+                        <a href="<?= base_url('broker-commission') ?>" class="mobile-submenu-item">Broker Commission</a>
                         <a href="<?= base_url('Brokers-form') ?>" class="mobile-submenu-item">Become a Broker</a>
                         <a href="<?= base_url('Investors-form') ?>" class="mobile-submenu-item">Become a Partner</a>
                     </div>
                 </li>
 
+                <!-- News & Media with submenu -->
                 <li class="mobile-nav-item">
-                    <a href="<?= base_url('Home/Media') ?>" class="mobile-nav-link">
+                    <button class="mobile-nav-link has-submenu" data-submenu="news">
                         <i class="bi bi-newspaper"></i>
-                        <span>News</span>
+                        <span>News & Media</span>
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <div class="mobile-submenu" id="submenu-news">
+                        <a href="<?= base_url('Media') ?>" class="mobile-submenu-item">All Media</a>
+                        <a href="<?= base_url('Media/view/video') ?>" class="mobile-submenu-item">Videos & Links</a>
+                        <a href="<?= base_url('Media/view/audio') ?>" class="mobile-submenu-item">Audio</a>
+                        <a href="<?= base_url('Media/view/image') ?>" class="mobile-submenu-item">Images</a>
+                        <a href="<?= base_url('Media/view/book') ?>" class="mobile-submenu-item">Books & E-books</a>
+                        <a href="<?= base_url('blog') ?>" class="mobile-submenu-item">Latest News</a>
+                        <a href="<?= base_url('events') ?>" class="mobile-submenu-item">Events</a>
+                        <a href="<?= base_url('press-releases') ?>" class="mobile-submenu-item">Press Releases</a>
+                        <a href="<?= base_url('question') ?>" class="mobile-submenu-item">FAQ</a>
+                    </div>
+                </li>
+
+                <!-- Contact direct -->
+                <li class="mobile-nav-item">
+                    <a href="<?= base_url('Home/Contact') ?>" class="mobile-nav-link">
+                        <i class="bi bi-envelope"></i>
+                        <span>Contact</span>
                     </a>
                 </li>
             </ul>
@@ -1791,17 +1801,17 @@
                     <button class="mobile-nav-link has-submenu" data-submenu="lang">
                         <i class="bi bi-globe"></i>
                         <span>Language</span>
-                        <span style="margin-left: auto; margin-right: 8px; font-size: 12px; color: var(--gray);">French</span>
+                        <span style="margin-left: auto; margin-right: 8px; font-size: 12px; color: var(--gray);"><?= ucfirst($current_lang) ?></span>
                         <i class="bi bi-chevron-right chevron"></i>
                     </button>
                     <div class="mobile-submenu" id="submenu-lang">
-                        <a href="#" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
+                        <a href="<?= base_url('Language/switch_lang/french') ?>" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
                             <img src="https://flagcdn.com/w20/fr.png" alt="FR" style="width: 20px;"> French
                         </a>
-                        <a href="#" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
+                        <a href="<?= base_url('Language/switch_lang/english') ?>" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
                             <img src="https://flagcdn.com/w20/us.png" alt="EN" style="width: 20px;"> English
                         </a>
-                        <a href="#" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
+                        <a href="<?= base_url('Language/switch_lang/swahili') ?>" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
                             <img src="https://flagcdn.com/w20/tz.png" alt="SW" style="width: 20px;"> Swahili
                         </a>
                     </div>

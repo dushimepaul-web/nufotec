@@ -23,6 +23,97 @@
         touch-action: manipulation;
     }
 
+    /* ===== HERO SECTION ===== */
+    .hero-section {
+        position: relative;
+        height: 300px;
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    }
+
+    .hero-bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .hero-bg-image img {
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 76, 58, 0.85);
+        z-index: 2;
+    }
+
+    .hero-content-wrapper {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        padding: 20px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        line-height: 1.2;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .hero-subtitle {
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: var(--accent);
+        margin-bottom: 15px;
+        line-height: 1.3;
+    }
+
+    .hero-text {
+        font-size: 1rem;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        opacity: 0.95;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @media (max-width: 991px) {
+        .hero-section { height: 280px; }
+        .hero-title { font-size: 1.8rem; }
+        .hero-subtitle { font-size: 1.1rem; }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section { height: 250px; min-height: 220px; }
+        .hero-title { font-size: 1.5rem; }
+        .hero-subtitle { font-size: 1rem; }
+        .hero-text { font-size: 0.9rem; }
+    }
+
+    @media (max-width: 576px) {
+        .hero-section { height: 220px; min-height: 200px; }
+        .hero-title { font-size: 1.3rem; }
+        .hero-subtitle { font-size: 0.95rem; }
+    }
+
+
     /* Navigation Glassmorphism */
     .navbar {
         background: rgba(255, 255, 255, 0.95);
@@ -852,6 +943,70 @@
 <!-- Container pour les notifications -->
 <div id="toastContainer" class="toast-container"></div>
 
+<!-- ===== HERO SECTION ===== -->
+<?php if (isset($hero_section) && !empty($hero_section)): ?>
+<div class="hero-section position-relative overflow-hidden">
+    <?php if (!empty($hero_section['image_url'])): ?>
+    <div class="hero-bg-image">
+        <img src="<?php echo base_url($hero_section['image_url']); ?>" 
+             alt="<?php echo isset($hero_section['titre_section']) ? $hero_section['titre_section'] : 'FAQ'; ?>"
+             class="w-100 h-100 object-fit-cover">
+    </div>
+    <?php endif; ?>
+    <div class="hero-overlay"></div>
+    <div class="hero-content-wrapper">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center text-white">
+                    <?php if (!empty($hero_section['titre_section'])): ?>
+                        <h1 class="hero-title animate__animated animate__fadeInUp">
+                            <?php echo $hero_section['titre_section']; ?>
+                        </h1>
+                    <?php else: ?>
+                        <h1 class="hero-title animate__animated animate__fadeInUp">FAQ</h1>
+                    <?php endif; ?>
+                    <?php if (!empty($hero_section['sous_titre'])): ?>
+                        <h2 class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                            <?php echo $hero_section['sous_titre']; ?>
+                        </h2>
+                    <?php else: ?>
+                        <h2 class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                            Questions Fréquemment Posées
+                        </h2>
+                    <?php endif; ?>
+                    <?php if (!empty($hero_section['contenu_texte'])): ?>
+                        <p class="hero-text animate__animated animate__fadeInUp animate__delay-2s">
+                            <?php echo $hero_section['contenu_texte']; ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<?php else: ?>
+<!-- Hero par défaut si pas de hero_section -->
+<div class="hero-section position-relative overflow-hidden">
+    <div class="hero-overlay"></div>
+    <div class="hero-content-wrapper">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center text-white">
+                    <h1 class="hero-title animate__animated animate__fadeInUp">Contact Us</h1>
+                    <h2 class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                        We're Here to Help
+                    </h2>
+                    <p class="hero-text animate__animated animate__fadeInUp animate__delay-2s">
+                        Have a question, project, or suggestion? Reach out to us and our team will get back to you as soon as possible.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<?php endif; ?>
 <!-- Section Principale -->
 <section class="contact-hero">
     <div class="container-fluid p-0">
@@ -860,7 +1015,7 @@
             <!-- Formulaire -->
             <div class="form-section">
                 <div class="form-header">
-                    <h1>Let's discuss your project</h1>
+                    <h1 class="text-success">Contact us</h1>
                     <p>Fill out the form below and we'll get back to you within 24 hours.</p>
                 </div>
 
@@ -949,8 +1104,8 @@
                 <div class="map-container">
                     <div id="map"></div>
                     <div class="map-overlay">
-                        <h3><i class="fas fa-map-pin me-2"></i>Nufotec</h3>
-                        <p>123 Business Street, New York, NY 10001</p>
+                        <h3><i class="fas fa-map-pin me-2"></i><?= $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI') ?></h3>
+                        <p><?= $this->Model->get_setting('adresse_siege', 'Bujumbura, République du Burundi') ?></p>
                     </div>
                     <div class="map-controls">
                         <button class="map-btn" onclick="zoomIn()" title="Zoom in" aria-label="Zoom in">
@@ -970,24 +1125,24 @@
 
                 <!-- Infos Contact -->
                 <div class="info-cards">
-                    <div class="info-card" onclick="copyToClipboard('+1234567890')" role="button" tabindex="0">
+                    <div class="info-card" onclick="copyToClipboard('<?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?>')" role="button" tabindex="0">
                         <div class="info-icon">
                             <i class="fas fa-phone-alt"></i>
                         </div>
                         <div class="info-content">
                             <h4>Phone</h4>
-                            <p>+1 (234) 567-890</p>
+                            <p><?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?></p>
                             <small>Click to copy</small>
                         </div>
                     </div>
 
-                    <div class="info-card" onclick="window.location.href='mailto:contact@nufotec.com'" role="button" tabindex="0">
+                    <div class="info-card" onclick="window.location.href='mailto:<?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi2026@gmail.com') ?>'" role="button" tabindex="0">
                         <div class="info-icon">
                             <i class="fas fa-envelope"></i>
                         </div>
                         <div class="info-content">
                             <h4>Email</h4>
-                            <p>contact@nufotec.com</p>
+                            <p><?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi2026@gmail.com') ?></p>
                             <small>Click to send email</small>
                         </div>
                     </div>
@@ -998,7 +1153,7 @@
                         </div>
                         <div class="info-content">
                             <h4>Hours</h4>
-                            <p>Mon - Fri: 8:00 AM - 6:00 PM</p>
+                            <p><?= $this->Model->get_setting('horaires_travail', 'Dimanche - Vendredi: 8h00 - 17h00') ?></p>
                             <span class="hours-badge" id="statusBadge">
                                 <i class="fas fa-circle"></i>
                                 <span id="statusText">Checking...</span>

@@ -255,3 +255,7 @@ $route['blog/index'] = 'Home/Blog/index';
 $route['blog/categorie/(:any)'] = 'Home/Blog/categorie/$1';
 $route['blog/recherche'] = 'Home/Blog/recherche';
 $route['actualite/(:any)'] = 'Home/Blog/article/$1';
+
+
+
+$route['question'] = 'Home/faq';

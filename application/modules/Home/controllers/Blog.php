@@ -59,6 +59,7 @@ class Blog extends MX_Controller {
             $config['per_page'],
             $page
         );
+         $data['hero_section'] = $this->get_hero_section();
         
         // Formater les données pour la vue
         $data['articles'] = $this->formatArticles($articles);
@@ -367,4 +368,34 @@ public function article($slug = null)
         
         return $date_obj->format('d') . ' ' . $month . ' ' . $date_obj->format('Y');
     }
+
+
+ private function get_hero_section()
+    {
+        $page = $this->Model->readOne('pages', ['slug' => 'blog', 'est_publiee' => 1]);
+
+        if (empty($page)) {
+            log_message('debug', 'Page product-categories non trouvée');
+            return null;
+        }
+
+        $hero = $this->Model->readOne('sections_contenu', [
+            'id_page'      => $page['id_page'],
+            'type_section' => 'hero',
+            'est_active'   => 1
+        ]);
+
+        if (empty($hero)) {
+            log_message('debug', 'Section hero non trouvée pour la page ' . $page['id_page']);
+            return null;
+        }
+
+        if (!empty($hero['options_json'])) {
+            $hero['options'] = json_decode($hero['options_json'], true);
+        }
+
+        return $hero;
+    }
+    
+    
 }

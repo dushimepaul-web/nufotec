@@ -186,81 +186,166 @@ class Audio extends MX_Controller {
         return;
     }
 
-    public function uploadChunk()
-    {
-        $this->_csrf_off();
-        $this->output->set_content_type('application/json');
-        
-        $upload_id   = $this->input->post('upload_id');
-        $chunk_index = (int)$this->input->post('chunk_index');
+   public function uploadChunk()
+{
+    $this->_csrf_off();
+    $this->output->set_content_type('application/json');
+    
+    // LOG DE DÉBUT
+    log_message('debug', '=== UPLOAD CHUNK START ===');
+    log_message('debug', 'POST data: ' . print_r($this->input->post(), true));
+    log_message('debug', 'FILES: ' . print_r($_FILES, true));
+    
+    $upload_id   = $this->input->post('upload_id');
+    $chunk_index = (int)$this->input->post('chunk_index');
 
-        if (empty($upload_id)) {
-            echo json_encode(['success' => false, 'message' => 'Upload ID manquant']);
-            return;
-        }
+    if (empty($upload_id)) {
+        log_message('error', 'Upload ID manquant');
+        echo json_encode(['success' => false, 'message' => 'Upload ID manquant']);
+        return;
+    }
 
-        $temp_dir      = $this->paths['temp'] . $upload_id . '/';
-        $metadata_file = $temp_dir . 'metadata.json';
-        
-        if (!file_exists($metadata_file)) {
-            echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
-            return;
-        }
-
-        $metadata   = json_decode(file_get_contents($metadata_file), true);
-        $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
-        
-        // Chunk déjà présent
-        if (file_exists($chunk_path)) {
-            if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
-                $metadata['uploaded_chunks'][] = $chunk_index;
-                sort($metadata['uploaded_chunks']);
-                file_put_contents($metadata_file, json_encode($metadata));
-            }
-            
-            $uploaded = count($metadata['uploaded_chunks']);
+    $temp_dir      = $this->paths['temp'] . $upload_id . '/';
+    $metadata_file = $temp_dir . 'metadata.json';
+    
+    // Vérification détaillée du dossier
+    log_message('debug', 'Temp dir: ' . $temp_dir);
+    log_message('debug', 'Is dir? ' . (is_dir($temp_dir) ? 'YES' : 'NO'));
+    
+    if (!is_dir($temp_dir)) {
+        if (!@mkdir($temp_dir, 0777, true)) {
+            $error = error_get_last();
+            log_message('error', 'Failed to create dir: ' . ($error['message'] ?? 'unknown'));
             echo json_encode([
-                'success'  => true,
-                'message'  => 'Chunk déjà présent',
-                'progress' => [
-                    'uploaded_chunks' => $uploaded,
-                    'total_chunks'    => $metadata['total_chunks'],
-                    'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
-                ]
+                'success' => false, 
+                'message' => 'Impossible de créer le dossier: ' . $temp_dir,
+                'debug' => $error['message'] ?? 'unknown'
             ]);
             return;
         }
-
-        // Sauvegarder le chunk
-        if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-            $error = $_FILES['chunk']['error'] ?? 'unknown';
-            echo json_encode(['success' => false, 'message' => 'Erreur chunk: ' . $error]);
-            return;
-        }
-
-        if (!@move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur écriture disque']);
-            return;
-        }
-
-        // Mettre à jour metadata
-        $metadata['uploaded_chunks'][] = $chunk_index;
-        sort($metadata['uploaded_chunks']);
-        file_put_contents($metadata_file, json_encode($metadata));
-
-        $uploaded = count($metadata['uploaded_chunks']);
+        log_message('debug', 'Directory created successfully');
+    }
+    
+    if (!file_exists($metadata_file)) {
+        log_message('error', 'Metadata file not found: ' . $metadata_file);
         echo json_encode([
-            'success'  => true,
-            'message'  => 'Chunk reçu',
-            'progress' => [
-                'uploaded_chunks' => $uploaded,
-                'total_chunks'    => $metadata['total_chunks'],
-                'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
-            ]
+            'success' => false, 
+            'message' => 'Session non trouvée',
+            'debug' => 'Missing: ' . $metadata_file
         ]);
         return;
     }
 
+    $metadata = json_decode(file_get_contents($metadata_file), true);
+    log_message('debug', 'Metadata loaded: ' . json_encode($metadata));
+    
+    $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
+    
+    // Vérification détaillée du fichier uploadé
+    if (!isset($_FILES['chunk'])) {
+        log_message('error', 'No chunk in FILES');
+        echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
+        return;
+    }
+    
+    $file_error = $_FILES['chunk']['error'];
+    log_message('debug', 'File error code: ' . $file_error);
+    
+    if ($file_error !== UPLOAD_ERR_OK) {
+        $error_msg = $this->getUploadErrorMessage($file_error);
+        log_message('error', 'Upload error: ' . $error_msg);
+        echo json_encode(['success' => false, 'message' => $error_msg]);
+        return;
+    }
+    
+    // Vérifier que le fichier temporaire existe
+    if (!file_exists($_FILES['chunk']['tmp_name'])) {
+        log_message('error', 'Temp file does not exist: ' . $_FILES['chunk']['tmp_name']);
+        echo json_encode(['success' => false, 'message' => 'Fichier temporaire introuvable']);
+        return;
+    }
+    
+    $temp_size = filesize($_FILES['chunk']['tmp_name']);
+    log_message('debug', 'Temp file size: ' . $temp_size . ' bytes');
+    
+    if ($temp_size == 0) {
+        log_message('error', 'Empty file uploaded');
+        echo json_encode(['success' => false, 'message' => 'Fichier vide reçu']);
+        return;
+    }
+    
+    // Sauvegarder le chunk
+    $move_result = @move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path);
+    
+    if (!$move_result) {
+        $error = error_get_last();
+        log_message('error', 'Move failed: ' . ($error['message'] ?? 'unknown'));
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Erreur sauvegarde chunk',
+            'debug' => $error['message'] ?? 'unknown',
+            'target' => $chunk_path
+        ]);
+        return;
+    }
+    
+    // Vérifier que le fichier a bien été créé
+    if (!file_exists($chunk_path)) {
+        log_message('error', 'Chunk not created at: ' . $chunk_path);
+        echo json_encode(['success' => false, 'message' => 'Chunk non créé']);
+        return;
+    }
+    
+    $saved_size = filesize($chunk_path);
+    log_message('debug', 'Saved chunk size: ' . $saved_size . ' bytes');
+    
+    if ($saved_size != $temp_size) {
+        log_message('error', 'Size mismatch: temp=' . $temp_size . ', saved=' . $saved_size);
+        echo json_encode(['success' => false, 'message' => 'Taille incohérente']);
+        return;
+    }
+
+    // Mettre à jour metadata
+    if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
+        $metadata['uploaded_chunks'][] = $chunk_index;
+        sort($metadata['uploaded_chunks']);
+        file_put_contents($metadata_file, json_encode($metadata));
+        log_message('debug', 'Metadata updated, chunks: ' . count($metadata['uploaded_chunks']));
+    }
+
+    $uploaded = count($metadata['uploaded_chunks']);
+    echo json_encode([
+        'success'  => true,
+        'message'  => 'Chunk reçu',
+        'progress' => [
+            'uploaded_chunks' => $uploaded,
+            'total_chunks'    => $metadata['total_chunks'],
+            'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
+        ]
+    ]);
+}
+
+private function getUploadErrorMessage($error_code)
+{
+    switch ($error_code) {
+        case UPLOAD_ERR_INI_SIZE:
+            return 'Le fichier dépasse la taille maximum (upload_max_filesize)';
+        case UPLOAD_ERR_FORM_SIZE:
+            return 'Le fichier dépasse la taille maximum (MAX_FILE_SIZE)';
+        case UPLOAD_ERR_PARTIAL:
+            return 'Le fichier n\'a été que partiellement uploadé';
+        case UPLOAD_ERR_NO_FILE:
+            return 'Aucun fichier n\'a été uploadé';
+        case UPLOAD_ERR_NO_TMP_DIR:
+            return 'Dossier temporaire manquant';
+        case UPLOAD_ERR_CANT_WRITE:
+            return 'Erreur d\'écriture sur le disque';
+        case UPLOAD_ERR_EXTENSION:
+            return 'Une extension PHP a arrêté l\'upload';
+        default:
+            return 'Erreur inconnue: ' . $error_code;
+    }
+}
     public function completeUpload()
     {
         $this->_csrf_off();
