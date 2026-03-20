@@ -305,8 +305,12 @@ if (!function_exists('get_quality_badge_audio')) {
                                                                             $current_thumb = $value['miniature'] ?? '';
                                                                             $thumb_display = $current_thumb ? base_url($current_thumb) : base_url('assets/images/audio-placeholder.jpg');
                                                                             ?>
-                                                                            <img src="<?= $thumb_display ?>" class="rounded w-100" style="height: 120px; object-fit: cover;" id="currentThumb<?= $value['id_media'] ?>" onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
-                                                                            <?php if (!empty($meta['thumbnails'])): ?>
+                                                                            <img src="<?= $thumb_display ?>" 
+     class="rounded w-100" 
+     style="height: 120px; object-fit: cover;"
+     id="currentThumb<?= $value['id_media'] ?>"
+     data-original="<?= $thumb_display ?>"
+     onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
                                                                             <div class="mt-2">
                                                                                 <label class="form-label small text-muted">Changer pour :</label>
                                                                                 <div class="d-flex gap-2 flex-wrap">
@@ -742,31 +746,89 @@ function selectThumbnail(url, element) {
 
 function uploadCustomThumbnail(file) {
     if (!file) return;
-    if (!['image/jpeg','image/png','image/gif','image/webp'].includes(file.type)) { toastr.error('Format non supporté'); return; }
-    if (file.size > 2*1024*1024) { toastr.error('Image trop grande (max 2MB)'); return; }
     
+    // Validation
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        toastr.error('Format non supporté. Utilisez JPG, PNG, GIF ou WEBP');
+        return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) {
+        toastr.error('Image trop grande. Maximum 2MB');
+        return;
+    }
+
+    // Afficher la progress bar
     $('#thumbnailUploadProgress').removeClass('d-none');
     $('#thumbnailUploadProgress .progress-bar').css('width', '0%');
     
+    // Préparer l'upload
     const formData = new FormData();
     formData.append('thumbnail_file', file);
     
+    console.log('Upload miniature vers:', UPLOAD_CONFIG.baseUrl + 'uploadThumbnail');
+    
+    // Upload AJAX
     $.ajax({
-        url: '<?= base_url('audio/uploadThumbnail') ?>', type: 'POST', data: formData, processData: false, contentType: false,
-        xhr: function() { const xhr = new XMLHttpRequest(); xhr.upload.addEventListener('progress', function(evt) { if (evt.lengthComputable) $('#thumbnailUploadProgress .progress-bar').css('width', (evt.loaded/evt.total*100)+'%'); }, false); return xhr; },
+        url: UPLOAD_CONFIG.baseUrl + 'uploadThumbnail',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        xhr: function() {
+            const xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function(evt) {
+                if (evt.lengthComputable) {
+                    const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    $('#thumbnailUploadProgress .progress-bar').css('width', percentComplete + '%');
+                }
+            }, false);
+            return xhr;
+        },
         success: function(response) {
+            console.log('Réponse upload miniature:', response);
             $('#thumbnailUploadProgress').addClass('d-none');
-            if (response.success) {
+            
+            if (response.success && response.file_path) {
+                // Afficher la preview
                 $('#customThumbnailImg').attr('src', response.preview_url);
                 $('#customThumbnailPreview').removeClass('d-none');
+                
+                // Mettre à jour le champ caché
                 $('#selectedThumbnail').val(response.file_path);
+                
+                // Désélectionner les miniatures générées
                 $('.thumbnail-option').css('border', '3px solid transparent').find('.bx-check-circle').remove();
-                $('#generated-tab').removeClass('active'); $('#upload-tab').addClass('active');
-                $('#generated-thumbnails').removeClass('show active'); $('#upload-thumbnail').addClass('show active');
-                toastr.success('Miniature uploadée');
-            } else toastr.error(response.message || 'Erreur upload');
+                
+                // Switch vers l'onglet upload
+                $('#generated-tab').removeClass('active');
+                $('#upload-tab').addClass('active');
+                $('#generated-thumbnails').removeClass('show active');
+                $('#upload-thumbnail').addClass('show active');
+                
+                toastr.success(response.message || 'Miniature uploadée avec succès');
+            } else {
+                toastr.error(response.message || 'Erreur upload miniature');
+            }
         },
-        error: function() { $('#thumbnailUploadProgress').addClass('d-none'); toastr.error('Erreur upload'); }
+        error: function(xhr, status, error) {
+            console.error('Erreur AJAX:', xhr.status, error);
+            console.error('Response:', xhr.responseText);
+            $('#thumbnailUploadProgress').addClass('d-none');
+            
+            let errorMsg = 'Erreur lors de l\'upload de la miniature';
+            if (xhr.responseText) {
+                try {
+                    const json = JSON.parse(xhr.responseText);
+                    errorMsg = json.message || errorMsg;
+                } catch(e) {
+                    errorMsg += ': ' + xhr.responseText.substring(0, 100);
+                }
+            }
+            toastr.error(errorMsg);
+        }
     });
 }
 
@@ -781,49 +843,126 @@ function removeCustomThumbnail() {
 
 function uploadEditThumbnail(id, file) {
     if (!file) return;
-    if (!['image/jpeg','image/png','image/gif','image/webp'].includes(file.type)) { toastr.error('Format non supporté'); return; }
-    if (file.size > 2*1024*1024) { toastr.error('Image trop grande (max 2MB)'); return; }
     
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        toastr.error('Format non supporté');
+        return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) {
+        toastr.error('Image trop grande (max 2MB)');
+        return;
+    }
+    
+    // Progress bar
     $(`#editThumbProgress${id}`).removeClass('d-none');
     $(`#editThumbProgress${id} .progress-bar`).css('width', '0%');
     
     const formData = new FormData();
     formData.append('thumbnail_file', file);
     
+    console.log('Upload miniature édition vers:', UPLOAD_CONFIG.baseUrl + 'uploadThumbnail');
+    
     $.ajax({
-        url: '<?= base_url('audio/uploadThumbnail') ?>', type: 'POST', data: formData, processData: false, contentType: false,
-        xhr: function() { const xhr = new XMLHttpRequest(); xhr.upload.addEventListener('progress', function(evt) { if (evt.lengthComputable) $(`#editThumbProgress${id} .progress-bar`).css('width', (evt.loaded/evt.total*100)+'%'); }, false); return xhr; },
+        url: UPLOAD_CONFIG.baseUrl + 'uploadThumbnail',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        xhr: function() {
+            const xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function(evt) {
+                if (evt.lengthComputable) {
+                    const percent = Math.round((evt.loaded / evt.total) * 100);
+                    $(`#editThumbProgress${id} .progress-bar`).css('width', percent + '%');
+                }
+            }, false);
+            return xhr;
+        },
         success: function(response) {
+            console.log('Réponse upload édition:', response);
             $(`#editThumbProgress${id}`).addClass('d-none');
-            if (response.success) {
+            
+            if (response.success && response.file_path) {
+                // Mettre à jour l'image principale
                 $(`#currentThumb${id}`).attr('src', response.preview_url);
+                
+                // Afficher la preview nouvelle
                 $(`#editThumbImg${id}`).attr('src', response.preview_url);
                 $(`#editThumbPreview${id}`).removeClass('d-none');
+                
+                // Mettre à jour le champ caché
                 $(`#editThumbSelected${id}`).val(response.file_path);
+                
+                // Reset les sélections précédentes
                 $(`.edit-thumb-option[data-id="${id}"]`).css('border', '2px solid transparent');
+                
                 toastr.success('Miniature uploadée');
-            } else toastr.error(response.message);
+            } else {
+                toastr.error(response.message || 'Erreur upload');
+            }
         },
-        error: function() { $(`#editThumbProgress${id}`).addClass('d-none'); toastr.error('Erreur upload'); }
+        error: function(xhr, status, error) {
+            console.error('Erreur upload édition:', xhr.status, error);
+            $(`#editThumbProgress${id}`).addClass('d-none');
+            
+            let errorMsg = 'Erreur upload';
+            if (xhr.responseText) {
+                try {
+                    const json = JSON.parse(xhr.responseText);
+                    errorMsg = json.message || errorMsg;
+                } catch(e) {
+                    errorMsg += ': ' + xhr.responseText.substring(0, 100);
+                }
+            }
+            toastr.error(errorMsg);
+        }
     });
 }
 
 function selectEditThumbnail(id, url, element) {
+    console.log('Sélection miniature édition:', id, url);
+    
+    // Mettre à jour le champ caché
     $(`#editThumbSelected${id}`).val(url);
+    
+    // Mettre à jour l'image principale
     const fullUrl = url.startsWith('http') ? url : '<?= base_url() ?>' + url;
     $(`#currentThumb${id}`).attr('src', fullUrl);
+    
+    // Visuellement marquer la sélection
     $(element).closest('.modal-body').find('.edit-thumb-option').css('border', '2px solid transparent');
     $(element).css('border', '2px solid #1DB954');
+    
+    // Cacher la preview d'upload si présente
     $(`#editThumbPreview${id}`).addClass('d-none');
+    
     toastr.success('Miniature sélectionnée');
 }
 
 function removeEditThumbnail(id) {
     $(`#editThumbPreview${id}`).addClass('d-none');
     $(`#editThumbImg${id}`).attr('src', '');
+    
+    // Resélectionner la première miniature disponible ou vider
     const firstOption = $(`#editModal${id} .edit-thumb-option`).first();
-    if (firstOption.length) { const url = firstOption.data('thumb'); selectEditThumbnail(id, url, firstOption[0]); }
-    else $(`#editThumbSelected${id}`).val('');
+    if (firstOption.length) {
+        const url = firstOption.data('thumb');
+        if (url) {
+            selectEditThumbnail(id, url, firstOption[0]);
+        }
+    } else {
+        $(`#editThumbSelected${id}`).val('');
+        // Restaurer l'image originale
+        const originalThumb = $(`#currentThumb${id}`).data('original') || '';
+        if (originalThumb) {
+            $(`#currentThumb${id}`).attr('src', originalThumb);
+        }
+    }
+    
+    toastr.info('Miniature restaurée');
 }
 
 function resetUpload() {
@@ -848,10 +987,37 @@ function openPlayer(id, title) {
 }
 
 function toggleStatus(id, status) {
-    $.ajax({ url: '<?= base_url('audio/ChangeStatus') ?>', type: 'POST', data: { id: id, est_actif: status }, success: function(r) { if(r.success) { toastr.success(status ? 'Audio public' : 'Audio privé'); setTimeout(()=>location.reload(),500); } else toastr.error('Erreur'); }, error: () => toastr.error('Erreur serveur') });
+    $.ajax({
+        url: UPLOAD_CONFIG.baseUrl + 'ChangeStatus',
+        type: 'POST',
+        data: { id: id, est_actif: status },
+        dataType: 'json',
+        success: function(response) {
+            if (response && response.success) {
+                toastr.success(status ? 'Audio rendu public' : 'Audio mis en privé');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                toastr.error(response?.message || 'Erreur lors du changement de statut');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Erreur toggleStatus:', error);
+            toastr.error('Erreur serveur');
+        }
+    });
 }
 
-function confirmDelete(id, title) { $('#deleteAudioId').val(id); $('#deleteAudioTitle').text(title); $('#deleteModal').modal('show'); }
+function confirmDelete(id, title) {
+    $('#deleteAudioId').val(id);
+    $('#deleteAudioTitle').text(title || 'Cet audio');
+    
+    // Utiliser Bootstrap 5 modal API
+    const modalElement = document.getElementById('deleteModal');
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+}
 
 $(document).ready(function() {
     if ($.fn.DataTable) $('#audiosTable').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' }, order: [[0, 'desc']], pageLength: 25 });
