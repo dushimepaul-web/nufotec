@@ -1,135 +1,6 @@
-<script>
-    window.addEventListener("load", function() {
-        const loader = document.getElementById("loadingSpinner");
-        if (loader) {
-            setTimeout(() => {
-                loader.classList.add("loader-hidden");
-                setTimeout(() => {
-                    loader.remove();
-                }, 400); // après la transition de 0.4s, on supprime
-            }, 3000); // 
-        }
-    });
-</script>
-
-
-
-
-
-
-
-
-
-<!-- ===== BOUTON PANIER FLOTTANT ===== -->
-<a href="<?php echo base_url('panier'); ?>" class="cart-link">
-    <i class="bi bi-cart-fill"></i>
-    <span class="cart-badge" id="cartBadge">0</span>
-</a>
-
-<script>
-// ============================================
-// SCRIPT GLOBAL DE MISE À JOUR DU BADGE PANIER
-// ============================================
-(function() {
-    // Définir BASE_URL si ce n'est pas déjà fait
-    if (typeof BASE_URL === 'undefined') {
-        window.BASE_URL = '<?php echo base_url(); ?>';
-    }
-
-    // Fonction de mise à jour du badge (rendue globale pour être appelée depuis les autres pages)
-    window.updateCartBadge = function() {
-        fetch(BASE_URL + 'panier/get_cart')
-            .then(response => response.json())
-            .then(data => {
-                var badge = document.getElementById('cartBadge');
-                if (badge) {
-                    badge.textContent = data.nb_articles || 0;
-                }
-            })
-            .catch(error => console.error('Erreur mise à jour badge:', error));
-    };
-
-    // Première mise à jour immédiate
-    window.updateCartBadge();
-
-    // Mise à jour toutes les 2 secondes
-    setInterval(window.updateCartBadge, 2000);
-})();
-</script>
-<style>
-    /* Bouton panier flottant */
-.cart-link {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #0f4c3a 0%, #1a6b52 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 24px;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-    cursor: pointer;
-    z-index: 999;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    border: none;
-    text-decoration: none;
-}
-
-.cart-link:hover {
-    transform: scale(1.1) rotate(5deg);
-    background: linear-gradient(135deg, #1a6b52 0%, #0f4c3a 100%);
-    color: white;
-}
-
-.cart-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #d4af37;
-    color: #0a3326;
-    font-size: 12px;
-    font-weight: 700;
-    min-width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    padding: 0 6px;
-}
-
-/* Adaptation mobile */
-@media (max-width: 768px) {
-    .cart-link {
-        bottom: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-    }
-}
-</style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- =========================================== -->
 <!-- MODERN FOOTER - 3 COLUMNS ONLY -->
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- =========================================== -->
 <footer class="site-footer" id="footer">
     <div class="footer-container">
         
@@ -140,37 +11,45 @@
                     
                     <!-- Column 1: Brand & Quick Contact -->
                     <div class="footer-col footer-col-brand">
-                         <div class="footer-brand">
-    <img src="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('site_logo', 'site_logo_20260309231724_69af38e43ca74.jpeg')) ?>" 
-         alt="<?= $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI') ?>" 
-         class="footer-logo"
-         onerror="this.src='<?= base_url('assets/images/placeholder.png') ?>'">
-    <div class="brand-info">
-        <h3><?= $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI') ?></h3>
-        <span><?= $this->Model->get_setting('agf_slogan', 'Excellence Agro-Industrielle et Phytomédicinale') ?></span>
-    </div>
-</div>
+                        <div class="footer-brand">
+                            <?php 
+                            $logo_path = $this->Model->get_setting('site_logo', '');
+                            $logo_full_path = FCPATH . 'attachments/Configurations/' . $logo_path;
+                            if (!empty($logo_path) && file_exists($logo_full_path)): 
+                            ?>
+                                <img src="<?= base_url('attachments/Configurations/' . $logo_path) ?>" 
+                                     alt="<?= $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI') ?>" 
+                                     class="footer-logo">
+                            <?php else: ?>
+                                <div class="footer-logo-placeholder">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                            <?php endif; ?>
+                            <div class="brand-info">
+                                <h3><?= $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI') ?></h3>
+                                <span><?= $this->Model->get_setting('agf_slogan', 'Excellence Agro-Industrielle et Phytomédicinale') ?></span>
+                            </div>
+                        </div>
 
-<p class="footer-desc">
-    <?= $this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi') ?>
-</p>
+                        <p class="footer-desc">
+                            <?= $this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi') ?>
+                        </p>
 
-<!-- Quick Contact -->
-<div class="footer-quick-contact">
-    <a href="tel:<?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?>" class="quick-contact-item">
-        <i class="bi bi-telephone-fill"></i>
-        <span><?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?></span>
-    </a>
-    <a href="mailto:<?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com') ?>" class="quick-contact-item">
-        <i class="bi bi-envelope-fill"></i>
-        <span><?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com') ?></span>
-    </a>
-    <a href="#" class="quick-contact-item" onclick="openMap()">
-        <i class="bi bi-geo-alt-fill"></i>
-        <span><?= $this->Model->get_setting('adresse_siege', 'Bujumbura, République du Burundi') ?></span>
-    </a>
-</div>
-
+                        <!-- Quick Contact -->
+                        <div class="footer-quick-contact">
+                            <a href="tel:<?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?>" class="quick-contact-item">
+                                <i class="bi bi-telephone-fill"></i>
+                                <span><?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?></span>
+                            </a>
+                            <a href="mailto:<?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com') ?>" class="quick-contact-item">
+                                <i class="bi bi-envelope-fill"></i>
+                                <span><?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com') ?></span>
+                            </a>
+                            <a href="#" class="quick-contact-item" onclick="openMap(); return false;">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                <span><?= $this->Model->get_setting('adresse_siege', 'Bujumbura, République du Burundi') ?></span>
+                            </a>
+                        </div>
 
                         <!-- Social Links -->
                         <div class="footer-social">
@@ -225,19 +104,19 @@
                             <ul class="footer-links">
                                 <li>
                                     <a href="<?= base_url('Medicins') ?>">
-                                        <i class="bi bi-file-earmark-pdf"></i>
+                                        <i class="bi bi-camera-video"></i>
                                         Medical Consultation
                                     </a>
                                 </li>
                                 <li>
                                     <a href="<?= base_url('boutique') ?>">
-                                        <i class="bi bi-file-earmark-pdf"></i>
+                                        <i class="bi bi-shop"></i>
                                         Product Sales
                                     </a>
                                 </li>
                                 <li>
                                     <a href="<?= base_url('investissement') ?>">
-                                        <i class="bi bi-file-earmark-pdf"></i>
+                                        <i class="bi bi-graph-up"></i>
                                         Investment Research
                                     </a>
                                 </li>
@@ -259,9 +138,9 @@
                         <p>&copy; <?= date('Y') ?> <strong><?= $this->Model->get_setting('site_name', 'AGF Phytomed') ?></strong>. All rights reserved.</p>
                     </div>
 
-                    <!-- Legal Links -->
-                    <div class="footer-legal">
-                        <p>designed by Dushime Paul : dushimeyesupaulin@gmail.com</p>
+                    <!-- Designed by -->
+                    <div class="footer-credit">
+                        <p>Designed by Dushime Paul : <a href="mailto:dushimeyesupaulin@gmail.com">dushimeyesupaulin@gmail.com</a></p>
                     </div>
 
                     <!-- Back to Top -->
@@ -282,7 +161,7 @@
         <i class="bi bi-house-door-fill"></i>
         <span>Home</span>
     </a>
-    <a href="<?= base_url('Home/Boutique') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('boutique') ?>" class="sticky-nav-item">
         <i class="bi bi-shop"></i>
         <span>Shop</span>
     </a>
@@ -291,13 +170,13 @@
         <span>Teleconsult</span>
     </a>
     <a href="<?= base_url('Investors-form') ?>" class="sticky-nav-item">
-    <i class="bi bi-graph-up-arrow"></i>
-    <span>Invest</span>
-</a>
+        <i class="bi bi-graph-up-arrow"></i>
+        <span>Invest</span>
+    </a>
     <a href="<?= base_url('panier') ?>" class="sticky-nav-item cart-item">
         <i class="bi bi-cart3"></i>
         <span>Cart</span>
-        <span class="sticky-badge" id="cart">0</span>
+        <span class="sticky-badge" id="cartBadgeMobile">0</span>
     </a>
     <a href="<?= base_url('Home/Contact') ?>" class="sticky-nav-item">
         <i class="bi bi-headset"></i>
@@ -384,13 +263,27 @@
     height: 56px;
     border-radius: 12px;
     background: white;
-    padding: 4px;
-    object-fit: cover;
+    padding: 8px;
+    object-fit: contain;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease;
 }
 
-.footer-brand:hover .footer-logo {
+.footer-logo-placeholder {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--footer-accent);
+    transition: transform 0.3s ease;
+}
+
+.footer-brand:hover .footer-logo,
+.footer-brand:hover .footer-logo-placeholder {
     transform: scale(1.05) rotate(3deg);
 }
 
@@ -514,7 +407,7 @@
 }
 
 .footer-links li {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .footer-links a {
@@ -523,7 +416,7 @@
     font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     transition: all 0.3s ease;
     padding: 6px 0;
 }
@@ -536,6 +429,7 @@
 .footer-links a i {
     color: var(--footer-accent);
     font-size: 14px;
+    width: 20px;
 }
 
 /* ============================================
@@ -565,28 +459,20 @@
     font-weight: 600;
 }
 
-.footer-legal {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.footer-legal a {
-    color: var(--footer-text-muted);
-    text-decoration: none;
+.footer-credit {
     font-size: 0.85rem;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.footer-legal a:hover {
-    color: var(--footer-accent);
-}
-
-.footer-legal .separator {
     color: var(--footer-text-muted);
-    font-size: 8px;
+}
+
+.footer-credit a {
+    color: var(--footer-accent);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-credit a:hover {
+    color: white;
+    text-decoration: underline;
 }
 
 .back-to-top {
@@ -824,7 +710,7 @@
         gap: 12px;
     }
     
-    .footer-logo {
+    .footer-logo, .footer-logo-placeholder {
         width: 64px;
         height: 64px;
     }
@@ -842,16 +728,8 @@
         font-size: 0.85rem;
     }
     
-    .footer-legal {
-        gap: 12px;
-    }
-    
-    .footer-legal a {
-        font-size: 0.8rem;
-    }
-    
-    .footer-legal .separator {
-        display: none;
+    .footer-credit {
+        font-size: 0.75rem;
     }
 }
 
@@ -882,18 +760,6 @@
 @media (max-height: 500px) and (max-width: 992px) {
     .mobile-sticky-footer {
         display: none;
-    }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .mobile-sticky-footer {
-        background: #1a1a1a;
-        border-top-color: #333;
-    }
-    
-    .sticky-nav-item {
-        color: #a0a0a0;
     }
 }
 
@@ -946,43 +812,39 @@ function scrollToTop() {
 
 // Open Map
 function openMap() {
-    const address = "<?= $this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi') ?>";
+    const address = "<?= addslashes($this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi')) ?>";
     window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
 }
 
-
-
-
 // ============================================
-// SCRIPT footer DE MISE À JOUR DU BADGE PANIER
+// CART BADGE UPDATE (Sans image placeholder)
 // ============================================
 (function() {
-    // Définir BASE_URL si ce n'est pas déjà fait
     if (typeof BASE_URL === 'undefined') {
         window.BASE_URL = '<?php echo base_url(); ?>';
     }
 
-    // Fonction de mise à jour du badge (rendue globale pour être appelée depuis les autres pages)
-    window.updateCartBadgecart = function() {
+    function updateCartBadges() {
         fetch(BASE_URL + 'panier/get_cart')
             .then(response => response.json())
             .then(data => {
-                var badge = document.getElementById('cart');
-                if (badge) {
-                    badge.textContent = data.nb_articles || 0;
-                }
+                const count = data.nb_articles || 0;
+                
+                // Update desktop badge (si existant)
+                const desktopBadge = document.getElementById('cartBadge');
+                if (desktopBadge) desktopBadge.textContent = count;
+                
+                // Update mobile badge
+                const mobileBadge = document.getElementById('cartBadgeMobile');
+                if (mobileBadge) mobileBadge.textContent = count;
             })
-            .catch(error => console.error('Erreur mise à jour badge:', error));
-    };
+            .catch(error => console.error('Erreur mise à jour badge panier:', error));
+    }
 
-    // Première mise à jour immédiate
-    window.updateCartBadgecart();
-
-    // Mise à jour toutes les 2 secondes
-    setInterval(window.updateCartBadgecart, 2000);
+    window.updateCartBadges = updateCartBadges;
+    updateCartBadges();
+    setInterval(updateCartBadges, 5000);
 })();
-
-
 
 // Intersection Observer for scroll animations
 const footerObserver = new IntersectionObserver((entries) => {
@@ -997,135 +859,3 @@ document.querySelectorAll('.footer-col').forEach(col => {
     footerObserver.observe(col);
 });
 </script>
-
-
-
-
-
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SCRIPTS - ORDRE CORRIGÉ -->
-<!-- ═══════════════════════════════════════════════════════ -->
-
-<!-- 1. Bootstrap JS D'ABORD -->
-<script src="<?= base_url() ?>assets/backend/js/bootstrap.bundle.min.js"></script>
-
-
-
-<!-- 4. Autres scripts -->
-<script src="<?= base_url() ?>assets/backend/js/swiper-bundle.min.js"></script>
-
-
-
-
-    <script>
-        // Page Loader
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                document.getElementById('pageLoader').classList.add('hidden');
-            }, 1000);
-        });
-
-        // Initialize Swiper
-        const heroSwiper = new Swiper('.heroSwiper', {
-            spaceBetween: 0,
-            effect: 'fade',
-            fadeEffect: {
-                crossFade: true
-            },
-            speed: 1000,
-            autoplay: {
-                delay: 6000,
-                disableOnInteraction: false,
-            },
-            pagination: {
-                el: '.swiper-pagination',
-                clickable: true,
-                dynamicBullets: true,
-            },
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            loop: true,
-            grabCursor: true,
-            keyboard: {
-                enabled: true,
-            },
-            on: {
-                slideChange: function () {
-                    // Reset animations
-                    const activeSlide = this.slides[this.activeIndex];
-                    const content = activeSlide.querySelector('.slide-inner');
-                    content.style.animation = 'none';
-                    setTimeout(() => {
-                        content.style.animation = 'slideInUp 1s ease';
-                    }, 10);
-                }
-            }
-        });
-
-        // Scroll Effect
-        window.addEventListener('scroll', function() {
-           // ✅ APRÈS (avec vérification null)
-const navbar = document.querySelector('.main-navbar');
-const header = document.querySelector('.main-header');
-const scrollIndicator = document.querySelector('.scroll-indicator');
-
-window.addEventListener('scroll', function() {
-    if (window.scrollY > 100) {
-        if (navbar) navbar.classList.add('scrolled');
-        if (header) header.style.transform = 'translateY(-100%)';
-        if (scrollIndicator) scrollIndicator.style.opacity = '0';
-    } else {
-        if (navbar) navbar.classList.remove('scrolled');
-        if (header) header.style.transform = 'translateY(0)';
-        if (scrollIndicator) scrollIndicator.style.opacity = '0.7';
-    }
-});
-        });
-
-        // Mobile Navigation Toggle
-        function toggleMobileNav() {
-            const nav = document.getElementById('mainNav');
-            const overlay = document.getElementById('mobileOverlay');
-            
-            nav.classList.toggle('active');
-            overlay.style.display = nav.classList.contains('active') ? 'block' : 'none';
-        }
-
-        // Mobile Dropdown Toggle
-        document.querySelectorAll('.nav-item.dropdown').forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (window.innerWidth <= 991) {
-                    e.preventDefault();
-                    this.classList.toggle('active');
-                }
-            });
-        });
-
-        // Smooth Scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Parallax effect for hero slides
-        window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const parallaxElements = document.querySelectorAll('.slide-bg');
-            parallaxElements.forEach(el => {
-                const speed = 0.5;
-                el.style.transform = `translateY(${scrolled * speed}px) scale(1.1)`;
-            });
-
-        });
-    </script>
