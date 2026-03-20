@@ -1067,20 +1067,22 @@ document.querySelectorAll('.footer-col').forEach(col => {
 
         // Scroll Effect
         window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.main-navbar');
-            const header = document.querySelector('.main-header');
-            const scrollIndicator = document.querySelector('.scroll-indicator');
-            
-            if (window.scrollY > 100) {
-                navbar.classList.add('scrolled');
-                header.style.transform = 'translateY(-100%)';
-                header.style.transition = 'transform 0.3s ease';
-                if (scrollIndicator) scrollIndicator.style.opacity = '0';
-            } else {
-                navbar.classList.remove('scrolled');
-                header.style.transform = 'translateY(0)';
-                if (scrollIndicator) scrollIndicator.style.opacity = '0.7';
-            }
+           // ✅ APRÈS (avec vérification null)
+const navbar = document.querySelector('.main-navbar');
+const header = document.querySelector('.main-header');
+const scrollIndicator = document.querySelector('.scroll-indicator');
+
+window.addEventListener('scroll', function() {
+    if (window.scrollY > 100) {
+        if (navbar) navbar.classList.add('scrolled');
+        if (header) header.style.transform = 'translateY(-100%)';
+        if (scrollIndicator) scrollIndicator.style.opacity = '0';
+    } else {
+        if (navbar) navbar.classList.remove('scrolled');
+        if (header) header.style.transform = 'translateY(0)';
+        if (scrollIndicator) scrollIndicator.style.opacity = '0.7';
+    }
+});
         });
 
         // Mobile Navigation Toggle
