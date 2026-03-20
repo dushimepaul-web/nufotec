@@ -299,29 +299,38 @@ if (!function_exists('get_quality_badge_audio')) {
                                                             <div class="card-body">
                                                                 <div class="row">
                                                                     <div class="col-md-5">
-                                                                        <label class="form-label small text-muted">Miniature actuelle</label>
-                                                                        <div class="position-relative">
-                                                                            <?php 
-                                                                            $current_thumb = $value['miniature'] ?? '';
-                                                                            $thumb_display = $current_thumb ? base_url($current_thumb) : base_url('assets/images/audio-placeholder.jpg');
-                                                                            ?>
-                                                                            <img src="<?= $thumb_display ?>" 
-     class="rounded w-100" 
-     style="height: 120px; object-fit: cover;"
-     id="currentThumb<?= $value['id_media'] ?>"
-     data-original="<?= $thumb_display ?>"
-     onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
-                                                                            <div class="mt-2">
-                                                                                <label class="form-label small text-muted">Changer pour :</label>
-                                                                                <div class="d-flex gap-2 flex-wrap">
-                                                                                    <?php foreach ($meta['thumbnails'] as $thumb_key => $thumb_url): if (empty($thumb_url)) continue; ?>
-                                                                                        <img src="<?= base_url($thumb_url) ?>" class="rounded cursor-pointer edit-thumb-option" style="width: 60px; height: 60px; object-fit: cover; border: 2px solid transparent;" onclick="selectEditThumbnail(<?= $value['id_media'] ?>, '<?= $thumb_url ?>', this)" data-thumb="<?= $thumb_url ?>" title="<?= htmlspecialchars($thumb_key) ?>">
-                                                                                    <?php endforeach; ?>
-                                                                                </div>
-                                                                            </div>
-                                                                            <?php endif; ?>
-                                                                        </div>
-                                                                    </div>
+    <label class="form-label small text-muted">Miniature actuelle</label>
+    <div class="position-relative">
+        <?php 
+        $current_thumb = $value['miniature'] ?? '';
+        $thumb_display = $current_thumb ? base_url($current_thumb) : base_url('assets/images/audio-placeholder.jpg');
+        ?>
+        <img src="<?= $thumb_display ?>" 
+             class="rounded w-100" 
+             style="height: 120px; object-fit: cover;"
+             id="currentThumb<?= $value['id_media'] ?>"
+             data-original="<?= $thumb_display ?>"
+             onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
+        
+        <?php if (!empty($meta['thumbnails'])): ?>
+        <div class="mt-2">
+            <label class="form-label small text-muted">Changer pour :</label>
+            <div class="d-flex gap-2 flex-wrap">
+                <?php foreach ($meta['thumbnails'] as $thumb_key => $thumb_url): 
+                    if (empty($thumb_url)) continue; 
+                ?>
+                    <img src="<?= base_url($thumb_url) ?>" 
+                         class="rounded cursor-pointer edit-thumb-option" 
+                         style="width: 60px; height: 60px; object-fit: cover; border: 2px solid transparent;" 
+                         onclick="selectEditThumbnail(<?= $value['id_media'] ?>, '<?= $thumb_url ?>', this)" 
+                         data-thumb="<?= $thumb_url ?>" 
+                         title="<?= htmlspecialchars($thumb_key) ?>">
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
                                                                     <div class="col-md-7">
                                                                         <label class="form-label small text-muted">Ou uploader une nouvelle</label>
                                                                         <div class="upload-thumbnail-zone border rounded p-3 text-center mb-2" style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;" onclick="document.getElementById('editThumbInput<?= $value['id_media'] ?>').click()">
