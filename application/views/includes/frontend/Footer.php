@@ -1,6 +1,6 @@
-<!-- =========================================== -->
+<!-- ═══════════════════════════════════════════════════════ -->
 <!-- MODERN FOOTER - 3 COLUMNS ONLY -->
-<!-- =========================================== -->
+<!-- ═══════════════════════════════════════════════════════ -->
 <footer class="site-footer" id="footer">
     <div class="footer-container">
         
@@ -13,61 +13,46 @@
                     <div class="footer-col footer-col-brand">
                         <div class="footer-brand">
                             <?php 
-                            $logo_path = $this->Model->get_setting('site_logo', '');
-                            $logo_full_path = FCPATH . 'attachments/Configurations/' . $logo_path;
-                            if (!empty($logo_path) && file_exists($logo_full_path)): 
+                            $site_logo = $this->Model->get_setting('site_logo');
+                            if (!empty($site_logo)): 
                             ?>
-                                <img src="<?= base_url('attachments/Configurations/' . $logo_path) ?>" 
-                                     alt="<?= $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI') ?>" 
-                                     class="footer-logo">
-                            <?php else: ?>
-                                <div class="footer-logo-placeholder">
-                                    <i class="bi bi-building"></i>
-                                </div>
+                            <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" 
+                                 alt="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?>" 
+                                 class="footer-logo">
                             <?php endif; ?>
                             <div class="brand-info">
-                                <h3><?= $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI') ?></h3>
-                                <span><?= $this->Model->get_setting('agf_slogan', 'Excellence Agro-Industrielle et Phytomédicinale') ?></span>
+                                <h3><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?></h3>
+                                <span><?= htmlspecialchars($this->Model->get_setting('agf_slogan', 'Excellence Agro-Industrielle et Phytomédicinale')) ?></span>
                             </div>
                         </div>
 
                         <p class="footer-desc">
-                            <?= $this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi') ?>
+                            <?= htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi')) ?>
                         </p>
 
                         <!-- Quick Contact -->
                         <div class="footer-quick-contact">
-                            <a href="tel:<?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?>" class="quick-contact-item">
+                            <a href="tel:<?= htmlspecialchars($this->Model->get_setting('site_phone', '+257 79 666 439')) ?>" class="quick-contact-item">
                                 <i class="bi bi-telephone-fill"></i>
-                                <span><?= $this->Model->get_setting('site_phone', '+257 79 666 439') ?></span>
+                                <span><?= htmlspecialchars($this->Model->get_setting('site_phone', '+257 79 666 439')) ?></span>
                             </a>
-                            <a href="mailto:<?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com') ?>" class="quick-contact-item">
+                            <a href="mailto:<?= htmlspecialchars($this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com')) ?>" class="quick-contact-item">
                                 <i class="bi bi-envelope-fill"></i>
-                                <span><?= $this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com') ?></span>
+                                <span><?= htmlspecialchars($this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com')) ?></span>
                             </a>
                             <a href="#" class="quick-contact-item" onclick="openMap(); return false;">
                                 <i class="bi bi-geo-alt-fill"></i>
-                                <span><?= $this->Model->get_setting('adresse_siege', 'Bujumbura, République du Burundi') ?></span>
+                                <span><?= htmlspecialchars($this->Model->get_setting('adresse_siege', 'Bujumbura, République du Burundi')) ?></span>
                             </a>
                         </div>
 
                         <!-- Social Links -->
                         <div class="footer-social">
-                            <a href="#" class="social-link" aria-label="LinkedIn">
-                                <i class="bi bi-linkedin"></i>
-                            </a>
-                            <a href="#" class="social-link" aria-label="Twitter">
-                                <i class="bi bi-twitter-x"></i>
-                            </a>
-                            <a href="#" class="social-link" aria-label="Facebook">
-                                <i class="bi bi-facebook"></i>
-                            </a>
-                            <a href="#" class="social-link" aria-label="Instagram">
-                                <i class="bi bi-instagram"></i>
-                            </a>
-                            <a href="#" class="social-link" aria-label="YouTube">
-                                <i class="bi bi-youtube"></i>
-                            </a>
+                            <a href="#" class="social-link" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+                            <a href="#" class="social-link" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+                            <a href="#" class="social-link" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                            <a href="#" class="social-link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                            <a href="#" class="social-link" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
                         </div>
                     </div>
 
@@ -104,7 +89,7 @@
                             <ul class="footer-links">
                                 <li>
                                     <a href="<?= base_url('Medicins') ?>">
-                                        <i class="bi bi-camera-video"></i>
+                                        <i class="bi bi-heart-pulse"></i>
                                         Medical Consultation
                                     </a>
                                 </li>
@@ -116,7 +101,7 @@
                                 </li>
                                 <li>
                                     <a href="<?= base_url('investissement') ?>">
-                                        <i class="bi bi-graph-up"></i>
+                                        <i class="bi bi-graph-up-arrow"></i>
                                         Investment Research
                                     </a>
                                 </li>
@@ -135,12 +120,12 @@
                     
                     <!-- Copyright -->
                     <div class="footer-copyright">
-                        <p>&copy; <?= date('Y') ?> <strong><?= $this->Model->get_setting('site_name', 'AGF Phytomed') ?></strong>. All rights reserved.</p>
+                        <p>&copy; <?= date('Y') ?> <strong><?= htmlspecialchars($this->Model->get_setting('site_name', 'AGF Phytomed')) ?></strong>. All rights reserved.</p>
                     </div>
 
-                    <!-- Designed by -->
-                    <div class="footer-credit">
-                        <p>Designed by Dushime Paul : <a href="mailto:dushimeyesupaulin@gmail.com">dushimeyesupaulin@gmail.com</a></p>
+                    <!-- Legal Links -->
+                    <div class="footer-legal">
+                        <p>designed by Dushime Paul : dushimeyesupaulin@gmail.com</p>
                     </div>
 
                     <!-- Back to Top -->
@@ -161,7 +146,7 @@
         <i class="bi bi-house-door-fill"></i>
         <span>Home</span>
     </a>
-    <a href="<?= base_url('boutique') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('Home/Boutique') ?>" class="sticky-nav-item">
         <i class="bi bi-shop"></i>
         <span>Shop</span>
     </a>
@@ -176,7 +161,7 @@
     <a href="<?= base_url('panier') ?>" class="sticky-nav-item cart-item">
         <i class="bi bi-cart3"></i>
         <span>Cart</span>
-        <span class="sticky-badge" id="cartBadgeMobile">0</span>
+        <span class="sticky-badge" id="cart">0</span>
     </a>
     <a href="<?= base_url('Home/Contact') ?>" class="sticky-nav-item">
         <i class="bi bi-headset"></i>
@@ -263,27 +248,13 @@
     height: 56px;
     border-radius: 12px;
     background: white;
-    padding: 8px;
-    object-fit: contain;
+    padding: 4px;
+    object-fit: cover;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease;
 }
 
-.footer-logo-placeholder {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    color: var(--footer-accent);
-    transition: transform 0.3s ease;
-}
-
-.footer-brand:hover .footer-logo,
-.footer-brand:hover .footer-logo-placeholder {
+.footer-brand:hover .footer-logo {
     transform: scale(1.05) rotate(3deg);
 }
 
@@ -407,7 +378,7 @@
 }
 
 .footer-links li {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .footer-links a {
@@ -416,7 +387,7 @@
     font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.3s ease;
     padding: 6px 0;
 }
@@ -429,7 +400,6 @@
 .footer-links a i {
     color: var(--footer-accent);
     font-size: 14px;
-    width: 20px;
 }
 
 /* ============================================
@@ -459,20 +429,28 @@
     font-weight: 600;
 }
 
-.footer-credit {
-    font-size: 0.85rem;
+.footer-legal {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.footer-legal a {
     color: var(--footer-text-muted);
-}
-
-.footer-credit a {
-    color: var(--footer-accent);
     text-decoration: none;
-    transition: color 0.3s ease;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-.footer-credit a:hover {
-    color: white;
-    text-decoration: underline;
+.footer-legal a:hover {
+    color: var(--footer-accent);
+}
+
+.footer-legal .separator {
+    color: var(--footer-text-muted);
+    font-size: 8px;
 }
 
 .back-to-top {
@@ -508,7 +486,7 @@
     height: 64px;
     background: white;
     border-top: 1px solid #e2e8f0;
-    display: flex;
+    display: none;
     justify-content: space-around;
     align-items: center;
     z-index: 1030;
@@ -620,6 +598,14 @@
         gap: 0;
     }
     
+    .mobile-sticky-footer {
+        display: flex;
+    }
+    
+    body {
+        padding-bottom: 64px;
+    }
+    
     .footer-col-brand {
         max-width: 100%;
         text-align: center;
@@ -710,7 +696,7 @@
         gap: 12px;
     }
     
-    .footer-logo, .footer-logo-placeholder {
+    .footer-logo {
         width: 64px;
         height: 64px;
     }
@@ -728,8 +714,16 @@
         font-size: 0.85rem;
     }
     
-    .footer-credit {
-        font-size: 0.75rem;
+    .footer-legal {
+        gap: 12px;
+    }
+    
+    .footer-legal a {
+        font-size: 0.8rem;
+    }
+    
+    .footer-legal .separator {
+        display: none;
     }
 }
 
@@ -761,6 +755,21 @@
     .mobile-sticky-footer {
         display: none;
     }
+    body {
+        padding-bottom: 0;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .mobile-sticky-footer {
+        background: #1a1a1a;
+        border-top-color: #333;
+    }
+    
+    .sticky-nav-item {
+        color: #a0a0a0;
+    }
 }
 
 /* Reduced motion */
@@ -782,80 +791,107 @@
 // FOOTER INTERACTIONS
 // ============================================
 
-// Mobile Accordions
-document.querySelectorAll('.footer-accordion-toggle').forEach(toggle => {
-    toggle.addEventListener('click', function() {
-        const expanded = this.getAttribute('aria-expanded') === 'true';
-        const content = document.getElementById(this.getAttribute('aria-controls'));
-        
-        // Close all others
-        document.querySelectorAll('.footer-accordion-toggle').forEach(other => {
-            if (other !== this) {
-                other.setAttribute('aria-expanded', 'false');
-                document.getElementById(other.getAttribute('aria-controls'))?.classList.remove('open');
-            }
-        });
-        
-        // Toggle this one
-        this.setAttribute('aria-expanded', !expanded);
-        content?.classList.toggle('open');
-    });
-});
-
-// Scroll to Top
-function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-}
-
-// Open Map
-function openMap() {
-    const address = "<?= addslashes($this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi')) ?>";
-    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
-}
-
-// ============================================
-// CART BADGE UPDATE (Sans image placeholder)
-// ============================================
 (function() {
-    if (typeof BASE_URL === 'undefined') {
-        window.BASE_URL = '<?php echo base_url(); ?>';
-    }
-
-    function updateCartBadges() {
-        fetch(BASE_URL + 'panier/get_cart')
-            .then(response => response.json())
-            .then(data => {
-                const count = data.nb_articles || 0;
-                
-                // Update desktop badge (si existant)
-                const desktopBadge = document.getElementById('cartBadge');
-                if (desktopBadge) desktopBadge.textContent = count;
-                
-                // Update mobile badge
-                const mobileBadge = document.getElementById('cartBadgeMobile');
-                if (mobileBadge) mobileBadge.textContent = count;
-            })
-            .catch(error => console.error('Erreur mise à jour badge panier:', error));
-    }
-
-    window.updateCartBadges = updateCartBadges;
-    updateCartBadges();
-    setInterval(updateCartBadges, 5000);
-})();
-
-// Intersection Observer for scroll animations
-const footerObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('footer-visible');
-        }
+    'use strict';
+    
+    // Mobile Accordions
+    document.querySelectorAll('.footer-accordion-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            const contentId = this.getAttribute('aria-controls');
+            const content = document.getElementById(contentId);
+            
+            // Close all others
+            document.querySelectorAll('.footer-accordion-toggle').forEach(function(other) {
+                if (other !== toggle) {
+                    other.setAttribute('aria-expanded', 'false');
+                    const otherContent = document.getElementById(other.getAttribute('aria-controls'));
+                    if (otherContent) otherContent.classList.remove('open');
+                }
+            });
+            
+            // Toggle this one
+            this.setAttribute('aria-expanded', !expanded);
+            if (content) content.classList.toggle('open');
+        });
     });
-}, { threshold: 0.1 });
 
-document.querySelectorAll('.footer-col').forEach(col => {
-    footerObserver.observe(col);
-});
+    // Scroll to Top
+    window.scrollToTop = function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+    // Open Map
+    window.openMap = function() {
+        const address = "<?= addslashes($this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi')) ?>";
+        window.open('https://maps.google.com/?q=' + encodeURIComponent(address), '_blank');
+    };
+
+    // ============================================
+    // SCRIPT PANIER - BADGE MISE À JOUR
+    // ============================================
+    
+    // Définir BASE_URL si ce n'est pas déjà fait
+    if (typeof BASE_URL === 'undefined') {
+        window.BASE_URL = '<?php echo rtrim(base_url(), '/'); ?>/';
+    }
+
+    // Fonction unique pour mettre à jour les badges
+    function updateCartBadges() {
+        const cartBadge = document.getElementById('cart');
+        const cartBadgeFloating = document.getElementById('cartBadge');
+        
+        // Si aucun badge n'existe, ne rien faire
+        if (!cartBadge && !cartBadgeFloating) return;
+
+        fetch(BASE_URL + 'panier/get_cart', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.text();
+        })
+        .then(function(text) {
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                // Réponse n'est pas du JSON, ignorer silencieusement
+                return;
+            }
+            
+            const count = data.nb_articles || 0;
+            
+            if (cartBadge) cartBadge.textContent = count;
+            if (cartBadgeFloating) cartBadgeFloating.textContent = count;
+        })
+        .catch(function(error) {
+            // Erreur silencieuse en production
+            console.warn('Cart update failed:', error.message);
+        });
+    }
+
+    // Exposer globalement si nécessaire
+    window.updateCartBadge = updateCartBadges;
+    window.updateCartBadgecart = updateCartBadges;
+
+    // Première mise à jour au chargement
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateCartBadges);
+    } else {
+        updateCartBadges();
+    }
+
+    // Mise à jour périodique (toutes les 5 secondes pour réduire la charge)
+    setInterval(updateCartBadges, 5000);
+
+})();
 </script>
