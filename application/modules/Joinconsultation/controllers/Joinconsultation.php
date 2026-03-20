@@ -132,8 +132,8 @@ class Joinconsultation extends MY_Controller {
     }
 
     // Charger les infos de l'autre participant
-    $this->load->model('User_model');
-    $other_user = $this->User_model->get_user_by_id($other_user_id);
+    
+    $other_user = $this->Model->get_user_by_id($other_user_id);
 
     if (!$other_user) {
         show_error('L\'autre participant est introuvable.', 404);
