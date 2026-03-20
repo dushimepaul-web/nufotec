@@ -1,3 +1,45 @@
+<script>
+    /**
+     * LOADING SPINNER NUFOTEC
+     * Affiche le spinner pendant 4 secondes puis le masque avec animation
+     */
+    (function() {
+        'use strict';
+        
+        const loader = document.getElementById("loadingSpinner");
+        
+        if (!loader) return; // Sécurité : si le spinner n'existe pas, ne rien faire
+
+        // Attendre que la page soit complètement chargée
+        window.addEventListener("load", function() {
+            
+            // Délai de 4 secondes avant de masquer le spinner
+            setTimeout(function() {
+                
+                // Ajouter la classe pour l'animation de disparition
+                loader.classList.add("loader-hidden");
+                
+                // Supprimer complètement le spinner après l'animation (0.4s)
+                setTimeout(function() {
+                    loader.remove();
+                    
+                    // Libérer le scroll si bloqué
+                    document.body.style.overflow = '';
+                    
+                }, 400); // Durée de la transition CSS
+                
+            }, 4000); // 4 secondes d'affichage
+            
+        });
+        
+        // Sécurité : si le load event ne se déclenche pas (déjà chargé)
+        if (document.readyState === 'complete') {
+            window.dispatchEvent(new Event('load'));
+        }
+        
+    })();
+</script>
+
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- MODERN FOOTER - 3 COLUMNS ONLY -->
 <!-- ═══════════════════════════════════════════════════════ -->
