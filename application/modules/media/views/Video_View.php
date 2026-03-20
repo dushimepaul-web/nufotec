@@ -276,17 +276,34 @@ if (!function_exists('extract_youtube_id')) {
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="openPlayer(<?= $value['id_media'] ?>, '<?= $js_title ?>')"><i class="bx bx-play me-2 text-success"></i>Lire</a></li>
-                                            <li><a class="dropdown-item" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editModal<?= $value['id_media'] ?>"><i class="bx bx-edit me-2 text-primary"></i>Modifier</a></li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(<?= $value['id_media'] ?>, '<?= $js_title ?>')"><i class="bx bx-trash me-2"></i>Supprimer</a></li>
-                                        </ul>
-                                    </div>
-                                </td>
+                                <td class="text-center">
+    <div class="d-flex gap-2 justify-content-center">
+        <!-- Icône Lire -->
+        <button class="btn btn-sm btn-outline-success rounded-circle" 
+                onclick="openPlayer(<?= $value['id_media'] ?>, '<?= $js_title ?>')" 
+                title="Lire la vidéo"
+                style="width: 32px; height: 32px; padding: 0;">
+            <i class="bx bx-play fs-5"></i>
+        </button>
+        
+        <!-- Icône Modifier -->
+        <button class="btn btn-sm btn-outline-primary rounded-circle" 
+                data-bs-toggle="modal" 
+                data-bs-target="#editModal<?= $value['id_media'] ?>" 
+                title="Modifier la vidéo"
+                style="width: 32px; height: 32px; padding: 0;">
+            <i class="bx bx-edit fs-5"></i>
+        </button>
+        
+        <!-- Icône Supprimer -->
+        <button class="btn btn-sm btn-outline-danger rounded-circle" 
+                onclick="confirmDelete(<?= $value['id_media'] ?>, '<?= $js_title ?>')" 
+                title="Supprimer la vidéo"
+                style="width: 32px; height: 32px; padding: 0;">
+            <i class="bx bx-trash fs-5"></i>
+        </button>
+    </div>
+</td>
                             </tr>
 
                             <!-- Edit Modal -->

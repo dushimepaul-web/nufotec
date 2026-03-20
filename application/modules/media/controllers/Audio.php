@@ -2,9 +2,8 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Audio Controller - Détection automatique durée/bitrate
- * Fonctionne avec OU sans FFmpeg (fallback intelligent)
- * cPanel compatible avec chemins étendus
+ * Audio Controller - YouTube-Style Upload
+ * Adapté pour serveur avec limites: upload_max_filesize=2M, post_max_size=8M
  */
 class Audio extends MX_Controller {
 
@@ -18,7 +17,9 @@ class Audio extends MX_Controller {
     {
         parent::__construct();
         
+        // DÉSACTIVER CSRF POUR TOUTES LES MÉTHODES AJAX
         $this->_csrf_off();
+        
         $this->initializePaths();
         $this->initializeConfig();
         $this->detectFFmpegTools();
@@ -28,45 +29,13 @@ class Audio extends MX_Controller {
         $this->load->model('media/Model_media', 'Model');
     }
 
-    // ==================== CSRF & HELPERS ====================
+    // ==================== DÉSACTIVATION CSRF ====================
 
     private function _csrf_off()
     {
         if ($this->input->is_ajax_request() || $this->input->server('REQUEST_METHOD') === 'POST') {
             $this->config->set_item('csrf_protection', FALSE);
         }
-    }
-
-    private function parseSize($size)
-    {
-        $unit = preg_replace('/[^bkmgtpezy]/i', '', $size);
-        $value = (float)preg_replace('/[^0-9.]/', '', $size);
-        $units = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
-        $unit = strtoupper($unit);
-        $pow = array_search($unit, $units) ?: 0;
-        return $value * pow(1024, $pow);
-    }
-
-    private function formatBytes($bytes)
-    {
-        if ($bytes <= 0) return '0 B';
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
-    }
-
-    private function formatDuration($seconds)
-    {
-        $hours = floor($seconds / 3600);
-        $mins = floor(($seconds % 3600) / 60);
-        $secs = floor($seconds % 60);
-        return $hours > 0 
-            ? sprintf('%d:%02d:%02d', $hours, $mins, $secs)
-            : sprintf('%d:%02d', $mins, $secs);
     }
 
     // ==================== INITIALISATION ====================
@@ -76,10 +45,10 @@ class Audio extends MX_Controller {
         $base = FCPATH;
         $this->paths = [
             'temp'         => $base . 'uploads/temp/audio/',
-            'sessions'     => $base . 'uploads/temp/sessions/',
             'originals'    => $base . 'attachments/Audio/Originals/',
             'converted'    => $base . 'attachments/Audio/Converted/',
             'thumbnails'   => $base . 'attachments/Audio/Thumbnails/',
+            'covers'       => $base . 'attachments/Audio/Covers/',
             'waveforms'    => $base . 'attachments/Audio/Waveforms/',
             'logs'         => $base . 'attachments/Audio/Logs/',
         ];
@@ -87,11 +56,12 @@ class Audio extends MX_Controller {
 
     private function initializeConfig()
     {
-        // 1.5MB chunks pour serveur 2M limit
-        $chunk_size = 1.5 * 1024 * 1024;
+        // Adapté aux limites serveur: upload_max_filesize=2M
+        // On utilise des chunks de 1.5MB pour être safe (en dessous de 2M)
+        $chunk_size = 1.5 * 1024 * 1024; // 1.5 MB (1,572,864 bytes)
         
         $this->audio_config = [
-            'chunk_size'        => $chunk_size,
+            'chunk_size'        => $chunk_size,  // 1.5MB chunks
             'max_file_size'     => 500 * 1024 * 1024, // 500MB max
             'allowed_extensions' => ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff', 'opus', 'weba'],
             'qualities' => [
@@ -101,75 +71,37 @@ class Audio extends MX_Controller {
                 'max'    => ['bitrate' => '320k', 'suffix' => '_320k']
             ]
         ];
+        
+        // Log pour debug
+        log_message('debug', 'Audio config - chunk_size: ' . $this->audio_config['chunk_size'] . ' bytes (' . round($this->audio_config['chunk_size'] / 1024 / 1024, 2) . ' MB)');
     }
-
-    // ==================== DÉTECTION FFMPEG AMÉLIORÉE ====================
 
     private function detectFFmpegTools()
     {
-        $ffmpeg_paths = [
-            '/usr/bin/ffmpeg',
-            '/usr/local/bin/ffmpeg',
-            '/opt/ffmpeg/bin/ffmpeg',
-            '/opt/cpanel/ea-php81/root/usr/bin/ffmpeg',
-            'ffmpeg'
-        ];
-        
-        $ffprobe_paths = [
-            '/usr/bin/ffprobe',
-            '/usr/local/bin/ffprobe',
-            '/opt/ffmpeg/bin/ffprobe',
-            '/opt/cpanel/ea-php81/root/usr/bin/ffprobe',
-            'ffprobe'
-        ];
-
-        $this->ffmpeg_path = $this->findBestExecutable($ffmpeg_paths);
-        $this->ffprobe_path = $this->findBestExecutable($ffprobe_paths);
-
-        log_message('info', 'FFmpeg: ' . ($this->ffmpeg_path ?: 'NON TROUVÉ'));
-        log_message('info', 'FFprobe: ' . ($this->ffprobe_path ?: 'NON TROUVÉ'));
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $this->ffmpeg_path   = 'C:\\ffmpeg\\bin\\ffmpeg.exe';
+            $this->ffprobe_path  = 'C:\\ffmpeg\\bin\\ffprobe.exe';
+            
+            if (!file_exists($this->ffmpeg_path)) {
+                $this->ffmpeg_path  = $this->findExecutable(['ffmpeg']);
+                $this->ffprobe_path = $this->findExecutable(['ffprobe']);
+            }
+        } else {
+            $this->ffmpeg_path   = $this->findExecutable(['ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg']);
+            $this->ffprobe_path  = $this->findExecutable(['ffprobe', '/usr/bin/ffprobe', '/usr/local/bin/ffprobe']);
+        }
     }
 
-    private function findBestExecutable($candidates)
+    private function findExecutable($candidates)
     {
-        if (!function_exists('exec')) {
-            return false;
-        }
-
         foreach ($candidates as $cmd) {
             if (empty($cmd)) continue;
-            
-            // Test avec which pour commandes sans chemin
-            if ($cmd === 'ffmpeg' || $cmd === 'ffprobe') {
-                $which_output = [];
-                $which_return = 0;
-                exec('which ' . escapeshellarg($cmd) . ' 2>/dev/null', $which_output, $which_return);
-                
-                if ($which_return === 0 && !empty($which_output[0])) {
-                    $full_path = $which_output[0];
-                    if ($this->testExecutable($full_path)) {
-                        return $full_path;
-                    }
-                }
-            } else {
-                // Chemin absolu
-                if ($this->testExecutable($cmd)) {
-                    return $cmd;
-                }
-            }
+            $output = [];
+            $return = 0;
+            exec($cmd . ' -version 2>/dev/null', $output, $return);
+            if ($return === 0) return $cmd;
         }
         return false;
-    }
-
-    private function testExecutable($path)
-    {
-        if (!file_exists($path)) return false;
-        
-        $output = [];
-        $return = 0;
-        exec(escapeshellarg($path) . ' -version 2>/dev/null | head -1', $output, $return);
-        
-        return ($return === 0 && !empty($output[0]));
     }
 
     private function checkGDAvailability()
@@ -201,7 +133,7 @@ class Audio extends MX_Controller {
         $this->load->view('Audio_View', $data);
     }
 
-    // ==================== API UPLOAD ====================
+    // ==================== API UPLOAD (JSON PUR) ====================
 
     public function initUpload()
     {
@@ -211,6 +143,7 @@ class Audio extends MX_Controller {
         $file_name = $this->input->post('file_name');
         $file_size = (int)$this->input->post('file_size');
 
+        // Validation
         if (empty($file_name) || $file_size <= 0) {
             echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
             return;
@@ -227,8 +160,9 @@ class Audio extends MX_Controller {
             return;
         }
 
+        // Créer session upload
         $upload_id = 'audio_' . uniqid() . '_' . bin2hex(random_bytes(4));
-        $temp_dir = $this->paths['temp'] . $upload_id . '/';
+        $temp_dir  = $this->paths['temp'] . $upload_id . '/';
         
         if (!@mkdir($temp_dir, 0777, true)) {
             echo json_encode(['success' => false, 'message' => 'Erreur création dossier']);
@@ -237,6 +171,9 @@ class Audio extends MX_Controller {
 
         $chunk_size = $this->audio_config['chunk_size'];
         $total_chunks = (int)ceil($file_size / $chunk_size);
+        
+        // Log pour debug
+        log_message('debug', 'initUpload - file: ' . $file_name . ', size: ' . $file_size . ', total_chunks: ' . $total_chunks . ', chunk_size: ' . $chunk_size);
         
         $metadata = [
             'upload_id'       => $upload_id,
@@ -266,7 +203,7 @@ class Audio extends MX_Controller {
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        $upload_id = $this->input->post('upload_id');
+        $upload_id   = $this->input->post('upload_id');
         $chunk_index = (int)$this->input->post('chunk_index');
 
         if (empty($upload_id)) {
@@ -274,7 +211,7 @@ class Audio extends MX_Controller {
             return;
         }
 
-        $temp_dir = $this->paths['temp'] . $upload_id . '/';
+        $temp_dir      = $this->paths['temp'] . $upload_id . '/';
         $metadata_file = $temp_dir . 'metadata.json';
         
         if (!file_exists($metadata_file)) {
@@ -283,31 +220,69 @@ class Audio extends MX_Controller {
         }
 
         $metadata = json_decode(file_get_contents($metadata_file), true);
-
-        if (!isset($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-            $error = isset($_FILES['chunk']) ? $_FILES['chunk']['error'] : 'aucun fichier';
-            echo json_encode(['success' => false, 'message' => 'Erreur upload: ' . $error]);
+        $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
+        
+        // Vérification détaillée du fichier uploadé
+        if (!isset($_FILES['chunk'])) {
+            echo json_encode(['success' => false, 'message' => 'Aucun chunk reçu']);
             return;
         }
-
+        
+        $file_error = $_FILES['chunk']['error'];
+        
+        if ($file_error !== UPLOAD_ERR_OK) {
+            $error_msg = $this->getUploadErrorMessage($file_error);
+            echo json_encode(['success' => false, 'message' => $error_msg]);
+            return;
+        }
+        
+        // Vérifier la taille du chunk (ne doit pas dépasser chunk_size)
         $chunk_size = $_FILES['chunk']['size'];
-        $max_allowed = $metadata['chunk_size'] + 1024;
+        $max_allowed = $metadata['chunk_size'] + 1024; // Marge 1KB
         
         if ($chunk_size > $max_allowed) {
             echo json_encode([
                 'success' => false, 
-                'message' => 'Chunk trop grand: ' . $this->formatBytes($chunk_size)
+                'message' => 'Chunk trop grand: ' . $chunk_size . ' bytes (max: ' . $metadata['chunk_size'] . ')'
             ]);
             return;
         }
-
-        $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
         
-        if (!move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
+        // Vérifier que le fichier temporaire existe
+        if (!file_exists($_FILES['chunk']['tmp_name'])) {
+            echo json_encode(['success' => false, 'message' => 'Fichier temporaire introuvable']);
+            return;
+        }
+        
+        $temp_size = filesize($_FILES['chunk']['tmp_name']);
+        
+        if ($temp_size == 0) {
+            echo json_encode(['success' => false, 'message' => 'Fichier vide reçu']);
+            return;
+        }
+        
+        // Sauvegarder le chunk
+        $move_result = @move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path);
+        
+        if (!$move_result) {
             echo json_encode(['success' => false, 'message' => 'Erreur sauvegarde chunk']);
             return;
         }
+        
+        // Vérifier que le fichier a bien été créé
+        if (!file_exists($chunk_path)) {
+            echo json_encode(['success' => false, 'message' => 'Chunk non créé']);
+            return;
+        }
+        
+        $saved_size = filesize($chunk_path);
+        
+        if ($saved_size != $temp_size) {
+            echo json_encode(['success' => false, 'message' => 'Taille incohérente']);
+            return;
+        }
 
+        // Mettre à jour metadata
         if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
             $metadata['uploaded_chunks'][] = $chunk_index;
             sort($metadata['uploaded_chunks']);
@@ -326,18 +301,32 @@ class Audio extends MX_Controller {
         ]);
     }
 
+    private function getUploadErrorMessage($error_code)
+    {
+        switch ($error_code) {
+            case UPLOAD_ERR_INI_SIZE:
+                return 'Le chunk dépasse la limite du serveur (2MB max)';
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'Le chunk dépasse la taille MAX_FILE_SIZE';
+            case UPLOAD_ERR_PARTIAL:
+                return 'Upload partiel - Réessayez';
+            case UPLOAD_ERR_NO_FILE:
+                return 'Aucun fichier reçu';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'Dossier temporaire manquant';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'Erreur d\'écriture disque';
+            case UPLOAD_ERR_EXTENSION:
+                return 'Extension PHP bloquée';
+            default:
+                return 'Erreur inconnue: ' . $error_code;
+        }
+    }
+    
     public function completeUpload()
     {
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
-        
-        // Timeout illimité pour assemblage
-        if (function_exists('set_time_limit')) {
-            @set_time_limit(0);
-        }
-        if (function_exists('ignore_user_abort')) {
-            @ignore_user_abort(true);
-        }
         
         $upload_id = $this->input->post('upload_id');
         
@@ -346,7 +335,7 @@ class Audio extends MX_Controller {
             return;
         }
 
-        $temp_dir = $this->paths['temp'] . $upload_id . '/';
+        $temp_dir      = $this->paths['temp'] . $upload_id . '/';
         $metadata_file = $temp_dir . 'metadata.json';
         
         if (!file_exists($metadata_file)) {
@@ -368,49 +357,40 @@ class Audio extends MX_Controller {
             echo json_encode([
                 'success' => false,
                 'message' => 'Chunks manquants: ' . count($missing),
-                'missing' => array_slice($missing, 0, 10)
+                'missing' => $missing
             ]);
             return;
         }
 
-        // Assembler fichier final (STREAMING pour économie mémoire)
-        $safe_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($metadata['file_name'], PATHINFO_FILENAME));
-        $original_name = date('YmdHis') . '_' . $safe_name . '_audio.' . pathinfo($metadata['file_name'], PATHINFO_EXTENSION);
-        $original_path = $this->paths['originals'] . $original_name;
+        // Assembler le fichier final
+        $safe_name      = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($metadata['file_name'], PATHINFO_FILENAME));
+        $original_name  = date('YmdHis') . '_' . $safe_name . '_audio.' . pathinfo($metadata['file_name'], PATHINFO_EXTENSION);
+        $original_path  = $this->paths['originals'] . $original_name;
         
         $out = fopen($original_path, 'wb');
         if (!$out) {
-            echo json_encode(['success' => false, 'message' => 'Impossible créer fichier']);
+            echo json_encode(['success' => false, 'message' => 'Impossible de créer fichier']);
             return;
         }
 
-        // Assemblage streaming (pas de file_get_contents complet)
         for ($i = 0; $i < $metadata['total_chunks']; $i++) {
             $chunk_file = $temp_dir . 'chunk_' . $i;
-            $in = fopen($chunk_file, 'rb');
-            if ($in) {
-                while (!feof($in)) {
-                    fwrite($out, fread($in, 262144)); // 256KB buffer
-                }
-                fclose($in);
-                unlink($chunk_file);
-            }
+            fwrite($out, file_get_contents($chunk_file));
+            unlink($chunk_file);
         }
         fclose($out);
 
-        // Nettoyer
+        // Nettoyer temp
         @unlink($metadata_file);
         @rmdir($temp_dir);
 
-        // ====== ANALYSE AUDIO AVEC FALLBACK ======
-        $analysis = $this->analyzeAudioSmart($original_path);
-        
-        // Traitements optionnels
-        $thumbnails = $this->ffmpeg_path ? $this->generateThumbnails($original_path, $original_name) : [];
-        $waveform = $this->ffmpeg_path ? $this->generateWaveform($original_path, $original_name) : null;
-        $conversions = $this->ffmpeg_path ? $this->convertToMultipleBitrates($original_path, $original_name) : [];
+        // Analyse et traitements audio
+        $analysis   = $this->analyzeAudio($original_path);
+        $thumbnails = $this->generateThumbnails($original_path, $original_name);
+        $waveform   = $this->generateWaveform($original_path, $original_name);
+        $conversions = $this->convertToMultipleBitrates($original_path, $original_name);
 
-        // Formater thumbnails
+        // CORRECTION: S'assurer que thumbnails est un objet
         $thumbnails_obj = new stdClass();
         if (!empty($thumbnails['cover'])) {
             $thumbnails_obj->cover = $thumbnails['cover'];
@@ -422,7 +402,6 @@ class Audio extends MX_Controller {
         echo json_encode([
             'success' => true,
             'message' => 'Upload complété',
-            'analysis_source' => $analysis['source'] ?? 'unknown',
             'data'    => [
                 'original_file' => 'attachments/Audio/Originals/' . $original_name,
                 'file_size'     => $this->formatBytes(filesize($original_path)),
@@ -438,135 +417,6 @@ class Audio extends MX_Controller {
             ]
         ]);
         return;
-    }
-
-    // ==================== ANALYSE AUDIO INTELLIGENTE ====================
-
-    /**
-     * Analyse audio avec fallback automatique
-     * 1. Essayer FFmpeg/ffprobe
-     * 2. Sinon, estimer à partir de la taille/extension
-     */
-    private function analyzeAudioSmart($file_path)
-    {
-        // Étape 1: Essayer FFmpeg si disponible
-        if ($this->ffprobe_path && file_exists($file_path)) {
-            $result = $this->analyzeWithFFprobe($file_path);
-            if ($result && $result['duration'] > 0) {
-                return $result;
-            }
-        }
-
-        // Étape 2: Fallback estimation
-        log_message('info', 'Fallback estimation pour: ' . basename($file_path));
-        return $this->estimateAudioProperties($file_path);
-    }
-
-    private function analyzeWithFFprobe($file_path)
-    {
-        $cmd = sprintf(
-            '%s -v quiet -print_format json -show_format -show_streams %s 2>&1',
-            escapeshellarg($this->ffprobe_path),
-            escapeshellarg($file_path)
-        );
-        
-        $output = [];
-        $return = 0;
-        exec($cmd, $output, $return);
-        
-        if ($return !== 0 || empty($output)) {
-            return null;
-        }
-
-        $data = json_decode(implode("\n", $output), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return null;
-        }
-
-        $format = $data['format'] ?? [];
-        $audio = null;
-        
-        foreach ($data['streams'] ?? [] as $stream) {
-            if (($stream['codec_type'] ?? '') === 'audio') {
-                $audio = $stream;
-                break;
-            }
-        }
-
-        $tags = $format['tags'] ?? [];
-        $duration = (float)($format['duration'] ?? 0);
-        
-        // Fallback durée dans stream si pas dans format
-        if ($duration == 0 && $audio) {
-            $duration = (float)($audio['duration'] ?? 0);
-        }
-
-        return [
-            'duration'           => $duration,
-            'duration_formatted' => $this->formatDuration($duration),
-            'size'               => (int)($format['size'] ?? filesize($file_path)),
-            'bitrate'            => (int)($format['bit_rate'] ?? 0),
-            'sample_rate'        => (int)($audio['sample_rate'] ?? 44100),
-            'channels'           => (int)($audio['channels'] ?? 2),
-            'codec'              => $audio['codec_name'] ?? 'unknown',
-            'title'              => $tags['title'] ?? $tags['TITLE'] ?? null,
-            'artist'             => $tags['artist'] ?? $tags['ARTIST'] ?? null,
-            'album'              => $tags['album'] ?? $tags['ALBUM'] ?? null,
-            'year'               => $tags['date'] ?? $tags['DATE'] ?? null,
-            'genre'              => $tags['genre'] ?? $tags['GENRE'] ?? null,
-            'source'             => 'ffprobe'
-        ];
-    }
-
-    /**
-     * Estimation des propriétés sans FFmpeg (FALLBACK)
-     */
-    private function estimateAudioProperties($file_path)
-    {
-        $size = filesize($file_path);
-        $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
-        
-        // Bitrate moyen par format (kbps)
-        $bitrate_map = [
-            'mp3'  => 192,
-            'aac'  => 128,
-            'ogg'  => 160,
-            'm4a'  => 128,
-            'flac' => 800,
-            'wav'  => 1411,
-            'aiff' => 1411,
-            'wma'  => 192,
-            'opus' => 128,
-            'weba' => 128,
-        ];
-        
-        $bitrate_kbps = $bitrate_map[$ext] ?? 192;
-        $bitrate = $bitrate_kbps * 1000;
-        
-        // Calculer durée: taille (bits) / bitrate (bits/s)
-        $duration = ($size * 8) / $bitrate;
-        
-        // Correction pour formats lossless (estimation moins précise)
-        if (in_array($ext, ['flac', 'wav', 'aiff'])) {
-            $duration = $duration * 0.9;
-        }
-
-        return [
-            'duration'           => round($duration, 2),
-            'duration_formatted' => $this->formatDuration($duration),
-            'size'               => $size,
-            'bitrate'            => $bitrate,
-            'sample_rate'        => 44100,
-            'channels'           => 2,
-            'codec'              => $ext,
-            'title'              => null,
-            'artist'             => null,
-            'album'              => null,
-            'year'               => null,
-            'genre'              => null,
-            'source'             => 'estimated',
-            'note'               => 'Valeurs estimées (FFmpeg non disponible)'
-        ];
     }
 
     // ==================== CRUD ====================
@@ -619,6 +469,7 @@ class Audio extends MX_Controller {
             return;
         }
 
+        // Récupérer l'audio actuel pour comparer
         $current_audio = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
 
         $data = [
@@ -633,8 +484,10 @@ class Audio extends MX_Controller {
             'updated_at'      => date('Y-m-d H:i:s')
         ];
 
+        // Gestion de la miniature modifiée
         $new_thumbnail = $this->input->post('thumbnail');
         if (!empty($new_thumbnail) && $new_thumbnail !== ($current_audio['miniature'] ?? '')) {
+            // Supprimer l'ancienne miniature personnalisée si elle existe
             if (!empty($current_audio['miniature']) && strpos($current_audio['miniature'], 'Custom/') !== false) {
                 @unlink(FCPATH . $current_audio['miniature']);
             }
@@ -676,7 +529,7 @@ class Audio extends MX_Controller {
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        $id = $this->input->post('id');
+        $id     = $this->input->post('id');
         $status = $this->input->post('est_actif');
         
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
@@ -693,7 +546,7 @@ class Audio extends MX_Controller {
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        $id = $this->input->post('id');
+        $id    = $this->input->post('id');
         $field = $this->input->post('field');
         $value = $this->input->post('value');
         
@@ -723,7 +576,11 @@ class Audio extends MX_Controller {
             return;
         }
         
-        $filename = basename($audio['fichier'] ?? '');
+        $filename = null;
+        
+        if (!empty($audio['fichier'])) {
+            $filename = basename($audio['fichier']);
+        }
         
         if (empty($filename)) {
             show_404();
@@ -736,17 +593,22 @@ class Audio extends MX_Controller {
     private function serveAudio($filename)
     {
         $filename = basename($filename);
+        
         $file_path = $this->paths['originals'] . $filename;
         
         if (!file_exists($file_path)) {
             $base_name = pathinfo($filename, PATHINFO_FILENAME);
+            
             $converted_files = glob($this->paths['converted'] . $base_name . '*');
             if (!empty($converted_files)) {
                 $file_path = $converted_files[0];
+            } else {
+                $file_path = $this->paths['converted'] . $filename;
             }
         }
         
         if (!file_exists($file_path)) {
+            log_message('error', 'Audio file not found: ' . $file_path . ' (original: ' . $filename . ')');
             show_404();
             return;
         }
@@ -792,12 +654,16 @@ class Audio extends MX_Controller {
             echo $buffer;
             flush();
             $bytes_sent += strlen($buffer);
+            
+            if ($bytes_sent % (1024 * 1024) === 0) {
+                ob_flush();
+            }
         }
         
         fclose($fp);
     }
 
-    // ==================== MINIATURES ====================
+    // ==================== UPLOAD MINIATURE PERSONNALISÉE ====================
 
     public function uploadThumbnail()
     {
@@ -805,26 +671,28 @@ class Audio extends MX_Controller {
         $this->output->set_content_type('application/json');
         
         if (empty($_FILES['thumbnail_file']) || $_FILES['thumbnail_file']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(['success' => false, 'message' => 'Aucun fichier reçu']);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Aucun fichier reçu'
+            ]);
             return;
         }
 
         $file = $_FILES['thumbnail_file'];
-        $upload_max = $this->parseSize(ini_get('upload_max_filesize'));
+        $nom_champ = $file['name'];
+        $nom_file = $file['tmp_name'];
         
-        if ($file['size'] > $upload_max) {
-            echo json_encode(['success' => false, 'message' => 'Image trop grande']);
-            return;
-        }
-
         $ref_folder = FCPATH . 'attachments/Audio/Thumbnails/Custom/';
         $code = date("YmdHis") . uniqid();
         $fichier = basename($code);
-        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $valid_ext = ['gif', 'jpg', 'png', 'jpeg', 'webp', 'svg'];
+        $file_extension = strtolower(pathinfo($nom_champ, PATHINFO_EXTENSION));
+        $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp', 'svg');
 
         if (!in_array($file_extension, $valid_ext)) {
-            echo json_encode(['success' => false, 'message' => 'Format non supporté']);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Format non supporté'
+            ]);
             return;
         }
 
@@ -835,8 +703,11 @@ class Audio extends MX_Controller {
         $final_filename = $fichier . "." . $file_extension;
         $destination = $ref_folder . $final_filename;
         
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur déplacement']);
+        if (!move_uploaded_file($nom_file, $destination)) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Erreur sauvegarde'
+            ]);
             return;
         }
 
@@ -928,6 +799,83 @@ class Audio extends MX_Controller {
         imagedestroy($dst_image);
     }
 
+    // ==================== HELPERS AUDIO ====================
+
+    private function analyzeAudio($file_path)
+    {
+        if (!$this->ffprobe_path || !file_exists($file_path)) {
+            return [
+                'duration' => 0, 
+                'bitrate' => 0, 
+                'sample_rate' => 0,
+                'channels' => 0,
+                'codec' => 'unknown',
+                'title' => null,
+                'artist' => null,
+                'album' => null,
+                'duration_formatted' => '0:00'
+            ];
+        }
+
+        $cmd = sprintf(
+            '%s -v quiet -print_format json -show_format -show_streams %s 2>&1',
+            escapeshellarg($this->ffprobe_path),
+            escapeshellarg($file_path)
+        );
+        
+        exec($cmd, $output, $code);
+        
+        if ($code !== 0) {
+            return [
+                'duration' => 0, 
+                'bitrate' => 0, 
+                'sample_rate' => 0,
+                'channels' => 0,
+                'codec' => 'unknown',
+                'title' => null,
+                'artist' => null,
+                'album' => null,
+                'duration_formatted' => '0:00'
+            ];
+        }
+
+        $data   = json_decode(implode("\n", $output), true);
+        $format = $data['format'] ?? [];
+        $audio  = null;
+        
+        foreach ($data['streams'] ?? [] as $stream) {
+            if (isset($stream['codec_type']) && $stream['codec_type'] === 'audio') {
+                $audio = $stream;
+                break;
+            }
+        }
+
+        $tags = $format['tags'] ?? [];
+        $duration = (float)($format['duration'] ?? 0);
+
+        $hours = floor($duration / 3600);
+        $mins = floor(($duration % 3600) / 60);
+        $secs = floor($duration % 60);
+        $duration_formatted = $hours > 0 
+            ? sprintf('%d:%02d:%02d', $hours, $mins, $secs)
+            : sprintf('%d:%02d', $mins, $secs);
+
+        return [
+            'duration'           => $duration,
+            'duration_formatted' => $duration_formatted,
+            'size'               => (int)($format['size'] ?? filesize($file_path)),
+            'bitrate'            => (int)($format['bit_rate'] ?? 0),
+            'sample_rate'        => (int)($audio['sample_rate'] ?? 0),
+            'channels'           => (int)($audio['channels'] ?? 0),
+            'codec'              => $audio['codec_name'] ?? 'unknown',
+            'title'              => $tags['title'] ?? $tags['TITLE'] ?? null,
+            'artist'             => $tags['artist'] ?? $tags['ARTIST'] ?? null,
+            'album'              => $tags['album'] ?? $tags['ALBUM'] ?? null,
+            'year'               => $tags['date'] ?? $tags['DATE'] ?? null,
+            'genre'              => $tags['genre'] ?? $tags['GENRE'] ?? null
+        ];
+    }
+
     private function generateThumbnails($audio_path, $filename)
     {
         $result = ['cover' => null, 'generated' => null];
@@ -936,19 +884,18 @@ class Audio extends MX_Controller {
             return $result;
         }
 
-        $base_name = pathinfo($filename, PATHINFO_FILENAME);
+        $base_name  = pathinfo($filename, PATHINFO_FILENAME);
         
-        // Cover art
         $cover_name = $base_name . '_cover.jpg';
         $cover_path = $this->paths['thumbnails'] . $cover_name;
         
-        $cmd = sprintf(
+        $cmd_cover = sprintf(
             '%s -i %s -an -vcodec copy -f image2 -y %s 2>&1',
             escapeshellarg($this->ffmpeg_path),
             escapeshellarg($audio_path),
             escapeshellarg($cover_path)
         );
-        exec($cmd);
+        exec($cmd_cover);
 
         if (file_exists($cover_path) && filesize($cover_path) > 1000) {
             $result['cover'] = 'attachments/Audio/Thumbnails/' . $cover_name;
@@ -956,18 +903,17 @@ class Audio extends MX_Controller {
             @unlink($cover_path);
         }
 
-        // Waveform si pas de cover
         if (empty($result['cover'])) {
             $generated_name = $base_name . '_waveform.jpg';
             $generated_path = $this->paths['thumbnails'] . $generated_name;
             
-            $cmd = sprintf(
+            $cmd_waveform = sprintf(
                 '%s -i %s -filter_complex "aformat=channel_layouts=mono,showwavespic=s=800x800:colors=#FF0000|#FF6B6B" -frames:v 1 -y %s 2>&1',
                 escapeshellarg($this->ffmpeg_path),
                 escapeshellarg($audio_path),
                 escapeshellarg($generated_path)
             );
-            exec($cmd);
+            exec($cmd_waveform);
 
             if (file_exists($generated_path)) {
                 $result['generated'] = 'attachments/Audio/Thumbnails/' . $generated_name;
@@ -1033,20 +979,14 @@ class Audio extends MX_Controller {
         return $conversions;
     }
 
-    // ==================== HELPERS ====================
-
     private function getAudioCapabilities()
     {
         return [
-            'hardware' => [
-                'ffmpeg' => (bool)$this->ffmpeg_path,
-                'ffprobe' => (bool)$this->ffprobe_path,
-                'gd' => $this->gd_available
-            ],
+            'hardware' => ['ffmpeg' => (bool)$this->ffmpeg_path],
             'features' => [
                 'multi_bitrate' => (bool)$this->ffmpeg_path,
-                'streaming' => true,
-                'auto_analysis' => true // Fallback intelligent actif
+                'streaming'     => true,
+                'gd_available'  => $this->gd_available
             ]
         ];
     }
@@ -1115,34 +1055,38 @@ class Audio extends MX_Controller {
             }
         }
 
-        $duration = $analysis['duration'] ?? 0;
-        if ($duration > 600 && $duration < 3600) {
-            return 'Podcast';
-        }
-        if ($duration > 3600) {
-            return 'Conférence';
+        if (!empty($analysis['duration'])) {
+            if ($analysis['duration'] > 600 && $analysis['duration'] < 3600) {
+                return 'Podcast';
+            }
+            if ($analysis['duration'] > 3600) {
+                return 'Conférence';
+            }
         }
 
         return 'Musique';
     }
 
+    private function formatBytes($bytes)
+    {
+        if ($bytes <= 0) return '0 B';
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $i = 0;
+        while ($bytes >= 1024 && $i < count($units) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+        return round($bytes, 2) . ' ' . $units[$i];
+    }
+
     public function checkConfig()
     {
         echo "<pre>";
-        echo "=== CONFIGURATION AUDIO ===\\n";
-        echo "FFmpeg: " . ($this->ffmpeg_path ?: 'NON TROUVÉ') . "\\n";
-        echo "FFprobe: " . ($this->ffprobe_path ?: 'NON TROUVÉ') . "\\n";
-        echo "GD: " . ($this->gd_available ? 'OK' : 'NON') . "\\n\\n";
-        
-        echo "=== LIMITES PHP ===\\n";
-        echo "upload_max_filesize: " . ini_get('upload_max_filesize') . "\\n";
-        echo "post_max_size: " . ini_get('post_max_size') . "\\n";
-        echo "max_execution_time: " . ini_get('max_execution_time') . "s\\n";
-        echo "memory_limit: " . ini_get('memory_limit') . "\\n\\n";
-        
-        echo "=== CONFIG CHUNKS ===\\n";
-        echo "Chunk size: " . $this->formatBytes($this->audio_config['chunk_size']) . "\\n";
-        echo "Max file: " . $this->formatBytes($this->audio_config['max_file_size']) . "\\n";
+        echo "upload_max_filesize: " . ini_get('upload_max_filesize') . "\n";
+        echo "post_max_size: " . ini_get('post_max_size') . "\n";
+        echo "max_execution_time: " . ini_get('max_execution_time') . "\n";
+        echo "memory_limit: " . ini_get('memory_limit') . "\n";
+        echo "Chunk size configuré: " . round($this->audio_config['chunk_size'] / 1024 / 1024, 2) . " MB\n";
         echo "</pre>";
         exit;
     }
