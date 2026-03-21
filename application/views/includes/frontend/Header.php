@@ -1633,16 +1633,13 @@
                         <div class="mega-column">
                             <h3><i class="bi bi-newspaper"></i> News</h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('blog') ?>"><i class="bi bi-chevron-right"></i> Latest News</a></li>
-                                <li><a href="<?= base_url('events') ?>"><i class="bi bi-chevron-right"></i> Events</a></li>
-                                <li><a href="<?= base_url('press-releases') ?>"><i class="bi bi-chevron-right"></i> Press Releases</a></li>
+                                <li><a href="<?= base_url('blog') ?>"><i class="bi bi-chevron-right"></i>News</a></li>
                             </ul>
                         </div>
                         <div class="mega-column">
                             <h3><i class="bi bi-question-circle"></i> Support</h3>
                             <ul class="mega-list">
                                 <li><a href="<?= base_url('question') ?>"><i class="bi bi-chevron-right"></i> FAQ</a></li>
-                                <li><a href="<?= base_url('Home/Contact') ?>"><i class="bi bi-chevron-right"></i> Contact Us</a></li>
                             </ul>
                         </div>
                     </div>

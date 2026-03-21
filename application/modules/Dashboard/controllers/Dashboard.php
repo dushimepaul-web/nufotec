@@ -788,7 +788,6 @@ class Dashboard extends MY_Controller {
     }
 
     public function api_stats() {
-        if (!$this->input->is_ajax_request()) show_404();
         $type = $this->input->get('type');
         $response = ['success' => true, 'timestamp' => date('c')];
         switch($type) {

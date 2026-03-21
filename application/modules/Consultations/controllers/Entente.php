@@ -75,6 +75,7 @@ class Entente extends MY_Controller {
         $this->db->join('medecins m', 'm.id = c.medecin_id', 'left');
         $this->db->join('users u', 'u.id = m.user_id', 'left');
         $this->db->where('c.statut', 'confirmee');
+        $this->db->where('c.statut', 'en_cours');
         $this->db->order_by('c.created_at', 'DESC');
         
         $data['consultations'] = $this->db->get()->result_array();

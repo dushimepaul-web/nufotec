@@ -544,7 +544,7 @@
             <div class="faq-cta" data-aos="zoom-in">
                 <h3>Vous avez encore des questions ?</h3>
                 <p>Notre équipe est là pour vous aider et répondre à toutes vos interrogations.</p>
-                <a href="<?php echo base_url('contact'); ?>" class="cta-btn">
+                <a href="<?php echo base_url('Home/Contact'); ?>" class="cta-btn">
                     <i class="bx bx-envelope"></i>
                     Contactez-nous
                 </a>
