@@ -58,41 +58,45 @@ class Entente extends MY_Controller {
      * Liste des consultations confirmées
      */
     public function confirme()
-    {
-        $this->db->select('
-            c.*, 
-            p.nom as patient_nom, 
-            p.prenom as patient_prenom, 
-            p.email as patient_email, 
-            p.telephone as patient_telephone,
-            u.nom as medecin_nom, 
-            u.prenom as medecin_prenom,
-            m.specialite as medecin_specialite,
-            m.id as medecin_id
-        ');
-        $this->db->from('consultations c');
-        $this->db->join('users p', 'p.id = c.patient_id', 'left');
-        $this->db->join('medecins m', 'm.id = c.medecin_id', 'left');
-        $this->db->join('users u', 'u.id = m.user_id', 'left');
-        $this->db->where('c.statut', 'confirmee');
-        $this->db->where('c.statut', 'en_cours');
-        $this->db->order_by('c.created_at', 'DESC');
-        
-        $data['consultations'] = $this->db->get()->result_array();
-        
-        // Récupérer patients et médecins
-        $this->db->where('type_utilisateur', 'patient');
-        $this->db->where('is_active', 1);
-        $data['patients'] = $this->db->get('users')->result_array();
-        
-        $this->db->select('m.*, u.nom, u.prenom, u.email, u.photo');
-        $this->db->from('medecins m');
-        $this->db->join('users u', 'u.id = m.user_id');
-        $this->db->where('u.is_active', 1);
-        $data['medecins'] = $this->db->get()->result_array();
-        
-        $this->load->view('allowed_View',$data);
-    }   
+{
+    // Récupérer les consultations confirmées ou en cours
+    $this->db->select('
+        c.*, 
+        p.nom as patient_nom, 
+        p.prenom as patient_prenom, 
+        p.email as patient_email, 
+        p.telephone as patient_telephone,
+        u.nom as medecin_nom, 
+        u.prenom as medecin_prenom,
+        m.specialite as medecin_specialite,
+        m.id as medecin_id
+    ');
+    $this->db->from('consultations c');
+    $this->db->join('users p', 'p.id = c.patient_id', 'left');
+    $this->db->join('medecins m', 'm.id = c.medecin_id', 'left');
+    $this->db->join('users u', 'u.id = m.user_id', 'left');
+    
+    // CORRECTION : Utiliser where_in au lieu de deux where()
+    $this->db->where_in('c.statut', ['confirmee', 'en_cours']);
+    
+    $this->db->order_by('c.created_at', 'DESC');
+    
+    $data['consultations'] = $this->db->get()->result_array();
+    
+    // Récupérer les patients
+    $this->db->where('type_utilisateur', 'patient');
+    $this->db->where('is_active', 1);
+    $data['patients'] = $this->db->get('users')->result_array();
+    
+    // Récupérer les médecins
+    $this->db->select('m.*, u.nom, u.prenom, u.email, u.photo');
+    $this->db->from('medecins m');
+    $this->db->join('users u', 'u.id = m.user_id');
+    $this->db->where('u.is_active', 1);
+    $data['medecins'] = $this->db->get()->result_array();
+    
+    $this->load->view('allowed_View', $data);
+}
 
     /**
      * Changer le statut d'une consultation
