@@ -249,6 +249,8 @@ $route['Media/searchAjax'] = 'Home/Media/searchAjax';
 
 
 
+
+
 // Blog routes
 $route['blog'] = 'Home/Blog';
 $route['blog/index'] = 'Home/Blog/index';

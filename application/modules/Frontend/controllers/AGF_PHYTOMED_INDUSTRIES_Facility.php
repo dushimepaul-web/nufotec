@@ -14,7 +14,7 @@ class AGF_PHYTOMED_INDUSTRIES_Facility extends Public_Controller {
     /**
      * Page dynamique universelle
      */
-    public function index($slug = 'agf-phytomed-facility') {
+    public function index($slug = 'nufotec-phytomed-industries-facility') {
         // 1. Sécurisation et nettoyage du slug
         $slug = url_title($slug, '-', TRUE);
 

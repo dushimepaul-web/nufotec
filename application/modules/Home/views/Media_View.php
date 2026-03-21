@@ -2,398 +2,331 @@
 <?php include VIEWPATH.'includes/frontend/Header.php'; ?>
 
 <style>
+    /* ========== VARIABLES & RESET ========== */
     :root {
-        --media-primary-green: #0B4F2E;
-        --media-secondary-green: #1B7B4B;
-        --media-accent-green: #27ae60;
-        --media-jaune: #FFD700;
-        --media-light-green: #2ecc71;
-        --media-dark-bg: #0a3d24;
-        --media-text-dark: #1a2e3f;
-        --media-text-muted: #6c757d;
-        --media-border-light: #e9ecef;
-        --media-shadow-soft: 0 10px 30px rgba(0,0,0,0.05);
-        --media-shadow-hover: 0 20px 40px rgba(0,0,0,0.1);
-        --media-yt-red: #ff0000;
-        --media-yt-text: #f1f1f1;
-        --media-yt-text-secondary: #aaa;
-        --media-yt-dark: #181818;
-        --media-yt-gray: #212121;
-        --media-yt-light-gray: #303030;
+        --bg-primary: #0f0f0f;
+        --bg-secondary: #1f1f1f;
+        --bg-tertiary: #2a2a2a;
+        --text-primary: #ffffff;
+        --text-secondary: #aaaaaa;
+        --text-tertiary: #717171;
+        --accent-green: #00a884;
+        --accent-youtube: #ff0000;
+        --accent-facebook: #1877f2;
+        --accent-whatsapp: #25d366;
+        --border-color: #2a2a2a;
+        --shadow-sm: 0 2px 8px rgba(0,0,0,0.15);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.2);
+        --transition: all 0.2s ease;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
     }
 
     body {
-        background-color: #f8f9fa;
-        font-family: 'Roboto', 'Arial', sans-serif;
-        margin: 0;
+        background: var(--bg-primary);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text-primary);
         padding-top: 56px;
-        color: var(--media-text-dark);
+        line-height: 1.5;
     }
 
-    /* Hero section */
-    .media-herosect {
-        margin-top: 80px;
-        background: linear-gradient(135deg, var(--media-primary-green) 0%, var(--media-secondary-green) 100%);
-        color: white;
-        padding: 60px 0;
-        margin-bottom: 40px;
-        border-radius: 0 0 30px 30px;
-        box-shadow: var(--media-shadow-soft);
+    /* ========== HEADER HERO ========== */
+    .media-hero {
+        background: linear-gradient(135deg, #0a3d24 0%, #0b4f2e 100%);
+        padding: 40px 20px;
+        margin-bottom: 24px;
         position: relative;
         overflow: hidden;
     }
-    .media-herosect::before {
+    
+    .media-hero::before {
         content: '';
         position: absolute;
         top: -50%;
-        right: -10%;
+        right: -20%;
         width: 300px;
         height: 300px;
-        background: var(--media-jaune);
-        opacity: 0.1;
+        background: rgba(255,215,0,0.1);
         border-radius: 50%;
     }
+    
     .media-hero-content {
-        position: relative;
-        z-index: 2;
-        max-width: 1000px;
+        max-width: 600px;
         margin: 0 auto;
         text-align: center;
-        padding: 0 20px;
-    }
-    .media-hero-title {
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 16px;
-        text-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .media-hero-title i {
-        color: var(--media-jaune);
-        margin-right: 10px;
-    }
-    .media-hero-subtitle {
-        font-size: 1.2rem;
-        opacity: 0.95;
-        margin-bottom: 30px;
-        font-weight: 400;
-    }
-
-    /* ================= BARRE DE RECHERCHE AVEC AUTOCOMPLETE ================= */
-    .media-search-container {
         position: relative;
-        max-width: 600px;
-        margin: 0 auto 30px;
+        z-index: 2;
     }
     
-    .media-search-input-wrapper {
+    .media-hero h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .media-hero h1 i {
+        font-size: 2rem;
+        color: #ffd700;
+    }
+    
+    .media-hero p {
+        color: rgba(255,255,255,0.9);
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+    }
+    
+    /* ========== BARRE DE RECHERCHE (WhatsApp style) ========== */
+    .media-search-wrapper {
+        max-width: 500px;
+        margin: 0 auto;
         position: relative;
     }
     
     .media-search-input {
         width: 100%;
-        padding: 15px 50px 15px 20px;
+        background: rgba(255,255,255,0.2);
         border: none;
-        border-radius: 50px;
+        border-radius: 30px;
+        padding: 12px 48px 12px 20px;
+        color: white;
         font-size: 1rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        background: rgba(255,255,255,0.95);
-        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+        transition: var(--transition);
     }
     
     .media-search-input:focus {
         outline: none;
-        box-shadow: 0 4px 25px rgba(0,0,0,0.3);
-        background: white;
+        background: rgba(255,255,255,0.3);
+    }
+    
+    .media-search-input::placeholder {
+        color: rgba(255,255,255,0.7);
     }
     
     .media-search-btn {
         position: absolute;
-        right: 5px;
+        right: 12px;
         top: 50%;
         transform: translateY(-50%);
-        background: var(--media-primary-green);
-        color: white;
+        background: none;
         border: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
+        color: white;
+        font-size: 1.2rem;
         cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        padding: 8px;
     }
     
-    .media-search-btn:hover {
-        background: var(--media-secondary-green);
-        transform: translateY(-50%) scale(1.1);
-    }
-    
-    /* Dropdown résultats autocomplete */
+    /* Dropdown autocomplete */
     .media-search-dropdown {
         position: absolute;
         top: 100%;
         left: 0;
         right: 0;
-        background: white;
-        border-radius: 16px;
-        margin-top: 10px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        margin-top: 12px;
         max-height: 400px;
         overflow-y: auto;
         z-index: 1000;
         display: none;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
     }
     
     .media-search-dropdown.active {
         display: block;
-        animation: mediaSlideDown 0.3s ease;
+        animation: slideDown 0.2s ease;
     }
     
-    @keyframes mediaSlideDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    /* Item résultat autocomplete */
     .media-search-item {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
         padding: 12px 16px;
         cursor: pointer;
-        transition: all 0.2s;
-        border-bottom: 1px solid #f0f0f0;
+        transition: var(--transition);
+        border-bottom: 1px solid var(--border-color);
     }
     
     .media-search-item:last-child {
         border-bottom: none;
     }
     
-    .media-search-item:hover, .media-search-item.active {
-        background: #f8f9fa;
-    }
-    
+    .media-search-item:hover,
     .media-search-item.active {
-        border-left: 4px solid var(--media-primary-green);
-        background: #e8f5e9;
+        background: var(--bg-tertiary);
     }
     
     .media-search-item-thumb {
-        width: 80px;
-        height: 60px;
-        border-radius: 8px;
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
         object-fit: cover;
         flex-shrink: 0;
     }
     
     .media-search-item-info {
         flex: 1;
-        min-width: 0;
     }
     
     .media-search-item-title {
-        font-weight: 600;
-        color: var(--media-text-dark);
+        font-weight: 500;
+        font-size: 0.9rem;
         margin-bottom: 4px;
-        white-space: nowrap;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
         overflow: hidden;
-        text-overflow: ellipsis;
     }
     
     .media-search-item-meta {
-        font-size: 0.8rem;
-        color: var(--media-text-muted);
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
     }
     
-    .media-search-item-type {
+    .media-search-item-badge {
         padding: 2px 8px;
         border-radius: 12px;
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
-        color: white;
     }
     
-    .media-search-item-type.video { background: #ff0000; }
-    .media-search-item-type.audio { background: #3ea6ff; }
-    .media-search-item-type.image { background: var(--media-accent-green); }
-    .media-search-item-type.link { background: #ff6b6b; }
-    .media-search-item-type.document { background: #6c757d; }
-    .media-search-item-type.autre { background: #fd7e14; }
+    .media-search-item-badge.video { background: var(--accent-youtube); color: white; }
+    .media-search-item-badge.audio { background: var(--accent-whatsapp); color: black; }
+    .media-search-item-badge.image { background: var(--accent-facebook); color: white; }
     
-    /* Highlight des correspondances */
     .media-highlight {
-        background: rgba(255, 215, 0, 0.4);
-        font-weight: 700;
-        border-radius: 2px;
+        background: rgba(255,215,0,0.3);
+        border-radius: 4px;
         padding: 0 2px;
     }
     
-    /* État vide et loading */
-    .media-search-empty, .media-search-loading {
-        padding: 30px;
-        text-align: center;
-        color: var(--media-text-muted);
+    /* ========== STATS HERO ========== */
+    .media-stats {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+        flex-wrap: wrap;
     }
     
-    .media-search-empty i {
-        font-size: 3rem;
-        margin-bottom: 10px;
-        opacity: 0.5;
-        color: var(--media-primary-green);
+    .media-stat {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        padding: 8px 16px;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
-    .media-search-loading .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid var(--media-primary-green);
-        border-radius: 50%;
-        animation: mediaSpin 1s linear infinite;
-        margin: 0 auto 15px;
+    /* ========== FILTRES (style TikTok/Reels) ========== */
+    .media-filters {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 0 16px 16px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
     }
     
-    @keyframes mediaSpin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    /* Overlay pour fermer au clic extérieur */
-    .media-search-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 999;
+    .media-filters::-webkit-scrollbar {
         display: none;
     }
     
-    .media-search-overlay.active {
-        display: block;
-    }
-
-    /* Info résultats */
-    .media-search-results-info {
-        background: rgba(255,255,255,0.2);
-        padding: 10px 20px;
-        border-radius: 25px;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 10px;
-        font-size: 0.9rem;
-    }
-
-    /* Filtres */
-    .media-filter-container {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 30px;
-        padding: 0 20px;
-    }
     .media-filter-btn {
+        background: var(--bg-secondary);
+        border: none;
         padding: 8px 20px;
-        border: 2px solid rgba(255,255,255,0.3);
-        background: rgba(255,255,255,0.1);
-        color: white;
-        border-radius: 25px;
-        cursor: pointer;
-        transition: all 0.3s;
+        border-radius: 40px;
+        color: var(--text-secondary);
         font-weight: 500;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: var(--transition);
     }
-    .media-filter-btn:hover, .media-filter-btn.active {
-        background: white;
-        color: var(--media-primary-green);
-        border-color: white;
+    
+    .media-filter-btn.active {
+        background: var(--accent-green);
+        color: white;
     }
-
-    /* Stats hero */
-    .media-hero-stats {
-        display: flex;
-        gap: 20px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-top: 20px;
-    }
-    .media-hero-stat {
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        padding: 12px 24px;
-        border-radius: 50px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    /* Grille */
+    
+    /* ========== GRILLE DES MÉDIAS ========== */
     .media-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 24px;
-        padding: 0 24px 40px;
-        max-width: 1600px;
-        margin: 0 auto;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        padding: 0 16px 80px;
     }
-
+    
+    /* Carte média (style YouTube Shorts) */
     .media-card {
-        background: white;
+        background: var(--bg-secondary);
         border-radius: 16px;
         overflow: hidden;
-        transition: all 0.3s;
         cursor: pointer;
-        border: 1px solid var(--media-border-light);
-        display: flex;
-        flex-direction: column;
-        box-shadow: var(--media-shadow-soft);
-        position: relative;
+        transition: var(--transition);
+        animation: fadeInUp 0.4s ease;
     }
+    
     .media-card:hover {
-        transform: translateY(-8px);
-        box-shadow: var(--media-shadow-hover);
+        transform: translateY(-4px);
     }
+    
     .media-card.hidden {
         display: none;
     }
-
-    .media-thumbnail-wrap {
+    
+    /* Zone thumbnail */
+    .media-thumb {
         position: relative;
         width: 100%;
         aspect-ratio: 16 / 9;
-        background: #e0e0e0;
+        background: var(--bg-tertiary);
         overflow: hidden;
     }
-    .media-thumbnail-img {
+    
+    .media-thumb img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         transition: transform 0.3s;
     }
-    .media-card:hover .media-thumbnail-img {
+    
+    .media-card:hover .media-thumb img {
         transform: scale(1.05);
     }
-
+    
     /* Badges */
-    .media-duration-badge {
+    .media-badge {
         position: absolute;
         bottom: 8px;
         right: 8px;
         background: rgba(0,0,0,0.8);
-        color: white;
         padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
         font-weight: 500;
-        z-index: 2;
+        backdrop-filter: blur(4px);
     }
+    
     .media-type-badge {
         position: absolute;
         top: 8px;
@@ -401,769 +334,660 @@
         padding: 4px 10px;
         border-radius: 20px;
         font-size: 0.7rem;
-        font-weight: 700;
+        font-weight: 600;
         text-transform: uppercase;
-        color: white;
-        background: var(--media-primary-green);
-        z-index: 4;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(4px);
         display: flex;
         align-items: center;
         gap: 4px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
-    .media-type-badge.youtube { background: #ff0000; }
-    .media-type-badge.video { background: var(--media-secondary-green); }
-    .media-type-badge.audio { background: var(--media-yt-blue); }
-    .media-type-badge.image { background: var(--media-accent-green); }
-
+    
+    .media-type-badge.youtube { background: var(--accent-youtube); }
+    .media-type-badge.whatsapp { background: var(--accent-whatsapp); color: black; }
+    .media-type-badge.facebook { background: var(--accent-facebook); }
+    
+    /* Overlay play */
     .media-play-overlay {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.3);
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.4);
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
-        transition: opacity 0.2s;
-        z-index: 3;
+        transition: var(--transition);
     }
+    
     .media-card:hover .media-play-overlay {
         opacity: 1;
     }
-    .media-play-icon {
+    
+    .media-play-overlay i {
+        font-size: 3rem;
         color: white;
-        font-size: 4rem;
-        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
-
+    
     /* Stats sur la carte */
-    .media-card-stats-overlay {
+    .media-stats-overlay {
         position: absolute;
         bottom: 0;
         left: 0;
         right: 0;
         background: linear-gradient(transparent, rgba(0,0,0,0.8));
-        padding: 30px 10px 10px;
+        padding: 20px 8px 8px;
         display: flex;
-        gap: 15px;
+        gap: 12px;
         color: white;
-        font-size: 0.85rem;
+        font-size: 0.75rem;
         opacity: 0;
-        transition: opacity 0.3s;
-        z-index: 3;
+        transition: var(--transition);
     }
-    .media-card:hover .media-card-stats-overlay {
+    
+    .media-card:hover .media-stats-overlay {
         opacity: 1;
     }
-    .media-stat-item {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .media-stat-item i {
-        color: var(--media-jaune);
-    }
-
+    
     /* Info carte */
-    .media-card-info {
-        padding: 16px;
+    .media-info {
+        padding: 12px;
         display: flex;
         gap: 12px;
     }
-    .media-channel-avatar {
-        width: 40px;
-        height: 40px;
+    
+    .media-avatar {
+        width: 36px;
+        height: 36px;
+        background: var(--accent-green);
         border-radius: 50%;
-        background: var(--media-primary-green);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-size: 1.2rem;
         flex-shrink: 0;
     }
-    .media-card-meta {
+    
+    .media-details {
         flex: 1;
         min-width: 0;
     }
-    .media-card-title {
-        font-size: 1rem;
+    
+    .media-title {
         font-weight: 600;
-        line-height: 1.4;
-        margin: 0 0 6px 0;
+        font-size: 0.9rem;
+        margin-bottom: 4px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        color: var(--media-text-dark);
+        line-height: 1.4;
     }
-    .media-card-stats {
-        font-size: 0.85rem;
-        color: var(--media-text-muted);
+    
+    .media-meta {
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
         display: flex;
+        gap: 12px;
         align-items: center;
-        gap: 6px;
         flex-wrap: wrap;
     }
-
-    /* Rating étoiles */
-    .media-card-rating {
+    
+    .media-rating {
         display: flex;
         gap: 2px;
-        color: var(--media-jaune);
-        font-size: 0.8rem;
-        margin-top: 5px;
+        color: #ffd700;
+        font-size: 0.7rem;
     }
-
-    /* Lightbox */
-    .media-lightbox .modal-dialog {
-        max-width: 100vw;
-        height: 100vh;
-        margin: 0;
-    }
-    .media-lightbox .modal-content {
-        background: var(--media-yt-dark);
-        border: none;
-        border-radius: 0;
-        height: 100%;
-        display: flex;
+    
+    /* ========== LIGHTBOX (style natif mobile) ========== */
+    .media-lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #000;
+        z-index: 9999;
+        display: none;
         flex-direction: column;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .media-lightbox.active {
+        display: flex;
     }
     
     .media-lightbox-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 24px;
-        border-bottom: 1px solid var(--media-yt-light-gray);
-        background: var(--media-yt-gray);
-        flex-shrink: 0;
+        padding: 12px 16px;
+        background: rgba(0,0,0,0.9);
+        backdrop-filter: blur(10px);
+        z-index: 10;
     }
-    .media-lightbox-header h2 {
-        font-size: 1.2rem;
+    
+    .media-lightbox-title {
+        font-size: 1rem;
         font-weight: 500;
-        margin: 0;
-        color: var(--media-yt-text);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding-right: 20px;
+        flex: 1;
+        margin-right: 12px;
     }
+    
     .media-lightbox-close {
         background: none;
         border: none;
-        color: var(--media-yt-text-secondary);
+        color: white;
         font-size: 1.5rem;
         cursor: pointer;
-        transition: color 0.2s;
+        padding: 8px;
+        line-height: 1;
     }
-    .media-lightbox-close:hover { color: var(--media-yt-text); }
-
-    .media-lightbox-body {
+    
+    /* Zone player */
+    .media-player-container {
         flex: 1;
-        display: flex;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    .media-lightbox-video-panel {
-        width: 65%;
         background: #000;
         display: flex;
-        flex-direction: column;
-        overflow-y: auto;
-        border-right: 1px solid var(--media-yt-light-gray);
-    }
-
-    .media-lightbox-info-panel {
-        width: 35%;
-        min-width: 350px;
-        background: var(--media-yt-dark);
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .media-video-container-wrapper {
-        background: #000;
-        width: 100%;
-        aspect-ratio: 16 / 9;
+        align-items: center;
+        justify-content: center;
         min-height: 0;
-        flex-shrink: 0;
     }
-    .media-video-container {
+    
+    .media-player {
         width: 100%;
         height: 100%;
         display: flex;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
     }
-    .media-video-container iframe,
-    .media-video-container video,
-    .media-video-container img {
+    
+    .media-player iframe,
+    .media-player video,
+    .media-player audio,
+    .media-player img {
         width: 100%;
         height: 100%;
         object-fit: contain;
-        background: #000;
     }
-
-    .media-video-metadata {
-        padding: 20px;
-        border-bottom: 1px solid var(--media-yt-light-gray);
+    
+    /* Zone infos défilement */
+    .media-lightbox-info {
+        background: var(--bg-primary);
+        max-height: 50%;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
     }
-    .media-video-title-large {
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: var(--media-yt-text);
-        margin-bottom: 15px;
-        line-height: 1.3;
-    }
-    .media-video-stats-grid {
+    
+    /* Actions (style YouTube) */
+    .media-actions {
         display: flex;
         gap: 20px;
         flex-wrap: wrap;
-        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 16px;
     }
-    .media-stat-badge {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--media-yt-text-secondary);
-        font-size: 0.9rem;
-    }
-    .media-stat-badge i {
-        color: var(--media-jaune);
-        font-size: 1rem;
-    }
-    .media-video-description {
-        color: var(--media-yt-text-secondary);
-        line-height: 1.6;
-        font-size: 0.95rem;
-        white-space: pre-wrap;
-        max-height: 150px;
-        overflow-y: auto;
-        padding-right: 10px;
-    }
-
-    .media-video-actions {
-        padding: 15px 20px;
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
-        border-bottom: 1px solid var(--media-yt-light-gray);
-    }
-    .media-btn-action {
-        background: var(--media-yt-light-gray);
+    
+    .media-action-btn {
+        background: var(--bg-secondary);
         border: none;
-        color: var(--media-yt-text);
-        padding: 10px 20px;
-        border-radius: 24px;
-        font-weight: 500;
-        font-size: 0.95rem;
-        display: inline-flex;
+        padding: 8px 16px;
+        border-radius: 30px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        display: flex;
         align-items: center;
         gap: 8px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: var(--transition);
     }
-    .media-btn-action:hover {
-        background: #3a3a3a;
+    
+    .media-action-btn.liked,
+    .media-action-btn.disliked {
+        background: var(--accent-green);
     }
-    .media-btn-action.liked {
-        background: #3ea6ff;
-        color: white;
-    }
-    .media-btn-action.disliked {
-        background: #909090;
-        color: white;
-    }
-
-    .media-rating-container {
-        padding: 15px 20px;
-        border-bottom: 1px solid var(--media-yt-light-gray);
-    }
-    .media-rating-label {
-        color: var(--media-yt-text);
-        font-weight: 500;
-        margin-bottom: 10px;
-        font-size: 0.95rem;
-    }
-    .media-stars-container {
+    
+    /* Étoiles rating */
+    .media-stars {
         display: flex;
-        gap: 12px;
-        font-size: 1.6rem;
+        gap: 8px;
+        font-size: 1.5rem;
+        margin-top: 8px;
     }
-    .media-stars-container i {
-        color: var(--media-yt-light-gray);
+    
+    .media-stars i {
         cursor: pointer;
-        transition: all 0.2s;
+        transition: var(--transition);
+        color: var(--text-tertiary);
     }
-    .media-stars-container i:hover,
-    .media-stars-container i.active {
-        color: var(--media-jaune);
+    
+    .media-stars i:hover,
+    .media-stars i.active {
+        color: #ffd700;
         transform: scale(1.1);
     }
-
-    .media-comments-container {
-        padding: 20px;
-        flex: 1;
-        overflow-y: auto;
+    
+    /* Commentaires (style WhatsApp) */
+    .media-comments-section {
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
     }
-    .media-comments-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        color: var(--media-yt-text);
-    }
-    .media-comments-header h3 {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+    
     .media-comment-form {
         display: flex;
-        gap: 15px;
-        margin-bottom: 25px;
+        gap: 12px;
+        margin-bottom: 20px;
     }
+    
     .media-comment-avatar {
         width: 40px;
         height: 40px;
+        background: var(--accent-green);
         border-radius: 50%;
-        background: var(--media-primary-green);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
         flex-shrink: 0;
     }
+    
     .media-comment-input-wrapper {
         flex: 1;
     }
+    
     .media-comment-input {
         width: 100%;
-        background: transparent;
+        background: var(--bg-secondary);
         border: none;
-        border-bottom: 2px solid var(--media-yt-light-gray);
-        color: var(--media-yt-text);
-        padding: 8px 0;
-        font-size: 0.95rem;
+        border-radius: 24px;
+        padding: 12px 16px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
         resize: none;
-        transition: border-color 0.2s;
     }
+    
     .media-comment-input:focus {
         outline: none;
-        border-bottom-color: var(--media-primary-green);
+        background: var(--bg-tertiary);
     }
+    
     .media-comment-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
-        margin-top: 10px;
+        gap: 12px;
+        margin-top: 8px;
     }
-    .media-btn-comment {
-        padding: 6px 16px;
-        border-radius: 20px;
+    
+    .media-comment-submit {
+        background: var(--accent-green);
         border: none;
-        cursor: pointer;
-        font-weight: 500;
-        transition: opacity 0.2s;
-    }
-    .media-btn-comment.cancel {
-        background: transparent;
-        color: var(--media-yt-text);
-    }
-    .media-btn-comment.cancel:hover {
-        background: rgba(255,255,255,0.1);
-    }
-    .media-btn-comment.submit {
-        background: var(--media-primary-green);
+        padding: 8px 20px;
+        border-radius: 24px;
         color: white;
+        font-weight: 500;
+        cursor: pointer;
     }
-    .media-btn-comment.submit:hover {
-        opacity: 0.9;
-    }
-
+    
     .media-comments-list {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 16px;
+        max-height: 300px;
+        overflow-y: auto;
     }
+    
     .media-comment-item {
         display: flex;
-        gap: 15px;
-        animation: mediaFadeIn 0.3s ease;
+        gap: 12px;
+        animation: slideUp 0.3s ease;
     }
-    @keyframes mediaFadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .media-comment-content {
-        flex: 1;
-    }
+    
     .media-comment-author {
-        color: var(--media-yt-text);
         font-weight: 600;
-        margin-bottom: 5px;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
+        margin-bottom: 4px;
     }
+    
     .media-comment-text {
-        color: var(--media-yt-text-secondary);
-        line-height: 1.5;
-        margin-bottom: 5px;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
     }
+    
     .media-comment-date {
-        color: var(--media-yt-text-secondary);
-        font-size: 0.75rem;
-        opacity: 0.7;
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+        margin-top: 4px;
     }
-
-    .media-recommendations-compact {
-        padding: 20px;
-        border-top: 1px solid var(--media-yt-light-gray);
+    
+    /* Recommandations compactes */
+    .media-recommendations {
+        margin-top: 16px;
     }
+    
     .media-recommendations-title {
-        color: var(--media-yt-text);
         font-weight: 600;
-        margin-bottom: 15px;
-        font-size: 1rem;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
+    
     .media-compact-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 12px;
     }
+    
     .media-compact-item {
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: var(--transition);
     }
-    .media-compact-item:hover {
-        transform: scale(1.05);
-    }
+    
     .media-compact-item img {
         width: 100%;
         aspect-ratio: 16/9;
         object-fit: cover;
-        border-radius: 6px;
+        border-radius: 12px;
     }
+    
     .media-compact-item-title {
-        font-size: 0.85rem;
-        color: var(--media-yt-text);
-        margin-top: 5px;
+        font-size: 0.7rem;
+        margin-top: 6px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .media-compact-item-stats {
-        font-size: 0.7rem;
-        color: var(--media-yt-text-secondary);
-    }
-
-    .media-lightbox-nav {
+    
+    /* Navigation */
+    .media-nav {
         position: fixed;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(255,255,255,0.1);
+        background: rgba(0,0,0,0.5);
         border: none;
-        color: white;
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        font-size: 1.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        backdrop-filter: blur(5px);
-        z-index: 1060;
-        transition: all 0.2s;
-    }
-    .media-lightbox-nav:hover { 
-        background: rgba(255,255,255,0.2);
-        transform: translateY(-50%) scale(1.1);
-    }
-    .media-nav-prev { left: 20px; }
-    .media-nav-next { right: 20px; }
-
-    .media-loading-spinner {
-        display: inline-block;
         width: 40px;
         height: 40px;
-        border: 3px solid rgba(255,255,255,0.3);
         border-radius: 50%;
-        border-top-color: var(--media-primary-green);
-        animation: mediaSpin 1s ease-in-out infinite;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        z-index: 10000;
+        backdrop-filter: blur(5px);
     }
-    @keyframes mediaSpin {
-        to { transform: rotate(360deg); }
-    }
-
-    .media-empty-state {
-        text-align: center;
-        padding: 80px 20px;
-        color: var(--media-text-muted);
-    }
-    .media-empty-icon { 
-        font-size: 5rem; 
-        margin-bottom: 20px; 
-        opacity: 0.5; 
-        color: var(--media-primary-green); 
-    }
-
-    .media-toast-container {
+    
+    .media-nav-prev { left: 12px; }
+    .media-nav-next { right: 12px; }
+    
+    /* Toast */
+    .media-toast {
         position: fixed;
         bottom: 20px;
+        left: 20px;
         right: 20px;
-        z-index: 9999;
-    }
-    .media-toast {
-        background: var(--media-primary-green);
+        background: rgba(0,0,0,0.9);
+        backdrop-filter: blur(10px);
+        padding: 12px 20px;
+        border-radius: 30px;
+        text-align: center;
+        z-index: 10001;
+        animation: slideUp 0.3s ease;
         color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        margin-top: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        animation: mediaSlideIn 0.3s ease;
+        font-size: 0.85rem;
     }
-    .media-toast.error {
-        background: #dc3545;
+    
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
-    .media-toast.success {
-        background: var(--media-primary-green);
-    }
-    @keyframes mediaSlideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-
-    @media (max-width: 1200px) {
-        .media-lightbox-info-panel {
-            min-width: 300px;
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
-
-    @media (max-width: 992px) {
-        .media-lightbox-body {
-            flex-direction: column;
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
         }
-        .media-lightbox-video-panel {
-            width: 100%;
-            max-height: 60%;
-            border-right: none;
-            border-bottom: 1px solid var(--media-yt-light-gray);
-        }
-        .media-lightbox-info-panel {
-            width: 100%;
-            min-width: auto;
-            max-height: 40%;
-        }
-        .media-video-container-wrapper {
-            aspect-ratio: 16/9;
-        }
-        .media-compact-grid {
-            grid-template-columns: repeat(4, 1fr);
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
-
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Responsive */
     @media (max-width: 768px) {
-        .media-hero-title { font-size: 2rem; }
-        .media-grid { grid-template-columns: 1fr; padding: 0 16px; }
-        
-        .media-lightbox-nav { 
-            width: 40px; 
-            height: 40px; 
-            font-size: 1rem;
+        .media-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding: 0 12px 80px;
         }
-        .media-nav-prev { left: 10px; }
-        .media-nav-next { right: 10px; }
         
-        .media-video-title-large { font-size: 1.2rem; }
-        .media-video-stats-grid { gap: 12px; }
-        .media-video-actions { gap: 10px; }
-        .media-btn-action { padding: 8px 16px; font-size: 0.85rem; }
-        .media-stars-container { font-size: 1.3rem; gap: 8px; }
+        .media-actions {
+            justify-content: space-between;
+        }
+        
+        .media-action-btn {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+        
+        .media-nav {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .media-lightbox-info {
+            max-height: 45%;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .media-hero h1 {
+            font-size: 1.4rem;
+        }
+        
+        .media-filter-btn {
+            padding: 6px 16px;
+            font-size: 0.75rem;
+        }
         
         .media-compact-grid {
             grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    @media (max-width: 576px) {
-        .media-compact-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        .media-comment-form {
-            flex-direction: column;
-        }
-        .media-comment-avatar {
-            align-self: flex-start;
         }
     }
 </style>
 
 <?php
 // Helper pour extraire ID YouTube
-function media_get_youtube_id($url) {
+function getYoutubeIdFromUrl($url) {
     preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $url, $matches);
     return $matches[1] ?? null;
 }
 
-// Préparation des données avec stats
-$mediaGalleryData = [];
+// Helper pour obtenir l'icône du type
+function getMediaIcon($type, $sous_type = null) {
+    if ($sous_type === 'book') return 'fa-book';
+    if ($type === 'video') return 'fa-video';
+    if ($type === 'audio') return 'fa-headphones';
+    if ($type === 'image') return 'fa-image';
+    if ($type === 'document') return 'fa-file-pdf';
+    if ($type === 'link') return 'fa-link';
+    return 'fa-file';
+}
+
+// Préparer les données avec toutes les stats
+$preparedMedias = [];
 if (!empty($medias)) {
     foreach ($medias as $media) {
         $item = (array)$media;
+        
+        // YouTube ID
         $item['youtube_id'] = null;
         if ($item['type'] === 'link' && !empty($item['lien'])) {
-            $item['youtube_id'] = media_get_youtube_id($item['lien']);
+            $item['youtube_id'] = getYoutubeIdFromUrl($item['lien']);
         }
         
-        // Stats depuis les relations
-        $item['views_count'] = $item['views_count'] ?? rand(1000, 500000);
-        $item['likes_count'] = $item['likes_count'] ?? rand(10, 5000);
-        $item['dislikes_count'] = $item['dislikes_count'] ?? rand(0, 100);
-        $item['plays_count'] = $item['plays_count'] ?? rand(100, 10000);
-        $item['comments_count'] = $item['comments_count'] ?? rand(0, 100);
+        // Thumbnail
+        $item['thumb_url'] = '';
+        if ($item['youtube_id']) {
+            $item['thumb_url'] = "https://img.youtube.com/vi/{$item['youtube_id']}/mqdefault.jpg";
+        } elseif (!empty($item['miniature'])) {
+            $item['thumb_url'] = base_url($item['miniature']);
+        } elseif ($item['type'] === 'image' && !empty($item['fichier'])) {
+            $item['thumb_url'] = base_url($item['fichier']);
+        } else {
+            $item['thumb_url'] = base_url('assets/images/default_thumbnail.jpg');
+        }
+        
+        // Statistiques (valeurs par défaut si non présentes)
+        $item['views_count'] = $item['views_count'] ?? rand(100, 5000);
+        $item['likes_count'] = $item['likes_count'] ?? rand(5, 500);
+        $item['dislikes_count'] = $item['dislikes_count'] ?? rand(0, 50);
+        $item['plays_count'] = $item['plays_count'] ?? rand(10, 1000);
+        $item['comments_count'] = $item['comments_count'] ?? rand(0, 50);
         $item['rating_avg'] = $item['rating_avg'] ?? rand(30, 50) / 10;
         
-        $item['duration'] = $item['duree'] ?? sprintf('%d:%02d', rand(1, 15), rand(0, 59));
-        $mediaGalleryData[] = $item;
+        // Durée formatée
+        $item['duration_formatted'] = $item['duration'] ?? ($item['duree'] ? sprintf('%d:%02d', floor($item['duree']/60), $item['duree']%60) : '00:00');
+        
+        // Badge de type pour affichage
+        $item['display_type'] = $item['type'];
+        if ($item['youtube_id']) $item['display_type'] = 'youtube';
+        if ($item['sous_type'] === 'book') $item['display_type'] = 'book';
+        
+        $preparedMedias[] = $item;
     }
 }
+
+$totalViews = array_sum(array_column($preparedMedias, 'views_count'));
+$totalLikes = array_sum(array_column($preparedMedias, 'likes_count'));
+$totalMedias = count($preparedMedias);
 ?>
 
-<!-- Hero Section -->
-<section class="media-herosect">
+<!-- HERO SECTION -->
+<section class="media-hero">
     <div class="media-hero-content">
-        <h1 class="media-hero-title">
-            <i class="fas fa-play-circle"></i> Médiathèque
+        <h1>
+            <i class="fas fa-play-circle"></i>
+            Médiathèque
         </h1>
-        <p class="media-hero-subtitle">Découvrez nos vidéos, tutoriels, podcasts et documents exclusifs</p>
+        <p>Vidéos, podcasts, images et documents exclusifs</p>
         
-        <!-- ================= BARRE DE RECHERCHE AVEC AUTOCOMPLETE ================= -->
-        <div class="media-search-container">
-            <div class="media-search-input-wrapper">
-                <input type="text" 
-                       class="media-search-input" 
-                       id="mediaSearchInput" 
-                       placeholder="Rechercher un média (tapez au moins 2 lettres)..." 
-                       autocomplete="off">
-                <button class="media-search-btn" id="mediaSearchBtn">
-                    <i class="fas fa-search" id="mediaSearchIcon"></i>
-                </button>
-            </div>
-            
-            <!-- Dropdown résultats autocomplete -->
+        <!-- Barre de recherche WhatsApp style -->
+        <div class="media-search-wrapper">
+            <input type="text" 
+                   class="media-search-input" 
+                   id="mediaSearchInput" 
+                   placeholder="Rechercher un média..." 
+                   autocomplete="off">
+            <button class="media-search-btn" id="mediaSearchBtn">
+                <i class="fas fa-search"></i>
+            </button>
             <div class="media-search-dropdown" id="mediaSearchDropdown"></div>
         </div>
-
-        <!-- Overlay pour fermer au clic extérieur -->
-        <div class="media-search-overlay" id="mediaSearchOverlay"></div>
         
-        <div class="media-search-results-info" id="mediaSearchInfo" style="display: none;">
-            <span id="mediaResultsCount">0</span> résultat(s) dans la grille
-            <button class="media-clear-search-btn" style="background: none; border: none; color: white; cursor: pointer;">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div class="media-hero-stats">
-            <div class="media-hero-stat"><i class="fas fa-eye"></i> <span id="mediaTotalViews"><?= array_sum(array_column($mediaGalleryData, 'views_count')) ?></span> vues</div>
-            <div class="media-hero-stat"><i class="fas fa-heart"></i> <span id="mediaTotalLikes"><?= array_sum(array_column($mediaGalleryData, 'likes_count')) ?></span> likes</div>
-            <div class="media-hero-stat"><i class="fas fa-play"></i> <?= count($mediaGalleryData) ?> médias</div>
+        <!-- Stats -->
+        <div class="media-stats">
+            <div class="media-stat"><i class="fas fa-eye"></i> <?= number_format($totalViews) ?> vues</div>
+            <div class="media-stat"><i class="fas fa-heart"></i> <?= number_format($totalLikes) ?> likes</div>
+            <div class="media-stat"><i class="fas fa-play"></i> <?= $totalMedias ?> médias</div>
         </div>
     </div>
 </section>
 
+<!-- Filtres style TikTok/Reels -->
+<div class="media-filters">
+    <button class="media-filter-btn active" data-filter="all">Tous</button>
+    <button class="media-filter-btn" data-filter="video">Vidéos</button>
+    <button class="media-filter-btn" data-filter="youtube">YouTube</button>
+    <button class="media-filter-btn" data-filter="audio">Audio</button>
+    <button class="media-filter-btn" data-filter="image">Images</button>
+    <button class="media-filter-btn" data-filter="document">Documents</button>
+    <button class="media-filter-btn" data-filter="book">Livres</button>
+</div>
+
 <!-- Grille des médias -->
 <div class="media-grid" id="mediaGrid">
-    <?php if (!empty($mediaGalleryData)): ?>
-        <?php foreach ($mediaGalleryData as $index => $media): 
-            // Miniature
-            $thumb_url = '';
-            if (!empty($media['youtube_id'])) {
-                $thumb_url = "https://img.youtube.com/vi/{$media['youtube_id']}/hqdefault.jpg";
-            } elseif (!empty($media['miniature'])) {
-                $thumb_url = base_url($media['miniature']);
-            } elseif ($media['type'] === 'image' && !empty($media['fichier'])) {
-                $thumb_url = base_url($media['fichier']);
-            } else {
-                $thumb_url = base_url('assets/images/default_thumbnail.jpg');
-            }
-
-            // Badge type
-            $badgeClass = $media['type'];
-            $badgeIcon = 'fa-file';
-            switch ($media['type']) {
-                case 'video': $badgeIcon = 'fa-video'; break;
-                case 'audio': $badgeIcon = 'fa-headphones'; break;
-                case 'image': $badgeIcon = 'fa-image'; break;
-                case 'link': $badgeIcon = 'fa-link'; break;
-            }
-            if (!empty($media['youtube_id'])) {
-                $badgeClass = 'youtube';
-                $badgeIcon = 'fa-youtube';
-            }
-
-            // Rating stars
+    <?php if (!empty($preparedMedias)): ?>
+        <?php foreach ($preparedMedias as $index => $media): 
+            $badgeClass = $media['display_type'];
+            $badgeIcon = getMediaIcon($media['type'], $media['sous_type']);
             $fullStars = floor($media['rating_avg']);
             $halfStar = ($media['rating_avg'] - $fullStars) >= 0.5;
             $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
         ?>
         <div class="media-card" 
-             data-media-index="<?= $index ?>" 
+             data-media-index="<?= $index ?>"
              data-media-id="<?= $media['id_media'] ?>"
              data-media-type="<?= $media['type'] ?>"
+             data-media-display-type="<?= $media['display_type'] ?>"
              data-media-title="<?= htmlspecialchars(strtolower($media['titre'])) ?>"
              data-media-category="<?= htmlspecialchars(strtolower($media['categorie'] ?? '')) ?>"
-             onclick="mediaOpenLightbox(<?= $index ?>)">
+             onclick="openMediaLightbox(<?= $index ?>)">
             
-            <div class="media-thumbnail-wrap">
-                <img src="<?= $thumb_url ?>" class="media-thumbnail-img" alt="<?= htmlspecialchars($media['titre']) ?>" loading="lazy">
-                <span class="media-duration-badge"><?= $media['duration'] ?></span>
-                <span class="media-type-badge <?= $badgeClass ?>"><i class="fab <?= $badgeIcon ?>"></i> <?= ucfirst($badgeClass) ?></span>
-                
-                <!-- Stats overlay -->
-                <div class="media-card-stats-overlay">
-                    <span class="media-stat-item"><i class="fas fa-eye"></i> <?= number_format($media['views_count']) ?></span>
-                    <span class="media-stat-item"><i class="fas fa-play"></i> <?= number_format($media['plays_count']) ?></span>
-                    <span class="media-stat-item"><i class="fas fa-thumbs-up"></i> <?= number_format($media['likes_count']) ?></span>
-                </div>
-                
+            <div class="media-thumb">
+                <img src="<?= $media['thumb_url'] ?>" alt="<?= htmlspecialchars($media['titre']) ?>" loading="lazy">
+                <span class="media-badge"><?= $media['duration_formatted'] ?></span>
+                <span class="media-type-badge <?= $badgeClass ?>">
+                    <i class="fab <?= $badgeIcon ?>"></i> 
+                    <?= strtoupper($badgeClass == 'youtube' ? 'YT' : ($badgeClass == 'book' ? 'LIVRE' : $media['type'])) ?>
+                </span>
                 <div class="media-play-overlay">
-                    <i class="fas fa-play-circle media-play-icon"></i>
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <div class="media-stats-overlay">
+                    <span><i class="fas fa-eye"></i> <?= number_format($media['views_count']) ?></span>
+                    <span><i class="fas fa-play"></i> <?= number_format($media['plays_count']) ?></span>
+                    <span><i class="fas fa-thumbs-up"></i> <?= number_format($media['likes_count']) ?></span>
                 </div>
             </div>
             
-            <div class="media-card-info">
-                <div class="media-channel-avatar">
+            <div class="media-info">
+                <div class="media-avatar">
                     <i class="fas fa-play"></i>
                 </div>
-                <div class="media-card-meta">
-                    <h3 class="media-card-title"><?= htmlspecialchars($media['titre']) ?></h3>
-                    
-                    <!-- Rating -->
-                    <div class="media-card-rating">
+                <div class="media-details">
+                    <h3 class="media-title"><?= htmlspecialchars($media['titre']) ?></h3>
+                    <div class="media-rating">
                         <?php for($i=0; $i<$fullStars; $i++): ?><i class="fas fa-star"></i><?php endfor; ?>
                         <?php if($halfStar): ?><i class="fas fa-star-half-alt"></i><?php endif; ?>
                         <?php for($i=0; $i<$emptyStars; $i++): ?><i class="far fa-star"></i><?php endfor; ?>
-                        <span style="color: var(--media-text-muted); margin-left: 5px;">(<?= $media['rating_avg'] ?>)</span>
                     </div>
-                    
-                    <div class="media-card-stats">
+                    <div class="media-meta">
                         <span><i class="fas fa-eye"></i> <?= number_format($media['views_count']) ?></span>
                         <span>•</span>
                         <span><?= date('d M Y', strtotime($media['created_at'] ?? 'now')) ?></span>
                         <?php if($media['comments_count'] > 0): ?>
-                            <span>•</span>
-                            <span><i class="fas fa-comment"></i> <?= $media['comments_count'] ?></span>
+                            <span>• <i class="fas fa-comment"></i> <?= $media['comments_count'] ?></span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -1171,383 +995,656 @@ if (!empty($medias)) {
         </div>
         <?php endforeach; ?>
     <?php else: ?>
-        <div class="media-empty-state">
-            <i class="fas fa-photo-video media-empty-icon"></i>
-            <h3>Aucun média disponible</h3>
-            <p>Revenez bientôt pour découvrir notre contenu.</p>
+        <div style="text-align: center; padding: 60px; color: var(--text-tertiary);">
+            <i class="fas fa-photo-video" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;"></i>
+            <p>Aucun média disponible pour le moment.</p>
         </div>
     <?php endif; ?>
 </div>
 
-<!-- Lightbox 2 colonnes -->
-<div class="modal fade media-lightbox" id="mediaLightboxModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="media-lightbox-header">
-                <h2 id="mediaLightboxHeaderTitle">Titre</h2>
-                <button type="button" class="media-lightbox-close" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                </button>
+<!-- LIGHTBOX NATIF -->
+<div class="media-lightbox" id="mediaLightbox">
+    <div class="media-lightbox-header">
+        <div class="media-lightbox-title" id="lightboxTitle">Titre</div>
+        <button class="media-lightbox-close" onclick="closeMediaLightbox()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <div class="media-player-container">
+        <div class="media-player" id="mediaPlayer"></div>
+    </div>
+    
+    <div class="media-lightbox-info" id="lightboxInfo">
+        <div class="media-actions">
+            <button class="media-action-btn" id="likeBtn">
+                <i class="fas fa-thumbs-up"></i> <span id="likeCount">0</span>
+            </button>
+            <button class="media-action-btn" id="dislikeBtn">
+                <i class="fas fa-thumbs-down"></i> <span id="dislikeCount">0</span>
+            </button>
+            <button class="media-action-btn" id="shareBtn">
+                <i class="fas fa-share-alt"></i> Partager
+            </button>
+        </div>
+        
+        <div>
+            <div style="font-weight: 500; margin-bottom: 8px;">Noter ce média</div>
+            <div class="media-stars" id="starRating">
+                <i class="far fa-star" data-rating="1"></i>
+                <i class="far fa-star" data-rating="2"></i>
+                <i class="far fa-star" data-rating="3"></i>
+                <i class="far fa-star" data-rating="4"></i>
+                <i class="far fa-star" data-rating="5"></i>
+            </div>
+        </div>
+        
+        <div class="media-comments-section">
+            <div style="margin-bottom: 12px;"><i class="fas fa-comments"></i> Commentaires (<span id="commentsCount">0</span>)</div>
+            
+            <div class="media-comment-form">
+                <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
+                <div class="media-comment-input-wrapper">
+                    <textarea class="media-comment-input" id="commentInput" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                    <div class="media-comment-actions">
+                        <button class="media-comment-submit" id="submitComment">Commenter</button>
+                    </div>
+                </div>
             </div>
             
-            <div class="media-lightbox-body">
-                <div class="media-lightbox-video-panel">
-                    <div class="media-video-container-wrapper">
-                        <div class="media-video-container" id="mediaVideoContainer"></div>
-                    </div>
-                </div>
-                
-                <div class="media-lightbox-info-panel">
-                    <div class="media-video-metadata">
-                        <div class="media-video-title-large" id="mediaVideoTitleLarge">Titre</div>
-                        <div class="media-video-stats-grid">
-                            <span class="media-stat-badge" id="mediaVideoViews"><i class="fas fa-eye"></i> 0 vues</span>
-                            <span class="media-stat-badge" id="mediaVideoPlays"><i class="fas fa-play"></i> 0 lectures</span>
-                            <span class="media-stat-badge" id="mediaVideoDate"><i class="fas fa-calendar"></i> date</span>
-                        </div>
-                        <div class="media-video-description" id="mediaVideoDescription">Description...</div>
-                    </div>
-                    
-                    <div class="media-video-actions">
-                        <button class="media-btn-action" id="mediaLikeBtn">
-                            <i class="fas fa-thumbs-up"></i> <span id="mediaLikeCount">0</span>
-                        </button>
-                        <button class="media-btn-action" id="mediaDislikeBtn">
-                            <i class="fas fa-thumbs-down"></i> <span id="mediaDislikeCount">0</span>
-                        </button>
-                        <button class="media-btn-action" id="mediaShareBtn">
-                            <i class="fas fa-share-alt"></i> Partager
-                        </button>
-                        <button class="media-btn-action" id="mediaDownloadBtn" style="display: none;">
-                            <i class="fas fa-download"></i> Télécharger
-                        </button>
-                    </div>
-
-                    <div class="media-rating-container">
-                        <div class="media-rating-label">Noter ce média</div>
-                        <div class="media-stars-container" id="mediaStarRating">
-                            <i class="far fa-star" data-rating="1"></i>
-                            <i class="far fa-star" data-rating="2"></i>
-                            <i class="far fa-star" data-rating="3"></i>
-                            <i class="far fa-star" data-rating="4"></i>
-                            <i class="far fa-star" data-rating="5"></i>
-                        </div>
-                        <div style="margin-top: 10px; color: var(--media-yt-text-secondary);" id="mediaUserRating"></div>
-                    </div>
-
-                    <div class="media-comments-container">
-                        <div class="media-comments-header">
-                            <h3><i class="fas fa-comments"></i> Commentaires (<span id="mediaCommentsCount">0</span>)</h3>
-                        </div>
-                        
-                        <div class="media-comment-form">
-                            <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
-                            <div class="media-comment-input-wrapper">
-                                <textarea class="media-comment-input" id="mediaCommentInput" rows="2" placeholder="Ajouter un commentaire..."></textarea>
-                                <div class="media-comment-actions">
-                                    <button class="media-btn-comment cancel" id="mediaCommentCancel">Annuler</button>
-                                    <button class="media-btn-comment submit" id="mediaCommentSubmit">Commenter</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="media-comments-list" id="mediaCommentsList"></div>
-                    </div>
-
-                    <div class="media-recommendations-compact">
-                        <div class="media-recommendations-title"><i class="fas fa-thumbs-up"></i> Recommandés</div>
-                        <div class="media-compact-grid" id="mediaCompactRecommendations"></div>
-                    </div>
-                </div>
+            <div class="media-comments-list" id="commentsList"></div>
+        </div>
+        
+        <div class="media-recommendations">
+            <div class="media-recommendations-title">
+                <i class="fas fa-thumbs-up"></i> Recommandés
             </div>
+            <div class="media-compact-grid" id="recommendationsGrid"></div>
         </div>
     </div>
     
-    <button class="media-lightbox-nav media-nav-prev" id="mediaNavPrev"><i class="fas fa-chevron-left"></i></button>
-    <button class="media-lightbox-nav media-nav-next" id="mediaNavNext"><i class="fas fa-chevron-right"></i></button>
+    <button class="media-nav media-nav-prev" id="prevMedia"><i class="fas fa-chevron-left"></i></button>
+    <button class="media-nav media-nav-next" id="nextMedia"><i class="fas fa-chevron-right"></i></button>
 </div>
 
-<!-- Toast Container -->
-<div class="media-toast-container" id="mediaToastContainer"></div>
-
 <script>
-// ================= CONFIGURATION =================
-const mediaGalleryData = <?= json_encode($mediaGalleryData) ?>;
-const mediaBaseUrl = '<?= base_url() ?>';
-let mediaCurrentIndex = 0;
-let mediaCurrentModal = null;
-let mediaCurrentFilter = 'all';
-let mediaSearchQuery = '';
-let mediaActiveSearchIndex = -1;
-let mediaSearchTimeout = null;
+// ================= DONNÉES GLOBALES =================
+const mediasData = <?= json_encode($preparedMedias) ?>;
+const baseUrl = '<?= base_url() ?>';
+let currentIndex = 0;
+let currentMedia = null;
+let searchQuery = '';
+let activeSearchIndex = -1;
+let searchTimeout = null;
+let currentFilter = 'all';
 
 // ================= INITIALISATION =================
 document.addEventListener('DOMContentLoaded', function() {
-    // Animer les cartes au chargement
-    mediaAnimateCards();
-    
-    // Initialiser les écouteurs d'événements
-    mediaInitializeSearch();
-    mediaInitializeLightboxEvents();
-    mediaInitializeKeyboardNav();
-    mediaInitializeEventListeners();
-    
-    // Vérifier s'il y a une recherche dans l'URL
-    mediaInitSearchFromUrl();
+    initSearch();
+    initFilters();
+    initLightboxEvents();
+    initKeyboardNav();
+    animateCards();
 });
 
-// ================= INITIALISATION DES ÉCOUTEURS =================
-function mediaInitializeEventListeners() {
-    // Boutons de la lightbox
-    document.getElementById('mediaLikeBtn')?.addEventListener('click', mediaHandleLike);
-    document.getElementById('mediaDislikeBtn')?.addEventListener('click', mediaHandleDislike);
-    document.getElementById('mediaShareBtn')?.addEventListener('click', mediaShareMedia);
-    document.getElementById('mediaDownloadBtn')?.addEventListener('click', mediaDownloadMedia);
-    document.getElementById('mediaCommentSubmit')?.addEventListener('click', mediaSubmitComment);
-    document.getElementById('mediaCommentCancel')?.addEventListener('click', mediaClearComment);
-    document.getElementById('mediaNavPrev')?.addEventListener('click', () => mediaNavigateMedia(-1));
-    document.getElementById('mediaNavNext')?.addEventListener('click', () => mediaNavigateMedia(1));
+// ================= RECHERCHE (WhatsApp style) =================
+function initSearch() {
+    const searchInput = document.getElementById('mediaSearchInput');
+    const searchBtn = document.getElementById('mediaSearchBtn');
+    const dropdown = document.getElementById('mediaSearchDropdown');
+    const overlay = document.getElementById('mediaSearchOverlay');
     
-    // Étoiles de notation
-    document.querySelectorAll('#mediaStarRating i').forEach(star => {
-        star.addEventListener('click', (e) => mediaRateMedia(parseInt(e.target.dataset.rating)));
+    if (!searchInput) return;
+    
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('focus', () => {
+        if (searchQuery.length >= 2 && dropdown.children.length > 0) {
+            dropdown.classList.add('active');
+        }
     });
+    searchInput.addEventListener('keydown', handleSearchKeyboard);
     
-    // Bouton effacer recherche
-    document.querySelector('.media-clear-search-btn')?.addEventListener('click', mediaClearSearch);
-}
-
-// ================= RECHERCHE EN TEMPS RÉEL =================
-function mediaInitializeSearch() {
-    const mediaSearchInput = document.getElementById('mediaSearchInput');
-    const mediaSearchBtn = document.getElementById('mediaSearchBtn');
-    const mediaSearchOverlay = document.getElementById('mediaSearchOverlay');
-    
-    if (!mediaSearchInput) return;
-    
-    mediaSearchInput.addEventListener('input', mediaHandleSearchInput);
-    mediaSearchInput.addEventListener('focus', mediaHandleSearchFocus);
-    mediaSearchInput.addEventListener('keydown', mediaHandleSearchKeyboard);
-    
-    if (mediaSearchBtn) {
-        mediaSearchBtn.addEventListener('click', mediaHandleSearchButtonClick);
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            if (searchQuery.length >= 2) {
+                performSearch(searchQuery);
+            } else if (searchQuery.length > 0) {
+                showToast('Tapez au moins 2 caractères', 'error');
+            }
+        });
     }
     
-    if (mediaSearchOverlay) {
-        mediaSearchOverlay.addEventListener('click', mediaCloseSearchDropdown);
-    }
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('active');
+        }
+    });
 }
 
-function mediaHandleSearchInput(e) {
-    const query = e.target.value.trim();
+function handleSearchInput(e) {
+    searchQuery = e.target.value.trim();
     
-    clearTimeout(mediaSearchTimeout);
+    clearTimeout(searchTimeout);
     
-    if (query.length === 0) {
-        mediaResetSearch();
-        mediaUpdateSearchIcon('search');
+    if (searchQuery.length === 0) {
+        clearSearch();
         return;
     }
     
-    if (query.length < 2) {
-        mediaCloseSearchDropdown();
-        mediaUpdateSearchIcon('times');
+    if (searchQuery.length < 2) {
+        document.getElementById('mediaSearchDropdown').classList.remove('active');
         return;
     }
     
-    mediaUpdateSearchIcon('times');
-    
-    mediaSearchTimeout = setTimeout(() => {
-        mediaPerformLiveSearch(query);
-    }, 300);
+    searchTimeout = setTimeout(() => performSearch(searchQuery), 300);
 }
 
-function mediaHandleSearchFocus() {
-    const query = document.getElementById('mediaSearchInput').value.trim();
+function performSearch(query) {
     const dropdown = document.getElementById('mediaSearchDropdown');
     
-    if (query.length >= 2 && dropdown.children.length > 0) {
-        mediaOpenSearchDropdown();
-    }
-}
-
-function mediaHandleSearchButtonClick() {
-    const mediaSearchIcon = document.getElementById('mediaSearchIcon');
-    const mediaSearchInput = document.getElementById('mediaSearchInput');
+    dropdown.innerHTML = '<div class="media-search-loading" style="padding: 20px; text-align: center;"><div class="spinner"></div> Recherche...</div>';
+    dropdown.classList.add('active');
     
-    if (mediaSearchIcon.classList.contains('fa-times')) {
-        mediaClearSearch();
-    } else {
-        const query = mediaSearchInput.value.trim();
-        if (query.length >= 2) {
-            mediaPerformLiveSearch(query);
-        } else if (query.length > 0) {
-            mediaShowToast('Veuillez taper au moins 2 caractères', 'error');
-        }
-    }
-}
-
-function mediaPerformLiveSearch(query) {
-    mediaSearchQuery = query;
-    mediaActiveSearchIndex = -1;
-    
-    mediaShowSearchLoading();
-    mediaOpenSearchDropdown();
-    
-    fetch(`${mediaBaseUrl}media/searchAjax?q=${encodeURIComponent(query)}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Erreur réseau');
-            return response.json();
-        })
+    fetch(`${baseUrl}media/searchAjax?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
         .then(data => {
-            if (data.success && data.medias) {
-                mediaRenderSearchResults(data.medias, query);
-                mediaFilterMainGridBySearch(data.medias.map(m => m.id_media));
+            if (data.success && data.medias && data.medias.length > 0) {
+                renderSearchResults(data.medias, query);
+                filterGridBySearch(data.medias.map(m => m.id_media));
                 
-                const resultsCount = document.getElementById('mediaResultsCount');
                 const searchInfo = document.getElementById('mediaSearchInfo');
-                
-                if (resultsCount) resultsCount.textContent = data.medias.length;
-                if (searchInfo) searchInfo.style.display = 'inline-flex';
+                if (searchInfo) searchInfo.style.display = 'flex';
+                document.getElementById('mediaResultsCount').textContent = data.medias.length;
             } else {
-                mediaShowSearchEmpty('Aucun résultat trouvé');
-                mediaFilterMainGridBySearch([]);
+                dropdown.innerHTML = `
+                    <div class="media-search-empty" style="padding: 30px; text-align: center;">
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p>Aucun résultat pour "${query}"</p>
+                    </div>
+                `;
+                filterGridBySearch([]);
             }
         })
-        .catch(error => {
-            console.error('Erreur recherche:', error);
-            mediaShowSearchEmpty('Erreur de connexion');
-            mediaPerformClientSearch(query);
+        .catch(() => {
+            // Fallback recherche côté client
+            const results = mediasData.filter(m => 
+                (m.titre || '').toLowerCase().includes(query.toLowerCase()) ||
+                (m.description || '').toLowerCase().includes(query.toLowerCase()) ||
+                (m.categorie || '').toLowerCase().includes(query.toLowerCase())
+            );
+            renderSearchResults(results.map(m => ({
+                id_media: m.id_media,
+                titre: m.titre,
+                type: m.type,
+                display_type: m.display_type,
+                thumb_url: m.thumb_url,
+                created_at: m.created_at
+            })), query);
+            filterGridBySearch(results.map(m => m.id_media));
         });
 }
 
-function mediaPerformClientSearch(query) {
-    const results = mediaGalleryData.filter(media => {
-        const titre = (media.titre || '').toLowerCase();
-        const description = (media.description || '').toLowerCase();
-        const categorie = (media.categorie || '').toLowerCase();
-        const searchLower = query.toLowerCase();
-        
-        return titre.includes(searchLower) || 
-               description.includes(searchLower) || 
-               categorie.includes(searchLower);
-    });
-    
-    const formattedResults = results.map(media => ({
-        id_media: media.id_media,
-        titre: media.titre,
-        type: media.type,
-        sous_type: media.sous_type || '',
-        categorie: media.categorie || 'Sans catégorie',
-        description: media.description ? media.description.substring(0, 100) + '...' : '',
-        thumb_url: mediaGetThumbnailUrl(media),
-        date: mediaFormatDate(media.created_at || media.date_media)
-    }));
-    
-    mediaRenderSearchResults(formattedResults, query);
-    mediaFilterMainGridBySearch(formattedResults.map(m => m.id_media));
-    
-    const resultsCount = document.getElementById('mediaResultsCount');
-    const searchInfo = document.getElementById('mediaSearchInfo');
-    
-    if (resultsCount) resultsCount.textContent = formattedResults.length;
-    if (searchInfo) searchInfo.style.display = 'inline-flex';
-}
-
-// ================= RENDU DES RÉSULTATS =================
-function mediaShowSearchLoading() {
+function renderSearchResults(results, query) {
     const dropdown = document.getElementById('mediaSearchDropdown');
-    if (!dropdown) return;
     
-    dropdown.innerHTML = `
-        <div class="media-search-loading">
-            <div class="spinner"></div>
-            <p>Recherche en cours...</p>
-        </div>
-    `;
-}
-
-function mediaShowSearchEmpty(message) {
-    const dropdown = document.getElementById('mediaSearchDropdown');
-    if (!dropdown) return;
-    
-    dropdown.innerHTML = `
-        <div class="media-search-empty">
-            <i class="fas fa-search"></i>
-            <p>${message}</p>
-        </div>
-    `;
-}
-
-function mediaRenderSearchResults(medias, query) {
-    const dropdown = document.getElementById('mediaSearchDropdown');
-    if (!dropdown) return;
-    
-    if (!medias || medias.length === 0) {
-        mediaShowSearchEmpty('Aucun résultat trouvé');
+    if (!results || results.length === 0) {
+        dropdown.innerHTML = `<div class="media-search-empty" style="padding: 30px; text-align: center;"><p>Aucun résultat</p></div>`;
         return;
     }
     
-    const html = medias.map((media, index) => {
-        const safeTitle = mediaEscapeHtml(media.titre || 'Sans titre');
-        const highlightedTitle = mediaHighlightText(safeTitle, query);
-        const typeLabel = mediaGetTypeLabel(media.type, media.sous_type);
-        const category = mediaEscapeHtml(media.categorie || 'Sans catégorie');
-        const thumbUrl = media.thumb_url || `${mediaBaseUrl}assets/images/default_thumbnail.jpg`;
+    dropdown.innerHTML = results.map((media, idx) => {
+        const title = escapeHtml(media.titre || 'Sans titre');
+        const highlightedTitle = highlightText(title, query);
+        const typeLabel = media.display_type === 'youtube' ? 'YouTube' : media.type;
+        const thumbUrl = media.thumb_url || `${baseUrl}assets/images/default_thumbnail.jpg`;
         
         return `
-        <div class="media-search-item" 
-             data-media-index="${index}" 
-             data-media-id="${media.id_media}"
-             onclick="mediaOpenFromSearch(${media.id_media})"
-             onmouseenter="mediaSetActiveSearchItem(${index})">
-            <img src="${thumbUrl}" class="media-search-item-thumb" alt="${safeTitle}" loading="lazy" 
-                 onerror="this.src='${mediaBaseUrl}assets/images/default_thumbnail.jpg'">
+        <div class="media-search-item" onclick="openMediaById(${media.id_media})">
+            <img src="${thumbUrl}" class="media-search-item-thumb" alt="${title}">
             <div class="media-search-item-info">
                 <div class="media-search-item-title">${highlightedTitle}</div>
                 <div class="media-search-item-meta">
-                    <span class="media-search-item-type ${media.type}">${typeLabel}</span>
-                    <span><i class="fas fa-folder"></i> ${category}</span>
-                    <span><i class="fas fa-calendar"></i> ${media.date || ''}</span>
+                    <span class="media-search-item-badge ${media.display_type || media.type}">${typeLabel}</span>
+                    <span><i class="fas fa-calendar"></i> ${formatDate(media.created_at)}</span>
                 </div>
             </div>
-            <i class="fas fa-chevron-right" style="color: #ccc;"></i>
         </div>
         `;
     }).join('');
-    
-    dropdown.innerHTML = html;
 }
 
-function mediaGetTypeLabel(type, sousType) {
-    const types = {
-        'video': 'Vidéo',
-        'audio': 'Audio',
-        'image': 'Image',
-        'document': 'Document',
-        'link': 'Lien',
-        'autre': 'Autre'
+function filterGridBySearch(visibleIds) {
+    const cards = document.querySelectorAll('.media-card');
+    let visible = 0;
+    
+    cards.forEach(card => {
+        const mediaId = parseInt(card.dataset.mediaId);
+        if (visibleIds.includes(mediaId)) {
+            card.classList.remove('hidden');
+            visible++;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+    
+    if (visible === 0) {
+        const grid = document.getElementById('mediaGrid');
+        const emptyMsg = document.querySelector('.media-no-results');
+        if (!emptyMsg) {
+            const msg = document.createElement('div');
+            msg.className = 'media-no-results';
+            msg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);';
+            msg.innerHTML = '<i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px;"></i><p>Aucun média trouvé</p>';
+            grid.appendChild(msg);
+        }
+    } else {
+        const emptyMsg = document.querySelector('.media-no-results');
+        if (emptyMsg) emptyMsg.remove();
+    }
+}
+
+function clearSearch() {
+    document.getElementById('mediaSearchInput').value = '';
+    document.getElementById('mediaSearchDropdown').classList.remove('active');
+    document.querySelectorAll('.media-card').forEach(card => card.classList.remove('hidden'));
+    const emptyMsg = document.querySelector('.media-no-results');
+    if (emptyMsg) emptyMsg.remove();
+}
+
+function handleSearchKeyboard(e) {
+    const items = document.querySelectorAll('.media-search-item');
+    
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (items.length) {
+                activeSearchIndex = Math.min(activeSearchIndex + 1, items.length - 1);
+                updateActiveSearchItem(activeSearchIndex);
+            }
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            if (items.length) {
+                activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
+                updateActiveSearchItem(activeSearchIndex);
+            }
+            break;
+        case 'Enter':
+            e.preventDefault();
+            if (activeSearchIndex >= 0 && items[activeSearchIndex]) {
+                items[activeSearchIndex].click();
+            }
+            break;
+        case 'Escape':
+            document.getElementById('mediaSearchDropdown').classList.remove('active');
+            break;
+    }
+}
+
+function updateActiveSearchItem(index) {
+    const items = document.querySelectorAll('.media-search-item');
+    items.forEach((item, i) => {
+        item.classList.toggle('active', i === index);
+    });
+    if (items[index]) {
+        items[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+}
+
+// ================= FILTRES =================
+function initFilters() {
+    const filters = document.querySelectorAll('.media-filter-btn');
+    
+    filters.forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentFilter = btn.dataset.filter;
+            
+            filters.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            applyFilters();
+        });
+    });
+}
+
+function applyFilters() {
+    const cards = document.querySelectorAll('.media-card');
+    let visible = 0;
+    
+    cards.forEach(card => {
+        const mediaType = card.dataset.mediaDisplayType || card.dataset.mediaType;
+        
+        if (currentFilter === 'all' || currentFilter === mediaType) {
+            card.classList.remove('hidden');
+            visible++;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+}
+
+// ================= LIGHTBOX =================
+function openMediaLightbox(index) {
+    if (!mediasData[index]) return;
+    
+    currentIndex = index;
+    currentMedia = mediasData[index];
+    
+    // Mettre à jour l'affichage
+    document.getElementById('lightboxTitle').textContent = currentMedia.titre || 'Sans titre';
+    document.getElementById('likeCount').textContent = currentMedia.likes_count || 0;
+    document.getElementById('dislikeCount').textContent = currentMedia.dislikes_count || 0;
+    document.getElementById('commentsCount').textContent = currentMedia.comments_count || 0;
+    
+    // Charger le player
+    loadPlayer();
+    
+    // Charger les commentaires
+    loadComments(currentMedia.id_media);
+    
+    // Charger les recommandations
+    loadRecommendations(currentMedia.id_media);
+    
+    // Réinitialiser les étoiles
+    resetStars();
+    
+    // Afficher la lightbox
+    document.getElementById('mediaLightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Incrémenter les vues
+    incrementViews(currentMedia.id_media);
+}
+
+function loadPlayer() {
+    const playerContainer = document.getElementById('mediaPlayer');
+    
+    if (currentMedia.youtube_id) {
+        playerContainer.innerHTML = `
+            <iframe src="https://www.youtube.com/embed/${currentMedia.youtube_id}?autoplay=1&rel=0" 
+                    frameborder="0" 
+                    allowfullscreen
+                    allow="autoplay; encrypted-media"></iframe>
+        `;
+    } else if (currentMedia.type === 'video' && currentMedia.fichier) {
+        playerContainer.innerHTML = `
+            <video controls autoplay onplay="incrementPlay(${currentMedia.id_media})">
+                <source src="${baseUrl}${currentMedia.fichier}" type="video/mp4">
+            </video>
+        `;
+    } else if (currentMedia.type === 'audio' && currentMedia.fichier) {
+        playerContainer.innerHTML = `
+            <audio controls autoplay onplay="incrementPlay(${currentMedia.id_media})" style="width: 90%;">
+                <source src="${baseUrl}${currentMedia.fichier}" type="audio/mpeg">
+            </audio>
+        `;
+    } else if (currentMedia.type === 'image' && currentMedia.fichier) {
+        playerContainer.innerHTML = `
+            <img src="${baseUrl}${currentMedia.fichier}" alt="${currentMedia.titre}">
+        `;
+    } else if (currentMedia.lien) {
+        playerContainer.innerHTML = `
+            <div style="text-align: center;">
+                <a href="${currentMedia.lien}" target="_blank" style="color: var(--accent-green);">
+                    <i class="fas fa-external-link-alt"></i> Ouvrir le lien
+                </a>
+            </div>
+        `;
+    } else {
+        playerContainer.innerHTML = '<div style="text-align: center;">Aucun lecteur disponible</div>';
+    }
+}
+
+function closeMediaLightbox() {
+    document.getElementById('mediaLightbox').classList.remove('active');
+    document.body.style.overflow = '';
+    
+    // Arrêter la lecture
+    const player = document.querySelector('#mediaPlayer video, #mediaPlayer audio');
+    if (player) player.pause();
+}
+
+function navigateMedia(direction) {
+    const visibleCards = Array.from(document.querySelectorAll('.media-card:not(.hidden)'));
+    if (visibleCards.length === 0) return;
+    
+    const currentCard = document.querySelector(`[data-media-index="${currentIndex}"]`);
+    const currentVisibleIndex = visibleCards.indexOf(currentCard);
+    
+    let newVisibleIndex = currentVisibleIndex + direction;
+    if (newVisibleIndex < 0) newVisibleIndex = visibleCards.length - 1;
+    if (newVisibleIndex >= visibleCards.length) newVisibleIndex = 0;
+    
+    const newCard = visibleCards[newVisibleIndex];
+    const newIndex = parseInt(newCard.dataset.mediaIndex);
+    
+    openMediaLightbox(newIndex);
+}
+
+function openMediaById(id) {
+    const index = mediasData.findIndex(m => m.id_media === id);
+    if (index !== -1) {
+        openMediaLightbox(index);
+        document.getElementById('mediaSearchDropdown').classList.remove('active');
+    } else {
+        window.location.href = `${baseUrl}media/view/${id}`;
+    }
+}
+
+// ================= INTERACTIONS =================
+function handleLike() {
+    if (!currentMedia) return;
+    
+    const btn = document.getElementById('likeBtn');
+    const isLiked = btn.classList.contains('liked');
+    
+    btn.classList.toggle('liked');
+    document.getElementById('dislikeBtn').classList.remove('disliked');
+    
+    const currentCount = parseInt(document.getElementById('likeCount').textContent);
+    document.getElementById('likeCount').textContent = isLiked ? currentCount - 1 : currentCount + 1;
+    
+    fetch(`${baseUrl}media/toggleLike`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&action=${isLiked ? 'remove' : 'like'}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(isLiked ? 'Like retiré' : 'Vous aimez ce média');
+        }
+    })
+    .catch(() => showToast('Erreur', 'error'));
+}
+
+function handleDislike() {
+    if (!currentMedia) return;
+    
+    const btn = document.getElementById('dislikeBtn');
+    const isDisliked = btn.classList.contains('disliked');
+    
+    btn.classList.toggle('disliked');
+    document.getElementById('likeBtn').classList.remove('liked');
+    
+    const currentCount = parseInt(document.getElementById('dislikeCount').textContent);
+    document.getElementById('dislikeCount').textContent = isDisliked ? currentCount - 1 : currentCount + 1;
+    
+    fetch(`${baseUrl}media/toggleLike`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&action=${isDisliked ? 'remove' : 'dislike'}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(isDisliked ? 'Dislike retiré' : 'Vous n\'aimez pas ce média');
+        }
+    })
+    .catch(() => showToast('Erreur', 'error'));
+}
+
+function rateMedia(rating) {
+    if (!currentMedia) return;
+    
+    const stars = document.querySelectorAll('#starRating i');
+    stars.forEach((star, i) => {
+        if (i < rating) {
+            star.classList.remove('far');
+            star.classList.add('fas', 'active');
+        } else {
+            star.classList.remove('fas', 'active');
+            star.classList.add('far');
+        }
+    });
+    
+    fetch(`${baseUrl}media/rateMedia`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&rating=${rating}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Note ${rating}/5 enregistrée`);
+        }
+    })
+    .catch(() => showToast('Erreur de notation', 'error'));
+}
+
+function submitComment() {
+    const input = document.getElementById('commentInput');
+    const text = input.value.trim();
+    
+    if (!text) {
+        showToast('Écrivez un commentaire', 'error');
+        return;
+    }
+    
+    if (!currentMedia) return;
+    
+    fetch(`${baseUrl}media/addComment`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&comment=${encodeURIComponent(text)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadComments(currentMedia.id_media);
+            showToast('Commentaire ajouté !');
+        }
+    })
+    .catch(() => showToast('Erreur', 'error'));
+}
+
+function shareMedia() {
+    const shareData = {
+        title: currentMedia.titre,
+        text: currentMedia.description || 'Découvrez ce média',
+        url: window.location.href
     };
     
-    if (sousType) {
-        return `${types[type] || type} / ${sousType}`;
-    }
-    return types[type] || type;
-}
-
-function mediaGetThumbnailUrl(media) {
-    if (media.youtube_id) {
-        return `https://img.youtube.com/vi/${media.youtube_id}/mqdefault.jpg`;
-    } else if (media.miniature) {
-        return mediaBaseUrl + media.miniature;
-    } else if (media.type === 'image' && media.fichier) {
-        return mediaBaseUrl + media.fichier;
+    if (navigator.share) {
+        navigator.share(shareData);
     } else {
-        return mediaBaseUrl + 'assets/images/default_thumbnail.jpg';
+        navigator.clipboard.writeText(window.location.href);
+        showToast('Lien copié !');
     }
 }
 
-function mediaFormatDate(dateString) {
+// ================= CHARGEMENT DES DONNÉES =================
+function loadComments(mediaId) {
+    fetch(`${baseUrl}media/getComments/${mediaId}`)
+        .then(res => res.json())
+        .then(data => {
+            const comments = data.comments || [];
+            const list = document.getElementById('commentsList');
+            
+            if (comments.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-tertiary); text-align: center;">Aucun commentaire. Soyez le premier !</p>';
+                return;
+            }
+            
+            list.innerHTML = comments.map(c => `
+                <div class="media-comment-item">
+                    <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
+                    <div>
+                        <div class="media-comment-author">${escapeHtml(c.author_name || 'Anonyme')}</div>
+                        <div class="media-comment-text">${escapeHtml(c.comment || '')}</div>
+                        <div class="media-comment-date">${formatDate(c.created_at)}</div>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('commentsList').innerHTML = '<p style="color: var(--text-tertiary);">Erreur de chargement</p>';
+        });
+}
+
+function loadRecommendations(mediaId) {
+    fetch(`${baseUrl}media/getRecommended/${mediaId}`)
+        .then(res => res.json())
+        .then(data => {
+            const medias = data.medias || [];
+            const grid = document.getElementById('recommendationsGrid');
+            
+            if (medias.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-tertiary);">Aucune recommandation</p>';
+                return;
+            }
+            
+            grid.innerHTML = medias.slice(0, 4).map(m => `
+                <div class="media-compact-item" onclick="openMediaById(${m.id_media})">
+                    <img src="${m.thumbnail_url || baseUrl + 'assets/images/default_thumbnail.jpg'}" alt="${escapeHtml(m.titre)}">
+                    <div class="media-compact-item-title">${escapeHtml(m.titre)}</div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+function resetStars() {
+    document.querySelectorAll('#starRating i').forEach(star => {
+        star.classList.remove('fas', 'active');
+        star.classList.add('far');
+    });
+}
+
+// ================= TRACKING =================
+function incrementViews(mediaId) {
+    fetch(`${baseUrl}media/trackView`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${mediaId}`,
+        keepalive: true
+    }).catch(() => {});
+}
+
+function incrementPlay(mediaId) {
+    fetch(`${baseUrl}media/trackPlay`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${mediaId}`,
+        keepalive: true
+    }).catch(() => {});
+}
+
+// ================= UTILITAIRES =================
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = 'media-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function formatDate(dateString) {
     if (!dateString) return '';
     try {
         const date = new Date(dateString);
@@ -1557,674 +1654,64 @@ function mediaFormatDate(dateString) {
     }
 }
 
-function mediaEscapeHtml(text) {
+function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-function mediaHighlightText(text, query) {
+function highlightText(text, query) {
     if (!query || !text) return text;
     try {
-        const regex = new RegExp(`(${mediaEscapeRegex(query)})`, 'gi');
+        const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
         return text.replace(regex, '<span class="media-highlight">$1</span>');
     } catch {
         return text;
     }
 }
 
-function mediaEscapeRegex(string) {
+function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// ================= GESTION DES RÉSULTATS DE RECHERCHE =================
-function mediaOpenFromSearch(id_media) {
-    const index = mediaGalleryData.findIndex(m => parseInt(m.id_media) === parseInt(id_media));
-    
-    if (index !== -1) {
-        mediaOpenLightbox(index);
-        mediaCloseSearchDropdown();
-        document.getElementById('mediaSearchInput')?.blur();
-    } else {
-        window.location.href = `${mediaBaseUrl}media/view/${id_media}`;
-    }
-}
-
-function mediaSetActiveSearchItem(index) {
-    const items = document.querySelectorAll('.media-search-item');
-    items.forEach((item, i) => {
-        item.classList.toggle('active', i === index);
-    });
-    mediaActiveSearchIndex = index;
-}
-
-function mediaHandleSearchKeyboard(e) {
-    const items = document.querySelectorAll('.media-search-item');
-    
-    switch(e.key) {
-        case 'ArrowDown':
-            e.preventDefault();
-            if (items.length > 0) {
-                mediaActiveSearchIndex = Math.min(mediaActiveSearchIndex + 1, items.length - 1);
-                mediaSetActiveSearchItem(mediaActiveSearchIndex);
-                items[mediaActiveSearchIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-            break;
-            
-        case 'ArrowUp':
-            e.preventDefault();
-            if (items.length > 0) {
-                mediaActiveSearchIndex = Math.max(mediaActiveSearchIndex - 1, 0);
-                mediaSetActiveSearchItem(mediaActiveSearchIndex);
-                items[mediaActiveSearchIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-            break;
-            
-        case 'Enter':
-            e.preventDefault();
-            if (mediaActiveSearchIndex >= 0 && items[mediaActiveSearchIndex]) {
-                items[mediaActiveSearchIndex].click();
-            } else if (items.length > 0) {
-                items[0].click();
-            }
-            break;
-            
-        case 'Escape':
-            mediaCloseSearchDropdown();
-            document.getElementById('mediaSearchInput')?.blur();
-            break;
-    }
-}
-
-// ================= FILTRAGE DE LA GRILLE =================
-function mediaFilterMainGridBySearch(visibleIds) {
-    const cards = document.querySelectorAll('.media-card');
-    let visibleCount = 0;
-    
-    cards.forEach(card => {
-        const mediaId = parseInt(card.getAttribute('data-media-id'));
-        
-        if (visibleIds.includes(mediaId)) {
-            card.classList.remove('hidden');
-            card.style.animation = 'mediaFadeIn 0.3s ease';
-            visibleCount++;
-        } else {
-            card.classList.add('hidden');
-        }
-    });
-    
-    const grid = document.getElementById('mediaGrid');
-    const existingEmpty = grid.querySelector('.media-no-results');
-    if (existingEmpty) existingEmpty.remove();
-    
-    if (visibleCount === 0) {
-        const emptyMsg = document.createElement('div');
-        emptyMsg.className = 'media-empty-state media-no-results';
-        emptyMsg.style.gridColumn = '1 / -1';
-        emptyMsg.innerHTML = `
-            <p>Essayez d'autres mots-clés ou <a href="#" onclick="mediaClearSearch(); return false;">effacez la recherche</a>.</p>
-        `;
-        grid.appendChild(emptyMsg);
-    }
-}
-
-// ================= UTILITAIRES DE RECHERCHE =================
-function mediaOpenSearchDropdown() {
-    const dropdown = document.getElementById('mediaSearchDropdown');
-    const overlay = document.getElementById('mediaSearchOverlay');
-    
-    if (dropdown) dropdown.classList.add('active');
-    if (overlay) overlay.classList.add('active');
-}
-
-function mediaCloseSearchDropdown() {
-    const dropdown = document.getElementById('mediaSearchDropdown');
-    const overlay = document.getElementById('mediaSearchOverlay');
-    
-    if (dropdown) dropdown.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
-    mediaActiveSearchIndex = -1;
-}
-
-function mediaResetSearch() {
-    mediaCloseSearchDropdown();
-    mediaResetGrid();
-    mediaUpdateSearchIcon('search');
-    
-    const searchInfo = document.getElementById('mediaSearchInfo');
-    if (searchInfo) searchInfo.style.display = 'none';
-}
-
-function mediaResetGrid() {
-    const cards = document.querySelectorAll('.media-card');
-    cards.forEach(card => {
-        card.classList.remove('hidden');
-    });
-    
-    const emptyMsg = document.querySelector('.media-no-results');
-    if (emptyMsg) emptyMsg.remove();
-}
-
-function mediaClearSearch() {
-    const searchInput = document.getElementById('mediaSearchInput');
-    if (searchInput) {
-        searchInput.value = '';
-        searchInput.focus();
-    }
-    
-    mediaResetSearch();
-}
-
-function mediaUpdateSearchIcon(icon) {
-    const searchIcon = document.getElementById('mediaSearchIcon');
-    if (searchIcon) {
-        searchIcon.className = `fas fa-${icon}`;
-    }
-}
-
-function mediaInitSearchFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('q');
-    
-    if (query) {
-        const searchInput = document.getElementById('mediaSearchInput');
-        if (searchInput) {
-            searchInput.value = query;
-            mediaPerformLiveSearch(query);
-        }
-    }
-}
-
-// ================= ANIMATIONS =================
-function mediaAnimateCards() {
+function animateCards() {
     const cards = document.querySelectorAll('.media-card');
     cards.forEach((card, i) => {
+        card.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s forwards`;
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
         
         setTimeout(() => {
-            card.style.transition = 'all 0.4s ease';
             card.style.opacity = '1';
             card.style.transform = 'translateY(0)';
         }, i * 50);
     });
 }
 
-// ================= LIGHTBOX =================
-function mediaOpenLightbox(index) {
-    if (!mediaGalleryData || !mediaGalleryData[index]) return;
+function initLightboxEvents() {
+    document.getElementById('likeBtn')?.addEventListener('click', handleLike);
+    document.getElementById('dislikeBtn')?.addEventListener('click', handleDislike);
+    document.getElementById('shareBtn')?.addEventListener('click', shareMedia);
+    document.getElementById('submitComment')?.addEventListener('click', submitComment);
+    document.getElementById('prevMedia')?.addEventListener('click', () => navigateMedia(-1));
+    document.getElementById('nextMedia')?.addEventListener('click', () => navigateMedia(1));
     
-    mediaCurrentIndex = index;
-    const media = mediaGalleryData[index];
-    
-    mediaIncrementViews(media.id_media);
-    mediaUpdateLightboxContent(media);
-    
-    const container = document.getElementById('mediaVideoContainer');
-    if (container) {
-        container.innerHTML = mediaGetPlayerHtml(media);
-    }
-    
-    mediaResetStars();
-    mediaLoadComments(media.id_media);
-    mediaLoadCompactRecommendations(media.id_media);
-    
-    if (mediaCurrentModal) {
-        mediaCurrentModal.dispose();
-    }
-    
-    const modalElement = document.getElementById('mediaLightboxModal');
-    if (modalElement && typeof bootstrap !== 'undefined') {
-        mediaCurrentModal = new bootstrap.Modal(modalElement);
-        mediaCurrentModal.show();
-    }
-}
-
-function mediaUpdateLightboxContent(media) {
-    const elements = {
-        headerTitle: document.getElementById('mediaLightboxHeaderTitle'),
-        titleLarge: document.getElementById('mediaVideoTitleLarge'),
-        description: document.getElementById('mediaVideoDescription'),
-        views: document.getElementById('mediaVideoViews'),
-        plays: document.getElementById('mediaVideoPlays'),
-        likeCount: document.getElementById('mediaLikeCount'),
-        dislikeCount: document.getElementById('mediaDislikeCount'),
-        commentsCount: document.getElementById('mediaCommentsCount'),
-        date: document.getElementById('mediaVideoDate')
-    };
-    
-    if (elements.headerTitle) elements.headerTitle.textContent = media.titre || 'Sans titre';
-    if (elements.titleLarge) elements.titleLarge.textContent = media.titre || 'Sans titre';
-    if (elements.description) elements.description.textContent = media.description || 'Aucune description disponible.';
-    
-    if (elements.views) {
-        elements.views.innerHTML = `<i class="fas fa-eye"></i> ${Number(media.views_count || 0).toLocaleString()} vues`;
-    }
-    
-    if (elements.plays) {
-        elements.plays.innerHTML = `<i class="fas fa-play"></i> ${Number(media.plays_count || 0).toLocaleString()} lectures`;
-    }
-    
-    if (elements.likeCount) elements.likeCount.textContent = media.likes_count || 0;
-    if (elements.dislikeCount) elements.dislikeCount.textContent = media.dislikes_count || 0;
-    if (elements.commentsCount) elements.commentsCount.textContent = media.comments_count || 0;
-    
-    if (elements.date) {
-        const date = new Date(media.created_at || media.date_media || Date.now());
-        elements.date.innerHTML = `<i class="fas fa-calendar"></i> ${date.toLocaleDateString('fr-FR')}`;
-    }
-    
-    const downloadBtn = document.getElementById('mediaDownloadBtn');
-    if (downloadBtn) {
-        downloadBtn.style.display = (media.fichier && media.type !== 'link') ? 'inline-flex' : 'none';
-    }
-}
-
-function mediaGetPlayerHtml(media) {
-    if (media.youtube_id) {
-        return `<iframe src="https://www.youtube.com/embed/${media.youtube_id}?autoplay=1&rel=0" frameborder="0" allowfullscreen></iframe>`;
-    }
-    
-    if (media.type === 'video' && media.fichier) {
-        return `<video controls autoplay onplay="mediaIncrementPlay(${media.id_media})"><source src="${mediaBaseUrl}${media.fichier}" type="video/mp4"></video>`;
-    }
-    
-    if (media.type === 'audio' && media.fichier) {
-        return `<div style="background:#333; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-                   <audio controls autoplay onplay="mediaIncrementPlay(${media.id_media})" src="${mediaBaseUrl}${media.fichier}" style="width:80%;"></audio>
-                </div>`;
-    }
-    
-    if (media.type === 'image' && media.fichier) {
-        return `<img src="${mediaBaseUrl}${media.fichier}" alt="${media.titre}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
-    }
-    
-    if (media.lien) {
-        return `<div style="text-align:center; padding:40px;">
-                   <a href="${media.lien}" target="_blank" style="color:#3ea6ff; font-size:1.2rem;">
-                       <i class="fas fa-external-link-alt"></i> Ouvrir le lien
-                   </a>
-                </div>`;
-    }
-    
-    return '<div class="text-center p-5">Aucun lecteur disponible</div>';
-}
-
-function mediaResetStars() {
-    document.querySelectorAll('#mediaStarRating i').forEach(star => {
-        star.classList.remove('fas', 'active');
-        star.classList.add('far');
+    document.querySelectorAll('#starRating i').forEach(star => {
+        star.addEventListener('click', (e) => rateMedia(parseInt(e.target.dataset.rating)));
     });
-    
-    const userRating = document.getElementById('mediaUserRating');
-    if (userRating) userRating.innerHTML = '';
 }
 
-function mediaNavigateMedia(direction) {
-    const visibleCards = Array.from(document.querySelectorAll('.media-card:not(.hidden)'));
-    if (visibleCards.length === 0) return;
-    
-    const currentCard = document.querySelector(`[data-media-index="${mediaCurrentIndex}"]`);
-    const currentVisibleIndex = visibleCards.indexOf(currentCard);
-    
-    let newVisibleIndex = currentVisibleIndex + direction;
-    if (newVisibleIndex < 0) newVisibleIndex = visibleCards.length - 1;
-    if (newVisibleIndex >= visibleCards.length) newVisibleIndex = 0;
-    
-    const newCard = visibleCards[newVisibleIndex];
-    const newDataIndex = parseInt(newCard.getAttribute('data-media-index'));
-    
-    mediaOpenLightbox(newDataIndex);
-}
-
-// ================= INTERACTIONS UTILISATEUR =================
-function mediaHandleLike() {
-    const media = mediaGalleryData[mediaCurrentIndex];
-    if (!media) return;
-    
-    const btn = document.getElementById('mediaLikeBtn');
-    const isLiked = btn.classList.contains('liked');
-    
-    btn.classList.toggle('liked');
-    document.getElementById('mediaDislikeBtn').classList.remove('disliked');
-    
-    const currentCount = parseInt(document.getElementById('mediaLikeCount').textContent);
-    document.getElementById('mediaLikeCount').textContent = isLiked ? currentCount - 1 : currentCount + 1;
-    
-    fetch(`${mediaBaseUrl}media/toggleLike`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${media.id_media}&action=${isLiked ? 'remove' : 'like'}`
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            mediaShowToast(isLiked ? 'Like retiré' : 'Vous aimez ce média !');
-        }
-    })
-    .catch(() => mediaShowToast('Erreur lors de l\'opération', 'error'));
-}
-
-function mediaHandleDislike() {
-    const media = mediaGalleryData[mediaCurrentIndex];
-    if (!media) return;
-    
-    const btn = document.getElementById('mediaDislikeBtn');
-    const isDisliked = btn.classList.contains('disliked');
-    
-    btn.classList.toggle('disliked');
-    document.getElementById('mediaLikeBtn').classList.remove('liked');
-    
-    const currentCount = parseInt(document.getElementById('mediaDislikeCount').textContent);
-    document.getElementById('mediaDislikeCount').textContent = isDisliked ? currentCount - 1 : currentCount + 1;
-    
-    fetch(`${mediaBaseUrl}media/toggleLike`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${media.id_media}&action=${isDisliked ? 'remove' : 'dislike'}`
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            mediaShowToast(isDisliked ? 'Dislike retiré' : 'Vous n\'aimez pas ce média');
-        }
-    })
-    .catch(() => mediaShowToast('Erreur lors de l\'opération', 'error'));
-}
-
-function mediaRateMedia(rating) {
-    const media = mediaGalleryData[mediaCurrentIndex];
-    if (!media) return;
-    
-    document.querySelectorAll('#mediaStarRating i').forEach((star, index) => {
-        if (index < rating) {
-            star.classList.remove('far');
-            star.classList.add('fas', 'active');
-        } else {
-            star.classList.remove('fas', 'active');
-            star.classList.add('far');
-        }
-    });
-    
-    const userRating = document.getElementById('mediaUserRating');
-    if (userRating) {
-        userRating.innerHTML = `<i class="fas fa-check-circle" style="color: var(--media-primary-green);"></i> Votre note: ${rating}/5`;
-    }
-    
-    fetch(`${mediaBaseUrl}media/rateMedia`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${media.id_media}&rating=${rating}`
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            mediaShowToast(`Merci pour votre note de ${rating} étoiles !`);
-        }
-    })
-    .catch(() => mediaShowToast('Erreur lors de la notation', 'error'));
-}
-
-function mediaSubmitComment() {
-    const input = document.getElementById('mediaCommentInput');
-    if (!input) return;
-    
-    const text = input.value.trim();
-    if (!text) {
-        mediaShowToast('Veuillez écrire un commentaire', 'error');
-        return;
-    }
-    
-    const media = mediaGalleryData[mediaCurrentIndex];
-    if (!media) return;
-    
-    fetch(`${mediaBaseUrl}media/addComment`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${media.id_media}&comment=${encodeURIComponent(text)}`
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            input.value = '';
-            mediaLoadComments(media.id_media);
-            mediaShowToast('Commentaire ajouté !');
-        }
-    })
-    .catch(() => mediaShowToast('Erreur lors de l\'ajout du commentaire', 'error'));
-}
-
-function mediaClearComment() {
-    document.getElementById('mediaCommentInput').value = '';
-}
-
-// ================= CHARGEMENT DES DONNÉES =================
-function mediaLoadComments(mediaId) {
-    fetch(`${mediaBaseUrl}media/getComments/${mediaId}`)
-        .then(r => r.json())
-        .then(data => {
-            const comments = data.comments || [];
-            const list = document.getElementById('mediaCommentsList');
-            if (!list) return;
-            
-            if (comments.length === 0) {
-                list.innerHTML = '<p style="color: var(--media-yt-text-secondary); text-align: center;">Aucun commentaire. Soyez le premier !</p>';
-                return;
-            }
-            
-            list.innerHTML = comments.map(c => `
-                <div class="media-comment-item">
-                    <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
-                    <div class="media-comment-content">
-                        <div class="media-comment-author">${mediaEscapeHtml(c.author_name || 'Anonyme')}</div>
-                        <div class="media-comment-text">${mediaEscapeHtml(c.comment || '')}</div>
-                        <div class="media-comment-date">${mediaFormatDate(c.created_at)}</div>
-                    </div>
-                </div>
-            `).join('');
-        })
-        .catch(() => {
-            const list = document.getElementById('mediaCommentsList');
-            if (list) {
-                list.innerHTML = '<p style="color: var(--media-yt-text-secondary); text-align: center;">Erreur de chargement des commentaires</p>';
-            }
-        });
-}
-
-function mediaLoadCompactRecommendations(mediaId) {
-    fetch(`${mediaBaseUrl}media/getRecommended/${mediaId}`)
-        .then(r => r.json())
-        .then(data => {
-            const medias = data.medias || [];
-            const grid = document.getElementById('mediaCompactRecommendations');
-            if (!grid) return;
-            
-            if (medias.length === 0) {
-                grid.innerHTML = '<p class="text-muted">Aucune recommandation</p>';
-                return;
-            }
-            
-            grid.innerHTML = medias.slice(0, 4).map(m => {
-                const thumbUrl = m.miniature ? mediaBaseUrl + m.miniature : `${mediaBaseUrl}assets/images/default_thumbnail.jpg`;
-                return `
-                <div class="media-compact-item" onclick="mediaOpenRecommended(${m.id_media})">
-                    <img src="${thumbUrl}" alt="${mediaEscapeHtml(m.titre)}" loading="lazy">
-                    <div class="media-compact-item-title">${mediaEscapeHtml(m.titre)}</div>
-                    <div class="media-compact-item-stats">${(m.views_count || 0).toLocaleString()} vues</div>
-                </div>
-                `;
-            }).join('');
-        })
-        .catch(() => {
-            const grid = document.getElementById('mediaCompactRecommendations');
-            if (grid) {
-                grid.innerHTML = '<p class="text-muted">Erreur de chargement</p>';
-            }
-        });
-}
-
-function mediaOpenRecommended(id) {
-    const index = mediaGalleryData.findIndex(m => parseInt(m.id_media) === parseInt(id));
-    if (index !== -1) {
-        mediaOpenLightbox(index);
-    }
-}
-
-// ================= TRACKING =================
-function mediaIncrementViews(mediaId) {
-    fetch(`${mediaBaseUrl}media/trackView`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${mediaId}`,
-        keepalive: true
-    }).catch(() => {});
-}
-
-function mediaIncrementPlay(mediaId) {
-    fetch(`${mediaBaseUrl}media/trackPlay`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${mediaId}`,
-        keepalive: true
-    }).catch(() => {});
-}
-
-// ================= PARTAGE ET TÉLÉCHARGEMENT =================
-function mediaShareMedia() {
-    const media = mediaGalleryData[mediaCurrentIndex];
-    if (!media) return;
-    
-    const shareData = {
-        title: media.titre,
-        text: media.description || 'Découvrez ce média',
-        url: window.location.href
-    };
-    
-    if (navigator.share) {
-        navigator.share(shareData).catch(() => {});
-    } else {
-        navigator.clipboard.writeText(shareData.url).then(() => {
-            mediaShowToast('Lien copié dans le presse-papiers !');
-        }).catch(() => {
-            mediaShowToast('Erreur lors de la copie', 'error');
-        });
-    }
-}
-
-function mediaDownloadMedia() {
-    const media = mediaGalleryData[mediaCurrentIndex];
-    if (media && media.fichier) {
-        window.open(`${mediaBaseUrl}${media.fichier}`, '_blank');
-    }
-}
-
-// ================= TOAST NOTIFICATIONS =================
-function mediaShowToast(message, type = 'success') {
-    const container = document.getElementById('mediaToastContainer');
-    if (!container) return;
-    
-    const toast = document.createElement('div');
-    toast.className = `media-toast ${type}`;
-    toast.textContent = message;
-    toast.setAttribute('role', 'alert');
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'mediaSlideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// ================= GESTION CLAVIER =================
-function mediaInitializeKeyboardNav() {
-    document.addEventListener('keydown', mediaHandleKeyboard);
-}
-
-function mediaHandleKeyboard(e) {
-    const modal = document.getElementById('mediaLightboxModal');
-    if (!modal || !modal.classList.contains('show')) return;
-    
-    switch(e.key) {
-        case 'ArrowLeft':
-            e.preventDefault();
-            mediaNavigateMedia(-1);
-            break;
-        case 'ArrowRight':
-            e.preventDefault();
-            mediaNavigateMedia(1);
-            break;
-        case 'Escape':
-            if (mediaCurrentModal) {
-                mediaCurrentModal.hide();
-            }
-            break;
-    }
-}
-
-// ================= INITIALISATION DES ÉVÉNEMENTS LIGHTBOX =================
-function mediaInitializeLightboxEvents() {
-    const lightbox = document.getElementById('mediaLightboxModal');
-    if (!lightbox) return;
-    
-    lightbox.addEventListener('hidden.bs.modal', function() {
-        const container = document.getElementById('mediaVideoContainer');
-        if (container) {
-            container.innerHTML = '';
-        }
+function initKeyboardNav() {
+    document.addEventListener('keydown', (e) => {
+        const lightbox = document.getElementById('mediaLightbox');
+        if (!lightbox.classList.contains('active')) return;
         
-        const downloadBtn = document.getElementById('mediaDownloadBtn');
-        if (downloadBtn) {
-            downloadBtn.style.display = 'none';
-        }
+        if (e.key === 'ArrowLeft') navigateMedia(-1);
+        if (e.key === 'ArrowRight') navigateMedia(1);
+        if (e.key === 'Escape') closeMediaLightbox();
     });
 }
-
-// ================= FILTRES =================
-function mediaFilterMedia(type) {
-    mediaCurrentFilter = type;
-    
-    document.querySelectorAll('.media-filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-filter') === type);
-    });
-    
-    mediaApplyFilters();
-}
-
-function mediaApplyFilters() {
-    const searchInput = document.getElementById('mediaSearchInput');
-    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const cards = document.querySelectorAll('.media-card');
-    let visibleCount = 0;
-    
-    cards.forEach(card => {
-        const title = card.getAttribute('data-media-title') || '';
-        const category = card.getAttribute('data-media-category') || '';
-        const cardType = card.getAttribute('data-media-type') || '';
-        
-        const matchesSearch = !query || title.includes(query) || category.includes(query);
-        const matchesFilter = mediaCurrentFilter === 'all' || cardType === mediaCurrentFilter;
-        
-        if (matchesSearch && matchesFilter) {
-            card.classList.remove('hidden');
-            visibleCount++;
-        } else {
-            card.classList.add('hidden');
-        }
-    });
-}
-
-// ================= INITIALISATION SUPPLÉMENTAIRE =================
-const mediaStyle = document.createElement('style');
-mediaStyle.textContent = `
-    @keyframes mediaSlideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(mediaStyle);
-
 </script>
 
 <?php include VIEWPATH.'includes/frontend/Footer.php'; ?>
