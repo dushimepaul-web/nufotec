@@ -5,10 +5,6 @@
         <div class="mobile-toggle-menu d-flex"><i class='bx bx-menu'></i>
         </div>
 
-<!--          <div class="search-bar d-lg-block d-none" data-bs-toggle="modal" data-bs-target="#SearchModal">
-             <a href="avascript:;" class="btn d-flex align-items-center"><i class="bx bx-search"></i>Search</a>
-          </div> -->
-
           <div class="top-menu ms-auto">
             <ul class="navbar-nav align-items-center gap-1">
                 <li class="nav-item mobile-search-icon d-flex d-lg-none" data-bs-toggle="modal" data-bs-target="#SearchModal">
@@ -134,35 +130,46 @@
             </ul>
         </div>
 
-
-
-
-
             <?php
-            // Récupération des données de session
+            // Récupération des données de session selon la nouvelle structure
             $idUser = $this->session->userdata('user_id');
+            $uuid = $this->session->userdata('uuid');
+            $email = $this->session->userdata('email');
+            $nom = $this->session->userdata('nom');
+            $prenom = $this->session->userdata('prenom');
             $user_name = $this->session->userdata('username');
+            $photo = $this->session->userdata('photo');
+            $type_utilisateur = $this->session->userdata('type_utilisateur');
             $user_role = $this->session->userdata('role');
-            $user_photo = $this->session->userdata('photo');
-            $user_email = $this->session->userdata('email');
+            $role_id = $this->session->userdata('role_id');
+            $role_slug = $this->session->userdata('role_slug');
+            $logged_in = $this->session->userdata('logged_in');
+            $last_regenerate = $this->session->userdata('last_regenerate');
 
-            $message_non_lus = $this->Model->count('contact_us', ['is_readed' => 0]);
+            // Construction du nom complet pour l'affichage
+            $nom_complet = trim(($prenom ?? '') . ' ' . ($nom ?? ''));
+            if (empty($nom_complet)) {
+                $nom_complet = $user_name ?? 'Utilisateur';
+            }
 
-            // Initiales pour l'avatar
+            // Construction des initiales pour l'avatar
             $initials = 'UR';
-            if (!empty($user_name)) {
+            if (!empty($prenom) && !empty($nom)) {
+                $initials = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
+            } elseif (!empty($user_name)) {
                 $initials = strtoupper(substr($user_name, 0, 2));
             }
-            
+
+            $message_non_lus = $this->Model->count('contact_us', ['is_readed' => 0]);
             ?>
 
-            <?php if (!empty($user_name)): ?>
+            <?php if (!empty($logged_in) && $logged_in === TRUE): ?>
             <div class="user-box dropdown">
                 <a class="d-flex align-items-center nav-link dropdown-toggle gap-3 dropdown-toggle-nocaret" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="position-relative">
                         <?php 
-                        $photo_path = 'attachments/users/' . $user_photo;
-                        if (!empty($user_photo) && file_exists(FCPATH . $photo_path)): 
+                        $photo_path = 'attachments/users/' . $photo;
+                        if (!empty($photo) && file_exists(FCPATH . $photo_path)): 
                         ?>
                             <img src="<?= base_url($photo_path) ?>" 
                                  class="user-img rounded-circle border border-2 border-primary" 
@@ -184,7 +191,7 @@
                     </div>
                     <div class="user-info d-none d-md-block">
                         <p class="user-name mb-0 fw-semibold" style="font-size: 14px;">
-                            <?= htmlspecialchars($user_name) ?>
+                            <?= htmlspecialchars($nom_complet) ?>
                         </p>
                         <p class="designation mb-0 text-muted" style="font-size: 12px;">
                             <i class="bx bx-badge-check me-1"></i>
@@ -198,7 +205,7 @@
                         <div class="dropdown-header text-dark bg-transparent border-bottom">
                             <div class="d-flex align-items-center">
                                 <div class="me-3">
-                                    <?php if (!empty($user_photo) && file_exists(FCPATH . $photo_path)): ?>
+                                    <?php if (!empty($photo) && file_exists(FCPATH . $photo_path)): ?>
                                         <img src="<?= base_url($photo_path) ?>" 
                                              class="rounded-circle" 
                                              width="45" 
@@ -213,8 +220,8 @@
                                     <?php endif; ?>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 text-dark"><?= htmlspecialchars($user_name) ?></h6>
-                                    <small class="text-muted"><?= !empty($user_email) ? htmlspecialchars($user_email) : 'Non défini' ?></small>
+                                    <h6 class="mb-0 text-dark"><?= htmlspecialchars($nom_complet) ?></h6>
+                                    <small class="text-muted"><?= !empty($email) ? htmlspecialchars($email) : 'Non défini' ?></small>
                                 </div>
                             </div>
                         </div>
@@ -270,11 +277,8 @@
                     <!-- Photo de profil -->
                     <div class="col-md-4 text-center">
                         <div class="position-relative">
-                            <?php 
-                            $modal_photo_path = 'attachments/membres/' . ($membre_info['image'] ?? $user_photo ?? '');
-                            ?>
-                            <?php if (!empty($modal_photo_path) && file_exists(FCPATH . $modal_photo_path)): ?>
-                                <img src="<?= base_url($modal_photo_path) ?>" 
+                            <?php if (!empty($photo) && file_exists(FCPATH . $photo_path)): ?>
+                                <img src="<?= base_url($photo_path) ?>" 
                                      class="rounded-circle border border-4 border-white shadow-lg" 
                                      style="width: 150px; height: 150px; object-fit: cover;"
                                      alt="Photo de profil"
@@ -286,11 +290,11 @@
                                 </div>
                             <?php endif; ?>
                         </div>
-                        <h4 class="mt-3 fw-bold"><?= htmlspecialchars($user_name) ?></h4>
-                        <p class="text-muted"><?= !empty($membre_info['profil']) ? htmlspecialchars($membre_info['profil']) : 'Membre' ?></p>
+                        <h4 class="mt-3 fw-bold"><?= htmlspecialchars($nom_complet) ?></h4>
+                        <p class="text-muted"><?= !empty($type_utilisateur) ? htmlspecialchars($type_utilisateur) : 'Membre' ?></p>
                         
-                        <span class="badge bg-<?= (!empty($membre_info['statut']) && $membre_info['statut'] == 'actif') ? 'success' : 'warning' ?> rounded-pill px-3 py-1">
-                            <?= !empty($membre_info['statut']) ? ucfirst($membre_info['statut']) : 'Actif' ?>
+                        <span class="badge bg-success rounded-pill px-3 py-1">
+                            <?= !empty($user_role) ? htmlspecialchars($user_role) : 'Actif' ?>
                         </span>
                     </div>
                     
@@ -301,17 +305,27 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label text-muted small mb-1">Nom Complet</label>
-                                <p class="fw-bold mb-0"><?= !empty($membre_info['nom_complet']) ? htmlspecialchars($membre_info['nom_complet']) : htmlspecialchars($user_name) ?></p>
+                                <p class="fw-bold mb-0"><?= htmlspecialchars($nom_complet) ?></p>
                             </div>
                             
                             <div class="col-md-6">
                                 <label class="form-label text-muted small mb-1">Email</label>
-                                <p class="fw-bold mb-0"><?= !empty($membre_info['email']) ? htmlspecialchars($membre_info['email']) : htmlspecialchars($user_email) ?></p>
+                                <p class="fw-bold mb-0"><?= !empty($email) ? htmlspecialchars($email) : 'Non renseigné' ?></p>
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label text-muted small mb-1">Téléphone</label>
-                                <p class="fw-bold mb-0"><?= !empty($membre_info['telephone']) ? htmlspecialchars($membre_info['telephone']) : 'Non renseigné' ?></p>
+                                <label class="form-label text-muted small mb-1">Nom</label>
+                                <p class="fw-bold mb-0"><?= !empty($nom) ? htmlspecialchars($nom) : 'Non renseigné' ?></p>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-1">Prénom</label>
+                                <p class="fw-bold mb-0"><?= !empty($prenom) ? htmlspecialchars($prenom) : 'Non renseigné' ?></p>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-1">Nom d'utilisateur</label>
+                                <p class="fw-bold mb-0"><?= !empty($user_name) ? htmlspecialchars($user_name) : 'Non renseigné' ?></p>
                             </div>
                             
                             <div class="col-md-6">
@@ -320,62 +334,19 @@
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label text-muted small mb-1">Date d'inscription</label>
-                                <p class="fw-bold mb-0">
-                                    <?php if (!empty($membre_info['date_inscription'])): ?>
-                                        <?= date('d/m/Y', strtotime($membre_info['date_inscription'])) ?>
-                                    <?php else: ?>
-                                        Non disponible
-                                    <?php endif; ?>
-                                </p>
+                                <label class="form-label text-muted small mb-1">Type d'utilisateur</label>
+                                <p class="fw-bold mb-0"><?= !empty($type_utilisateur) ? htmlspecialchars($type_utilisateur) : 'Standard' ?></p>
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label text-muted small mb-1">Adresse</label>
-                                <p class="fw-bold mb-0"><?= !empty($membre_info['adresse']) ? htmlspecialchars($membre_info['adresse']) : 'Non renseignée' ?></p>
+                                <label class="form-label text-muted small mb-1">ID Utilisateur</label>
+                                <p class="fw-bold mb-0"><?= !empty($idUser) ? (int)$idUser : 'N/A' ?></p>
                             </div>
                             
-                            <!-- Réseaux sociaux -->
-                            <?php if (!empty($membre_info['facebook']) || !empty($membre_info['linkedln']) || !empty($membre_info['instagram'])): ?>
-                            <div class="col-12 mt-4">
-                                <h6 class="border-bottom pb-2 mb-3">Réseaux Sociaux</h6>
-                                <div class="d-flex gap-2">
-                                    <?php if (!empty($membre_info['facebook'])): ?>
-                                        <a href="<?= htmlspecialchars($membre_info['facebook']) ?>" 
-                                           class="btn btn-outline-primary btn-sm rounded-circle" 
-                                           target="_blank" 
-                                           title="Facebook">
-                                            <i class="bx bxl-facebook"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (!empty($membre_info['linkedln'])): ?>
-                                        <a href="<?= htmlspecialchars($membre_info['linkedln']) ?>" 
-                                           class="btn btn-outline-info btn-sm rounded-circle" 
-                                           target="_blank" 
-                                           title="LinkedIn">
-                                            <i class="bx bxl-linkedin"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (!empty($membre_info['instagram'])): ?>
-                                        <a href="<?= htmlspecialchars($membre_info['instagram']) ?>" 
-                                           class="btn btn-outline-danger btn-sm rounded-circle" 
-                                           target="_blank" 
-                                           title="Instagram">
-                                            <i class="bx bxl-instagram"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (!empty($membre_info['youtube'])): ?>
-                                        <a href="<?= htmlspecialchars($membre_info['youtube']) ?>" 
-                                           class="btn btn-outline-danger btn-sm rounded-circle" 
-                                           target="_blank" 
-                                           title="YouTube">
-                                            <i class="bx bxl-youtube"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
+                            <?php if (!empty($uuid)): ?>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-1">UUID</label>
+                                <p class="fw-bold mb-0 text-truncate" title="<?= htmlspecialchars($uuid) ?>"><?= htmlspecialchars(substr($uuid, 0, 8)) ?>...</p>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -506,18 +477,3 @@ document.addEventListener('click', function(e) {
     }
 });
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
