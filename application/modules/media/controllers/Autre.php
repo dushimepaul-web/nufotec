@@ -64,7 +64,8 @@ class Autre extends MX_Controller {
                 'color'   => 'info',
                 'accept'  => null,
                 'max_size'=> 0,
-                'has_file'=> false
+                'has_file'=> false,
+                'type_db' => 'link'  // Pour les liens, le type dans la base sera 'link'
             ],
             'book' => [
                 'label'   => 'Livre / PDF',
@@ -72,7 +73,8 @@ class Autre extends MX_Controller {
                 'color'   => 'warning',
                 'accept'  => ['pdf', 'epub', 'mobi'],
                 'max_size'=> 500 * 1024 * 1024, // 500MB
-                'has_file'=> true
+                'has_file'=> true,
+                'type_db' => 'autre'  // Reste 'autre'
             ],
             'texte' => [
                 'label'   => 'Texte',
@@ -80,7 +82,8 @@ class Autre extends MX_Controller {
                 'color'   => 'success',
                 'accept'  => null,
                 'max_size'=> 0,
-                'has_file'=> false
+                'has_file'=> false,
+                'type_db' => 'autre'  // Reste 'autre'
             ],
             'photo' => [
                 'label'   => 'Photo / Image',
@@ -88,7 +91,8 @@ class Autre extends MX_Controller {
                 'color'   => 'danger',
                 'accept'  => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff'],
                 'max_size'=> 50 * 1024 * 1024, // 50MB
-                'has_file'=> true
+                'has_file'=> true,
+                'type_db' => 'image'  // Pour les photos, le type dans la base sera 'image'
             ],
             'other' => [
                 'label'   => 'Autre fichier',
@@ -96,7 +100,8 @@ class Autre extends MX_Controller {
                 'color'   => 'secondary',
                 'accept'  => '*',
                 'max_size'=> 500 * 1024 * 1024, // 500MB
-                'has_file'=> true
+                'has_file'=> true,
+                'type_db' => 'autre'  // Reste 'autre'
             ]
         ];
     }
@@ -113,6 +118,116 @@ class Autre extends MX_Controller {
                 @mkdir($path, 0777, true);
             }
         }
+    }
+
+    // ==================== FONCTIONS DE GESTION DES SLUGS ====================
+
+    /**
+     * Générer un slug unique pour un média
+     */
+    private function generateSlug($title, $id = null)
+    {
+        // Nettoyer le titre
+        $slug = strtolower(trim($title));
+        if (empty($slug)) {
+            $slug = 'media';
+        }
+        
+        // Remplacer les caractères spéciaux
+        $replacements = [
+            ' ' => '-',
+            "'" => '-',     // Remplacer l'apostrophe par un tiret
+            '"' => '-',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'à' => 'a', 'â' => 'a', 'ä' => 'a',
+            'î' => 'i', 'ï' => 'i',
+            'ô' => 'o', 'ö' => 'o',
+            'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c',
+            'œ' => 'oe',
+            '/' => '-',
+            '\\' => '-',
+            '&' => 'et',
+            '?' => '',
+            '!' => '',
+            '.' => '-',
+            ',' => '-',
+            ';' => '-',
+            ':' => '-',
+            '(' => '',
+            ')' => '',
+            '[' => '',
+            ']' => '',
+            '{' => '',
+            '}' => '',
+            '+' => '-',
+            '*' => '',
+            '#' => '',
+            '@' => '',
+            '%' => '',
+            '^' => '',
+            '=' => '-'
+        ];
+        
+        foreach ($replacements as $search => $replace) {
+            $slug = str_replace($search, $replace, $slug);
+        }
+        
+        // Supprimer les caractères non alphanumériques restants
+        $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
+        
+        // Supprimer les tirets multiples
+        $slug = preg_replace('/-+/', '-', $slug);
+        
+        // Supprimer les tirets au début et à la fin
+        $slug = trim($slug, '-');
+        
+        // Limiter la longueur du slug
+        if (strlen($slug) > 80) {
+            $slug = substr($slug, 0, 80);
+            $slug = preg_replace('/-+$/', '', $slug);
+        }
+        
+        // Ajouter l'ID pour garantir l'unicité
+        if ($id) {
+            $slug = $slug . '-' . $id;
+        }
+        
+        return $slug;
+    }
+
+    /**
+     * Vérifier si un slug existe déjà et générer un slug unique
+     */
+    private function generateUniqueSlug($title, $id = null)
+    {
+        $slug = $this->generateSlug($title, $id);
+        
+        // Si pas d'ID, vérifier si le slug existe déjà
+        if (!$id) {
+            $existing = $this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows();
+            if ($existing > 0) {
+                $counter = 2;
+                $original_slug = $slug;
+                while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows() > 0) {
+                    $slug = $original_slug . '-' . $counter;
+                    $counter++;
+                }
+            }
+        } else {
+            // Si ID fourni, vérifier que le slug n'appartient pas à un autre média
+            $existing = $this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ? AND id_media != ?", [$slug, $id])->num_rows();
+            if ($existing > 0) {
+                $counter = 2;
+                $original_slug = $slug;
+                while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ? AND id_media != ?", [$slug, $id])->num_rows() > 0) {
+                    $slug = $original_slug . '-' . $counter;
+                    $counter++;
+                }
+            }
+        }
+        
+        return $slug;
     }
 
     // ==================== VUE PRINCIPALE ====================
@@ -547,6 +662,9 @@ class Autre extends MX_Controller {
             redirect(base_url('autre'));
             return;
         }
+        
+        // AJOUT: Générer le slug automatiquement avant l'insertion
+        $data['slug'] = $this->generateUniqueSlug($data['titre']);
 
         $rsp = $this->Model->create('galerie_medias', $data);
         
@@ -585,6 +703,11 @@ class Autre extends MX_Controller {
             'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
             'updated_at'      => date('Y-m-d H:i:s')
         ];
+        
+        // AJOUT: Mettre à jour le slug si le titre a changé
+        if ($data['titre'] != $current['titre']) {
+            $data['slug'] = $this->generateUniqueSlug($data['titre'], $id);
+        }
 
         // Gestion lien pour type link
         if ($current['sous_type'] === 'link') {
@@ -794,9 +917,12 @@ class Autre extends MX_Controller {
 
     private function prepareData($sous_type, $mode, $auto_data = [])
     {
+        // Déterminer le type dans la base selon la configuration
+        $type_db = $this->type_configs[$sous_type]['type_db'] ?? 'autre';
+        
         $data = [
             'titre'           => $this->input->post('titre'),
-            'type'            => 'autre',
+            'type'            => $type_db,  // Utiliser le type approprié (link, image, ou autre)
             'sous_type'       => $sous_type,
             'description'     => $this->input->post('description') ?: null,
             'categorie'       => $this->input->post('categorie') ?: null,
@@ -816,11 +942,13 @@ class Autre extends MX_Controller {
             case 'link':
                 $data['lien'] = $this->input->post('lien');
                 $data['miniature'] = $this->extractLinkThumb($data['lien']);
+                $data['fichier'] = null;
                 break;
                 
             case 'texte':
                 $data['contenu_texte'] = $this->input->post('contenu_texte') ?: null;
                 $data['miniature'] = 'assets/images/text-default.png';
+                $data['fichier'] = null;
                 break;
                 
             default:
@@ -962,70 +1090,31 @@ class Autre extends MX_Controller {
     }
 
     /**
- * Générer un slug unique pour un média
- */
-public function generateSlug($title, $id = null)
-{
-    // Nettoyer le titre
-    $slug = strtolower(trim($title));
-    if (empty($slug)) {
-        $slug = 'media';
+     * Mettre à jour tous les slugs existants pour les médias de type autre
+     */
+    public function updateAllSlugs()
+    {
+        // Vérifier si l'utilisateur est admin (à adapter selon votre système)
+        if (!$this->session->userdata('is_admin')) {
+            show_404();
+            return;
+        }
+        
+        $items = $this->db->query("
+            SELECT id_media, titre FROM galerie_medias 
+            WHERE type IN ('autre', 'link', 'image') AND est_actif = 1
+        ")->result_array();
+        
+        $updated = 0;
+        foreach ($items as $item) {
+            $slug = $this->generateUniqueSlug($item['titre'], $item['id_media']);
+            
+            $this->db->where('id_media', $item['id_media']);
+            $this->db->update('galerie_medias', ['slug' => $slug]);
+            $updated++;
+            echo "ID: {$item['id_media']} - Slug: {$slug}<br>";
+        }
+        
+        echo "<br>Total mis à jour: {$updated} slugs pour les médias divers.";
     }
-    
-    // Remplacer les caractères spéciaux (AJOUT DE L'APOSTROPHE)
-    $replacements = [
-        ' ' => '-',
-        "'" => '-',     // Remplacer l'apostrophe par un tiret
-        '"' => '-',
-        'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
-        'à' => 'a', 'â' => 'a', 'ä' => 'a',
-        'î' => 'i', 'ï' => 'i',
-        'ô' => 'o', 'ö' => 'o',
-        'ù' => 'u', 'û' => 'u', 'ü' => 'u',
-        'ç' => 'c',
-        'œ' => 'oe',
-        '/' => '-',
-        '\\' => '-',
-        '&' => 'et',
-        '?' => '',
-        '!' => '',
-        '.' => '-',
-        ',' => '-',
-        ';' => '-',
-        ':' => '-',
-        '(' => '',
-        ')' => '',
-        '[' => '',
-        ']' => '',
-        '{' => '',
-        '}' => '',
-        '+' => '-',
-        '*' => '',
-        '#' => '',
-        '@' => '',
-        '%' => '',
-        '^' => '',
-        '=' => '-'
-    ];
-    
-    foreach ($replacements as $search => $replace) {
-        $slug = str_replace($search, $replace, $slug);
-    }
-    
-    // Supprimer les caractères non alphanumériques restants
-    $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
-    
-    // Supprimer les tirets multiples
-    $slug = preg_replace('/-+/', '-', $slug);
-    
-    // Supprimer les tirets au début et à la fin
-    $slug = trim($slug, '-');
-    
-    // Ajouter l'ID pour garantir l'unicité
-    if ($id) {
-        $slug = $slug . '-' . $id;
-    }
-    
-    return $slug;
-}
 }

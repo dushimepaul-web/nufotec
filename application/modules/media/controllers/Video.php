@@ -111,6 +111,116 @@ class Video extends MX_Controller {
         }
     }
 
+    // ==================== FONCTIONS DE GESTION DES SLUGS ====================
+
+    /**
+     * Générer un slug unique pour un média vidéo
+     */
+    private function generateSlug($title, $id = null)
+    {
+        // Nettoyer le titre
+        $slug = strtolower(trim($title));
+        if (empty($slug)) {
+            $slug = 'video';
+        }
+        
+        // Remplacer les caractères spéciaux
+        $replacements = [
+            ' ' => '-',
+            "'" => '-',     // Remplacer l'apostrophe par un tiret
+            '"' => '-',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'à' => 'a', 'â' => 'a', 'ä' => 'a',
+            'î' => 'i', 'ï' => 'i',
+            'ô' => 'o', 'ö' => 'o',
+            'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c',
+            'œ' => 'oe',
+            '/' => '-',
+            '\\' => '-',
+            '&' => 'et',
+            '?' => '',
+            '!' => '',
+            '.' => '-',
+            ',' => '-',
+            ';' => '-',
+            ':' => '-',
+            '(' => '',
+            ')' => '',
+            '[' => '',
+            ']' => '',
+            '{' => '',
+            '}' => '',
+            '+' => '-',
+            '*' => '',
+            '#' => '',
+            '@' => '',
+            '%' => '',
+            '^' => '',
+            '=' => '-'
+        ];
+        
+        foreach ($replacements as $search => $replace) {
+            $slug = str_replace($search, $replace, $slug);
+        }
+        
+        // Supprimer les caractères non alphanumériques restants
+        $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
+        
+        // Supprimer les tirets multiples
+        $slug = preg_replace('/-+/', '-', $slug);
+        
+        // Supprimer les tirets au début et à la fin
+        $slug = trim($slug, '-');
+        
+        // Limiter la longueur du slug
+        if (strlen($slug) > 80) {
+            $slug = substr($slug, 0, 80);
+            $slug = preg_replace('/-+$/', '', $slug);
+        }
+        
+        // Ajouter l'ID pour garantir l'unicité
+        if ($id) {
+            $slug = $slug . '-' . $id;
+        }
+        
+        return $slug;
+    }
+
+    /**
+     * Vérifier si un slug existe déjà et générer un slug unique
+     */
+    private function generateUniqueSlug($title, $id = null)
+    {
+        $slug = $this->generateSlug($title, $id);
+        
+        // Si pas d'ID, vérifier si le slug existe déjà
+        if (!$id) {
+            $existing = $this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows();
+            if ($existing > 0) {
+                $counter = 2;
+                $original_slug = $slug;
+                while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows() > 0) {
+                    $slug = $original_slug . '-' . $counter;
+                    $counter++;
+                }
+            }
+        } else {
+            // Si ID fourni, vérifier que le slug n'appartient pas à un autre média
+            $existing = $this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ? AND id_media != ?", [$slug, $id])->num_rows();
+            if ($existing > 0) {
+                $counter = 2;
+                $original_slug = $slug;
+                while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ? AND id_media != ?", [$slug, $id])->num_rows() > 0) {
+                    $slug = $original_slug . '-' . $counter;
+                    $counter++;
+                }
+            }
+        }
+        
+        return $slug;
+    }
+
     // ==================== VUE PRINCIPALE ====================
 
     public function index()
@@ -446,6 +556,9 @@ class Video extends MX_Controller {
             'created_at'      => date('Y-m-d H:i:s'),
             'updated_at'      => date('Y-m-d H:i:s')
         ];
+        
+        // AJOUT: Générer le slug automatiquement avant l'insertion
+        $data['slug'] = $this->generateUniqueSlug($data['titre']);
 
         $rsp = $this->Model->create('galerie_medias', $data);
         
@@ -478,6 +591,11 @@ class Video extends MX_Controller {
             'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
             'updated_at'      => date('Y-m-d H:i:s')
         ];
+        
+        // AJOUT: Mettre à jour le slug si le titre a changé
+        if ($data['titre'] != $current_video['titre']) {
+            $data['slug'] = $this->generateUniqueSlug($data['titre'], $id);
+        }
 
         $new_thumbnail = $this->input->post('thumbnail');
         if (!empty($new_thumbnail) && $new_thumbnail !== ($current_video['miniature'] ?? '')) {
@@ -1001,72 +1119,32 @@ class Video extends MX_Controller {
         exit;
     }
 
-
     /**
- * Générer un slug unique pour un média
- */
-public function generateSlug($title, $id = null)
-{
-    // Nettoyer le titre
-    $slug = strtolower(trim($title));
-    if (empty($slug)) {
-        $slug = 'media';
+     * Mettre à jour tous les slugs existants pour les vidéos
+     */
+    public function updateAllSlugs()
+    {
+        // Vérifier si l'utilisateur est admin (à adapter selon votre système)
+        if (!$this->session->userdata('is_admin')) {
+            show_404();
+            return;
+        }
+        
+        $videos = $this->db->query("
+            SELECT id_media, titre FROM galerie_medias 
+            WHERE type = 'video' AND est_actif = 1
+        ")->result_array();
+        
+        $updated = 0;
+        foreach ($videos as $video) {
+            $slug = $this->generateUniqueSlug($video['titre'], $video['id_media']);
+            
+            $this->db->where('id_media', $video['id_media']);
+            $this->db->update('galerie_medias', ['slug' => $slug]);
+            $updated++;
+            echo "ID: {$video['id_media']} - Slug: {$slug}<br>";
+        }
+        
+        echo "<br>Total mis à jour: {$updated} slugs pour les vidéos.";
     }
-    
-    // Remplacer les caractères spéciaux (AJOUT DE L'APOSTROPHE)
-    $replacements = [
-        ' ' => '-',
-        "'" => '-',     // Remplacer l'apostrophe par un tiret
-        '"' => '-',
-        'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
-        'à' => 'a', 'â' => 'a', 'ä' => 'a',
-        'î' => 'i', 'ï' => 'i',
-        'ô' => 'o', 'ö' => 'o',
-        'ù' => 'u', 'û' => 'u', 'ü' => 'u',
-        'ç' => 'c',
-        'œ' => 'oe',
-        '/' => '-',
-        '\\' => '-',
-        '&' => 'et',
-        '?' => '',
-        '!' => '',
-        '.' => '-',
-        ',' => '-',
-        ';' => '-',
-        ':' => '-',
-        '(' => '',
-        ')' => '',
-        '[' => '',
-        ']' => '',
-        '{' => '',
-        '}' => '',
-        '+' => '-',
-        '*' => '',
-        '#' => '',
-        '@' => '',
-        '%' => '',
-        '^' => '',
-        '=' => '-'
-    ];
-    
-    foreach ($replacements as $search => $replace) {
-        $slug = str_replace($search, $replace, $slug);
-    }
-    
-    // Supprimer les caractères non alphanumériques restants
-    $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
-    
-    // Supprimer les tirets multiples
-    $slug = preg_replace('/-+/', '-', $slug);
-    
-    // Supprimer les tirets au début et à la fin
-    $slug = trim($slug, '-');
-    
-    // Ajouter l'ID pour garantir l'unicité
-    if ($id) {
-        $slug = $slug . '-' . $id;
-    }
-    
-    return $slug;
-}
 }
