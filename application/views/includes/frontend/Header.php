@@ -1612,44 +1612,10 @@
                 </div>
             </li>
 
-            <!-- News & Media Mega Menu -->
-            <li class="nav-item mega-menu">
-                <a href="#" class="nav-link">
-                    <span>News & Media</span>
-                    <i class="bi bi-chevron-down"></i>
-                </a>
-                <div class="mega-dropdown">
-                    <div class="mega-grid">
-                        <div class="mega-column">
-                            <h3><i class="bi bi-collection-play"></i> Media</h3>
-                            <ul class="mega-list">
-                                <li><a href="<?= base_url('Media') ?>"><i class="bi bi-chevron-right"></i> All Media</a></li>
-                                <li><a href="<?= base_url('Media/view/video') ?>"><i class="bi bi-chevron-right"></i> Videos & Links</a></li>
-                                <li><a href="<?= base_url('Media/view/audio') ?>"><i class="bi bi-chevron-right"></i> Audio</a></li>
-                                <li><a href="<?= base_url('Media/view/image') ?>"><i class="bi bi-chevron-right"></i> Images</a></li>
-                                <li><a href="<?= base_url('Media/view/book') ?>"><i class="bi bi-chevron-right"></i> Books & E-books</a></li>
-                            </ul>
-                        </div>
-                        <div class="mega-column">
-                            <h3><i class="bi bi-newspaper"></i> News</h3>
-                            <ul class="mega-list">
-                                <li><a href="<?= base_url('blog') ?>"><i class="bi bi-chevron-right"></i>News</a></li>
-                            </ul>
-                        </div>
-                        <div class="mega-column">
-                            <h3><i class="bi bi-question-circle"></i> Support</h3>
-                            <ul class="mega-list">
-                                <li><a href="<?= base_url('question') ?>"><i class="bi bi-chevron-right"></i> FAQ</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Contact direct link -->
+             <!-- Contact direct link -->
             <li class="nav-item">
-                <a href="<?= base_url('Home/Contact') ?>" class="nav-link">
-                    <span>Contact</span>
+                <a href="<?= base_url('media') ?>" class="nav-link">
+                    <span>Media</span>
                 </a>
             </li>
         </ul>

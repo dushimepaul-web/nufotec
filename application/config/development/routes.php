@@ -227,6 +227,7 @@ $route['audio/(:any)'] = 'media/Audio/$1';
 $route['patient-fallowed'] = 'Consultations/Entente/confirme/';
 
 
+// ==================== ROUTES MEDIA ====================
 
 // ==================== ROUTES MEDIA ====================
 
@@ -234,39 +235,85 @@ $route['patient-fallowed'] = 'Consultations/Entente/confirme/';
 $route['media'] = 'Home/Media/index';
 $route['Media'] = 'Home/Media/index';
 
-// Route avec filtre par type (video, audio, image, document, book, link, autre)
+// Route pour la recherche HTML (AFFICHAGE DES RÉSULTATS)
+$route['media/search'] = 'Home/Media/search';
+
+// Route pour la recherche AJAX (JSON)
+$route['media/searchAjax'] = 'Home/Media/apiSearch';
+$route['media/apiSearch'] = 'Home/Media/apiSearch'; // Ajout pour compatibilité
+
+// Route avec filtre par type
 $route['media/view/(:any)'] = 'Home/Media/view/$1';
 $route['Media/view/(:any)'] = 'Home/Media/view/$1';
 
+// Route pour les catégories
+$route['media/category/(:any)'] = 'Home/Media/category/$1';
+$route['Media/category/(:any)'] = 'Home/Media/category/$1';
+
+// Route pour le détail d'un média - SUPPORTE SLUG ET ID
+$route['media/detail/(:any)'] = 'Home/Media/detail/$1';
+$route['Media/detail/(:any)'] = 'Home/Media/detail/$1';
+
+// Route pour le type de média
+$route['media/type/(:any)'] = 'Home/Media/type/$1';
+$route['Media/type/(:any)'] = 'Home/Media/type/$1';
+
 // ==================== API ROUTES (AJAX) ====================
 
-// Recherche
-$route['media/searchAjax'] = 'Home/Media/searchAjax';
-$route['media/search'] = 'Home/Media/search';
-
 // Tracking
-$route['media/trackView'] = 'Home/Media/trackView';
-$route['media/trackPlay'] = 'Home/Media/trackPlay';
+$route['media/trackView'] = 'Home/Media/apiTrackView';
+$route['media/apiTrackView'] = 'Home/Media/apiTrackView'; // Ajout pour compatibilité
+
+$route['media/trackPlay'] = 'Home/Media/apiTrackPlay';
+$route['media/apiTrackPlay'] = 'Home/Media/apiTrackPlay'; // Ajout pour compatibilité
 
 // Interactions utilisateur
-$route['media/toggleLike'] = 'Home/Media/toggleLike';
-$route['media/rateMedia'] = 'Home/Media/rateMedia';
-$route['media/addComment'] = 'Home/Media/addComment';
+$route['media/toggleLike'] = 'Home/Media/apiToggleLike';
+$route['media/apiToggleLike'] = 'Home/Media/apiToggleLike'; // Ajout pour compatibilité
+
+$route['media/rateMedia'] = 'Home/Media/apiRateMedia';
+$route['media/apiRateMedia'] = 'Home/Media/apiRateMedia'; // Ajout pour compatibilité
+
+$route['media/addComment'] = 'Home/Media/apiAddComment';
+$route['media/apiAddComment'] = 'Home/Media/apiAddComment'; // AJOUT IMPORTANT
+
 $route['media/checkUserLike/(:num)'] = 'Home/Media/checkUserLike/$1';
 $route['media/checkUserLike'] = 'Home/Media/checkUserLike';
 
+// Favoris
+$route['media/getFavorites'] = 'Home/Media/apiGetFavorites';
+$route['media/apiGetFavorites'] = 'Home/Media/apiGetFavorites'; // Ajout pour compatibilité
+
+$route['media/toggleFavorite'] = 'Home/Media/apiToggleFavorite';
+$route['media/apiToggleFavorite'] = 'Home/Media/apiToggleFavorite'; // Ajout pour compatibilité
+
+// Partage
+$route['media/share'] = 'Home/Media/apiShare';
+$route['media/apiShare'] = 'Home/Media/apiShare'; // Ajout pour compatibilité
+
 // Récupération de données
-$route['media/getComments/(:num)'] = 'Home/Media/getComments/$1';
-$route['media/getRecommended/(:num)'] = 'Home/Media/getRecommended/$1';
-$route['media/getMedia/(:num)'] = 'Home/Media/getMedia/$1';
+$route['media/getComments/(:any)'] = 'Home/Media/apiGetComments/$1';
+$route['media/apiGetComments/(:any)'] = 'Home/Media/apiGetComments/$1';
+$route['media/getComments'] = 'Home/Media/apiGetComments';
+$route['media/apiGetComments'] = 'Home/Media/apiGetComments';
+
+$route['media/getRecommended/(:any)'] = 'Home/Media/getRecommended/$1';
+$route['media/getMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
+$route['media/apiGetMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
 $route['media/getCategories'] = 'Home/Media/getCategories';
-$route['media/getStats'] = 'Home/Media/getStats';
+$route['media/getStats'] = 'Home/Media/apiGetStats';
+$route['media/apiGetStats'] = 'Home/Media/apiGetStats';
 
+// Waveform
+$route['media/getWaveform/(:num)'] = 'Home/Media/apiGetWaveform/$1';
+$route['media/apiGetWaveform/(:num)'] = 'Home/Media/apiGetWaveform/$1';
 
+// Streaming audio/vidéo
+$route['media/stream/(:any)/(:num)'] = 'Home/Media/stream/$1/$2';
 
-
-
-
+// Favoris et lecteur
+$route['media/favorites'] = 'Home/Media/favorites';
+$route['media/player/(:any)'] = 'Home/Media/player/$1';
 
 // Blog routes
 $route['blog'] = 'Home/Blog';
