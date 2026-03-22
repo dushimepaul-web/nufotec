@@ -14,10 +14,11 @@ class Media extends Public_Controller {
         $this->load->helper('cookie');
         $this->load->library('user_agent');
         $this->load->helper('string');
+       /** 
         if (!is_logged_in()) {
             redirect(base_url('Auth'));
             exit;
-        }
+        }*/
         
         // Désactiver CSRF pour les requêtes AJAX
         if ($this->input->is_ajax_request()) {

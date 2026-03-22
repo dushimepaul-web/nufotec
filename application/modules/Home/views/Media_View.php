@@ -794,6 +794,9 @@ function createMediaCard($media) {
     // Utiliser le slug s'il existe, sinon l'ID
     $identifier = !empty($media['slug']) ? $media['slug'] : $media['id_media'];
     
+    // Échapper le slug pour JavaScript (évite les problèmes avec les apostrophes, guillemets, etc.)
+    $identifier_js = addslashes($identifier);
+    
     // File URL
     $fileUrl = '';
     if (!empty($media['fichier_url'])) {
@@ -892,6 +895,7 @@ function createMediaCard($media) {
     $comments = $media['comments_count'] ?? 0;
     $rating = round($media['rating_avg'] ?? 0, 1);
 
+    // CORRECTION IMPORTANTE : Utiliser addslashes pour échapper les caractères spéciaux
     return "
     <div class=\"media-card\" 
          data-id=\"{$media['id_media']}\"
@@ -907,7 +911,7 @@ function createMediaCard($media) {
          data-likes=\"{$likes}\"
          data-comments=\"{$comments}\"
          data-rating=\"{$rating}\"
-         onclick=\"openMedia('" . htmlspecialchars($identifier) . "')\">
+         onclick=\"openMedia('" . addslashes($identifier) . "')\">
         
         <div class=\"thumbnail-container {$thumbClass}\">
             {$thumbContent}
@@ -933,4 +937,3 @@ function createMediaCard($media) {
         </div>
     </div>";
 }
-?>
