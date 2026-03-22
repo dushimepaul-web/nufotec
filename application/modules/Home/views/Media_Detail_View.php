@@ -13,6 +13,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
+        /* Tous vos styles existants restent identiques */
         :root {
             --bg-dark: #0f0f0f;
             --bg-card: #1a1a1a;
@@ -364,6 +365,39 @@
         .comment-item {
             padding: 1rem;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .comment-avatar {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: var(--bg-hover);
+        }
+        
+        .comment-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .comment-avatar .default-avatar {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .comment-content {
+            flex: 1;
         }
         
         .comment-header {
@@ -377,6 +411,17 @@
         .comment-author {
             font-weight: 600;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .comment-author-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 12px;
+            background: #3ea6ff;
+            color: white;
         }
         
         .comment-text {
@@ -457,6 +502,8 @@
             .action-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
             .share-buttons { gap: 0.5rem; }
             .share-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+            .comment-item { flex-direction: column; gap: 0.5rem; }
+            .comment-avatar { width: 32px; height: 32px; }
         }
     </style>
 </head>
@@ -470,6 +517,23 @@
         <a href="<?= base_url('media') ?>" class="btn btn-outline-light btn-sm">
             <i class="bi bi-arrow-left"></i> Retour
         </a>
+        <?php if (isset($user) && $user): ?>
+        <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle"></i> <?= htmlspecialchars($user['prenom'] . ' ' . $user['nom']) ?>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><a class="dropdown-item" href="<?= base_url('profile') ?>"><i class="bi bi-person"></i> Mon profil</a></li>
+                <li><a class="dropdown-item" href="<?= base_url('media/favorites') ?>"><i class="bi bi-bookmark"></i> Mes favoris</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="<?= base_url('auth/logout') ?>"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
+            </ul>
+        </div>
+        <?php else: ?>
+        <a href="<?= base_url('auth/login') ?>" class="btn btn-primary btn-sm">
+            <i class="bi bi-box-arrow-in-right"></i> Connexion
+        </a>
+        <?php endif; ?>
     </div>
 </nav>
 
@@ -584,7 +648,6 @@
                             break;
                             
                         case 'link':
-                            // Pour les liens qui ne sont pas YouTube
                             if (!empty($lien)): ?>
                                 <div class="text-center p-5">
                                     <i class="bi bi-link-45deg" style="font-size: 4rem;"></i>
@@ -627,13 +690,13 @@
                 <?php endif; ?>
                 
                 <div class="action-buttons">
-                    <button class="action-btn" id="likeBtn" onclick="toggleLike(<?= (int)$media['id_media'] ?>)">
+                    <button class="action-btn <?= ($media['user_like_action'] ?? '') === 'like' ? 'active' : '' ?>" id="likeBtn" onclick="toggleLike(<?= (int)$media['id_media'] ?>)">
                         <i class="bi bi-hand-thumbs-up"></i> <span id="likeCount"><?= (int)($media['likes_count'] ?? 0) ?></span>
                     </button>
-                    <button class="action-btn" id="dislikeBtn" onclick="toggleDislike(<?= (int)$media['id_media'] ?>)">
+                    <button class="action-btn <?= ($media['user_like_action'] ?? '') === 'dislike' ? 'disliked' : '' ?>" id="dislikeBtn" onclick="toggleDislike(<?= (int)$media['id_media'] ?>)">
                         <i class="bi bi-hand-thumbs-down"></i> <span id="dislikeCount"><?= (int)($media['dislikes_count'] ?? 0) ?></span>
                     </button>
-                    <button class="action-btn" onclick="toggleFavorite(<?= (int)$media['id_media'] ?>)">
+                    <button class="action-btn <?= ($media['is_favorite'] ?? 0) ? 'active' : '' ?>" id="favoriteBtn" onclick="toggleFavorite(<?= (int)$media['id_media'] ?>)">
                         <i class="bi bi-bookmark"></i> Favoris
                     </button>
                     <button class="action-btn" onclick="openShareModal()">
@@ -644,7 +707,7 @@
                 <div class="rating-section">
                     <div class="rating-stars" id="ratingStars">
                         <?php for($i = 1; $i <= 5; $i++): ?>
-                            <i class="bi bi-star" onclick="rateMedia(<?= $i ?>, <?= (int)$media['id_media'] ?>)"></i>
+                            <i class="bi bi-star <?= ($media['user_rating'] ?? 0) >= $i ? 'bi-star-fill' : 'bi-star' ?>" onclick="rateMedia(<?= $i ?>, <?= (int)$media['id_media'] ?>)"></i>
                         <?php endfor; ?>
                     </div>
                     <div class="rating-average">
@@ -673,21 +736,53 @@
         
         <div class="comments-section">
             <div class="comments-title"><i class="bi bi-chat-dots"></i> Commentaires (<?= (int)($media['comments_count'] ?? 0) ?>)</div>
+            
+            <?php if (isset($user) && $user): ?>
             <div class="comment-form">
                 <textarea class="comment-input" id="commentText" rows="3" placeholder="Ajouter un commentaire..."></textarea>
                 <button class="comment-submit" onclick="addComment(<?= (int)$media['id_media'] ?>)">
                     <i class="bi bi-send"></i> Publier
                 </button>
             </div>
+            <?php else: ?>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> <a href="<?= base_url('auth/login') ?>" class="alert-link">Connectez-vous</a> pour laisser un commentaire.
+            </div>
+            <?php endif; ?>
+            
             <div class="comment-list">
                 <?php if (!empty($comments)): ?>
                     <?php foreach($comments as $comment): ?>
                         <div class="comment-item">
-                            <div class="comment-header">
-                                <span class="comment-author"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($comment['author_name'] ?? 'Anonyme') ?></span>
-                                <span><?= $comment['created_at_formatted'] ?? date('d/m/Y H:i', strtotime($comment['created_at'])) ?></span>
+                            <div class="comment-avatar">
+                                <?php if (!empty($comment['photo']) && $comment['photo'] != 'default-avatar.png'): ?>
+                                    <img src="<?= base_url('uploads/users/' . $comment['photo']) ?>" alt="<?= htmlspecialchars($comment['prenom'] ?? '') ?>">
+                                <?php elseif (!empty($comment['user_id'])): ?>
+                                    <div class="default-avatar">
+                                        <?= strtoupper(substr($comment['prenom'] ?? 'V', 0, 1) . substr($comment['nom'] ?? 'i', 0, 1)) ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="default-avatar">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <div class="comment-text"><?= nl2br(htmlspecialchars($comment['comment'])) ?></div>
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <div class="comment-author">
+                                        <?php if (!empty($comment['user_id'])): ?>
+                                            <strong><?= htmlspecialchars(($comment['prenom'] ?? '') . ' ' . ($comment['nom'] ?? '')) ?></strong>
+                                            <?php if (isset($comment['type_utilisateur']) && $comment['type_utilisateur'] === 'admin'): ?>
+                                                <span class="comment-author-badge">Admin</span>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <strong><?= htmlspecialchars($comment['author_name'] ?? 'Visiteur') ?></strong>
+                                        <?php endif; ?>
+                                    </div>
+                                    <span><?= $comment['created_at_formatted'] ?? date('d/m/Y H:i', strtotime($comment['created_at'])) ?></span>
+                                </div>
+                                <div class="comment-text"><?= nl2br(htmlspecialchars($comment['comment'])) ?></div>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
@@ -830,7 +925,16 @@ function toggleFavorite(mediaId) {
         body: `id_media=${mediaId}`
     })
     .then(r => r.json())
-    .then(data => showToast(data.is_favorite ? 'Ajouté aux favoris' : 'Retiré des favoris', 'success'))
+    .then(data => {
+        if (data.success) {
+            const btn = document.getElementById('favoriteBtn');
+            btn.classList.toggle('active', data.is_favorite);
+            showToast(data.message, 'success');
+        } else if (data.need_login) {
+            showToast('Veuillez vous connecter', 'warning');
+            setTimeout(() => window.location.href = '<?= base_url('auth/login') ?>', 2000);
+        }
+    })
     .catch(() => showToast('Erreur', 'error'));
 }
 
@@ -886,7 +990,7 @@ function openShareModal() { document.getElementById('shareSection').scrollIntoVi
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'} border-0`;
+    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning' === type ? 'warning' : 'primary'} border-0`;
     toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
     container.appendChild(toast);
     new bootstrap.Toast(toast).show();
@@ -894,9 +998,11 @@ function showToast(message, type = 'info') {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const currentRating = parseFloat('<?= $media['rating_avg'] ?? 0 ?>');
-    const stars = document.querySelectorAll('#ratingStars i');
-    stars.forEach((star, index) => star.className = index < Math.round(currentRating) ? 'bi bi-star-fill' : 'bi bi-star');
+    const currentRating = parseFloat('<?= $media['user_rating'] ?? 0 ?>');
+    if (currentRating > 0) {
+        const stars = document.querySelectorAll('#ratingStars i');
+        stars.forEach((star, index) => star.className = index < currentRating ? 'bi bi-star-fill' : 'bi bi-star');
+    }
 });
 </script>
 </body>

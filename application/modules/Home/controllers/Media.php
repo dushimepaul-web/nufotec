@@ -14,6 +14,10 @@ class Media extends Public_Controller {
         $this->load->helper('cookie');
         $this->load->library('user_agent');
         $this->load->helper('string');
+        if (!is_logged_in()) {
+            redirect(base_url('Auth'));
+            exit;
+        }
         
         // Désactiver CSRF pour les requêtes AJAX
         if ($this->input->is_ajax_request()) {
@@ -22,365 +26,196 @@ class Media extends Public_Controller {
     }
 
     /**
+     * Récupérer l'utilisateur connecté
+     */
+    private function getCurrentUser()
+    {
+        if ($this->session->userdata('user_id')) {
+            return $this->db->query("
+                SELECT id, uuid, email, nom, prenom, photo, type_utilisateur 
+                FROM users 
+                WHERE id = ? AND is_active = 1
+            ", [$this->session->userdata('user_id')])->row_array();
+        }
+        return null;
+    }
+
+    /**
      * Page d'accueil - Découverte des médias
      */
     public function index()
-    {
-        // Récupérer les médias actifs
-        $medias = $this->db->query("
-            SELECT g.*,
-                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-            FROM galerie_medias g
-            WHERE g.est_actif = 1
-            ORDER BY g.created_at DESC
-        ")->result_array();
-        
-        // Formater les données
-        $medias = $this->formatMedias($medias);
-        
-        // Récupérer les catégories
-        $categories = $this->getCategoriesWithCount();
-        
-        $data = [
-            'medias' => $medias,
-            'categories' => $categories,
-            'current_type' => null,
-            'search_query' => null,
-            'results_count' => count($medias)
-        ];
-        
-        $this->load->view('Media_View', $data);
-    }
+{
+    $user = $this->getCurrentUser();
+    
+    // CORRECTION : Pas de paramètre dans la requête
+    $medias = $this->db->query("
+        SELECT g.*,
+               (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+               (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+               (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+               (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+               (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+               (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+               (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
+        FROM galerie_medias g
+        WHERE g.est_actif = 1
+        ORDER BY g.created_at DESC
+    ")->result_array();  // PAS de paramètre
+    
+    $medias = $this->formatMedias($medias);
+    $categories = $this->getCategoriesWithCount();
+    
+    $data = [
+        'medias' => $medias,
+        'categories' => $categories,
+        'current_type' => null,
+        'search_query' => null,
+        'results_count' => count($medias),
+        'user' => $user
+    ];
+    
+    $this->load->view('Media_View', $data);
+}
 
     /**
      * Vue filtrée par type de média
      */
-    public function type($type)
-    {
-        $valid_types = ['video', 'audio', 'image', 'document', 'link', 'autre'];
-        
-        if (!in_array($type, $valid_types)) {
-            show_404();
-            return;
-        }
-        
-        $medias = $this->db->query("
-            SELECT g.*,
-                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-            FROM galerie_medias g
-            WHERE g.est_actif = 1 AND g.type = ?
-            ORDER BY g.created_at DESC
-        ", [$type])->result_array();
-        
-        $medias = $this->formatMedias($medias);
-        $categories = $this->getCategoriesWithCount();
-        
-        $data = [
-            'medias' => $medias,
-            'categories' => $categories,
-            'current_type' => $type,
-            'search_query' => null,
-            'results_count' => count($medias)
-        ];
-        
-        $this->load->view('Media_View', $data);
-    }
-
     /**
-     * Vue filtrée par catégorie
-     */
-    public function category($category)
-    {
-        $medias = $this->db->query("
-            SELECT g.*,
-                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-            FROM galerie_medias g
-            WHERE g.est_actif = 1 AND g.categorie = ?
-            ORDER BY g.created_at DESC
-        ", [$category])->result_array();
-        
-        $medias = $this->formatMedias($medias);
-        $categories = $this->getCategoriesWithCount();
-        
-        $data = [
-            'medias' => $medias,
-            'categories' => $categories,
-            'current_type' => null,
-            'current_category' => $category,
-            'search_query' => null,
-            'results_count' => count($medias)
-        ];
-        
-        $this->load->view('Media_View', $data);
+ * Vue filtrée par type de média
+ */
+public function type($type)
+{
+    $valid_types = ['video', 'audio', 'image', 'document', 'link', 'autre'];
+    
+    if (!in_array($type, $valid_types)) {
+        show_404();
+        return;
     }
-
-    /**
-     * Recherche de médias
-     */
-    public function search()
-    {
-        $query = $this->input->get('q');
-        
-        if (empty($query)) {
-            redirect('media');
-            return;
-        }
-        
-        $medias = $this->db->query("
-            SELECT g.*,
-                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-            FROM galerie_medias g
-            WHERE g.est_actif = 1 
-            AND (g.titre LIKE ? OR g.description LIKE ? OR g.credits LIKE ?)
-            ORDER BY g.created_at DESC
-        ", ["%$query%", "%$query%", "%$query%"])->result_array();
-        
-        $medias = $this->formatMedias($medias);
-        $categories = $this->getCategoriesWithCount();
-        
-        $data = [
-            'medias' => $medias,
-            'categories' => $categories,
-            'current_type' => null,
-            'search_query' => $query,
-            'results_count' => count($medias)
-        ];
-        
-        $this->load->view('Media_View', $data);
-    }
+    
+    $user = $this->getCurrentUser();
+    
+    // CORRECTION : On passe UNIQUEMENT le type, pas le user_id
+    $medias = $this->db->query("
+        SELECT g.*,
+               (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+               (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+               (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+               (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+               (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+               (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+               (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
+        FROM galerie_medias g
+        WHERE g.est_actif = 1 AND g.type = ?
+        ORDER BY g.created_at DESC
+    ", [$type])->result_array();  // UN SEUL paramètre
+    
+    $medias = $this->formatMedias($medias);
+    $categories = $this->getCategoriesWithCount();
+    
+    $data = [
+        'medias' => $medias,
+        'categories' => $categories,
+        'current_type' => $type,
+        'search_query' => null,
+        'results_count' => count($medias),
+        'user' => $user
+    ];
+    
+    $this->load->view('Media_View', $data);
+}
 
     /**
      * Détail d'un média - Supporte à la fois l'ID et le slug
      */
-    public function detail($identifier)
-    {
-        // Déterminer si c'est un ID numérique ou un slug
-        if (is_numeric($identifier)) {
-            // Recherche par ID
-            $media = $this->db->query("
-                SELECT g.*,
-                       (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                       (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                       (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                       (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                       (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-                FROM galerie_medias g
-                WHERE g.id_media = ? AND g.est_actif = 1
-            ", [$identifier])->row_array();
-        } else {
-            // Recherche par slug
-            $media = $this->db->query("
-                SELECT g.*,
-                       (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                       (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                       (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                       (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                       (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-                FROM galerie_medias g
-                WHERE g.slug = ? AND g.est_actif = 1
-            ", [$identifier])->row_array();
-        }
-        
-        if (!$media) {
-            show_404();
-            return;
-        }
-        
-        $media = $this->formatMedia($media);
-        
-        // Rediriger vers l'URL avec slug si l'identifiant était un ID (SEO friendly)
-        if (is_numeric($identifier) && !empty($media['slug'])) {
-            redirect("media/detail/{$media['slug']}", 'location', 301);
-            return;
-        }
-        
-        // Enregistrer la vue
-        $this->recordView($media['id_media']);
-        
-        // Récupérer les commentaires
-        $comments = $this->db->query("
-            SELECT * FROM media_comments 
-            WHERE id_media = ? AND is_approved = 1 
-            ORDER BY created_at DESC 
-            LIMIT 50
-        ", [$media['id_media']])->result_array();
-        
-        foreach ($comments as &$comment) {
-            $comment['created_at_formatted'] = date('d/m/Y H:i', strtotime($comment['created_at']));
-        }
-        
-        // Récupérer les médias recommandés
-        $recommended = $this->getRecommendedMedias($media);
-        $recommended = $this->formatMedias($recommended);
-        
-        // Récupérer les catégories
-        $categories = $this->getCategoriesWithCount();
-        
-        $data = [
-            'media' => $media,
-            'comments' => $comments,
-            'recommended' => $recommended,
-            'categories' => $categories
-        ];
-        
-        $this->load->view('Media_Detail_View', $data);
-    }
-
     /**
-     * Générer un slug unique pour un média
-     */
-    public function generateSlug($title, $id = null)
-    {
-        // Nettoyer le titre
-        $slug = strtolower(trim($title));
-        if (empty($slug)) {
-            $slug = 'media';
-        }
-        
-        // Remplacer les caractères spéciaux
-        $replacements = [
-            ' ' => '-',
-            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
-            'à' => 'a', 'â' => 'a', 'ä' => 'a',
-            'î' => 'i', 'ï' => 'i',
-            'ô' => 'o', 'ö' => 'o',
-            'ù' => 'u', 'û' => 'u', 'ü' => 'u',
-            'ç' => 'c',
-            'œ' => 'oe',
-            '/' => '-',
-            '\\' => '-',
-            '&' => 'et',
-            "'" => '-',
-            '"' => '-',
-            '?' => '',
-            '!' => '',
-            '.' => '-',
-            ',' => '-',
-            ';' => '-',
-            ':' => '-'
-        ];
-        
-        foreach ($replacements as $search => $replace) {
-            $slug = str_replace($search, $replace, $slug);
-        }
-        
-        // Supprimer les caractères non alphanumériques restants
-        $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
-        
-        // Supprimer les tirets multiples
-        $slug = preg_replace('/-+/', '-', $slug);
-        
-        // Supprimer les tirets au début et à la fin
-        $slug = trim($slug, '-');
-        
-        // Ajouter l'ID pour garantir l'unicité
-        if ($id) {
-            $slug = $slug . '-' . $id;
-        }
-        
-        return $slug;
+ * Détail d'un média - Supporte à la fois l'ID et le slug
+ */
+public function detail($identifier)
+{
+    $user = $this->getCurrentUser();
+    $user_id = $user ? $user['id'] : null;
+    
+    // Déterminer si c'est un ID numérique ou un slug
+    if (is_numeric($identifier)) {
+        // Recherche par ID
+        $media = $this->db->query("
+            SELECT g.*,
+                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings,
+                   (SELECT rating FROM media_ratings WHERE id_media = g.id_media AND user_id = ?) as user_rating,
+                   (SELECT action FROM media_likes WHERE id_media = g.id_media AND user_id = ?) as user_like_action
+            FROM galerie_medias g
+            WHERE g.id_media = ? AND g.est_actif = 1
+        ", [$user_id, $user_id, $identifier])->row_array();  // 3 paramètres : user_id (x2) + id_media
+    } else {
+        // Recherche par slug
+        $media = $this->db->query("
+            SELECT g.*,
+                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings,
+                   (SELECT rating FROM media_ratings WHERE id_media = g.id_media AND user_id = ?) as user_rating,
+                   (SELECT action FROM media_likes WHERE id_media = g.id_media AND user_id = ?) as user_like_action
+            FROM galerie_medias g
+            WHERE g.slug = ? AND g.est_actif = 1
+        ", [$user_id, $user_id, $identifier])->row_array();  // 3 paramètres : user_id (x2) + slug
     }
-
-    /**
-     * Mettre à jour tous les slugs existants
-     */
-    public function updateAllSlugs()
-    {
-        // Vérifier si l'utilisateur est admin (à adapter selon votre système)
-        if (!$this->session->userdata('is_admin')) {
-            show_404();
-            return;
-        }
-        
-        $medias = $this->db->query("
-            SELECT id_media, titre FROM galerie_medias 
-            WHERE est_actif = 1
-        ")->result_array();
-        
-        $updated = 0;
-        foreach ($medias as $media) {
-            $slug = $this->generateSlug($media['titre'], $media['id_media']);
-            
-            $this->db->where('id_media', $media['id_media']);
-            $this->db->update('galerie_medias', ['slug' => $slug]);
-            $updated++;
-        }
-        
-        echo "{$updated} slugs mis à jour avec succès.";
+    
+    if (!$media) {
+        show_404();
+        return;
     }
-
+    
+    $media = $this->formatMedia($media);
+    
+    // Rediriger vers l'URL avec slug si l'identifiant était un ID (SEO friendly)
+    if (is_numeric($identifier) && !empty($media['slug'])) {
+        redirect("media/detail/{$media['slug']}", 'location', 301);
+        return;
+    }
+    
+    // Enregistrer la vue
+    $this->recordView($media['id_media'], $user_id);
+    
+    // Récupérer les commentaires avec les informations utilisateur
+    $comments = $this->db->query("
+        SELECT mc.*,
+               u.nom, u.prenom, u.photo, u.email,
+               DATE_FORMAT(mc.created_at, '%d/%m/%Y %H:%i') as created_at_formatted
+        FROM media_comments mc
+        LEFT JOIN users u ON mc.user_id = u.id
+        WHERE mc.id_media = ? AND mc.is_approved = 1 
+        ORDER BY mc.created_at DESC 
+        LIMIT 50
+    ", [$media['id_media']])->result_array();
+    
+    // Récupérer les médias recommandés
+    $recommended = $this->getRecommendedMedias($media);
+    $recommended = $this->formatMedias($recommended);
+    
+    // Récupérer les catégories
+    $categories = $this->getCategoriesWithCount();
+    
+    $data = [
+        'media' => $media,
+        'comments' => $comments,
+        'recommended' => $recommended,
+        'categories' => $categories,
+        'user' => $user
+    ];
+    
+    $this->load->view('Media_Detail_View', $data);
+}
     // ==================== API ENDPOINTS ====================
-
-    /**
-     * API: Récupérer un média (par ID ou slug)
-     */
-    public function apiGetMedia($identifier)
-    {
-        if (is_numeric($identifier)) {
-            $media = $this->db->query("
-                SELECT g.*,
-                       (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                       (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                       (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                       (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                       (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-                FROM galerie_medias g
-                WHERE g.id_media = ? AND g.est_actif = 1
-            ", [$identifier])->row_array();
-        } else {
-            $media = $this->db->query("
-                SELECT g.*,
-                       (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                       (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-                       (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-                       (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-                       (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-                       (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-                FROM galerie_medias g
-                WHERE g.slug = ? AND g.est_actif = 1
-            ", [$identifier])->row_array();
-        }
-        
-        if (!$media) {
-            echo json_encode(['success' => false, 'message' => 'Média non trouvé']);
-            return;
-        }
-        
-        $media = $this->formatMedia($media);
-        
-        echo json_encode(['success' => true, 'media' => $media]);
-    }
 
     /**
      * API: Enregistrer une vue
@@ -391,6 +226,7 @@ class Media extends Public_Controller {
         $session_id = session_id();
         $ip_address = $this->input->ip_address();
         $user_agent = $this->input->user_agent();
+        $user_id = $this->session->userdata('user_id') ?: null;
         
         // Vérifier si déjà vu dans cette session
         $viewed = $this->db->query("
@@ -402,6 +238,7 @@ class Media extends Public_Controller {
         if (!$viewed) {
             $this->db->insert('media_views', [
                 'id_media' => $id_media,
+                'user_id' => $user_id,
                 'session_id' => $session_id,
                 'ip_address' => $ip_address,
                 'user_agent' => $user_agent,
@@ -417,44 +254,29 @@ class Media extends Public_Controller {
     }
 
     /**
-     * API: Enregistrer une lecture
-     */
-    public function apiTrackPlay()
-    {
-        $id_media = $this->input->post('id_media');
-        $duration_played = (int)$this->input->post('duration_played');
-        $session_id = session_id();
-        $ip_address = $this->input->ip_address();
-        
-        $this->db->insert('media_plays', [
-            'id_media' => $id_media,
-            'ip_address' => $ip_address,
-            'session_id' => $session_id,
-            'duration_played' => $duration_played,
-            'played_at' => date('Y-m-d H:i:s')
-        ]);
-        
-        $plays = $this->db->query("
-            SELECT COUNT(*) as count FROM media_plays WHERE id_media = ?
-        ", [$id_media])->row()->count;
-        
-        echo json_encode(['success' => true, 'plays' => $plays]);
-    }
-
-    /**
      * API: Like/Dislike
      */
     public function apiToggleLike()
     {
         $id_media = $this->input->post('id_media');
         $action = $this->input->post('action');
+        $user_id = $this->session->userdata('user_id');
         $ip_address = $this->input->ip_address();
         
-        $existing = $this->db->query("
-            SELECT id, action FROM media_likes 
-            WHERE id_media = ? AND ip_address = ? 
-            LIMIT 1
-        ", [$id_media, $ip_address])->row();
+        // Si utilisateur connecté, utiliser user_id, sinon utiliser ip_address
+        if ($user_id) {
+            $existing = $this->db->query("
+                SELECT id, action FROM media_likes 
+                WHERE id_media = ? AND user_id = ? 
+                LIMIT 1
+            ", [$id_media, $user_id])->row();
+        } else {
+            $existing = $this->db->query("
+                SELECT id, action FROM media_likes 
+                WHERE id_media = ? AND ip_address = ? AND user_id IS NULL
+                LIMIT 1
+            ", [$id_media, $ip_address])->row();
+        }
         
         if ($action === 'remove') {
             if ($existing) {
@@ -470,7 +292,8 @@ class Media extends Public_Controller {
             } else {
                 $this->db->insert('media_likes', [
                     'id_media' => $id_media,
-                    'ip_address' => $ip_address,
+                    'user_id' => $user_id,
+                    'ip_address' => $user_id ? null : $ip_address,
                     'action' => $action,
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
@@ -499,6 +322,7 @@ class Media extends Public_Controller {
     {
         $id_media = $this->input->post('id_media');
         $rating = (int)$this->input->post('rating');
+        $user_id = $this->session->userdata('user_id');
         $ip_address = $this->input->ip_address();
         
         if ($rating < 1 || $rating > 5) {
@@ -506,18 +330,27 @@ class Media extends Public_Controller {
             return;
         }
         
-        $existing = $this->db->query("
-            SELECT id FROM media_ratings 
-            WHERE id_media = ? AND ip_address = ? 
-            LIMIT 1
-        ", [$id_media, $ip_address])->row();
+        if ($user_id) {
+            $existing = $this->db->query("
+                SELECT id FROM media_ratings 
+                WHERE id_media = ? AND user_id = ? 
+                LIMIT 1
+            ", [$id_media, $user_id])->row();
+        } else {
+            $existing = $this->db->query("
+                SELECT id FROM media_ratings 
+                WHERE id_media = ? AND ip_address = ? AND user_id IS NULL
+                LIMIT 1
+            ", [$id_media, $ip_address])->row();
+        }
         
         if ($existing) {
             $this->db->where('id', $existing->id)->update('media_ratings', ['rating' => $rating]);
         } else {
             $this->db->insert('media_ratings', [
                 'id_media' => $id_media,
-                'ip_address' => $ip_address,
+                'user_id' => $user_id,
+                'ip_address' => $user_id ? null : $ip_address,
                 'rating' => $rating,
                 'created_at' => date('Y-m-d H:i:s')
             ]);
@@ -545,7 +378,7 @@ class Media extends Public_Controller {
     {
         $id_media = $this->input->post('id_media');
         $comment = trim($this->input->post('comment'));
-        $author_name = trim($this->input->post('author_name')) ?: 'Visiteur';
+        $user = $this->getCurrentUser();
         $ip_address = $this->input->ip_address();
         
         if (empty($comment)) {
@@ -558,9 +391,22 @@ class Media extends Public_Controller {
             return;
         }
         
+        // Si utilisateur connecté, utiliser ses informations
+        if ($user) {
+            $author_name = $user['prenom'] . ' ' . $user['nom'];
+            $author_email = $user['email'];
+            $user_id = $user['id'];
+        } else {
+            $author_name = trim($this->input->post('author_name')) ?: 'Visiteur';
+            $author_email = null;
+            $user_id = null;
+        }
+        
         $this->db->insert('media_comments', [
             'id_media' => $id_media,
+            'user_id' => $user_id,
             'author_name' => $author_name,
+            'author_email' => $author_email,
             'comment' => $comment,
             'ip_address' => $ip_address,
             'created_at' => date('Y-m-d H:i:s'),
@@ -569,10 +415,13 @@ class Media extends Public_Controller {
         
         $comment_id = $this->db->insert_id();
         $new_comment = $this->db->query("
-            SELECT * FROM media_comments WHERE id = ?
+            SELECT mc.*,
+                   u.nom, u.prenom, u.photo, u.email,
+                   DATE_FORMAT(mc.created_at, '%d/%m/%Y %H:%i') as created_at_formatted
+            FROM media_comments mc
+            LEFT JOIN users u ON mc.user_id = u.id
+            WHERE mc.id = ?
         ", [$comment_id])->row_array();
-        
-        $new_comment['created_at_formatted'] = date('d/m/Y H:i', strtotime($new_comment['created_at']));
         
         $total_comments = $this->db->query("
             SELECT COUNT(*) as count FROM media_comments 
@@ -592,48 +441,19 @@ class Media extends Public_Controller {
     public function apiGetComments($id_media)
     {
         $comments = $this->db->query("
-            SELECT * FROM media_comments 
-            WHERE id_media = ? AND is_approved = 1 
-            ORDER BY created_at DESC 
+            SELECT mc.*,
+                   u.nom, u.prenom, u.photo, u.email,
+                   DATE_FORMAT(mc.created_at, '%d/%m/%Y %H:%i') as created_at_formatted
+            FROM media_comments mc
+            LEFT JOIN users u ON mc.user_id = u.id
+            WHERE mc.id_media = ? AND mc.is_approved = 1 
+            ORDER BY mc.created_at DESC 
             LIMIT 50
         ", [$id_media])->result_array();
-        
-        foreach ($comments as &$comment) {
-            $comment['created_at_formatted'] = date('d/m/Y H:i', strtotime($comment['created_at']));
-        }
         
         echo json_encode([
             'success' => true,
             'comments' => $comments
-        ]);
-    }
-
-    /**
-     * API: Récupérer les favoris
-     */
-    public function apiGetFavorites()
-    {
-        $favorites = $this->input->cookie('favorites') ? json_decode($this->input->cookie('favorites'), true) : [];
-        
-        if (empty($favorites)) {
-            echo json_encode(['success' => true, 'medias' => []]);
-            return;
-        }
-        
-        $ids = implode(',', array_fill(0, count($favorites), '?'));
-        $medias = $this->db->query("
-            SELECT g.*,
-                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count
-            FROM galerie_medias g
-            WHERE g.id_media IN ($ids) AND g.est_actif = 1
-        ", $favorites)->result_array();
-        
-        $medias = $this->formatMedias($medias);
-        
-        echo json_encode([
-            'success' => true,
-            'medias' => $medias
         ]);
     }
 
@@ -643,91 +463,66 @@ class Media extends Public_Controller {
     public function apiToggleFavorite()
     {
         $id_media = $this->input->post('id_media');
-        $favorites = $this->input->cookie('favorites') ? json_decode($this->input->cookie('favorites'), true) : [];
+        $user = $this->getCurrentUser();
         
-        $key = array_search($id_media, $favorites);
-        
-        if ($key !== false) {
-            unset($favorites[$key]);
-            $favorites = array_values($favorites);
-            $is_favorite = false;
-        } else {
-            $favorites[] = $id_media;
-            $is_favorite = true;
+        // Vérifier si l'utilisateur est connecté
+        if (!$user) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Vous devez être connecté pour ajouter aux favoris',
+                'need_login' => true
+            ]);
+            return;
         }
         
-        $this->input->set_cookie('favorites', json_encode($favorites), 60 * 60 * 24 * 30);
+        $user_id = $user['id'];
+        
+        // Vérifier si déjà en favori
+        $existing = $this->db->query("
+            SELECT id FROM media_favorites 
+            WHERE id_media = ? AND user_id = ?
+        ", [$id_media, $user_id])->row();
+        
+        if ($existing) {
+            $this->db->where('id', $existing->id)->delete('media_favorites');
+            $is_favorite = false;
+        } else {
+            $this->db->insert('media_favorites', [
+                'id_media' => $id_media,
+                'user_id' => $user_id,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+            $is_favorite = true;
+        }
         
         echo json_encode([
             'success' => true,
             'is_favorite' => $is_favorite,
-            'favorites_count' => count($favorites)
+            'message' => $is_favorite ? 'Ajouté aux favoris' : 'Retiré des favoris'
         ]);
     }
 
     /**
-     * API: Partager un média
+     * API: Récupérer les favoris de l'utilisateur
      */
-    public function apiShare()
+    public function apiGetFavorites()
     {
-        $id_media = $this->input->post('id_media');
-        $platform = $this->input->post('platform');
+        $user = $this->getCurrentUser();
         
-        // Récupérer le média pour obtenir son slug
-        $media = $this->db->query("
-            SELECT titre, slug FROM galerie_medias WHERE id_media = ?
-        ", [$id_media])->row_array();
-        
-        if (!$media) {
-            echo json_encode(['success' => false]);
-            return;
-        }
-        
-        // Utiliser le slug si disponible, sinon l'ID
-        $slug = !empty($media['slug']) ? $media['slug'] : $id_media;
-        $url = base_url("media/detail/$slug");
-        $title = urlencode($media['titre']);
-        
-        $share_urls = [
-            'facebook' => "https://www.facebook.com/sharer/sharer.php?u=" . urlencode($url),
-            'twitter' => "https://twitter.com/intent/tweet?text=$title&url=" . urlencode($url),
-            'whatsapp' => "https://wa.me/?text=$title%20" . urlencode($url),
-            'linkedin' => "https://www.linkedin.com/shareArticle?mini=true&url=" . urlencode($url) . "&title=$title",
-            'telegram' => "https://t.me/share/url?url=" . urlencode($url) . "&text=$title",
-            'email' => "mailto:?subject=$title&body=" . urlencode($url)
-        ];
-        
-        $share_url = $share_urls[$platform] ?? $url;
-        
-        echo json_encode([
-            'success' => true,
-            'share_url' => $share_url,
-            'url' => $url
-        ]);
-    }
-
-    /**
-     * API: Recherche AJAX
-     */
-    public function apiSearch()
-    {
-        $query = trim($this->input->get('q'));
-        $limit = (int)$this->input->get('limit') ?: 10;
-        
-        if (empty($query)) {
-            echo json_encode(['success' => true, 'medias' => []]);
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'Utilisateur non connecté', 'medias' => []]);
             return;
         }
         
         $medias = $this->db->query("
             SELECT g.*,
-                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count
+                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count
             FROM galerie_medias g
-            WHERE g.est_actif = 1 
-            AND (g.titre LIKE ? OR g.description LIKE ?)
-            ORDER BY g.created_at DESC
-            LIMIT ?
-        ", ["%$query%", "%$query%", $limit])->result_array();
+            INNER JOIN media_favorites mf ON mf.id_media = g.id_media
+            WHERE mf.user_id = ? AND g.est_actif = 1
+            ORDER BY mf.created_at DESC
+        ", [$user['id']])->result_array();
         
         $medias = $this->formatMedias($medias);
         
@@ -739,7 +534,7 @@ class Media extends Public_Controller {
 
     // ==================== PRIVATE METHODS ====================
 
-    private function recordView($id_media)
+    private function recordView($id_media, $user_id = null)
     {
         $session_id = session_id();
         
@@ -752,6 +547,7 @@ class Media extends Public_Controller {
         if (!$viewed) {
             $this->db->insert('media_views', [
                 'id_media' => $id_media,
+                'user_id' => $user_id,
                 'session_id' => $session_id,
                 'ip_address' => $this->input->ip_address(),
                 'user_agent' => $this->input->user_agent(),
@@ -879,17 +675,18 @@ class Media extends Public_Controller {
         ")->result_array();
     }
 
-    private function getRecommendedMedias($current_media, $limit = 10)
+    private function getRecommendedMedias($current_media, $user_id = null, $limit = 10)
     {
         $sql = "
             SELECT g.*,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+                   (SELECT COUNT(*) FROM media_favorites WHERE id_media = g.id_media AND user_id = ?) as is_favorite
             FROM galerie_medias g
             WHERE g.est_actif = 1 AND g.id_media != ?
         ";
         
-        $params = [$current_media['id_media']];
+        $params = [$user_id, $current_media['id_media']];
         
         if (!empty($current_media['categorie'])) {
             $sql .= " AND g.categorie = ?";
