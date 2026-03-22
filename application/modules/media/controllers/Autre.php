@@ -960,4 +960,72 @@ class Autre extends MX_Controller {
         }
         return round($bytes, 2) . ' ' . $units[$i];
     }
+
+    /**
+ * Générer un slug unique pour un média
+ */
+public function generateSlug($title, $id = null)
+{
+    // Nettoyer le titre
+    $slug = strtolower(trim($title));
+    if (empty($slug)) {
+        $slug = 'media';
+    }
+    
+    // Remplacer les caractères spéciaux (AJOUT DE L'APOSTROPHE)
+    $replacements = [
+        ' ' => '-',
+        "'" => '-',     // Remplacer l'apostrophe par un tiret
+        '"' => '-',
+        'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+        'à' => 'a', 'â' => 'a', 'ä' => 'a',
+        'î' => 'i', 'ï' => 'i',
+        'ô' => 'o', 'ö' => 'o',
+        'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+        'ç' => 'c',
+        'œ' => 'oe',
+        '/' => '-',
+        '\\' => '-',
+        '&' => 'et',
+        '?' => '',
+        '!' => '',
+        '.' => '-',
+        ',' => '-',
+        ';' => '-',
+        ':' => '-',
+        '(' => '',
+        ')' => '',
+        '[' => '',
+        ']' => '',
+        '{' => '',
+        '}' => '',
+        '+' => '-',
+        '*' => '',
+        '#' => '',
+        '@' => '',
+        '%' => '',
+        '^' => '',
+        '=' => '-'
+    ];
+    
+    foreach ($replacements as $search => $replace) {
+        $slug = str_replace($search, $replace, $slug);
+    }
+    
+    // Supprimer les caractères non alphanumériques restants
+    $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
+    
+    // Supprimer les tirets multiples
+    $slug = preg_replace('/-+/', '-', $slug);
+    
+    // Supprimer les tirets au début et à la fin
+    $slug = trim($slug, '-');
+    
+    // Ajouter l'ID pour garantir l'unicité
+    if ($id) {
+        $slug = $slug . '-' . $id;
+    }
+    
+    return $slug;
+}
 }
