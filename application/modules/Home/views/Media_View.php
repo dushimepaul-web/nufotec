@@ -2,7 +2,7 @@
 <?php include VIEWPATH.'includes/frontend/Header.php'; ?>
 
 <style>
-    /* ========== VARIABLES & RESET ========== */
+    /* ========== VARIABLES GLOBALES ========== */
     :root {
         --bg-primary: #0f0f0f;
         --bg-secondary: #1f1f1f;
@@ -11,9 +11,11 @@
         --text-secondary: #aaaaaa;
         --text-tertiary: #717171;
         --accent-green: #00a884;
+        --accent-green-dark: #008f6c;
         --accent-youtube: #ff0000;
         --accent-facebook: #1877f2;
         --accent-whatsapp: #25d366;
+        --accent-instagram: #e4405f;
         --border-color: #2a2a2a;
         --shadow-sm: 0 2px 8px rgba(0,0,0,0.15);
         --shadow-md: 0 4px 12px rgba(0,0,0,0.2);
@@ -85,7 +87,7 @@
         margin-bottom: 24px;
     }
     
-    /* ========== BARRE DE RECHERCHE (WhatsApp style) ========== */
+    /* ========== BARRE DE RECHERCHE ========== */
     .media-search-wrapper {
         max-width: 500px;
         margin: 0 auto;
@@ -126,7 +128,6 @@
         padding: 8px;
     }
     
-    /* Dropdown autocomplete */
     .media-search-dropdown {
         position: absolute;
         top: 100%;
@@ -195,6 +196,7 @@
         display: flex;
         gap: 12px;
         align-items: center;
+        flex-wrap: wrap;
     }
     
     .media-search-item-badge {
@@ -208,6 +210,9 @@
     .media-search-item-badge.video { background: var(--accent-youtube); color: white; }
     .media-search-item-badge.audio { background: var(--accent-whatsapp); color: black; }
     .media-search-item-badge.image { background: var(--accent-facebook); color: white; }
+    .media-search-item-badge.youtube { background: var(--accent-youtube); color: white; }
+    .media-search-item-badge.document { background: #6c757d; color: white; }
+    .media-search-item-badge.book { background: #8b5a2b; color: white; }
     
     .media-highlight {
         background: rgba(255,215,0,0.3);
@@ -236,7 +241,7 @@
         gap: 8px;
     }
     
-    /* ========== FILTRES (style TikTok/Reels) ========== */
+    /* ========== FILTRES ========== */
     .media-filters {
         display: flex;
         gap: 12px;
@@ -271,12 +276,12 @@
     /* ========== GRILLE DES MÉDIAS ========== */
     .media-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
         padding: 0 16px 80px;
     }
     
-    /* Carte média (style YouTube Shorts) */
+    /* Carte média générique */
     .media-card {
         background: var(--bg-secondary);
         border-radius: 16px;
@@ -294,7 +299,7 @@
         display: none;
     }
     
-    /* Zone thumbnail */
+    /* ========== THUMBNAIL ========== */
     .media-thumb {
         position: relative;
         width: 100%;
@@ -314,8 +319,7 @@
         transform: scale(1.05);
     }
     
-    /* Badges */
-    .media-badge {
+    .media-duration-badge {
         position: absolute;
         bottom: 8px;
         right: 8px;
@@ -346,8 +350,13 @@
     .media-type-badge.youtube { background: var(--accent-youtube); }
     .media-type-badge.whatsapp { background: var(--accent-whatsapp); color: black; }
     .media-type-badge.facebook { background: var(--accent-facebook); }
+    .media-type-badge.video { background: var(--accent-green); }
+    .media-type-badge.audio { background: var(--accent-whatsapp); color: black; }
+    .media-type-badge.image { background: var(--accent-facebook); }
+    .media-type-badge.document { background: #6c757d; }
+    .media-type-badge.book { background: #8b5a2b; }
+    .media-type-badge.link { background: #ff6b6b; }
     
-    /* Overlay play */
     .media-play-overlay {
         position: absolute;
         top: 0;
@@ -372,7 +381,6 @@
         text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
     
-    /* Stats sur la carte */
     .media-stats-overlay {
         position: absolute;
         bottom: 0;
@@ -440,9 +448,93 @@
         gap: 2px;
         color: #ffd700;
         font-size: 0.7rem;
+        margin-top: 4px;
     }
     
-    /* ========== LIGHTBOX (style natif mobile) ========== */
+    /* ========== AUDIO CARD (WHATSAPP STYLE) ========== */
+    .media-card.audio-card {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+    }
+    
+    .audio-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+    }
+    
+    .audio-duration-badge {
+        background: var(--accent-green);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .whatsapp-audio-avatar {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--accent-green), #128C7E);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .whatsapp-audio-avatar i {
+        font-size: 24px;
+        color: white;
+    }
+    
+    .whatsapp-waveform {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 32px;
+        margin-top: 12px;
+    }
+    
+    .whatsapp-waveform-bar {
+        width: 3px;
+        background: var(--accent-green);
+        border-radius: 2px;
+        transition: height 0.1s ease;
+        opacity: 0.6;
+    }
+    
+    .whatsapp-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    
+    .whatsapp-play-btn {
+        width: 40px;
+        height: 40px;
+        background: var(--accent-green);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+        flex-shrink: 0;
+    }
+    
+    .whatsapp-play-btn:hover {
+        transform: scale(1.05);
+        background: #128C7E;
+    }
+    
+    /* ========== LIGHTBOX GÉNÉRIQUE ========== */
     .media-lightbox {
         position: fixed;
         top: 0;
@@ -490,7 +582,6 @@
         line-height: 1;
     }
     
-    /* Zone player */
     .media-player-container {
         flex: 1;
         background: #000;
@@ -517,10 +608,9 @@
         object-fit: contain;
     }
     
-    /* Zone infos défilement */
     .media-lightbox-info {
         background: var(--bg-primary);
-        max-height: 50%;
+        max-height: 45%;
         overflow-y: auto;
         padding: 16px;
         display: flex;
@@ -528,7 +618,7 @@
         gap: 16px;
     }
     
-    /* Actions (style YouTube) */
+    /* Actions */
     .media-actions {
         display: flex;
         gap: 20px;
@@ -576,7 +666,7 @@
         transform: scale(1.1);
     }
     
-    /* Commentaires (style WhatsApp) */
+    /* Commentaires */
     .media-comments-section {
         border-top: 1px solid var(--border-color);
         padding-top: 16px;
@@ -668,7 +758,7 @@
         margin-top: 4px;
     }
     
-    /* Recommandations compactes */
+    /* Recommandations */
     .media-recommendations {
         margin-top: 16px;
     }
@@ -707,7 +797,136 @@
         text-overflow: ellipsis;
     }
     
-    /* Navigation */
+    /* ========== AUDIO LIGHTBOX (WHATSAPP STYLE) ========== */
+    .whatsapp-lightbox .media-player-container {
+        background: linear-gradient(135deg, #0a3d24, #0b4f2e);
+        min-height: 350px;
+    }
+    
+    .whatsapp-audio-card {
+        background: var(--bg-secondary);
+        border-radius: 32px;
+        padding: 24px;
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .whatsapp-audio-avatar-large {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, var(--accent-green), #128C7E);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    
+    .whatsapp-audio-avatar-large i {
+        font-size: 56px;
+        color: white;
+    }
+    
+    .whatsapp-audio-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .whatsapp-audio-artist {
+        color: var(--text-tertiary);
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+    }
+    
+    .whatsapp-progress-bar {
+        width: 100%;
+        height: 4px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+        margin: 12px 0;
+    }
+    
+    .whatsapp-progress-fill {
+        height: 100%;
+        background: var(--accent-green);
+        border-radius: 4px;
+        width: 0%;
+        transition: width 0.1s linear;
+        position: relative;
+    }
+    
+    .whatsapp-progress-fill::after {
+        content: '';
+        position: absolute;
+        right: -6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 12px;
+        height: 12px;
+        background: var(--accent-green);
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .whatsapp-progress-bar:hover .whatsapp-progress-fill::after {
+        opacity: 1;
+    }
+    
+    .whatsapp-time {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+    }
+    
+    .whatsapp-large-waveform {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        height: 60px;
+        margin: 20px 0;
+    }
+    
+    .wave-bar {
+        width: 4px;
+        background: var(--accent-green);
+        border-radius: 2px;
+        transition: height 0.1s ease;
+    }
+    
+    .whatsapp-large-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        margin: 20px 0;
+    }
+    
+    .whatsapp-large-play {
+        width: 64px;
+        height: 64px;
+        background: var(--accent-green);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .whatsapp-large-play:hover {
+        transform: scale(1.05);
+    }
+    
+    /* Navigation lightbox */
     .media-nav {
         position: fixed;
         top: 50%;
@@ -783,6 +1002,16 @@
         }
     }
     
+    @keyframes waveAnimation {
+        0% { transform: scaleY(0.3); }
+        50% { transform: scaleY(1); }
+        100% { transform: scaleY(0.3); }
+    }
+    
+    .wave-bar.playing {
+        animation: waveAnimation 0.8s ease-in-out infinite;
+    }
+    
     /* Responsive */
     @media (max-width: 768px) {
         .media-grid {
@@ -827,13 +1056,15 @@
 </style>
 
 <?php
+// ==================== PRÉPARATION DES DONNÉES ====================
 // Helper pour extraire ID YouTube
 function getYoutubeIdFromUrl($url) {
+    if (empty($url)) return null;
     preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $url, $matches);
     return $matches[1] ?? null;
 }
 
-// Helper pour obtenir l'icône du type
+// Helper pour obtenir l'icône
 function getMediaIcon($type, $sous_type = null) {
     if ($sous_type === 'book') return 'fa-book';
     if ($type === 'video') return 'fa-video';
@@ -844,7 +1075,15 @@ function getMediaIcon($type, $sous_type = null) {
     return 'fa-file';
 }
 
-// Préparer les données avec toutes les stats
+// Helper pour formater la durée
+function formatDuration($seconds) {
+    if (!$seconds || $seconds <= 0) return '00:00';
+    $minutes = floor($seconds / 60);
+    $secs = floor($seconds % 60);
+    return sprintf('%02d:%02d', $minutes, $secs);
+}
+
+// Préparer les médias
 $preparedMedias = [];
 if (!empty($medias)) {
     foreach ($medias as $media) {
@@ -868,21 +1107,43 @@ if (!empty($medias)) {
             $item['thumb_url'] = base_url('assets/images/default_thumbnail.jpg');
         }
         
-        // Statistiques (valeurs par défaut si non présentes)
+        // Métadonnées audio
+        if ($item['type'] === 'audio') {
+            $metadata = !empty($item['metadata_id3']) ? json_decode($item['metadata_id3'], true) : [];
+            $item['artist'] = $metadata['artist'] ?? ($item['credits'] ?? 'Artiste inconnu');
+            $item['album'] = $metadata['album'] ?? '';
+            
+            // Waveform points
+            $item['waveform_points'] = [];
+            if (!empty($item['waveform_data'])) {
+                $waveformFile = FCPATH . $item['waveform_data'];
+                if (file_exists($waveformFile)) {
+                    $waveformData = json_decode(file_get_contents($waveformFile), true);
+                    $item['waveform_points'] = $waveformData['points'] ?? [];
+                }
+            }
+            if (empty($item['waveform_points'])) {
+                for ($i = 0; $i < 50; $i++) {
+                    $item['waveform_points'][] = rand(20, 80);
+                }
+            }
+        }
+        
+        // Durée formatée
+        $item['duration_formatted'] = formatDuration($item['duree'] ?? 0);
+        
+        // Badge d'affichage
+        $item['display_type'] = $item['type'];
+        if ($item['youtube_id']) $item['display_type'] = 'youtube';
+        if ($item['sous_type'] === 'book') $item['display_type'] = 'book';
+        
+        // Statistiques par défaut
         $item['views_count'] = $item['views_count'] ?? rand(100, 5000);
         $item['likes_count'] = $item['likes_count'] ?? rand(5, 500);
         $item['dislikes_count'] = $item['dislikes_count'] ?? rand(0, 50);
         $item['plays_count'] = $item['plays_count'] ?? rand(10, 1000);
         $item['comments_count'] = $item['comments_count'] ?? rand(0, 50);
         $item['rating_avg'] = $item['rating_avg'] ?? rand(30, 50) / 10;
-        
-        // Durée formatée
-        $item['duration_formatted'] = $item['duration'] ?? ($item['duree'] ? sprintf('%d:%02d', floor($item['duree']/60), $item['duree']%60) : '00:00');
-        
-        // Badge de type pour affichage
-        $item['display_type'] = $item['type'];
-        if ($item['youtube_id']) $item['display_type'] = 'youtube';
-        if ($item['sous_type'] === 'book') $item['display_type'] = 'book';
         
         $preparedMedias[] = $item;
     }
@@ -893,7 +1154,7 @@ $totalLikes = array_sum(array_column($preparedMedias, 'likes_count'));
 $totalMedias = count($preparedMedias);
 ?>
 
-<!-- HERO SECTION -->
+<!-- ==================== HERO SECTION ==================== -->
 <section class="media-hero">
     <div class="media-hero-content">
         <h1>
@@ -902,7 +1163,6 @@ $totalMedias = count($preparedMedias);
         </h1>
         <p>Vidéos, podcasts, images et documents exclusifs</p>
         
-        <!-- Barre de recherche WhatsApp style -->
         <div class="media-search-wrapper">
             <input type="text" 
                    class="media-search-input" 
@@ -915,27 +1175,26 @@ $totalMedias = count($preparedMedias);
             <div class="media-search-dropdown" id="mediaSearchDropdown"></div>
         </div>
         
-        <!-- Stats -->
         <div class="media-stats">
-            <div class="media-stat"><i class="fas fa-eye"></i> <?= number_format($totalViews) ?> vues</div>
-            <div class="media-stat"><i class="fas fa-heart"></i> <?= number_format($totalLikes) ?> likes</div>
+            <div class="media-stat"><i class="fas fa-eye"></i> <span id="totalViews"><?= number_format($totalViews) ?></span> vues</div>
+            <div class="media-stat"><i class="fas fa-heart"></i> <span id="totalLikes"><?= number_format($totalLikes) ?></span> likes</div>
             <div class="media-stat"><i class="fas fa-play"></i> <?= $totalMedias ?> médias</div>
         </div>
     </div>
 </section>
 
-<!-- Filtres style TikTok/Reels -->
+<!-- ==================== FILTRES ==================== -->
 <div class="media-filters">
     <button class="media-filter-btn active" data-filter="all">Tous</button>
-    <button class="media-filter-btn" data-filter="video">Vidéos</button>
     <button class="media-filter-btn" data-filter="youtube">YouTube</button>
+    <button class="media-filter-btn" data-filter="video">Vidéos</button>
     <button class="media-filter-btn" data-filter="audio">Audio</button>
     <button class="media-filter-btn" data-filter="image">Images</button>
     <button class="media-filter-btn" data-filter="document">Documents</button>
     <button class="media-filter-btn" data-filter="book">Livres</button>
 </div>
 
-<!-- Grille des médias -->
+<!-- ==================== GRILLE DES MÉDIAS ==================== -->
 <div class="media-grid" id="mediaGrid">
     <?php if (!empty($preparedMedias)): ?>
         <?php foreach ($preparedMedias as $index => $media): 
@@ -945,64 +1204,113 @@ $totalMedias = count($preparedMedias);
             $halfStar = ($media['rating_avg'] - $fullStars) >= 0.5;
             $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
         ?>
-        <div class="media-card" 
-             data-media-index="<?= $index ?>"
-             data-media-id="<?= $media['id_media'] ?>"
-             data-media-type="<?= $media['type'] ?>"
-             data-media-display-type="<?= $media['display_type'] ?>"
-             data-media-title="<?= htmlspecialchars(strtolower($media['titre'])) ?>"
-             data-media-category="<?= htmlspecialchars(strtolower($media['categorie'] ?? '')) ?>"
-             onclick="openMediaLightbox(<?= $index ?>)">
-            
-            <div class="media-thumb">
-                <img src="<?= $media['thumb_url'] ?>" alt="<?= htmlspecialchars($media['titre']) ?>" loading="lazy">
-                <span class="media-badge"><?= $media['duration_formatted'] ?></span>
-                <span class="media-type-badge <?= $badgeClass ?>">
-                    <i class="fab <?= $badgeIcon ?>"></i> 
-                    <?= strtoupper($badgeClass == 'youtube' ? 'YT' : ($badgeClass == 'book' ? 'LIVRE' : $media['type'])) ?>
-                </span>
-                <div class="media-play-overlay">
-                    <i class="fas fa-play-circle"></i>
-                </div>
-                <div class="media-stats-overlay">
-                    <span><i class="fas fa-eye"></i> <?= number_format($media['views_count']) ?></span>
-                    <span><i class="fas fa-play"></i> <?= number_format($media['plays_count']) ?></span>
-                    <span><i class="fas fa-thumbs-up"></i> <?= number_format($media['likes_count']) ?></span>
-                </div>
-            </div>
-            
-            <div class="media-info">
-                <div class="media-avatar">
-                    <i class="fas fa-play"></i>
-                </div>
-                <div class="media-details">
-                    <h3 class="media-title"><?= htmlspecialchars($media['titre']) ?></h3>
-                    <div class="media-rating">
-                        <?php for($i=0; $i<$fullStars; $i++): ?><i class="fas fa-star"></i><?php endfor; ?>
-                        <?php if($halfStar): ?><i class="fas fa-star-half-alt"></i><?php endif; ?>
-                        <?php for($i=0; $i<$emptyStars; $i++): ?><i class="far fa-star"></i><?php endfor; ?>
+            <?php if ($media['type'] === 'audio'): ?>
+                <!-- CARTE AUDIO STYLE WHATSAPP -->
+                <div class="media-card audio-card" 
+                     data-media-index="<?= $index ?>"
+                     data-media-id="<?= $media['id_media'] ?>"
+                     data-media-type="audio"
+                     data-media-display-type="audio"
+                     data-media-title="<?= htmlspecialchars(strtolower($media['titre'])) ?>"
+                     onclick="openAudioLightbox(<?= $index ?>)">
+                    
+                    <div class="media-info" style="padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="whatsapp-audio-avatar">
+                                <i class="fas fa-microphone-alt"></i>
+                            </div>
+                            
+                            <div style="flex: 1; min-width: 0;">
+                                <div class="media-title" style="margin-bottom: 4px;">
+                                    <?= htmlspecialchars($media['titre']) ?>
+                                </div>
+                                <div class="audio-meta">
+                                    <span><i class="fas fa-user"></i> <?= htmlspecialchars($media['artist'] ?? 'Artiste') ?></span>
+                                    <span class="audio-duration-badge">
+                                        <i class="fas fa-clock"></i> <?= $media['duration_formatted'] ?>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="whatsapp-controls">
+                                <button class="whatsapp-play-btn" onclick="event.stopPropagation(); playAudioQuick(<?= $index ?>)">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="whatsapp-waveform" id="waveform-mini-<?= $index ?>">
+                            <?php 
+                            $points = $media['waveform_points'] ?? [];
+                            for($i = 0; $i < min(30, count($points)); $i++): 
+                                $height = max(8, $points[$i] / 2);
+                            ?>
+                                <div class="whatsapp-waveform-bar" style="height: <?= $height ?>px;"></div>
+                            <?php endfor; ?>
+                        </div>
                     </div>
-                    <div class="media-meta">
-                        <span><i class="fas fa-eye"></i> <?= number_format($media['views_count']) ?></span>
-                        <span>•</span>
-                        <span><?= date('d M Y', strtotime($media['created_at'] ?? 'now')) ?></span>
-                        <?php if($media['comments_count'] > 0): ?>
-                            <span>• <i class="fas fa-comment"></i> <?= $media['comments_count'] ?></span>
+                </div>
+            <?php else: ?>
+                <!-- CARTE STANDARD (VIDEO, IMAGE, DOCUMENT, LINK) -->
+                <div class="media-card" 
+                     data-media-index="<?= $index ?>"
+                     data-media-id="<?= $media['id_media'] ?>"
+                     data-media-type="<?= $media['type'] ?>"
+                     data-media-display-type="<?= $media['display_type'] ?>"
+                     data-media-title="<?= htmlspecialchars(strtolower($media['titre'])) ?>"
+                     onclick="openMediaLightbox(<?= $index ?>)">
+                    
+                    <div class="media-thumb">
+                        <img src="<?= $media['thumb_url'] ?>" alt="<?= htmlspecialchars($media['titre']) ?>" loading="lazy">
+                        <?php if ($media['type'] !== 'image' && $media['type'] !== 'document'): ?>
+                            <span class="media-duration-badge"><?= $media['duration_formatted'] ?></span>
                         <?php endif; ?>
+                        <span class="media-type-badge <?= $badgeClass ?>">
+                            <i class="fab <?= $badgeIcon ?>"></i> 
+                            <?= strtoupper($badgeClass == 'youtube' ? 'YT' : ($badgeClass == 'book' ? 'LIVRE' : $media['type'])) ?>
+                        </span>
+                        <div class="media-play-overlay">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="media-stats-overlay">
+                            <span><i class="fas fa-eye"></i> <?= number_format($media['views_count']) ?></span>
+                            <span><i class="fas fa-thumbs-up"></i> <?= number_format($media['likes_count']) ?></span>
+                            <?php if($media['comments_count'] > 0): ?>
+                                <span><i class="fas fa-comment"></i> <?= $media['comments_count'] ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <div class="media-info">
+                        <div class="media-avatar">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="media-details">
+                            <h3 class="media-title"><?= htmlspecialchars($media['titre']) ?></h3>
+                            <div class="media-rating">
+                                <?php for($i=0; $i<$fullStars; $i++): ?><i class="fas fa-star"></i><?php endfor; ?>
+                                <?php if($halfStar): ?><i class="fas fa-star-half-alt"></i><?php endif; ?>
+                                <?php for($i=0; $i<$emptyStars; $i++): ?><i class="far fa-star"></i><?php endfor; ?>
+                            </div>
+                            <div class="media-meta">
+                                <span><i class="fas fa-eye"></i> <?= number_format($media['views_count']) ?></span>
+                                <span>•</span>
+                                <span><?= date('d M Y', strtotime($media['created_at'] ?? 'now')) ?></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            <?php endif; ?>
         <?php endforeach; ?>
     <?php else: ?>
-        <div style="text-align: center; padding: 60px; color: var(--text-tertiary);">
+        <div style="text-align: center; padding: 60px; color: var(--text-tertiary); grid-column: 1/-1;">
             <i class="fas fa-photo-video" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;"></i>
             <p>Aucun média disponible pour le moment.</p>
         </div>
     <?php endif; ?>
 </div>
 
-<!-- LIGHTBOX NATIF -->
+<!-- ==================== LIGHTBOX STANDARD ==================== -->
 <div class="media-lightbox" id="mediaLightbox">
     <div class="media-lightbox-header">
         <div class="media-lightbox-title" id="lightboxTitle">Titre</div>
@@ -1025,6 +1333,9 @@ $totalMedias = count($preparedMedias);
             </button>
             <button class="media-action-btn" id="shareBtn">
                 <i class="fas fa-share-alt"></i> Partager
+            </button>
+            <button class="media-action-btn" id="downloadBtn" style="display: none;">
+                <i class="fas fa-download"></i> Télécharger
             </button>
         </div>
         
@@ -1067,8 +1378,80 @@ $totalMedias = count($preparedMedias);
     <button class="media-nav media-nav-next" id="nextMedia"><i class="fas fa-chevron-right"></i></button>
 </div>
 
+<!-- ==================== AUDIO LIGHTBOX (WHATSAPP STYLE) ==================== -->
+<div class="media-lightbox whatsapp-lightbox" id="audioLightbox">
+    <div class="media-lightbox-header">
+        <div class="media-lightbox-title" id="audioLightboxTitle">Lecture audio</div>
+        <button class="media-lightbox-close" onclick="closeAudioLightbox()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <div class="media-player-container">
+        <div class="whatsapp-audio-card">
+            <div class="whatsapp-audio-avatar-large">
+                <i class="fas fa-headphones"></i>
+            </div>
+            
+            <div class="whatsapp-audio-title" id="audioTitle">Titre</div>
+            <div class="whatsapp-audio-artist" id="audioArtist">Artiste</div>
+            
+            <div class="whatsapp-large-player">
+                <div class="whatsapp-large-waveform" id="largeWaveform"></div>
+                
+                <div class="whatsapp-large-controls">
+                    <button class="whatsapp-large-play" id="audioPlayBtn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+                
+                <div class="whatsapp-progress-bar" id="audioProgressBar">
+                    <div class="whatsapp-progress-fill" id="audioProgressFill"></div>
+                </div>
+                
+                <div class="whatsapp-time">
+                    <span id="audioCurrentTime">00:00</span>
+                    <span id="audioTotalTime">00:00</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; gap: 20px; justify-content: center;">
+                    <button class="media-action-btn" id="audioLikeBtn">
+                        <i class="fas fa-heart"></i> <span id="audioLikeCount">0</span>
+                    </button>
+                    <button class="media-action-btn" id="audioShareBtn">
+                        <i class="fas fa-share-alt"></i> Partager
+                    </button>
+                    <button class="media-action-btn" id="audioDownloadBtn">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="media-lightbox-info" style="max-height: 40%;">
+        <div class="media-comments-section">
+            <div style="margin-bottom: 12px;"><i class="fas fa-comments"></i> Commentaires (<span id="audioCommentsCount">0</span>)</div>
+            
+            <div class="media-comment-form">
+                <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
+                <div class="media-comment-input-wrapper">
+                    <textarea class="media-comment-input" id="audioCommentInput" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                    <div class="media-comment-actions">
+                        <button class="media-comment-submit" id="audioSubmitComment">Commenter</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="media-comments-list" id="audioCommentsList"></div>
+        </div>
+    </div>
+</div>
+
 <script>
-// ================= DONNÉES GLOBALES =================
+// ==================== DONNÉES GLOBALES ====================
 const mediasData = <?= json_encode($preparedMedias) ?>;
 const baseUrl = '<?= base_url() ?>';
 let currentIndex = 0;
@@ -1078,570 +1461,18 @@ let activeSearchIndex = -1;
 let searchTimeout = null;
 let currentFilter = 'all';
 
-// ================= INITIALISATION =================
-document.addEventListener('DOMContentLoaded', function() {
-    initSearch();
-    initFilters();
-    initLightboxEvents();
-    initKeyboardNav();
-    animateCards();
-});
+// Variables audio
+let currentAudio = null;
+let currentAudioIndex = null;
+let audioWaveformInterval = null;
+let isAudioPlaying = false;
 
-// ================= RECHERCHE (WhatsApp style) =================
-function initSearch() {
-    const searchInput = document.getElementById('mediaSearchInput');
-    const searchBtn = document.getElementById('mediaSearchBtn');
-    const dropdown = document.getElementById('mediaSearchDropdown');
-    const overlay = document.getElementById('mediaSearchOverlay');
-    
-    if (!searchInput) return;
-    
-    searchInput.addEventListener('input', handleSearchInput);
-    searchInput.addEventListener('focus', () => {
-        if (searchQuery.length >= 2 && dropdown.children.length > 0) {
-            dropdown.classList.add('active');
-        }
-    });
-    searchInput.addEventListener('keydown', handleSearchKeyboard);
-    
-    if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
-            if (searchQuery.length >= 2) {
-                performSearch(searchQuery);
-            } else if (searchQuery.length > 0) {
-                showToast('Tapez au moins 2 caractères', 'error');
-            }
-        });
-    }
-    
-    document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('active');
-        }
-    });
-}
-
-function handleSearchInput(e) {
-    searchQuery = e.target.value.trim();
-    
-    clearTimeout(searchTimeout);
-    
-    if (searchQuery.length === 0) {
-        clearSearch();
-        return;
-    }
-    
-    if (searchQuery.length < 2) {
-        document.getElementById('mediaSearchDropdown').classList.remove('active');
-        return;
-    }
-    
-    searchTimeout = setTimeout(() => performSearch(searchQuery), 300);
-}
-
-function performSearch(query) {
-    const dropdown = document.getElementById('mediaSearchDropdown');
-    
-    dropdown.innerHTML = '<div class="media-search-loading" style="padding: 20px; text-align: center;"><div class="spinner"></div> Recherche...</div>';
-    dropdown.classList.add('active');
-    
-    fetch(`${baseUrl}media/searchAjax?q=${encodeURIComponent(query)}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success && data.medias && data.medias.length > 0) {
-                renderSearchResults(data.medias, query);
-                filterGridBySearch(data.medias.map(m => m.id_media));
-                
-                const searchInfo = document.getElementById('mediaSearchInfo');
-                if (searchInfo) searchInfo.style.display = 'flex';
-                document.getElementById('mediaResultsCount').textContent = data.medias.length;
-            } else {
-                dropdown.innerHTML = `
-                    <div class="media-search-empty" style="padding: 30px; text-align: center;">
-                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
-                        <p>Aucun résultat pour "${query}"</p>
-                    </div>
-                `;
-                filterGridBySearch([]);
-            }
-        })
-        .catch(() => {
-            // Fallback recherche côté client
-            const results = mediasData.filter(m => 
-                (m.titre || '').toLowerCase().includes(query.toLowerCase()) ||
-                (m.description || '').toLowerCase().includes(query.toLowerCase()) ||
-                (m.categorie || '').toLowerCase().includes(query.toLowerCase())
-            );
-            renderSearchResults(results.map(m => ({
-                id_media: m.id_media,
-                titre: m.titre,
-                type: m.type,
-                display_type: m.display_type,
-                thumb_url: m.thumb_url,
-                created_at: m.created_at
-            })), query);
-            filterGridBySearch(results.map(m => m.id_media));
-        });
-}
-
-function renderSearchResults(results, query) {
-    const dropdown = document.getElementById('mediaSearchDropdown');
-    
-    if (!results || results.length === 0) {
-        dropdown.innerHTML = `<div class="media-search-empty" style="padding: 30px; text-align: center;"><p>Aucun résultat</p></div>`;
-        return;
-    }
-    
-    dropdown.innerHTML = results.map((media, idx) => {
-        const title = escapeHtml(media.titre || 'Sans titre');
-        const highlightedTitle = highlightText(title, query);
-        const typeLabel = media.display_type === 'youtube' ? 'YouTube' : media.type;
-        const thumbUrl = media.thumb_url || `${baseUrl}assets/images/default_thumbnail.jpg`;
-        
-        return `
-        <div class="media-search-item" onclick="openMediaById(${media.id_media})">
-            <img src="${thumbUrl}" class="media-search-item-thumb" alt="${title}">
-            <div class="media-search-item-info">
-                <div class="media-search-item-title">${highlightedTitle}</div>
-                <div class="media-search-item-meta">
-                    <span class="media-search-item-badge ${media.display_type || media.type}">${typeLabel}</span>
-                    <span><i class="fas fa-calendar"></i> ${formatDate(media.created_at)}</span>
-                </div>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-
-function filterGridBySearch(visibleIds) {
-    const cards = document.querySelectorAll('.media-card');
-    let visible = 0;
-    
-    cards.forEach(card => {
-        const mediaId = parseInt(card.dataset.mediaId);
-        if (visibleIds.includes(mediaId)) {
-            card.classList.remove('hidden');
-            visible++;
-        } else {
-            card.classList.add('hidden');
-        }
-    });
-    
-    if (visible === 0) {
-        const grid = document.getElementById('mediaGrid');
-        const emptyMsg = document.querySelector('.media-no-results');
-        if (!emptyMsg) {
-            const msg = document.createElement('div');
-            msg.className = 'media-no-results';
-            msg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);';
-            msg.innerHTML = '<i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px;"></i><p>Aucun média trouvé</p>';
-            grid.appendChild(msg);
-        }
-    } else {
-        const emptyMsg = document.querySelector('.media-no-results');
-        if (emptyMsg) emptyMsg.remove();
-    }
-}
-
-function clearSearch() {
-    document.getElementById('mediaSearchInput').value = '';
-    document.getElementById('mediaSearchDropdown').classList.remove('active');
-    document.querySelectorAll('.media-card').forEach(card => card.classList.remove('hidden'));
-    const emptyMsg = document.querySelector('.media-no-results');
-    if (emptyMsg) emptyMsg.remove();
-}
-
-function handleSearchKeyboard(e) {
-    const items = document.querySelectorAll('.media-search-item');
-    
-    switch(e.key) {
-        case 'ArrowDown':
-            e.preventDefault();
-            if (items.length) {
-                activeSearchIndex = Math.min(activeSearchIndex + 1, items.length - 1);
-                updateActiveSearchItem(activeSearchIndex);
-            }
-            break;
-        case 'ArrowUp':
-            e.preventDefault();
-            if (items.length) {
-                activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
-                updateActiveSearchItem(activeSearchIndex);
-            }
-            break;
-        case 'Enter':
-            e.preventDefault();
-            if (activeSearchIndex >= 0 && items[activeSearchIndex]) {
-                items[activeSearchIndex].click();
-            }
-            break;
-        case 'Escape':
-            document.getElementById('mediaSearchDropdown').classList.remove('active');
-            break;
-    }
-}
-
-function updateActiveSearchItem(index) {
-    const items = document.querySelectorAll('.media-search-item');
-    items.forEach((item, i) => {
-        item.classList.toggle('active', i === index);
-    });
-    if (items[index]) {
-        items[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-}
-
-// ================= FILTRES =================
-function initFilters() {
-    const filters = document.querySelectorAll('.media-filter-btn');
-    
-    filters.forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentFilter = btn.dataset.filter;
-            
-            filters.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            applyFilters();
-        });
-    });
-}
-
-function applyFilters() {
-    const cards = document.querySelectorAll('.media-card');
-    let visible = 0;
-    
-    cards.forEach(card => {
-        const mediaType = card.dataset.mediaDisplayType || card.dataset.mediaType;
-        
-        if (currentFilter === 'all' || currentFilter === mediaType) {
-            card.classList.remove('hidden');
-            visible++;
-        } else {
-            card.classList.add('hidden');
-        }
-    });
-}
-
-// ================= LIGHTBOX =================
-function openMediaLightbox(index) {
-    if (!mediasData[index]) return;
-    
-    currentIndex = index;
-    currentMedia = mediasData[index];
-    
-    // Mettre à jour l'affichage
-    document.getElementById('lightboxTitle').textContent = currentMedia.titre || 'Sans titre';
-    document.getElementById('likeCount').textContent = currentMedia.likes_count || 0;
-    document.getElementById('dislikeCount').textContent = currentMedia.dislikes_count || 0;
-    document.getElementById('commentsCount').textContent = currentMedia.comments_count || 0;
-    
-    // Charger le player
-    loadPlayer();
-    
-    // Charger les commentaires
-    loadComments(currentMedia.id_media);
-    
-    // Charger les recommandations
-    loadRecommendations(currentMedia.id_media);
-    
-    // Réinitialiser les étoiles
-    resetStars();
-    
-    // Afficher la lightbox
-    document.getElementById('mediaLightbox').classList.add('active');
-    document.body.style.overflow = 'hidden';
-    
-    // Incrémenter les vues
-    incrementViews(currentMedia.id_media);
-}
-
-function loadPlayer() {
-    const playerContainer = document.getElementById('mediaPlayer');
-    
-    if (currentMedia.youtube_id) {
-        playerContainer.innerHTML = `
-            <iframe src="https://www.youtube.com/embed/${currentMedia.youtube_id}?autoplay=1&rel=0" 
-                    frameborder="0" 
-                    allowfullscreen
-                    allow="autoplay; encrypted-media"></iframe>
-        `;
-    } else if (currentMedia.type === 'video' && currentMedia.fichier) {
-        playerContainer.innerHTML = `
-            <video controls autoplay onplay="incrementPlay(${currentMedia.id_media})">
-                <source src="${baseUrl}${currentMedia.fichier}" type="video/mp4">
-            </video>
-        `;
-    } else if (currentMedia.type === 'audio' && currentMedia.fichier) {
-        playerContainer.innerHTML = `
-            <audio controls autoplay onplay="incrementPlay(${currentMedia.id_media})" style="width: 90%;">
-                <source src="${baseUrl}${currentMedia.fichier}" type="audio/mpeg">
-            </audio>
-        `;
-    } else if (currentMedia.type === 'image' && currentMedia.fichier) {
-        playerContainer.innerHTML = `
-            <img src="${baseUrl}${currentMedia.fichier}" alt="${currentMedia.titre}">
-        `;
-    } else if (currentMedia.lien) {
-        playerContainer.innerHTML = `
-            <div style="text-align: center;">
-                <a href="${currentMedia.lien}" target="_blank" style="color: var(--accent-green);">
-                    <i class="fas fa-external-link-alt"></i> Ouvrir le lien
-                </a>
-            </div>
-        `;
-    } else {
-        playerContainer.innerHTML = '<div style="text-align: center;">Aucun lecteur disponible</div>';
-    }
-}
-
-function closeMediaLightbox() {
-    document.getElementById('mediaLightbox').classList.remove('active');
-    document.body.style.overflow = '';
-    
-    // Arrêter la lecture
-    const player = document.querySelector('#mediaPlayer video, #mediaPlayer audio');
-    if (player) player.pause();
-}
-
-function navigateMedia(direction) {
-    const visibleCards = Array.from(document.querySelectorAll('.media-card:not(.hidden)'));
-    if (visibleCards.length === 0) return;
-    
-    const currentCard = document.querySelector(`[data-media-index="${currentIndex}"]`);
-    const currentVisibleIndex = visibleCards.indexOf(currentCard);
-    
-    let newVisibleIndex = currentVisibleIndex + direction;
-    if (newVisibleIndex < 0) newVisibleIndex = visibleCards.length - 1;
-    if (newVisibleIndex >= visibleCards.length) newVisibleIndex = 0;
-    
-    const newCard = visibleCards[newVisibleIndex];
-    const newIndex = parseInt(newCard.dataset.mediaIndex);
-    
-    openMediaLightbox(newIndex);
-}
-
-function openMediaById(id) {
-    const index = mediasData.findIndex(m => m.id_media === id);
-    if (index !== -1) {
-        openMediaLightbox(index);
-        document.getElementById('mediaSearchDropdown').classList.remove('active');
-    } else {
-        window.location.href = `${baseUrl}media/view/${id}`;
-    }
-}
-
-// ================= INTERACTIONS =================
-function handleLike() {
-    if (!currentMedia) return;
-    
-    const btn = document.getElementById('likeBtn');
-    const isLiked = btn.classList.contains('liked');
-    
-    btn.classList.toggle('liked');
-    document.getElementById('dislikeBtn').classList.remove('disliked');
-    
-    const currentCount = parseInt(document.getElementById('likeCount').textContent);
-    document.getElementById('likeCount').textContent = isLiked ? currentCount - 1 : currentCount + 1;
-    
-    fetch(`${baseUrl}media/toggleLike`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${currentMedia.id_media}&action=${isLiked ? 'remove' : 'like'}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            showToast(isLiked ? 'Like retiré' : 'Vous aimez ce média');
-        }
-    })
-    .catch(() => showToast('Erreur', 'error'));
-}
-
-function handleDislike() {
-    if (!currentMedia) return;
-    
-    const btn = document.getElementById('dislikeBtn');
-    const isDisliked = btn.classList.contains('disliked');
-    
-    btn.classList.toggle('disliked');
-    document.getElementById('likeBtn').classList.remove('liked');
-    
-    const currentCount = parseInt(document.getElementById('dislikeCount').textContent);
-    document.getElementById('dislikeCount').textContent = isDisliked ? currentCount - 1 : currentCount + 1;
-    
-    fetch(`${baseUrl}media/toggleLike`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${currentMedia.id_media}&action=${isDisliked ? 'remove' : 'dislike'}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            showToast(isDisliked ? 'Dislike retiré' : 'Vous n\'aimez pas ce média');
-        }
-    })
-    .catch(() => showToast('Erreur', 'error'));
-}
-
-function rateMedia(rating) {
-    if (!currentMedia) return;
-    
-    const stars = document.querySelectorAll('#starRating i');
-    stars.forEach((star, i) => {
-        if (i < rating) {
-            star.classList.remove('far');
-            star.classList.add('fas', 'active');
-        } else {
-            star.classList.remove('fas', 'active');
-            star.classList.add('far');
-        }
-    });
-    
-    fetch(`${baseUrl}media/rateMedia`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${currentMedia.id_media}&rating=${rating}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            showToast(`Note ${rating}/5 enregistrée`);
-        }
-    })
-    .catch(() => showToast('Erreur de notation', 'error'));
-}
-
-function submitComment() {
-    const input = document.getElementById('commentInput');
-    const text = input.value.trim();
-    
-    if (!text) {
-        showToast('Écrivez un commentaire', 'error');
-        return;
-    }
-    
-    if (!currentMedia) return;
-    
-    fetch(`${baseUrl}media/addComment`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${currentMedia.id_media}&comment=${encodeURIComponent(text)}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            input.value = '';
-            loadComments(currentMedia.id_media);
-            showToast('Commentaire ajouté !');
-        }
-    })
-    .catch(() => showToast('Erreur', 'error'));
-}
-
-function shareMedia() {
-    const shareData = {
-        title: currentMedia.titre,
-        text: currentMedia.description || 'Découvrez ce média',
-        url: window.location.href
-    };
-    
-    if (navigator.share) {
-        navigator.share(shareData);
-    } else {
-        navigator.clipboard.writeText(window.location.href);
-        showToast('Lien copié !');
-    }
-}
-
-// ================= CHARGEMENT DES DONNÉES =================
-function loadComments(mediaId) {
-    fetch(`${baseUrl}media/getComments/${mediaId}`)
-        .then(res => res.json())
-        .then(data => {
-            const comments = data.comments || [];
-            const list = document.getElementById('commentsList');
-            
-            if (comments.length === 0) {
-                list.innerHTML = '<p style="color: var(--text-tertiary); text-align: center;">Aucun commentaire. Soyez le premier !</p>';
-                return;
-            }
-            
-            list.innerHTML = comments.map(c => `
-                <div class="media-comment-item">
-                    <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
-                    <div>
-                        <div class="media-comment-author">${escapeHtml(c.author_name || 'Anonyme')}</div>
-                        <div class="media-comment-text">${escapeHtml(c.comment || '')}</div>
-                        <div class="media-comment-date">${formatDate(c.created_at)}</div>
-                    </div>
-                </div>
-            `).join('');
-        })
-        .catch(() => {
-            document.getElementById('commentsList').innerHTML = '<p style="color: var(--text-tertiary);">Erreur de chargement</p>';
-        });
-}
-
-function loadRecommendations(mediaId) {
-    fetch(`${baseUrl}media/getRecommended/${mediaId}`)
-        .then(res => res.json())
-        .then(data => {
-            const medias = data.medias || [];
-            const grid = document.getElementById('recommendationsGrid');
-            
-            if (medias.length === 0) {
-                grid.innerHTML = '<p style="color: var(--text-tertiary);">Aucune recommandation</p>';
-                return;
-            }
-            
-            grid.innerHTML = medias.slice(0, 4).map(m => `
-                <div class="media-compact-item" onclick="openMediaById(${m.id_media})">
-                    <img src="${m.thumbnail_url || baseUrl + 'assets/images/default_thumbnail.jpg'}" alt="${escapeHtml(m.titre)}">
-                    <div class="media-compact-item-title">${escapeHtml(m.titre)}</div>
-                </div>
-            `).join('');
-        })
-        .catch(() => {});
-}
-
-function resetStars() {
-    document.querySelectorAll('#starRating i').forEach(star => {
-        star.classList.remove('fas', 'active');
-        star.classList.add('far');
-    });
-}
-
-// ================= TRACKING =================
-function incrementViews(mediaId) {
-    fetch(`${baseUrl}media/trackView`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${mediaId}`,
-        keepalive: true
-    }).catch(() => {});
-}
-
-function incrementPlay(mediaId) {
-    fetch(`${baseUrl}media/trackPlay`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${mediaId}`,
-        keepalive: true
-    }).catch(() => {});
-}
-
-// ================= UTILITAIRES =================
-function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = 'media-toast';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+// ==================== UTILITAIRES ====================
+function formatDuration(seconds) {
+    if (isNaN(seconds) || !seconds) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 function formatDate(dateString) {
@@ -1675,24 +1506,735 @@ function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function animateCards() {
-    const cards = document.querySelectorAll('.media-card');
-    cards.forEach((card, i) => {
-        card.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s forwards`;
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, i * 50);
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = 'media-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ==================== TRACKING ====================
+function incrementViews(mediaId) {
+    fetch(`${baseUrl}media/trackView`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${mediaId}`,
+        keepalive: true
+    }).catch(() => {});
+}
+
+function incrementPlay(mediaId) {
+    fetch(`${baseUrl}media/trackPlay`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${mediaId}`,
+        keepalive: true
+    }).catch(() => {});
+}
+
+// ==================== RECHERCHE ====================
+function initSearch() {
+    const searchInput = document.getElementById('mediaSearchInput');
+    const searchBtn = document.getElementById('mediaSearchBtn');
+    const dropdown = document.getElementById('mediaSearchDropdown');
+    
+    if (!searchInput) return;
+    
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('focus', () => {
+        if (searchQuery.length >= 2 && dropdown.children.length > 0) {
+            dropdown.classList.add('active');
+        }
+    });
+    searchInput.addEventListener('keydown', handleSearchKeyboard);
+    
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            if (searchQuery.length >= 2) {
+                performSearch(searchQuery);
+            } else if (searchQuery.length > 0) {
+                showToast('Tapez au moins 2 caractères');
+            }
+        });
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('active');
+        }
     });
 }
 
+function handleSearchInput(e) {
+    searchQuery = e.target.value.trim();
+    
+    clearTimeout(searchTimeout);
+    
+    if (searchQuery.length === 0) {
+        clearSearch();
+        return;
+    }
+    
+    if (searchQuery.length < 2) {
+        document.getElementById('mediaSearchDropdown').classList.remove('active');
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => performSearch(searchQuery), 300);
+}
+
+function performSearch(query) {
+    const dropdown = document.getElementById('mediaSearchDropdown');
+    
+    dropdown.innerHTML = '<div style="padding: 20px; text-align: center;">Recherche...</div>';
+    dropdown.classList.add('active');
+    
+    fetch(`${baseUrl}media/searchAjax?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.medias && data.medias.length > 0) {
+                renderSearchResults(data.medias, query);
+                filterGridBySearch(data.medias.map(m => m.id_media));
+            } else {
+                dropdown.innerHTML = `
+                    <div style="padding: 30px; text-align: center;">
+                        <i class="fas fa-search" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <p>Aucun résultat pour "${query}"</p>
+                    </div>
+                `;
+                filterGridBySearch([]);
+            }
+        })
+        .catch(() => {
+            // Fallback client-side
+            const results = mediasData.filter(m => 
+                (m.titre || '').toLowerCase().includes(query.toLowerCase())
+            );
+            renderSearchResults(results.map(m => ({
+                id_media: m.id_media,
+                titre: m.titre,
+                type: m.type,
+                display_type: m.display_type,
+                thumb_url: m.thumb_url,
+                created_at: m.created_at
+            })), query);
+            filterGridBySearch(results.map(m => m.id_media));
+        });
+}
+
+function renderSearchResults(results, query) {
+    const dropdown = document.getElementById('mediaSearchDropdown');
+    
+    dropdown.innerHTML = results.map(media => {
+        const title = escapeHtml(media.titre || 'Sans titre');
+        const highlightedTitle = highlightText(title, query);
+        const typeLabel = media.display_type === 'youtube' ? 'YouTube' : media.type;
+        const thumbUrl = media.thumb_url || `${baseUrl}assets/images/default_thumbnail.jpg`;
+        
+        return `
+        <div class="media-search-item" onclick="openMediaById(${media.id_media})">
+            <img src="${thumbUrl}" class="media-search-item-thumb" alt="${title}">
+            <div class="media-search-item-info">
+                <div class="media-search-item-title">${highlightedTitle}</div>
+                <div class="media-search-item-meta">
+                    <span class="media-search-item-badge ${media.display_type || media.type}">${typeLabel}</span>
+                    <span><i class="fas fa-calendar"></i> ${formatDate(media.created_at)}</span>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+function filterGridBySearch(visibleIds) {
+    const cards = document.querySelectorAll('.media-card');
+    let visible = 0;
+    
+    cards.forEach(card => {
+        const mediaId = parseInt(card.dataset.mediaId);
+        if (visibleIds.includes(mediaId)) {
+            card.classList.remove('hidden');
+            visible++;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+}
+
+function clearSearch() {
+    document.getElementById('mediaSearchInput').value = '';
+    document.getElementById('mediaSearchDropdown').classList.remove('active');
+    document.querySelectorAll('.media-card').forEach(card => card.classList.remove('hidden'));
+}
+
+function handleSearchKeyboard(e) {
+    const items = document.querySelectorAll('.media-search-item');
+    
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (items.length) {
+                activeSearchIndex = Math.min(activeSearchIndex + 1, items.length - 1);
+                items.forEach((item, i) => item.classList.toggle('active', i === activeSearchIndex));
+                if (items[activeSearchIndex]) items[activeSearchIndex].scrollIntoView({ block: 'nearest' });
+            }
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            if (items.length) {
+                activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
+                items.forEach((item, i) => item.classList.toggle('active', i === activeSearchIndex));
+            }
+            break;
+        case 'Enter':
+            e.preventDefault();
+            if (activeSearchIndex >= 0 && items[activeSearchIndex]) {
+                items[activeSearchIndex].click();
+            } else if (items[0]) {
+                items[0].click();
+            }
+            break;
+        case 'Escape':
+            document.getElementById('mediaSearchDropdown').classList.remove('active');
+            break;
+    }
+}
+
+function openMediaById(id) {
+    const index = mediasData.findIndex(m => m.id_media === id);
+    if (index !== -1) {
+        if (mediasData[index].type === 'audio') {
+            openAudioLightbox(index);
+        } else {
+            openMediaLightbox(index);
+        }
+        document.getElementById('mediaSearchDropdown').classList.remove('active');
+    }
+}
+
+// ==================== FILTRES ====================
+function initFilters() {
+    const filters = document.querySelectorAll('.media-filter-btn');
+    
+    filters.forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentFilter = btn.dataset.filter;
+            
+            filters.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            applyFilters();
+        });
+    });
+}
+
+function applyFilters() {
+    const cards = document.querySelectorAll('.media-card');
+    
+    cards.forEach(card => {
+        const mediaType = card.dataset.mediaDisplayType || card.dataset.mediaType;
+        
+        if (currentFilter === 'all' || currentFilter === mediaType) {
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+}
+
+// ==================== LIGHTBOX STANDARD ====================
+function openMediaLightbox(index) {
+    if (!mediasData[index]) return;
+    
+    currentIndex = index;
+    currentMedia = mediasData[index];
+    
+    document.getElementById('lightboxTitle').textContent = currentMedia.titre || 'Sans titre';
+    document.getElementById('likeCount').textContent = currentMedia.likes_count || 0;
+    document.getElementById('dislikeCount').textContent = currentMedia.dislikes_count || 0;
+    document.getElementById('commentsCount').textContent = currentMedia.comments_count || 0;
+    
+    loadPlayer();
+    loadComments(currentMedia.id_media);
+    loadRecommendations(currentMedia.id_media);
+    resetStars();
+    
+    const downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn) {
+        downloadBtn.style.display = (currentMedia.fichier && currentMedia.type !== 'link') ? 'flex' : 'none';
+    }
+    
+    document.getElementById('mediaLightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    incrementViews(currentMedia.id_media);
+}
+
+function loadPlayer() {
+    const playerContainer = document.getElementById('mediaPlayer');
+    
+    if (currentMedia.youtube_id) {
+        playerContainer.innerHTML = `
+            <iframe src="https://www.youtube.com/embed/${currentMedia.youtube_id}?autoplay=1&rel=0" 
+                    frameborder="0" 
+                    allowfullscreen
+                    allow="autoplay; encrypted-media"></iframe>
+        `;
+    } else if (currentMedia.type === 'video' && currentMedia.fichier) {
+        playerContainer.innerHTML = `
+            <video controls autoplay onplay="incrementPlay(${currentMedia.id_media})">
+                <source src="${baseUrl}${currentMedia.fichier}" type="video/mp4">
+            </video>
+        `;
+    } else if (currentMedia.type === 'image' && currentMedia.fichier) {
+        playerContainer.innerHTML = `<img src="${baseUrl}${currentMedia.fichier}" alt="${currentMedia.titre}">`;
+    } else if (currentMedia.lien) {
+        playerContainer.innerHTML = `
+            <div style="text-align: center;">
+                <a href="${currentMedia.lien}" target="_blank" style="color: var(--accent-green);">
+                    <i class="fas fa-external-link-alt"></i> Ouvrir le lien
+                </a>
+            </div>
+        `;
+    } else {
+        playerContainer.innerHTML = '<div style="text-align: center;">Aucun lecteur disponible</div>';
+    }
+}
+
+function closeMediaLightbox() {
+    document.getElementById('mediaLightbox').classList.remove('active');
+    document.body.style.overflow = '';
+    
+    const player = document.querySelector('#mediaPlayer video, #mediaPlayer audio, #mediaPlayer iframe');
+    if (player && player.pause) player.pause();
+}
+
+function navigateMedia(direction) {
+    const visibleCards = Array.from(document.querySelectorAll('.media-card:not(.hidden)'));
+    if (visibleCards.length === 0) return;
+    
+    const currentCard = document.querySelector(`[data-media-index="${currentIndex}"]`);
+    const currentVisibleIndex = visibleCards.indexOf(currentCard);
+    
+    let newVisibleIndex = currentVisibleIndex + direction;
+    if (newVisibleIndex < 0) newVisibleIndex = visibleCards.length - 1;
+    if (newVisibleIndex >= visibleCards.length) newVisibleIndex = 0;
+    
+    const newCard = visibleCards[newVisibleIndex];
+    const newIndex = parseInt(newCard.dataset.mediaIndex);
+    
+    if (mediasData[newIndex].type === 'audio') {
+        openAudioLightbox(newIndex);
+    } else {
+        openMediaLightbox(newIndex);
+    }
+}
+
+// ==================== INTERACTIONS ====================
+function handleLike() {
+    if (!currentMedia) return;
+    
+    const btn = document.getElementById('likeBtn');
+    const isLiked = btn.classList.contains('liked');
+    
+    btn.classList.toggle('liked');
+    document.getElementById('dislikeBtn').classList.remove('disliked');
+    
+    const currentCount = parseInt(document.getElementById('likeCount').textContent);
+    document.getElementById('likeCount').textContent = isLiked ? currentCount - 1 : currentCount + 1;
+    
+    fetch(`${baseUrl}media/toggleLike`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&action=${isLiked ? 'remove' : 'like'}`
+    }).catch(() => showToast('Erreur', 'error'));
+}
+
+function handleDislike() {
+    if (!currentMedia) return;
+    
+    const btn = document.getElementById('dislikeBtn');
+    const isDisliked = btn.classList.contains('disliked');
+    
+    btn.classList.toggle('disliked');
+    document.getElementById('likeBtn').classList.remove('liked');
+    
+    const currentCount = parseInt(document.getElementById('dislikeCount').textContent);
+    document.getElementById('dislikeCount').textContent = isDisliked ? currentCount - 1 : currentCount + 1;
+    
+    fetch(`${baseUrl}media/toggleLike`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&action=${isDisliked ? 'remove' : 'dislike'}`
+    }).catch(() => showToast('Erreur', 'error'));
+}
+
+function rateMedia(rating) {
+    if (!currentMedia) return;
+    
+    const stars = document.querySelectorAll('#starRating i');
+    stars.forEach((star, i) => {
+        if (i < rating) {
+            star.classList.remove('far');
+            star.classList.add('fas', 'active');
+        } else {
+            star.classList.remove('fas', 'active');
+            star.classList.add('far');
+        }
+    });
+    
+    fetch(`${baseUrl}media/rateMedia`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&rating=${rating}`
+    }).catch(() => showToast('Erreur de notation', 'error'));
+}
+
+function submitComment() {
+    const input = document.getElementById('commentInput');
+    const text = input.value.trim();
+    
+    if (!text) {
+        showToast('Écrivez un commentaire');
+        return;
+    }
+    
+    if (!currentMedia) return;
+    
+    fetch(`${baseUrl}media/addComment`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${currentMedia.id_media}&comment=${encodeURIComponent(text)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadComments(currentMedia.id_media);
+            showToast('Commentaire ajouté !');
+        }
+    })
+    .catch(() => showToast('Erreur', 'error'));
+}
+
+function shareMedia() {
+    if (navigator.share) {
+        navigator.share({
+            title: currentMedia.titre,
+            text: currentMedia.description || 'Découvrez ce média',
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        showToast('Lien copié !');
+    }
+}
+
+function downloadMedia() {
+    if (currentMedia && currentMedia.fichier) {
+        window.open(`${baseUrl}${currentMedia.fichier}`, '_blank');
+    }
+}
+
+function loadComments(mediaId) {
+    fetch(`${baseUrl}media/getComments/${mediaId}`)
+        .then(res => res.json())
+        .then(data => {
+            const comments = data.comments || [];
+            const list = document.getElementById('commentsList');
+            
+            if (comments.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-tertiary); text-align: center;">Aucun commentaire.</p>';
+                return;
+            }
+            
+            list.innerHTML = comments.map(c => `
+                <div class="media-comment-item">
+                    <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
+                    <div>
+                        <div class="media-comment-author">${escapeHtml(c.author_name || 'Anonyme')}</div>
+                        <div class="media-comment-text">${escapeHtml(c.comment || '')}</div>
+                        <div class="media-comment-date">${formatDate(c.created_at)}</div>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+function loadRecommendations(mediaId) {
+    fetch(`${baseUrl}media/getRecommended/${mediaId}`)
+        .then(res => res.json())
+        .then(data => {
+            const medias = data.medias || [];
+            const grid = document.getElementById('recommendationsGrid');
+            
+            if (medias.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-tertiary);">Aucune recommandation</p>';
+                return;
+            }
+            
+            grid.innerHTML = medias.slice(0, 4).map(m => `
+                <div class="media-compact-item" onclick="openMediaById(${m.id_media})">
+                    <img src="${m.thumbnail_url || baseUrl + 'assets/images/default_thumbnail.jpg'}" alt="${escapeHtml(m.titre)}">
+                    <div class="media-compact-item-title">${escapeHtml(m.titre)}</div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+function resetStars() {
+    document.querySelectorAll('#starRating i').forEach(star => {
+        star.classList.remove('fas', 'active');
+        star.classList.add('far');
+    });
+}
+
+// ==================== AUDIO WHATSAPP STYLE ====================
+function playAudioQuick(index) {
+    openAudioLightbox(index);
+}
+
+function openAudioLightbox(index) {
+    if (!mediasData[index] || mediasData[index].type !== 'audio') return;
+    
+    currentAudioIndex = index;
+    const audio = mediasData[index];
+    
+    document.getElementById('audioLightboxTitle').textContent = audio.titre || 'Lecture audio';
+    document.getElementById('audioTitle').textContent = audio.titre || 'Sans titre';
+    document.getElementById('audioArtist').textContent = audio.artist || 'Artiste inconnu';
+    document.getElementById('audioLikeCount').textContent = audio.likes_count || 0;
+    document.getElementById('audioCommentsCount').textContent = audio.comments_count || 0;
+    
+    generateWaveform(audio.waveform_points || generateRandomWaveform(80));
+    
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+    
+    const audioUrl = audio.fichier ? `${baseUrl}${audio.fichier}` : null;
+    if (audioUrl) {
+        currentAudio = new Audio(audioUrl);
+        currentAudio.addEventListener('loadedmetadata', () => {
+            document.getElementById('audioTotalTime').textContent = formatDuration(currentAudio.duration);
+        });
+        currentAudio.addEventListener('timeupdate', updateAudioProgress);
+        currentAudio.addEventListener('ended', () => {
+            isAudioPlaying = false;
+            document.getElementById('audioPlayBtn').innerHTML = '<i class="fas fa-play"></i>';
+            stopWaveformAnimation();
+        });
+    }
+    
+    loadAudioComments(audio.id_media);
+    
+    document.getElementById('audioLightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    incrementViews(audio.id_media);
+}
+
+function closeAudioLightbox() {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+    isAudioPlaying = false;
+    stopWaveformAnimation();
+    document.getElementById('audioLightbox').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function toggleAudioPlay() {
+    if (!currentAudio) return;
+    
+    if (isAudioPlaying) {
+        currentAudio.pause();
+        document.getElementById('audioPlayBtn').innerHTML = '<i class="fas fa-play"></i>';
+        isAudioPlaying = false;
+        stopWaveformAnimation();
+    } else {
+        currentAudio.play();
+        document.getElementById('audioPlayBtn').innerHTML = '<i class="fas fa-pause"></i>';
+        isAudioPlaying = true;
+        startWaveformAnimation();
+        
+        const media = mediasData[currentAudioIndex];
+        if (media) incrementPlay(media.id_media);
+    }
+}
+
+function updateAudioProgress() {
+    if (!currentAudio) return;
+    
+    const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+    document.getElementById('audioProgressFill').style.width = `${progress}%`;
+    document.getElementById('audioCurrentTime').textContent = formatDuration(currentAudio.currentTime);
+}
+
+function generateWaveform(points) {
+    const container = document.getElementById('largeWaveform');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    const maxHeight = 48;
+    
+    for (let i = 0; i < Math.min(80, points.length); i++) {
+        const height = (points[i] / 100) * maxHeight;
+        const bar = document.createElement('div');
+        bar.className = 'wave-bar';
+        bar.style.height = `${Math.max(8, height)}px`;
+        bar.style.width = '4px';
+        bar.style.background = 'var(--accent-green)';
+        bar.style.borderRadius = '2px';
+        bar.style.margin = '0 2px';
+        container.appendChild(bar);
+    }
+}
+
+function startWaveformAnimation() {
+    if (audioWaveformInterval) clearInterval(audioWaveformInterval);
+    
+    const bars = document.querySelectorAll('#largeWaveform .wave-bar');
+    
+    audioWaveformInterval = setInterval(() => {
+        bars.forEach(bar => {
+            const randomHeight = Math.random() * 40 + 10;
+            bar.style.height = `${randomHeight}px`;
+        });
+    }, 100);
+}
+
+function stopWaveformAnimation() {
+    if (audioWaveformInterval) {
+        clearInterval(audioWaveformInterval);
+        audioWaveformInterval = null;
+    }
+    
+    const bars = document.querySelectorAll('#largeWaveform .wave-bar');
+    bars.forEach((bar, i) => {
+        bar.style.height = '24px';
+    });
+}
+
+function generateRandomWaveform(count = 80) {
+    const points = [];
+    for (let i = 0; i < count; i++) {
+        points.push(Math.sin(i * 0.2) * 30 + Math.random() * 20 + 30);
+    }
+    return points;
+}
+
+function likeAudio() {
+    if (!currentAudioIndex) return;
+    const media = mediasData[currentAudioIndex];
+    if (!media) return;
+    
+    const btn = document.getElementById('audioLikeBtn');
+    const isLiked = btn.classList.contains('liked');
+    
+    btn.classList.toggle('liked');
+    const currentCount = parseInt(document.getElementById('audioLikeCount').textContent);
+    document.getElementById('audioLikeCount').textContent = isLiked ? currentCount - 1 : currentCount + 1;
+    
+    fetch(`${baseUrl}media/toggleLike`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${media.id_media}&action=${isLiked ? 'remove' : 'like'}`
+    }).catch(() => showToast('Erreur', 'error'));
+}
+
+function shareAudio() {
+    const media = mediasData[currentAudioIndex];
+    if (!media) return;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: media.titre,
+            text: `Écoutez "${media.titre}" par ${media.artist || 'Artiste'}`,
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        showToast('Lien copié !');
+    }
+}
+
+function downloadAudio() {
+    const media = mediasData[currentAudioIndex];
+    if (media && media.fichier) {
+        window.open(`${baseUrl}${media.fichier}`, '_blank');
+    }
+}
+
+function submitAudioComment() {
+    const input = document.getElementById('audioCommentInput');
+    const text = input.value.trim();
+    
+    if (!text) {
+        showToast('Écrivez un commentaire');
+        return;
+    }
+    
+    if (!currentAudioIndex) return;
+    const media = mediasData[currentAudioIndex];
+    
+    fetch(`${baseUrl}media/addComment`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id_media=${media.id_media}&comment=${encodeURIComponent(text)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadAudioComments(media.id_media);
+            showToast('Commentaire ajouté !');
+        }
+    })
+    .catch(() => showToast('Erreur', 'error'));
+}
+
+function loadAudioComments(mediaId) {
+    fetch(`${baseUrl}media/getComments/${mediaId}`)
+        .then(res => res.json())
+        .then(data => {
+            const comments = data.comments || [];
+            const list = document.getElementById('audioCommentsList');
+            
+            if (comments.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-tertiary); text-align: center;">Aucun commentaire.</p>';
+                return;
+            }
+            
+            list.innerHTML = comments.map(c => `
+                <div class="media-comment-item">
+                    <div class="media-comment-avatar"><i class="fas fa-user"></i></div>
+                    <div>
+                        <div class="media-comment-author">${escapeHtml(c.author_name || 'Anonyme')}</div>
+                        <div class="media-comment-text">${escapeHtml(c.comment || '')}</div>
+                        <div class="media-comment-date">${formatDate(c.created_at)}</div>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+// ==================== INITIALISATION ====================
 function initLightboxEvents() {
     document.getElementById('likeBtn')?.addEventListener('click', handleLike);
     document.getElementById('dislikeBtn')?.addEventListener('click', handleDislike);
     document.getElementById('shareBtn')?.addEventListener('click', shareMedia);
+    document.getElementById('downloadBtn')?.addEventListener('click', downloadMedia);
     document.getElementById('submitComment')?.addEventListener('click', submitComment);
     document.getElementById('prevMedia')?.addEventListener('click', () => navigateMedia(-1));
     document.getElementById('nextMedia')?.addEventListener('click', () => navigateMedia(1));
@@ -1702,16 +2244,69 @@ function initLightboxEvents() {
     });
 }
 
+function initAudioEvents() {
+    const playBtn = document.getElementById('audioPlayBtn');
+    const progressBar = document.getElementById('audioProgressBar');
+    const likeBtn = document.getElementById('audioLikeBtn');
+    const shareBtn = document.getElementById('audioShareBtn');
+    const downloadBtn = document.getElementById('audioDownloadBtn');
+    const submitComment = document.getElementById('audioSubmitComment');
+    
+    if (playBtn) playBtn.addEventListener('click', toggleAudioPlay);
+    if (likeBtn) likeBtn.addEventListener('click', likeAudio);
+    if (shareBtn) shareBtn.addEventListener('click', shareAudio);
+    if (downloadBtn) downloadBtn.addEventListener('click', downloadAudio);
+    
+    if (progressBar) {
+        progressBar.addEventListener('click', (e) => {
+            if (!currentAudio) return;
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            currentAudio.currentTime = percent * currentAudio.duration;
+        });
+    }
+    
+    if (submitComment) {
+        submitComment.addEventListener('click', submitAudioComment);
+    }
+}
+
 function initKeyboardNav() {
     document.addEventListener('keydown', (e) => {
         const lightbox = document.getElementById('mediaLightbox');
-        if (!lightbox.classList.contains('active')) return;
+        const audioLightbox = document.getElementById('audioLightbox');
         
-        if (e.key === 'ArrowLeft') navigateMedia(-1);
-        if (e.key === 'ArrowRight') navigateMedia(1);
-        if (e.key === 'Escape') closeMediaLightbox();
+        if (lightbox.classList.contains('active')) {
+            if (e.key === 'ArrowLeft') navigateMedia(-1);
+            if (e.key === 'ArrowRight') navigateMedia(1);
+            if (e.key === 'Escape') closeMediaLightbox();
+        } else if (audioLightbox.classList.contains('active')) {
+            if (e.key === 'Escape') closeAudioLightbox();
+        }
     });
 }
+
+function animateCards() {
+    const cards = document.querySelectorAll('.media-card');
+    cards.forEach((card, i) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, i * 50);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initSearch();
+    initFilters();
+    initLightboxEvents();
+    initAudioEvents();
+    initKeyboardNav();
+    animateCards();
+});
 </script>
 
 <?php include VIEWPATH.'includes/frontend/Footer.php'; ?>

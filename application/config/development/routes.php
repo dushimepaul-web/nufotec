@@ -228,24 +228,41 @@ $route['patient-fallowed'] = 'Consultations/Entente/confirme/';
 
 
 
+// ==================== ROUTES MEDIA ====================
 
-// Routes API pour les interactions AJAX
+// Route principale
+$route['media'] = 'Home/Media/index';
+$route['Media'] = 'Home/Media/index';
+
+// Route avec filtre par type (video, audio, image, document, book, link, autre)
+$route['media/view/(:any)'] = 'Home/Media/view/$1';
+$route['Media/view/(:any)'] = 'Home/Media/view/$1';
+
+// ==================== API ROUTES (AJAX) ====================
+
+// Recherche
+$route['media/searchAjax'] = 'Home/Media/searchAjax';
+$route['media/search'] = 'Home/Media/search';
+
+// Tracking
 $route['media/trackView'] = 'Home/Media/trackView';
-$route['media/toggleLike'] = 'Home/Media/toggleLike';
 $route['media/trackPlay'] = 'Home/Media/trackPlay';
-$route['media/addComment'] = 'Home/Media/addComment';
+
+// Interactions utilisateur
+$route['media/toggleLike'] = 'Home/Media/toggleLike';
 $route['media/rateMedia'] = 'Home/Media/rateMedia';
+$route['media/addComment'] = 'Home/Media/addComment';
+$route['media/checkUserLike/(:num)'] = 'Home/Media/checkUserLike/$1';
+$route['media/checkUserLike'] = 'Home/Media/checkUserLike';
+
+// Récupération de données
 $route['media/getComments/(:num)'] = 'Home/Media/getComments/$1';
-$route['media/search'] = 'media/search';
 $route['media/getRecommended/(:num)'] = 'Home/Media/getRecommended/$1';
+$route['media/getMedia/(:num)'] = 'Home/Media/getMedia/$1';
 $route['media/getCategories'] = 'Home/Media/getCategories';
 $route['media/getStats'] = 'Home/Media/getStats';
-$route['media/checkUserLike'] = 'Home/Media/checkUserLike';
-$route['Media/view/(:any)'] = 'Home/Media/view/$1';
-$route['Media'] = 'Home/Media/index';
-// routes.php
-$route['media/searchAjax'] = 'Home/Media/searchAjax';
-$route['Media/searchAjax'] = 'Home/Media/searchAjax';
+
+
 
 
 

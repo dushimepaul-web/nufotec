@@ -28,7 +28,7 @@
                     
                 }, 400); // Durée de la transition CSS
                 
-            }, 3000); // 4 secondes d'affichage
+            }, 1000); // 4 secondes d'affichage
             
         });
         
