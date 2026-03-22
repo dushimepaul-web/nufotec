@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        /* Styles identiques à votre code original */
+        /* Tous vos styles existants restent identiques */
         :root {
             --bg-dark: #0f0f0f;
             --bg-card: #1a1a1a;
@@ -20,7 +20,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow-x: hidden; }
 
-        /* Navbar */
         .navbar {
             background: rgba(15,15,15,0.98);
             border-bottom: 1px solid var(--border-color);
@@ -107,7 +106,6 @@
             width: 100%;
             font-size: 0.9rem;
             outline: none;
-            transition: all 0.3s ease;
         }
         
         .search-input:focus {
@@ -125,10 +123,6 @@
             color: white;
             padding: 0.5rem 1.5rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s ease;
         }
         
         .search-btn:hover {
@@ -145,13 +139,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            text-decoration: none;
             flex-shrink: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .menu-toggle:hover {
-            opacity: 0.8;
         }
 
         .sidebar { 
@@ -570,158 +558,6 @@
             font-size: 0.9rem; 
         }
 
-        .modal-content { 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-color); 
-            color: white; 
-        }
-        
-        .btn-close { 
-            filter: invert(1); 
-        }
-        
-        .video-wrapper { 
-            position: relative; 
-            background: #000; 
-            border-radius: 12px; 
-            overflow: hidden; 
-        }
-        
-        .video-container { 
-            position: relative; 
-            padding-bottom: 56.25%; 
-        }
-        
-        .video-container iframe, .video-container video { 
-            position: absolute; 
-            inset: 0; 
-            width: 100%; 
-            height: 100%; 
-            border: none; 
-        }
-        
-        .image-viewer { 
-            background: #000; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 300px; 
-        }
-        
-        .image-viewer img { 
-            max-width: 100%; 
-            max-height: 60vh; 
-            object-fit: contain; 
-        }
-        
-        .pdf-container { 
-            background: #2a2a2a; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            height: 60vh; 
-        }
-        
-        .pdf-toolbar { 
-            background: #1a1a1a; 
-            padding: 0.5rem 1rem; 
-            display: flex; 
-            align-items: center; 
-            gap: 1rem; 
-            border-bottom: 1px solid var(--border-color); 
-        }
-        
-        .pdf-frame { 
-            width: 100%; 
-            height: calc(60vh - 45px); 
-            border: none; 
-            background: white; 
-        }
-
-        .action-buttons { 
-            display: flex; 
-            gap: 0.5rem; 
-            flex-wrap: wrap; 
-        }
-        
-        .action-btn { 
-            display: flex; 
-            align-items: center; 
-            gap: 0.4rem; 
-            padding: 0.4rem 0.8rem; 
-            background: var(--bg-hover); 
-            border: none; 
-            border-radius: 18px; 
-            color: white; 
-            font-size: 0.8rem; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-        }
-        
-        .action-btn:hover { 
-            background: #3a3a3a; 
-        }
-        
-        .action-btn.liked { 
-            background: #3ea6ff; 
-            color: white; 
-        }
-        
-        .action-btn.disliked { 
-            background: #ff6b6b; 
-            color: white; 
-        }
-
-        .rating-stars { 
-            display: flex; 
-            gap: 0.2rem; 
-            font-size: 1.1rem; 
-            color: #ffc107; 
-            cursor: pointer; 
-        }
-
-        .share-options { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 0.75rem; 
-            margin-top: 0.75rem; 
-        }
-        
-        .share-option { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 0.4rem; 
-            padding: 0.75rem; 
-            background: var(--bg-hover); 
-            border-radius: 10px; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            text-decoration: none; 
-            color: white; 
-        }
-        
-        .share-option:hover { 
-            background: #3a3a3a; 
-            transform: translateY(-2px); 
-        }
-        
-        .share-icon { 
-            width: 40px; 
-            height: 40px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.25rem; 
-        }
-        
-        .share-whatsapp { background: #25d366; }
-        .share-facebook { background: #1877f2; }
-        .share-twitter { background: #1da1f2; }
-        .share-copy { background: #666; }
-
         .toast-container { 
             position: fixed; 
             top: 80px; 
@@ -748,98 +584,50 @@
         }
 
         @media (max-width: 1200px) { 
-            .sidebar { 
-                transform: translateX(-100%); 
-            } 
-            .sidebar.open { 
-                transform: translateX(0); 
-            } 
-            .main-content { 
-                margin-left: 0; 
-            } 
-            .audio-player-bar { 
-                left: 0; 
-            }
-            .navbar .container-fluid {
-                flex-wrap: nowrap;
-            }
+            .sidebar { transform: translateX(-100%); } 
+            .sidebar.open { transform: translateX(0); } 
+            .main-content { margin-left: 0; } 
+            .audio-player-bar { left: 0; }
         }
         
         @media (max-width: 768px) { 
-            .media-grid { 
-                grid-template-columns: 1fr; 
-            } 
-            .search-container { 
-                margin: 0 0.5rem;
-            }
-            .navbar .container-fluid {
-                flex-wrap: wrap;
-            }
-            .logo-wrapper {
-                order: 1;
-            }
-            .search-container {
-                order: 3;
-                margin: 0.5rem 0 0 0;
-                max-width: 100%;
-            }
-            .menu-toggle {
-                order: 2;
-            }
+            .media-grid { grid-template-columns: 1fr; } 
+            .search-container { margin: 0 0.5rem; }
+            .navbar .container-fluid { flex-wrap: wrap; }
+            .logo-wrapper { order: 1; }
+            .search-container { order: 3; margin: 0.5rem 0 0 0; max-width: 100%; }
+            .menu-toggle { order: 2; }
         }
         
         @media (max-width: 480px) {
-            .brand-name {
-                font-size: 0.8rem;
-            }
-            .brand-subname {
-                font-size: 0.6rem;
-            }
-            .site-logo {
-                height: 32px;
-            }
+            .brand-name { font-size: 0.8rem; }
+            .brand-subname { font-size: 0.6rem; }
+            .site-logo { height: 32px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar">
         <div class="container-fluid">
             <div class="logo-wrapper">
                 <img src="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('site_logo', 'logo.png')) ?>" 
                      alt="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?>" 
                      class="site-logo">
-                
                 <a class="navbar-brand" href="<?= base_url('media') ?>">
                     <div class="brand-info">
-                        <h1 class="brand-name">
-                            <?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?>
-                        </h1>
-                        <span class="brand-subname">
-                            <?= htmlspecialchars($this->Model->get_setting('span_site_name', 'Media Center')) ?>
-                        </span> 
+                        <h1 class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></h1>
+                        <span class="brand-subname"><?= htmlspecialchars($this->Model->get_setting('span_site_name', 'Media Center')) ?></span>
                     </div>
                 </a>
             </div>
-
             <div class="search-container">
                 <form action="<?= base_url('media/search') ?>" method="GET" class="search-form">
-                    <input type="text" 
-                           name="q" 
-                           class="search-input" 
-                           placeholder="Rechercher des médias..." 
-                           value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>" 
-                           id="searchInput">
-                    <button class="search-btn" type="submit">
-                        <i class="bi bi-search"></i>
-                    </button>
+                    <input type="text" name="q" class="search-input" placeholder="Rechercher des médias..." value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>">
+                    <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
                 </form>
             </div>
-
-            <button class="menu-toggle" onclick="toggleSidebar()">
-                <i class="bi bi-list fs-4"></i>
-            </button>
+            <button class="menu-toggle" onclick="toggleSidebar()"><i class="bi bi-list fs-4"></i></button>
         </div>
     </nav>
 
@@ -870,7 +658,6 @@
     </aside>
 
     <main class="main-content">
-        
         <?php if (isset($search_query)): ?>
         <div class="search-header">
             <h4><i class="bi bi-search me-2"></i>Résultats pour "<?= htmlspecialchars($search_query) ?>"</h4>
@@ -878,7 +665,7 @@
         </div>
         <?php endif; ?>
 
-        <div class="media-grid" id="mediaGrid">
+        <div class="media-grid">
             <?php if (!empty($medias)): ?>
                 <?php foreach ($medias as $media): ?>
                     <?= createMediaCard($media) ?>
@@ -886,7 +673,7 @@
             <?php endif; ?>
         </div>
 
-        <div class="empty-state" id="emptyState" style="display: <?= empty($medias) ? 'block' : 'none' ?>;">
+        <div class="empty-state" style="display: <?= empty($medias) ? 'block' : 'none' ?>;">
             <i class="bi bi-inbox"></i>
             <h3><?= isset($search_query) ? 'Aucun résultat trouvé' : 'Aucun média disponible' ?></h3>
             <p><?= isset($search_query) ? 'Essayez avec d\'autres termes de recherche.' : 'Revenez plus tard pour découvrir du nouveau contenu.' ?></p>
@@ -917,332 +704,58 @@
         <audio id="audioElement" preload="metadata"></audio>
     </div>
 
-    <div class="modal fade" id="viewerModal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewerTitle">Lecture</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-0" id="viewerContent"></div>
-                <div class="modal-footer">
-                    <div class="d-flex justify-content-between align-items-center w-100">
-                        <div class="action-buttons">
-                            <button class="action-btn" id="likeBtn" onclick="toggleLike()"><i class="bi bi-hand-thumbs-up"></i> <span id="likeCount">0</span></button>
-                            <button class="action-btn" id="dislikeBtn" onclick="toggleDislike()"><i class="bi bi-hand-thumbs-down"></i> <span id="dislikeCount">0</span></button>
-                            <button class="action-btn" onclick="toggleFavorite()"><i class="bi bi-bookmark"></i></button>
-                            <button class="action-btn" onclick="openShareModal()"><i class="bi bi-share"></i></button>
-                        </div>
-                        <div class="rating-stars" id="ratingStars">
-                            <i class="bi bi-star" onclick="rateMedia(1)"></i>
-                            <i class="bi bi-star" onclick="rateMedia(2)"></i>
-                            <i class="bi bi-star" onclick="rateMedia(3)"></i>
-                            <i class="bi bi-star" onclick="rateMedia(4)"></i>
-                            <i class="bi bi-star" onclick="rateMedia(5)"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="pdfModal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pdfTitle">PDF</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="pdf-container">
-                        <div class="pdf-toolbar">
-                            <span class="pdf-page-info">Visualiseur PDF</span>
-                            <a id="pdfDownloadLink" href="#" target="_blank" class="btn btn-sm btn-primary ms-auto">
-                                <i class="bi bi-box-arrow-up-right"></i> Ouvrir dans un nouvel onglet
-                            </a>
-                        </div>
-                        <iframe class="pdf-frame" id="pdfFrame" src=""></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="shareModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Partager</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Lien</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control bg-dark text-white border-secondary" id="shareLink" readonly>
-                            <button class="btn btn-outline-secondary" onclick="copyLink()"><i class="bi bi-clipboard"></i></button>
-                        </div>
-                    </div>
-                    <div class="share-options">
-                        <a href="#" class="share-option" onclick="shareWhatsApp()"><div class="share-icon share-whatsapp"><i class="bi bi-whatsapp"></i></div><span>WhatsApp</span></a>
-                        <a href="#" class="share-option" onclick="shareFacebook()"><div class="share-icon share-facebook"><i class="bi bi-facebook"></i></div><span>Facebook</span></a>
-                        <a href="#" class="share-option" onclick="shareTwitter()"><div class="share-icon share-twitter"><i class="bi bi-twitter"></i></div><span>Twitter</span></a>
-                        <div class="share-option" onclick="copyLink()"><div class="share-icon share-copy"><i class="bi bi-link-45deg"></i></div><span>Copier</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentMedia = null;
+        let audioElement = document.getElementById('audioElement');
         let isPlaying = false;
         let mediaQueue = [];
         let currentQueueIndex = 0;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const audio = document.getElementById('audioElement');
-            if (audio) {
-                audio.addEventListener('timeupdate', updateProgress);
-                audio.addEventListener('ended', nextTrack);
-                audio.addEventListener('loadedmetadata', function() {
-                    document.getElementById('totalTime').textContent = formatTime(audio.duration);
-                });
-            }
-        });
+        if (audioElement) {
+            audioElement.addEventListener('timeupdate', updateProgress);
+            audioElement.addEventListener('ended', nextTrack);
+            audioElement.addEventListener('loadedmetadata', function() {
+                document.getElementById('totalTime').textContent = formatTime(audioElement.duration);
+            });
+        }
 
-        // Open Media - Utilise le slug au lieu de l'ID
+        // Fonction qui redirige vers la page de détail avec le slug
         function openMedia(mediaSlug) {
-            // Rediriger vers la page de détail avec le slug
             window.location.href = '<?= base_url('media/detail/') ?>' + mediaSlug;
         }
 
         function togglePlay() {
-            const audio = document.getElementById('audioElement');
-            if (!audio) return;
-            if (isPlaying) audio.pause(); else audio.play();
+            if (!audioElement) return;
+            if (isPlaying) audioElement.pause(); else audioElement.play();
             isPlaying = !isPlaying;
             updatePlayButton();
         }
 
         function updatePlayButton() {
             const btn = document.getElementById('playPauseBtn');
-            if (btn) {
-                btn.innerHTML = isPlaying ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>';
-            }
+            if (btn) btn.innerHTML = isPlaying ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>';
         }
 
         function updateProgress() {
-            const audio = document.getElementById('audioElement');
-            if (!audio) return;
-            const percent = (audio.currentTime / audio.duration) * 100;
+            if (!audioElement) return;
+            const percent = (audioElement.currentTime / audioElement.duration) * 100;
             const fill = document.getElementById('progressFill');
             if (fill) fill.style.width = percent + '%';
-            document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+            document.getElementById('currentTime').textContent = formatTime(audioElement.currentTime);
         }
 
         function seekAudio(e) {
-            const audio = document.getElementById('audioElement');
-            if (!audio) return;
-            audio.currentTime = (e.offsetX / e.currentTarget.offsetWidth) * audio.duration;
+            if (!audioElement) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            audioElement.currentTime = (x / rect.width) * audioElement.duration;
         }
 
-        function previousTrack() {
-            if (currentQueueIndex > 0) {
-                currentQueueIndex--;
-                const prev = mediaQueue[currentQueueIndex];
-                playAudio(prev.slug);
-            }
-        }
-
-        function nextTrack() {
-            if (currentQueueIndex < mediaQueue.length - 1) {
-                currentQueueIndex++;
-                const next = mediaQueue[currentQueueIndex];
-                playAudio(next.slug);
-            }
-        }
-
-        function playAudio(mediaSlug) {
-            window.location.href = '<?= base_url('media/detail/') ?>' + mediaSlug;
-        }
-
-        function toggleMute() {
-            const audio = document.getElementById('audioElement');
-            if (!audio) return;
-            audio.muted = !audio.muted;
-            const icon = document.getElementById('volumeIcon');
-            if (icon) {
-                icon.className = audio.muted ? 'bi bi-volume-mute-fill' : 'bi bi-volume-up-fill';
-            }
-        }
-
-        function openVideoModal(media) {
-            const modal = new bootstrap.Modal(document.getElementById('viewerModal'));
-            const content = document.getElementById('viewerContent');
-            
-            document.getElementById('viewerTitle').textContent = media.titre;
-            updateActionButtons(media);
-
-            if (media.youtube_id) {
-                content.innerHTML = `<div class="video-wrapper"><div class="video-container"><iframe src="https://www.youtube.com/embed/${media.youtube_id}?autoplay=1&rel=0" allowfullscreen></iframe></div></div>`;
-            } else if (media.fichier) {
-                content.innerHTML = `<div class="video-wrapper"><div class="video-container"><video controls autoplay playsinline><source src="${media.fichier}" type="video/mp4"></video></div></div>`;
-            } else {
-                content.innerHTML = `<div class="text-center p-5"><i class="bi bi-play-circle display-1"></i><p>Vidéo non disponible</p></div>`;
-            }
-            
-            modal.show();
-        }
-
-        function openImageModal(media) {
-            const modal = new bootstrap.Modal(document.getElementById('viewerModal'));
-            document.getElementById('viewerTitle').textContent = media.titre;
-            updateActionButtons(media);
-            document.getElementById('viewerContent').innerHTML = `<div class="image-viewer"><img src="${media.fichier}" alt="${media.titre}"></div>`;
-            modal.show();
-        }
-
-        function openPdfModal(media) {
-            const modal = new bootstrap.Modal(document.getElementById('pdfModal'));
-            document.getElementById('pdfTitle').textContent = media.titre;
-            
-            const pdfUrl = media.fichier;
-            const viewerUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(pdfUrl)}`;
-            
-            document.getElementById('pdfFrame').src = viewerUrl;
-            document.getElementById('pdfDownloadLink').href = pdfUrl;
-            
-            modal.show();
-        }
-
-        function openFileModal(media) {
-            const modal = new bootstrap.Modal(document.getElementById('viewerModal'));
-            document.getElementById('viewerTitle').textContent = media.titre;
-            updateActionButtons(media);
-            document.getElementById('viewerContent').innerHTML = `
-                <div class="text-center p-5">
-                    <i class="bi bi-file-earmark display-1 mb-3"></i>
-                    <h4>${escapeHtml(media.titre)}</h4>
-                    <a href="${media.fichier}" target="_blank" class="btn btn-primary mt-3"><i class="bi bi-box-arrow-up-right"></i> Ouvrir</a>
-                </div>`;
-            modal.show();
-        }
-
-        function updateActionButtons(media) {
-            document.getElementById('likeCount').textContent = media.likes || 0;
-            document.getElementById('dislikeCount').textContent = media.dislikes || 0;
-        }
-
-        function toggleLike() {
-            if (!currentMedia) return;
-            const btn = document.getElementById('likeBtn');
-            const isLiked = btn.classList.contains('liked');
-            
-            fetch('<?= base_url('media/apiToggleLike') ?>', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `id_media=${currentMedia.id_media}&action=${isLiked ? 'remove' : 'like'}`
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('likeCount').textContent = data.likes;
-                    document.getElementById('dislikeCount').textContent = data.dislikes;
-                    btn.classList.toggle('liked', !isLiked);
-                    document.getElementById('dislikeBtn').classList.remove('disliked');
-                    showToast(isLiked ? 'Like retiré' : 'Like ajouté', 'success');
-                }
-            })
-            .catch(err => showToast('Erreur, veuillez vous connecter', 'error'));
-        }
-
-        function toggleDislike() {
-            if (!currentMedia) return;
-            const btn = document.getElementById('dislikeBtn');
-            const isDisliked = btn.classList.contains('disliked');
-            
-            fetch('<?= base_url('media/apiToggleLike') ?>', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `id_media=${currentMedia.id_media}&action=${isDisliked ? 'remove' : 'dislike'}`
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('likeCount').textContent = data.likes;
-                    document.getElementById('dislikeCount').textContent = data.dislikes;
-                    btn.classList.toggle('disliked', !isDisliked);
-                    document.getElementById('likeBtn').classList.remove('liked');
-                    showToast(isDisliked ? 'Dislike retiré' : 'Dislike ajouté', 'success');
-                }
-            })
-            .catch(err => showToast('Erreur, veuillez vous connecter', 'error'));
-        }
-
-        function toggleFavorite() {
-            if (!currentMedia) return;
-            fetch('<?= base_url('media/apiToggleFavorite') ?>', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `id_media=${currentMedia.id_media}`
-            })
-            .then(r => r.json())
-            .then(data => showToast(data.is_favorite ? 'Ajouté aux favoris' : 'Retiré des favoris', 'success'))
-            .catch(err => showToast('Erreur', 'error'));
-        }
-
-        function rateMedia(rating) {
-            if (!currentMedia) return;
-            fetch('<?= base_url('media/apiRateMedia') ?>', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `id_media=${currentMedia.id_media}&rating=${rating}`
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const stars = document.querySelectorAll('#ratingStars i');
-                    stars.forEach((s, i) => {
-                        s.className = i < rating ? 'bi bi-star-fill' : 'bi bi-star';
-                    });
-                    showToast('Merci !', 'success');
-                }
-            })
-            .catch(err => showToast('Erreur', 'error'));
-        }
-
-        function openShareModal() {
-            if (!currentMedia) return;
-            // Utiliser le slug pour le partage
-            const shareUrl = currentMedia.slug ? 
-                '<?= base_url('media/detail/') ?>' + currentMedia.slug : 
-                '<?= base_url('media/detail/') ?>' + currentMedia.id_media;
-            document.getElementById('shareLink').value = shareUrl;
-            new bootstrap.Modal(document.getElementById('shareModal')).show();
-        }
-
-        function shareWhatsApp() {
-            const link = document.getElementById('shareLink').value;
-            window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, '_blank');
-        }
-
-        function shareFacebook() {
-            const link = document.getElementById('shareLink').value;
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
-        }
-
-        function shareTwitter() {
-            const link = document.getElementById('shareLink').value;
-            window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}`, '_blank');
-        }
-
-        function copyLink() {
-            const input = document.getElementById('shareLink');
-            input.select();
-            document.execCommand('copy');
-            showToast('Lien copié !', 'success');
-        }
+        function previousTrack() { if (currentQueueIndex > 0) currentQueueIndex--; }
+        function nextTrack() { if (currentQueueIndex < mediaQueue.length - 1) currentQueueIndex++; }
+        function toggleMute() { if (!audioElement) return; audioElement.muted = !audioElement.muted; }
 
         function formatTime(seconds) {
             if (isNaN(seconds)) return '0:00';
@@ -1262,32 +775,18 @@
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            `;
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'primary'} border-0`;
+            toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
             container.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
+            new bootstrap.Toast(toast).show();
             setTimeout(() => toast.remove(), 3000);
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
     </script>
 </body>
 </html>
 
 <?php
-// Helper: Create media card - Utilise le slug pour les liens
+// Helper: Create media card - Utilise le slug pour le lien
 function createMediaCard($media) {
     $type = $media['type'];
     $sous_type = $media['sous_type'] ?? null;

@@ -63,7 +63,6 @@
             position: relative;
         }
         
-        /* Styles pour les vidéos YouTube intégrées */
         .video-wrapper {
             position: relative;
             width: 100%;
@@ -487,107 +486,128 @@
             $fichier = base_url($fichier);
         }
         
-        // Extraire l'ID YouTube du lien si nécessaire
+        // Extraire l'ID YouTube du lien si nécessaire (pour tous les types)
         if (empty($youtube_id) && !empty($lien)) {
             preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $lien, $matches);
             $youtube_id = $matches[1] ?? '';
         }
+        
+        // Détecter si c'est un lien YouTube (peu importe le type)
+        $is_youtube_link = !empty($youtube_id);
     ?>
         <div class="media-container">
             <div class="media-viewer" id="mediaViewer">
-                <?php switch($type):
-                    case 'video':
-                        // Lecture YouTube intégrée
-                        if (!empty($youtube_id)): ?>
-                            <div class="video-wrapper">
-                                <iframe 
-                                    src="https://www.youtube-nocookie.com/embed/<?= htmlspecialchars($youtube_id) ?>?autoplay=1&rel=0&modestbranding=1&showinfo=0&controls=1&fs=1&disablekb=1&iv_load_policy=3&color=white&theme=dark&hl=fr"
-                                    frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    allowfullscreen
-                                    title="<?= htmlspecialchars($media['titre']) ?>">
-                                </iframe>
-                            </div>
-                        <?php elseif (!empty($fichier)): ?>
-                            <video controls autoplay>
-                                <source src="<?= htmlspecialchars($fichier) ?>" type="video/mp4">
-                                Votre navigateur ne supporte pas la lecture vidéo.
-                            </video>
-                        <?php else: ?>
-                            <div class="text-center p-5">
-                                <i class="bi bi-play-circle" style="font-size: 4rem;"></i>
-                                <h4 class="mt-3">Vidéo non disponible</h4>
-                            </div>
-                        <?php endif;
-                        break;
-                        
-                    case 'audio':
-                        if (!empty($fichier)): ?>
-                            <div class="audio-container">
-                                <i class="bi bi-music-note-beamed" style="font-size: 4rem;"></i>
-                                <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
-                                <div class="audio-controls">
-                                    <button class="audio-btn" onclick="previousTrack()">
-                                        <i class="bi bi-skip-backward-fill"></i>
-                                    </button>
-                                    <button class="audio-btn play-pause" id="playPauseBtn" onclick="togglePlay()">
-                                        <i class="bi bi-play-fill"></i>
-                                    </button>
-                                    <button class="audio-btn" onclick="nextTrack()">
-                                        <i class="bi bi-skip-forward-fill"></i>
-                                    </button>
+                <?php 
+                // PRIORITÉ ABSOLUE : Si c'est un lien YouTube (quel que soit le type), on affiche l'iframe
+                if ($is_youtube_link): ?>
+                    <div class="video-wrapper">
+                        <iframe 
+                            src="https://www.youtube-nocookie.com/embed/<?= htmlspecialchars($youtube_id) ?>?autoplay=1&rel=0&modestbranding=1&showinfo=0&controls=1&fs=1&disablekb=1&iv_load_policy=3&color=white&theme=dark&hl=fr"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen
+                            title="<?= htmlspecialchars($media['titre']) ?>">
+                        </iframe>
+                    </div>
+                <?php 
+                // Sinon, on traite selon le type normal
+                else:
+                    switch($type):
+                        case 'video':
+                            if (!empty($fichier)): ?>
+                                <video controls autoplay>
+                                    <source src="<?= htmlspecialchars($fichier) ?>" type="video/mp4">
+                                    Votre navigateur ne supporte pas la lecture vidéo.
+                                </video>
+                            <?php else: ?>
+                                <div class="text-center p-5">
+                                    <i class="bi bi-play-circle" style="font-size: 4rem;"></i>
+                                    <h4 class="mt-3">Vidéo non disponible</h4>
                                 </div>
-                                <div class="progress-bar-custom">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span id="currentTime">0:00</span>
-                                        <span id="totalTime">0:00</span>
+                            <?php endif;
+                            break;
+                            
+                        case 'audio':
+                            if (!empty($fichier)): ?>
+                                <div class="audio-container">
+                                    <i class="bi bi-music-note-beamed" style="font-size: 4rem;"></i>
+                                    <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
+                                    <div class="audio-controls">
+                                        <button class="audio-btn" onclick="previousTrack()">
+                                            <i class="bi bi-skip-backward-fill"></i>
+                                        </button>
+                                        <button class="audio-btn play-pause" id="playPauseBtn" onclick="togglePlay()">
+                                            <i class="bi bi-play-fill"></i>
+                                        </button>
+                                        <button class="audio-btn" onclick="nextTrack()">
+                                            <i class="bi bi-skip-forward-fill"></i>
+                                        </button>
                                     </div>
-                                    <div class="progress" style="height: 6px; background: rgba(255,255,255,0.3); cursor: pointer;" onclick="seekAudio(event)">
-                                        <div class="progress-bar bg-white" id="progressFill" style="width: 0%;"></div>
+                                    <div class="progress-bar-custom">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span id="currentTime">0:00</span>
+                                            <span id="totalTime">0:00</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.3); cursor: pointer;" onclick="seekAudio(event)">
+                                            <div class="progress-bar bg-white" id="progressFill" style="width: 0%;"></div>
+                                        </div>
                                     </div>
+                                    <audio id="audioElement" src="<?= htmlspecialchars($fichier) ?>" preload="metadata"></audio>
                                 </div>
-                                <audio id="audioElement" src="<?= htmlspecialchars($fichier) ?>" preload="metadata"></audio>
-                            </div>
-                        <?php endif;
-                        break;
-                        
-                    case 'image':
-                        if (!empty($fichier)): ?>
-                            <img src="<?= htmlspecialchars($fichier) ?>" alt="<?= htmlspecialchars($media['titre']) ?>">
-                        <?php endif;
-                        break;
-                        
-                    case 'autre':
-                        if ($sous_type === 'book' || str_ends_with($fichier, '.pdf')): ?>
-                            <div class="text-center p-5">
-                                <i class="bi bi-file-earmark-pdf" style="font-size: 4rem; color: #e74c3c;"></i>
-                                <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
-                                <a href="<?= htmlspecialchars($fichier) ?>" target="_blank" class="btn btn-danger mt-3">
-                                    <i class="bi bi-download"></i> Télécharger le PDF
-                                </a>
-                            </div>
-                        <?php else: ?>
-                            <div class="text-center p-5">
-                                <i class="bi bi-file-earmark" style="font-size: 4rem;"></i>
-                                <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
-                                <a href="<?= htmlspecialchars($fichier) ?>" target="_blank" class="btn btn-primary mt-3">
-                                    <i class="bi bi-box-arrow-up-right"></i> Ouvrir le fichier
-                                </a>
-                            </div>
-                        <?php endif;
-                        break;
-                        
-                    default:
-                        if (!empty($lien)): ?>
-                            <div class="text-center p-5">
-                                <i class="bi bi-link-45deg" style="font-size: 4rem;"></i>
-                                <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
-                                <a href="<?= htmlspecialchars($lien) ?>" target="_blank" class="btn btn-primary mt-3">
-                                    <i class="bi bi-box-arrow-up-right"></i> Ouvrir le lien
-                                </a>
-                            </div>
-                        <?php endif;
-                endswitch; ?>
+                            <?php endif;
+                            break;
+                            
+                        case 'image':
+                            if (!empty($fichier)): ?>
+                                <img src="<?= htmlspecialchars($fichier) ?>" alt="<?= htmlspecialchars($media['titre']) ?>">
+                            <?php endif;
+                            break;
+                            
+                        case 'autre':
+                            if ($sous_type === 'book' || str_ends_with($fichier, '.pdf')): ?>
+                                <div class="text-center p-5">
+                                    <i class="bi bi-file-earmark-pdf" style="font-size: 4rem; color: #e74c3c;"></i>
+                                    <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
+                                    <a href="<?= htmlspecialchars($fichier) ?>" target="_blank" class="btn btn-danger mt-3">
+                                        <i class="bi bi-download"></i> Télécharger le PDF
+                                    </a>
+                                </div>
+                            <?php elseif (!empty($fichier)): ?>
+                                <div class="text-center p-5">
+                                    <i class="bi bi-file-earmark" style="font-size: 4rem;"></i>
+                                    <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
+                                    <a href="<?= htmlspecialchars($fichier) ?>" target="_blank" class="btn btn-primary mt-3">
+                                        <i class="bi bi-box-arrow-up-right"></i> Ouvrir le fichier
+                                    </a>
+                                </div>
+                            <?php endif;
+                            break;
+                            
+                        case 'link':
+                            // Pour les liens qui ne sont pas YouTube
+                            if (!empty($lien)): ?>
+                                <div class="text-center p-5">
+                                    <i class="bi bi-link-45deg" style="font-size: 4rem;"></i>
+                                    <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
+                                    <a href="<?= htmlspecialchars($lien) ?>" target="_blank" class="btn btn-primary mt-3">
+                                        <i class="bi bi-box-arrow-up-right"></i> Ouvrir le lien
+                                    </a>
+                                </div>
+                            <?php endif;
+                            break;
+                            
+                        default:
+                            if (!empty($lien)): ?>
+                                <div class="text-center p-5">
+                                    <i class="bi bi-link-45deg" style="font-size: 4rem;"></i>
+                                    <h3 class="mt-3"><?= htmlspecialchars($media['titre']) ?></h3>
+                                    <a href="<?= htmlspecialchars($lien) ?>" target="_blank" class="btn btn-primary mt-3">
+                                        <i class="bi bi-box-arrow-up-right"></i> Ouvrir le lien
+                                    </a>
+                                </div>
+                            <?php endif;
+                    endswitch;
+                endif; ?>
             </div>
             
             <div class="media-info">
@@ -872,8 +892,6 @@ function showToast(message, type = 'info') {
     new bootstrap.Toast(toast).show();
     setTimeout(() => toast.remove(), 3000);
 }
-
-function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
 document.addEventListener('DOMContentLoaded', function() {
     const currentRating = parseFloat('<?= $media['rating_avg'] ?? 0 ?>');
