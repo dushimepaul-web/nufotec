@@ -212,7 +212,7 @@
         </div>
 
     </div>
-</div>
+
 
 <!-- Modal Create -->
 <div class="modal fade" id="modalCreate" tabindex="-1">

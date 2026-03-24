@@ -2131,11 +2131,11 @@ document.addEventListener("DOMContentLoaded", () => {
             <!-- Formulaire -->
             <div class="col-lg-7" data-aos="fade-left">
                 <div class="newsletter-content">
-                    <span class="section-tag">Stay Informed</span>
-                    <h2 class="section-title">Subscribe to Our Newsletter</h2>
-                    <p class="newsletter-desc">
-                        Receive our latest news, exclusive offers, and health tips directly in your inbox. Enjoy 10% off your first order!
-                    </p>
+                    <span class="section-tag">Restez informé</span>
+                     <h2 class="section-title">Abonnez-vous à notre newsletter</h2>
+                     <p class="newsletter-desc">
+                       Recevez nos dernières actualités, offres exclusives et conseils santé directement dans votre boîte mail. Bénéficiez de 10% de réduction sur votre première commande !
+                      </p>
 
                     <form id="subscribeForm" method="POST" action="<?= base_url('Home/Abonner'); ?>" class="newsletter-form" novalidate>
                         

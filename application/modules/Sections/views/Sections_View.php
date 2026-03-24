@@ -282,24 +282,24 @@
                                 </td>
 
                                 <td class="text-center">
-                                    <?php if (!empty($value['deleted_at'])): ?>
-                                        <span class="badge bg-danger" style="font-size: 0.7rem;">
-                                            <i class="bx bx-trash"></i> Suppr.
-                                        </span>
-                                    <?php else: ?>
-                                        <form action="<?= base_url('Sections/ToggleStatus') ?>" method="POST" class="d-inline">
-                                            <input type="hidden" name="id" value="<?= $value['id_section'] ?>">
-                                            <div class="form-check form-switch d-flex justify-content-center">
-                                                <input class="form-check-input" type="checkbox" 
-                                                       name="est_active" 
-                                                       value="1" 
-                                                       <?= $is_active ? 'checked' : '' ?> 
-                                                       onchange="this.form.submit()"
-                                                       style="cursor: pointer;">
-                                            </div>
-                                        </form>
-                                    <?php endif; ?>
-                                </td>
+    <?php if (!empty($value['deleted_at'])): ?>
+        <span class="badge bg-danger" style="font-size: 0.7rem;">
+            <i class="bx bx-trash"></i> Suppr.
+        </span>
+    <?php else: ?>
+        <form action="<?= base_url('Sections/ToggleStatus') ?>" method="POST" class="d-inline" id="toggleForm-<?= $value['id_section'] ?>">
+            <input type="hidden" name="id_section" value="<?= $value['id_section'] ?>">
+            <div class="form-check form-switch d-flex justify-content-center">
+                <input class="form-check-input" type="checkbox" 
+                       name="est_active" 
+                       value="1" 
+                       <?= $is_active ? 'checked' : '' ?> 
+                       onchange="document.getElementById('toggleForm-<?= $value['id_section'] ?>').submit()"
+                       style="cursor: pointer;">
+            </div>
+        </form>
+    <?php endif; ?>
+</td>
 
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">

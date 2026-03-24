@@ -371,4 +371,72 @@ class Sections extends MY_Controller {
 
         return NULL;
     }
+
+
+
+    /**
+ * Activer/Désactiver une section (Toggle Status)
+ */
+public function ToggleStatus()
+{
+    // Vérifier si la requête est AJAX
+    if (!$this->input->is_ajax_request()) {
+        show_404();
+        return;
+    }
+
+    // Récupérer l'ID de la section (accepter 'id' ou 'id_section')
+    $id = $this->input->post('id_section');
+    if (empty($id)) {
+        $id = $this->input->post('id');
+    }
+    
+    if (empty($id)) {
+        $response = [
+            'success' => false,
+            'message' => 'ID de section manquant'
+        ];
+        echo json_encode($response);
+        return;
+    }
+
+    // Récupérer la section actuelle
+    $section = $this->Model->readOne('sections_contenu', ['id_section' => $id]);
+    
+    if (!$section) {
+        $response = [
+            'success' => false,
+            'message' => 'Section non trouvée'
+        ];
+        echo json_encode($response);
+        return;
+    }
+
+    // Inverser le statut est_active
+    $new_status = $section['est_active'] == 1 ? 0 : 1;
+    
+    // Mettre à jour la section
+    $update_data = [
+        'est_active' => $new_status,
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+    
+    $result = $this->Model->update('sections_contenu', ['id_section' => $id], $update_data);
+    
+    if ($result) {
+        $status_text = $new_status == 1 ? 'activée' : 'désactivée';
+        $response = [
+            'success' => true,
+            'message' => 'Section ' . $status_text . ' avec succès',
+            'new_status' => $new_status
+        ];
+    } else {
+        $response = [
+            'success' => false,
+            'message' => 'Erreur lors de la mise à jour du statut'
+        ];
+    }
+    
+    echo json_encode($response);
+}
 }
