@@ -1,19 +1,19 @@
 <script>
     /**
      * LOADING SPINNER NUFOTEC
-     * Affiche le spinner pendant 4 secondes puis le masque avec animation
+     * Affiche le spinner pendant 1 seconde puis le masque avec animation
      */
     (function() {
         'use strict';
         
-        const loader = document.getElementById("loadingSpinner");
+        var loader = document.getElementById("loadingSpinner");
         
         if (!loader) return; // Sécurité : si le spinner n'existe pas, ne rien faire
 
         // Attendre que la page soit complètement chargée
         window.addEventListener("load", function() {
             
-            // Délai de 4 secondes avant de masquer le spinner
+            // Délai de 1 seconde avant de masquer le spinner
             setTimeout(function() {
                 
                 // Ajouter la classe pour l'animation de disparition
@@ -28,7 +28,7 @@
                     
                 }, 400); // Durée de la transition CSS
                 
-            }, 1000); // 4 secondes d'affichage
+            }, 1000); // 1 seconde d'affichage
             
         });
         
@@ -59,32 +59,32 @@
                             if (!empty($site_logo)): 
                             ?>
                             <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" 
-                                 alt="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?>" 
+                                 alt="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'), ENT_QUOTES, 'UTF-8') ?>" 
                                  class="footer-logo">
                             <?php endif; ?>
                             <div class="brand-info">
-                                <h3><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?></h3>
-                                <span><?= htmlspecialchars($this->Model->get_setting('agf_slogan', 'Excellence Agro-Industrielle et Phytomédicinale')) ?></span>
+                                <h3><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'), ENT_QUOTES, 'UTF-8') ?></h3>
+                                <span><?= htmlspecialchars($this->Model->get_setting('agf_slogan', 'Excellence Agro-Industrielle et Phytomédicinale'), ENT_QUOTES, 'UTF-8') ?></span>
                             </div>
                         </div>
 
                         <p class="footer-desc">
-                            <?= htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi')) ?>
+                            <?= htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi'), ENT_QUOTES, 'UTF-8') ?>
                         </p>
 
                         <!-- Quick Contact -->
                         <div class="footer-quick-contact">
-                            <a href="tel:<?= htmlspecialchars($this->Model->get_setting('site_phone', '+257 79 666 439')) ?>" class="quick-contact-item">
+                            <a href="tel:<?= htmlspecialchars($this->Model->get_setting('site_phone', '+257 79 666 439'), ENT_QUOTES, 'UTF-8') ?>" class="quick-contact-item">
                                 <i class="bi bi-telephone-fill"></i>
-                                <span><?= htmlspecialchars($this->Model->get_setting('site_phone', '+257 79 666 439')) ?></span>
+                                <span><?= htmlspecialchars($this->Model->get_setting('site_phone', '+257 79 666 439'), ENT_QUOTES, 'UTF-8') ?></span>
                             </a>
-                            <a href="mailto:<?= htmlspecialchars($this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com')) ?>" class="quick-contact-item">
+                            <a href="mailto:<?= htmlspecialchars($this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com'), ENT_QUOTES, 'UTF-8') ?>" class="quick-contact-item">
                                 <i class="bi bi-envelope-fill"></i>
-                                <span><?= htmlspecialchars($this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com')) ?></span>
+                                <span><?= htmlspecialchars($this->Model->get_setting('contact_email_invest', 'nufotecburundi@gmail.com'), ENT_QUOTES, 'UTF-8') ?></span>
                             </a>
                             <a href="#" class="quick-contact-item" onclick="openMap(); return false;">
                                 <i class="bi bi-geo-alt-fill"></i>
-                                <span><?= htmlspecialchars($this->Model->get_setting('adresse_siege', 'Bujumbura, République du Burundi')) ?></span>
+                                <span><?= htmlspecialchars($this->Model->get_setting('adresse_siege', 'Bujumbura, République du Burundi'), ENT_QUOTES, 'UTF-8') ?></span>
                             </a>
                         </div>
 
@@ -108,12 +108,12 @@
                         
                         <div class="footer-accordion-content" id="footerNav1">
                             <ul class="footer-links">
-                                <li><a href="<?= base_url() ?>">Home</a></li>
-                                <li><a href="<?= base_url('a-propos') ?>">About Us</a></li>
-                                <li><a href="<?= base_url('boutique') ?>">Shop</a></li>
-                                <li><a href="<?= base_url('Medicins') ?>">Teleconsultation</a></li>
-                                <li><a href="<?= base_url('investissement') ?>">Investment</a></li>
-                                <li><a href="<?= base_url('Home/Media') ?>">News</a></li>
+                                <li><a href="<?= base_url() ?>">Accueil</a></li>
+                                <li><a href="<?= base_url('a-propos') ?>">À Propos</a></li>
+                                <li><a href="<?= base_url('boutique') ?>">Boutique</a></li>
+                                <li><a href="<?= base_url('Medicins') ?>">Téléconsultation</a></li>
+                                <li><a href="<?= base_url('investissement') ?>">Investissement</a></li>
+                                <li><a href="<?= base_url('Home/Media') ?>">Médias</a></li>
                                 <li><a href="<?= base_url('Home/Contact') ?>">Contact</a></li>
                             </ul>
                         </div>
@@ -122,29 +122,29 @@
                     <!-- Column 3: Our Services -->
                     <div class="footer-col footer-col-services">
                         <button class="footer-accordion-toggle d-lg-none" aria-expanded="false" aria-controls="footerNav2">
-                            <h4>Our Services</h4>
+                            <h4>Nos Services</h4>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <h4 class="d-none d-lg-block">Our Services</h4>
+                        <h4 class="d-none d-lg-block">Nos Services</h4>
                         
                         <div class="footer-accordion-content" id="footerNav2">
                             <ul class="footer-links">
                                 <li>
                                     <a href="<?= base_url('Medicins') ?>">
                                         <i class="bi bi-heart-pulse"></i>
-                                        Medical Consultation
+                                        Consultation Médicale
                                     </a>
                                 </li>
                                 <li>
                                     <a href="<?= base_url('boutique') ?>">
                                         <i class="bi bi-shop"></i>
-                                        Product Sales
+                                        Vente de Produits
                                     </a>
                                 </li>
                                 <li>
                                     <a href="<?= base_url('investissement') ?>">
                                         <i class="bi bi-graph-up-arrow"></i>
-                                        Investment Research
+                                        Recherche d'Investissement
                                     </a>
                                 </li>
                             </ul>
@@ -162,16 +162,16 @@
                     
                     <!-- Copyright -->
                     <div class="footer-copyright">
-                        <p>&copy; <?= date('Y') ?> <strong><?= htmlspecialchars($this->Model->get_setting('site_name', 'AGF Phytomed')) ?></strong>. All rights reserved.</p>
+                        <p>&copy; <?= date('Y') ?> <strong><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'), ENT_QUOTES, 'UTF-8') ?></strong>. Tous droits réservés.</p>
                     </div>
 
                     <!-- Legal Links -->
                     <div class="footer-legal">
-                        <p>designed by Dushime Paul : dushimeyesupaulin@gmail.com</p>
+                        <p>Conçu par Dushime Paul : dushimeyesupaulin@gmail.com</p>
                     </div>
 
                     <!-- Back to Top -->
-                    <button class="back-to-top" onclick="scrollToTop()" aria-label="Back to top">
+                    <button class="back-to-top" onclick="scrollToTop()" aria-label="Retour en haut">
                         <i class="bi bi-arrow-up"></i>
                     </button>
 
@@ -182,32 +182,86 @@
     </div>
 </footer>
 
+<!-- Floating Cart Button - Caché sur mobile -->
+<a href="<?= base_url('panier') ?>" class="floating-cart d-none d-md-flex" id="floatingCart" title="Mon panier">
+    <div class="cart-icon-wrapper">
+        <i class="bi bi-cart-fill"></i>
+        <span class="cart-badge" id="cartBadge">0</span>
+    </div>
+    <span class="cart-text">Panier</span>
+</a>
+
 <!-- Mobile Sticky Footer (App Style) -->
 <div class="mobile-sticky-footer d-lg-none">
-    <a href="<?= base_url() ?>" class="sticky-nav-item <?= current_url() == base_url() ? 'active' : '' ?>">
+    <a href="<?= base_url() ?>" class="sticky-nav-item <?= (current_url() == base_url()) ? 'active' : '' ?>">
         <i class="bi bi-house-door-fill"></i>
-        <span>Home</span>
+        <span>Accueil</span>
     </a>
-    <a href="<?= base_url('Home/Boutique') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('boutique') ?>" class="sticky-nav-item">
         <i class="bi bi-shop"></i>
-        <span>Shop</span>
+        <span>Boutique</span>
     </a>
     <a href="<?= base_url('Medicins') ?>" class="sticky-nav-item">
         <i class="bi bi-camera-video"></i>
-        <span>Teleconsult</span>
+        <span>Téléconsult</span>
     </a>
-    <a href="<?= base_url('Investors-form') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('investissement') ?>" class="sticky-nav-item">
         <i class="bi bi-graph-up-arrow"></i>
-        <span>Invest</span>
+        <span>Investir</span>
     </a>
     <a href="<?= base_url('panier') ?>" class="sticky-nav-item cart-item">
         <i class="bi bi-cart3"></i>
-        <span>Cart</span>
+        <span>Panier</span>
         <span class="sticky-badge" id="cart">0</span>
     </a>
-    <a href="<?= base_url('Home/Contact') ?>" class="sticky-nav-item">
-        <i class="bi bi-headset"></i>
-        <span>Contact</span>
+    
+    <?php 
+    // Récupérer les informations de l'utilisateur depuis la session (CodeIgniter 3)
+    $user_id = $this->session->userdata('user_id');
+    $user_photo = $this->session->userdata('photo');
+    $user_fullname = $this->session->userdata('fullname');
+    $user_type = $this->session->userdata('type_utilisateur');
+    $is_logged_in = $this->session->userdata('logged_in');
+
+    // Calculer les initiales pour le placeholder
+    $initials = '';
+    if ($is_logged_in && !empty($user_fullname)) {
+        $name_parts = explode(' ', trim($user_fullname));
+        if (count($name_parts) >= 2) {
+            $initials = strtoupper(substr($name_parts[0], 0, 1) . substr($name_parts[1], 0, 1));
+        } else {
+            $initials = strtoupper(substr($user_fullname, 0, 2));
+        }
+    }
+    
+    // Déterminer le lien de redirection selon le type d'utilisateur
+    $account_link = base_url('Auth');
+    if ($is_logged_in) {
+        if ($user_type == 'medecin') {
+            $account_link = base_url('home-medecin');
+        } elseif ($user_type == 'admin') {
+            $account_link = base_url('admin/dashboard');
+        } else {
+            $account_link = base_url('home-patient');
+        }
+    }
+    ?>
+    
+    <a href="<?= $account_link ?>" class="sticky-nav-item sticky-account" title="<?= $is_logged_in ? 'Mon compte' : 'Se connecter' ?>">
+        <div class="sticky-icon-wrapper">
+            <?php if ($is_logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
+                <div class="sticky-avatar">
+                    <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" 
+                         alt="<?= htmlspecialchars($user_fullname, ENT_QUOTES, 'UTF-8') ?>"
+                         class="avatar-img">
+                </div>
+            <?php elseif ($is_logged_in): ?>
+                <div class="avatar-placeholder"><?= $initials ?></div>
+            <?php else: ?>
+                <i class="bi bi-person-circle"></i>
+            <?php endif; ?>
+        </div>
+        <span><?= $is_logged_in ? 'Compte' : 'Connexion' ?></span>
     </a>
 </div>
 
@@ -228,9 +282,9 @@
 }
 
 .site-footer {
-    background: linear-gradient(180deg, var(--footer-bg-light) 0%, var(--footer-bg) 100%);
+    background: linear-gradient(135deg, var(--footer-bg-light) 0%, var(--footer-bg) 100%);
     color: var(--footer-text);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     position: relative;
     margin-top: auto;
 }
@@ -301,7 +355,7 @@
 }
 
 .brand-info h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.4rem;
     font-weight: 700;
     color: white;
@@ -478,21 +532,10 @@
     flex-wrap: wrap;
 }
 
-.footer-legal a {
-    color: var(--footer-text-muted);
-    text-decoration: none;
+.footer-legal p {
+    margin: 0;
     font-size: 0.85rem;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.footer-legal a:hover {
-    color: var(--footer-accent);
-}
-
-.footer-legal .separator {
     color: var(--footer-text-muted);
-    font-size: 8px;
 }
 
 .back-to-top {
@@ -515,6 +558,80 @@
     color: var(--footer-bg);
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+}
+
+/* ============================================
+   FLOATING CART BUTTON
+   ============================================ */
+.floating-cart {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, var(--footer-accent), #f4d03f);
+    color: var(--footer-bg);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1040;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+.floating-cart:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+    color: var(--footer-bg);
+}
+
+.cart-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.floating-cart i {
+    font-size: 24px;
+}
+
+.cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -12px;
+    background: #dc3545;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.cart-text {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Animation pour l'ajout au panier */
+@keyframes cartBump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.cart-badge.bump {
+    animation: cartBump 0.3s ease-in-out;
 }
 
 /* ============================================
@@ -582,6 +699,87 @@
     align-items: center;
     justify-content: center;
     border: 2px solid white;
+}
+
+/* ============================================
+   STICKY FOOTER ACCOUNT AVATAR
+   ============================================ */
+.sticky-nav-item.sticky-account {
+    position: relative;
+}
+
+/* Conteneur unifié pour l'icône/avatar */
+.sticky-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    position: relative;
+}
+
+/* Style pour l'avatar */
+.sticky-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-light);
+    border: 2px solid var(--footer-accent);
+    transition: all 0.3s ease;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Style pour le placeholder d'avatar (initiales) */
+.avatar-placeholder {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--footer-accent), #f4d03f);
+    color: var(--footer-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: 2px solid var(--footer-accent);
+    transition: all 0.3s ease;
+}
+
+/* Style pour les icônes */
+.sticky-icon-wrapper i {
+    font-size: 24px;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+/* Effets au survol */
+.sticky-nav-item.active .sticky-avatar,
+.sticky-nav-item:hover .sticky-avatar {
+    transform: scale(1.1);
+    border-color: var(--footer-accent);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+}
+
+.sticky-nav-item.active .avatar-placeholder,
+.sticky-nav-item:hover .avatar-placeholder {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+}
+
+.sticky-nav-item.active .sticky-icon-wrapper i,
+.sticky-nav-item:hover .sticky-icon-wrapper i {
+    color: var(--footer-accent);
+    transform: scale(1.1);
 }
 
 /* ============================================
@@ -726,6 +924,20 @@
         color: var(--footer-bg);
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
+    
+    .floating-cart {
+        bottom: 80px;
+        right: 20px;
+        padding: 10px 16px;
+    }
+    
+    .floating-cart i {
+        font-size: 20px;
+    }
+    
+    .cart-text {
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 576px) {
@@ -756,16 +968,45 @@
         font-size: 0.85rem;
     }
     
-    .footer-legal {
-        gap: 12px;
-    }
-    
-    .footer-legal a {
+    .footer-legal p {
         font-size: 0.8rem;
     }
     
-    .footer-legal .separator {
+    .sticky-icon-wrapper {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .sticky-icon-wrapper i {
+        font-size: 20px;
+    }
+    
+    .avatar-placeholder {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+    
+    .floating-cart {
+        bottom: 70px;
+        right: 15px;
+        padding: 8px 14px;
+    }
+    
+    .floating-cart i {
+        font-size: 18px;
+    }
+    
+    .cart-text {
         display: none;
+    }
+    
+    .cart-badge {
+        top: -6px;
+        right: -10px;
+        font-size: 10px;
+        min-width: 16px;
+        height: 16px;
     }
 }
 
@@ -799,6 +1040,10 @@
     }
     body {
         padding-bottom: 0;
+    }
+    
+    .floating-cart {
+        bottom: 20px;
     }
 }
 
@@ -839,24 +1084,26 @@
     // ============================================
     // FOOTER ACCORDIONS
     // ============================================
-    document.querySelectorAll('.footer-accordion-toggle').forEach(function(toggle) {
-        toggle.addEventListener('click', function() {
-            const expanded = this.getAttribute('aria-expanded') === 'true';
-            const contentId = this.getAttribute('aria-controls');
-            const content = document.getElementById(contentId);
+    var accordionToggles = document.querySelectorAll('.footer-accordion-toggle');
+    for (var i = 0; i < accordionToggles.length; i++) {
+        accordionToggles[i].addEventListener('click', function() {
+            var expanded = this.getAttribute('aria-expanded') === 'true';
+            var contentId = this.getAttribute('aria-controls');
+            var content = document.getElementById(contentId);
 
-            document.querySelectorAll('.footer-accordion-toggle').forEach(function(other) {
-                if (other !== toggle) {
-                    other.setAttribute('aria-expanded', 'false');
-                    const otherContent = document.getElementById(other.getAttribute('aria-controls'));
+            var allToggles = document.querySelectorAll('.footer-accordion-toggle');
+            for (var j = 0; j < allToggles.length; j++) {
+                if (allToggles[j] !== this) {
+                    allToggles[j].setAttribute('aria-expanded', 'false');
+                    var otherContent = document.getElementById(allToggles[j].getAttribute('aria-controls'));
                     if (otherContent) otherContent.classList.remove('open');
                 }
-            });
+            }
 
             this.setAttribute('aria-expanded', !expanded);
             if (content) content.classList.toggle('open');
         });
-    });
+    }
 
     // ============================================
     // UTILITAIRES
@@ -866,7 +1113,7 @@
     };
 
     window.openMap = function() {
-        const address = "<?= addslashes($this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi')) ?>";
+        var address = "<?= addslashes($this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi')) ?>";
         window.open('https://maps.google.com/?q=' + encodeURIComponent(address), '_blank');
     };
 
@@ -880,14 +1127,15 @@
     // ============================================
     // PANIER (ANTI SPAM + SAFE)
     // ============================================
-    let isFetchingCart = false;
+    var isFetchingCart = false;
+    var cartInterval = null;
 
     function updateCartBadges() {
         if (isFetchingCart) return;
         isFetchingCart = true;
 
-        const cartBadge = document.getElementById('cart');
-        const cartBadgeFloating = document.getElementById('cartBadge');
+        var cartBadge = document.getElementById('cart');
+        var cartBadgeFloating = document.getElementById('cartBadge');
 
         if (!cartBadge && !cartBadgeFloating) {
             isFetchingCart = false;
@@ -898,20 +1146,82 @@
             method: 'GET',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(response => {
+        .then(function(response) {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
         })
-        .then(data => {
-            const count = data.nb_articles || 0;
-
-            if (cartBadge) cartBadge.textContent = count;
-            if (cartBadgeFloating) cartBadgeFloating.textContent = count;
+        .then(function(data) {
+            var count = data.nb_articles || 0;
+            
+            // Mettre à jour le badge du sticky footer
+            if (cartBadge) {
+                cartBadge.textContent = count;
+            }
+            
+            // Mettre à jour le badge flottant avec animation
+            if (cartBadgeFloating) {
+                var oldCount = parseInt(cartBadgeFloating.textContent) || 0;
+                cartBadgeFloating.textContent = count;
+                
+                if (count > oldCount) {
+                    cartBadgeFloating.classList.add('bump');
+                    setTimeout(function() {
+                        cartBadgeFloating.classList.remove('bump');
+                    }, 300);
+                }
+            }
         })
-        .catch(() => {})
-        .finally(() => {
+        .catch(function() {})
+        .finally(function() {
             isFetchingCart = false;
         });
+    }
+
+    // Fonction pour ajouter au panier
+    window.addToCart = function(productId, quantity) {
+        quantity = quantity || 1;
+        
+        fetch(BASE_URL + 'panier/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'product_id=' + productId + '&quantity=' + quantity
+        })
+        .then(function(response) {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                updateCartBadges();
+                showNotification('Produit ajouté au panier !', 'success');
+            } else {
+                showNotification(data.message || 'Erreur lors de l\'ajout', 'error');
+            }
+        })
+        .catch(function() {
+            showNotification('Erreur lors de l\'ajout au panier', 'error');
+        });
+    };
+    
+    // Fonction pour afficher une notification
+    function showNotification(message, type) {
+        var notification = document.getElementById('cart-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'cart-notification';
+            notification.className = 'cart-notification';
+            document.body.appendChild(notification);
+        }
+        
+        notification.textContent = message;
+        notification.className = 'cart-notification ' + type + ' show';
+        
+        setTimeout(function() {
+            notification.classList.remove('show');
+        }, 3000);
     }
 
     // Exposer globalement
@@ -924,8 +1234,8 @@
         updateCartBadges();
 
         // Empêcher plusieurs intervals
-        if (!window.cartInterval) {
-            window.cartInterval = setInterval(updateCartBadges, 5000);
+        if (!cartInterval) {
+            cartInterval = setInterval(updateCartBadges, 5000);
         }
     }
 
@@ -937,3 +1247,60 @@
 
 })();
 </script>
+
+<!-- Cart Notification Styles -->
+<style>
+.cart-notification {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    background: var(--footer-bg);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1050;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    border-left: 4px solid var(--footer-accent);
+}
+
+.cart-notification.show {
+    transform: translateX(0);
+}
+
+.cart-notification.success {
+    border-left-color: #28a745;
+    background: linear-gradient(135deg, var(--footer-bg), #0a3326);
+}
+
+.cart-notification.error {
+    border-left-color: #dc3545;
+    background: linear-gradient(135deg, #2c1a1a, #1a0f0f);
+}
+
+@media (max-width: 992px) {
+    .cart-notification {
+        bottom: 90px;
+        right: 20px;
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .cart-notification {
+        bottom: 80px;
+        right: 15px;
+        left: 15px;
+        transform: translateY(100px);
+        text-align: center;
+    }
+    
+    .cart-notification.show {
+        transform: translateY(0);
+    }
+}
+</style>

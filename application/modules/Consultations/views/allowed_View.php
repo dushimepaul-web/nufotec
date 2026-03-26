@@ -56,8 +56,8 @@
                             <th width="15%">Patient</th>
                             <th width="12%">Médecin</th>
                             <th width="8%">Type</th>
-                            <th width="10%">Date</th>
-                            <th width="8%">Prix TTC</th>
+                            <th width="10%">Date debut consultation</th>
+                            <th width="8%">Prix</th>
                             <th width="10%">Live Consultation</th>
                         </tr>
                     </thead>
@@ -130,15 +130,11 @@
                             <td><?= $type_badge ?></td>
 
                             <td>
-                                <small><?= !empty($value['date_souhaitee']) ? date('d/m/Y H:i', strtotime($value['date_souhaitee'])) : '-' ?></small>
-                                <?php if (!empty($value['duree_minutes'])): ?>
-                                    <br><small class="text-muted"><?= $value['duree_minutes'] ?> min</small>
-                                <?php endif; ?>
+                                <?= !empty($value['date_debut']) ? date('d/m/Y H:i', strtotime($value['date_debut'])) : '-' ?>
                             </td>
 
                             <td>
-                                <strong class="text-success"><?= number_format($value['prix_ttc'] ?? 0, 2, ',', ' ') ?> €</strong>
-                                <br><small class="text-muted">HT: <?= number_format($value['prix_ht'] ?? 0, 2, ',', ' ') ?> €</small>
+                                <strong class="text-success"><?= number_format($value['prix_ttc'] ?? 0, 2, ',', ' ') ?> $</strong>
                             </td>
                             
 
@@ -230,13 +226,13 @@
                                                 <h6 class="text-primary border-bottom pb-2"><i class="bx bx-euro me-2"></i>Finances</h6>
                                                 <div class="row">
                                                     <div class="col-md-3">
-                                                        <p class="mb-1">Prix HT: <strong><?= number_format($value['prix_ht'], 2, ',', ' ') ?> €</strong></p>
+                                                        <p class="mb-1">Prix HT: <strong><?= number_format($value['prix_ht'], 2, ',', ' ') ?> $</strong></p>
                                                     </div>
                                                     <div class="col-md-3">
                                                         <p class="mb-1">TVA: <strong><?= $value['tva'] ?>%</strong></p>
                                                     </div>
                                                     <div class="col-md-3">
-                                                        <p class="mb-1">Prix TTC: <strong class="text-success"><?= number_format($value['prix_ttc'], 2, ',', ' ') ?> €</strong></p>
+                                                        <p class="mb-1">Prix TTC: <strong class="text-success"><?= number_format($value['prix_ttc'], 2, ',', ' ') ?> $</strong></p>
                                                     </div>
                                                     <div class="col-md-3">
                                                         <p class="mb-1">Paiement: <?= $paiement_badge ?></p>
@@ -455,7 +451,7 @@
                                                     <h6 class="card-title text-primary mb-3"><i class="bx bx-euro me-2"></i>Finances</h6>
                                                     <div class="row g-3">
                                                         <div class="col-md-3">
-                                                            <label class="form-label fw-bold">Prix HT (€) <span class="text-danger">*</span></label>
+                                                            <label class="form-label fw-bold">Prix HT ($) <span class="text-danger">*</span></label>
                                                             <input type="number" step="0.01" class="form-control" name="prix_ht" value="<?= $value['prix_ht'] ?>" required>
                                                         </div>
                                                         <div class="col-md-3">
@@ -463,7 +459,7 @@
                                                             <input type="number" step="0.01" class="form-control" name="tva" value="<?= $value['tva'] ?>">
                                                         </div>
                                                         <div class="col-md-3">
-                                                            <label class="form-label fw-bold">Prix TTC (€)</label>
+                                                            <label class="form-label fw-bold">Prix TTC ($)</label>
                                                             <input type="text" class="form-control" value="<?= number_format($value['prix_ttc'], 2) ?>" disabled>
                                                         </div>
                                                         <div class="col-md-3">
@@ -713,7 +709,7 @@
                             <h6 class="card-title text-primary mb-3"><i class="bx bx-euro me-2"></i>Finances</h6>
                             <div class="row g-3">
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold">Prix HT (€) <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold">Prix HT ($) <span class="text-danger">*</span></label>
                                     <input type="number" step="0.01" class="form-control" name="prix_ht" required placeholder="50.00">
                                 </div>
                                 <div class="col-md-3">

@@ -1242,13 +1242,14 @@ textarea.form-control {
 }
 </style>
 
-<a href="#main-content" class="skip-link"><i class="bi bi-skip-forward"></i> Skip to main content</a>
 
-<!-- HERO SECTION -->
+<a href="#main-content" class="skip-link"><i class="bi bi-skip-forward"></i> Passer au contenu principal</a>
+
+<!-- SECTION HERO -->
 <section class="consultation-hero">
     <div class="container">
-        <h1 id="hero-title"><i class="bi bi-heart-pulse"></i> Online Consultation</h1>
-        <p id="hero-subtitle"><i class="bi bi-shield-check"></i> Book an appointment with our phytotherapy doctors easily</p>
+        <h1 id="hero-title"><i class="bi bi-heart-pulse"></i> Consultation en ligne</h1>
+        <p id="hero-subtitle"><i class="bi bi-shield-check"></i> Prenez rendez-vous facilement avec nos médecins phytothérapeutes</p>
     </div>
 </section>
 
@@ -1257,18 +1258,17 @@ textarea.form-control {
     <div class="row">
         <!-- Colonne principale -->
         <div class="col-lg-8">
-            <!-- Barre de progression -->
+            <!-- Barre de progression (4 étapes seulement maintenant) -->
             <div class="consultation-progress" 
                  role="progressbar" 
-                 aria-valuenow="20" 
+                 aria-valuenow="25" 
                  aria-valuemin="0" 
                  aria-valuemax="100">
                 <div class="progress-steps">
                     <div class="progress-step active" id="step1-indicator"><i class="bi bi-person"></i></div>
                     <div class="progress-step" id="step2-indicator"><i class="bi bi-hospital"></i></div>
                     <div class="progress-step" id="step3-indicator"><i class="bi bi-file-earmark-medical"></i></div>
-                    <div class="progress-step" id="step4-indicator"><i class="bi bi-credit-card"></i></div>
-                    <div class="progress-step" id="step5-indicator"><i class="bi bi-check-lg"></i></div>
+                    <div class="progress-step" id="step4-indicator"><i class="bi bi-check-lg"></i></div>
                 </div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" id="progressBar"></div>
@@ -1283,7 +1283,7 @@ textarea.form-control {
                       enctype="multipart/form-data" 
                       novalidate>
                     
-                    <!-- Champs cachés pour les données du médecin (depuis PHP) -->
+                    <!-- Champs cachés pour les données du médecin -->
                     <input type="hidden" name="doctor_id" value="<?= htmlspecialchars($medecin['id'] ?? '') ?>">
                     <input type="hidden" name="doctor_uuid" value="<?= htmlspecialchars($medecin['uuid'] ?? '') ?>">
                     <input type="hidden" name="doctor_nom" value="<?= htmlspecialchars($medecin['nom'] ?? '') ?>">
@@ -1298,23 +1298,20 @@ textarea.form-control {
                            value="<?= get_csrf_hash() ?>">
                     <?php endif; ?>
                     
-                    <!-- Champ caché pour la méthode de paiement -->
-                    <input type="hidden" name="payment_method" id="payment_method_input">
-                    
                     <!-- ÉTAPE 1: Informations Personnelles -->
                     <div class="step-content" id="step1">
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-person-badge"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-person"></i> Personal Information</h2>
-                                <p><i class="bi bi-lock"></i> Your data is confidential</p>
+                                <h2><i class="bi bi-person"></i> Informations personnelles</h2>
+                                <p><i class="bi bi-lock"></i> Vos données sont confidentielles</p>
                             </div>
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group full-width">
                                 <label class="form-label" for="full_name">
-                                    <i class="bi bi-person"></i> Full name <span class="required">*</span>
+                                    <i class="bi bi-person"></i> Nom complet <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-person input-icon"></i>
@@ -1322,19 +1319,19 @@ textarea.form-control {
                                            class="form-control" 
                                            name="full_name" 
                                            id="full_name"
-                                           placeholder="e.g., John Doe"
+                                           placeholder="ex: Jean Dupont"
                                            required
                                            minlength="3"
                                            maxlength="100"
                                            value="<?= htmlspecialchars($this->session->userdata('fullname') ?: $this->session->userdata('fu') ?: '', ENT_QUOTES, 'UTF-8') ?>"
                                            <?= ($this->session->userdata('fullname') || $this->session->userdata('fu')) ? 'readonly' : '' ?>>
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Please enter your full name (min. 3 characters)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Veuillez saisir votre nom complet (minimum 3 caractères)</div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="age">
-                                    <i class="bi bi-calendar"></i> Age <span class="required">*</span>
+                                    <i class="bi bi-calendar"></i> Âge <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-calendar input-icon"></i>
@@ -1342,36 +1339,36 @@ textarea.form-control {
                                            class="form-control" 
                                            name="age" 
                                            id="age"
-                                           placeholder="e.g., 35"
+                                           placeholder="ex: 35"
                                            required
                                            min="1"
                                            max="120"
                                            value="<?= set_value('age'); ?>">
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Invalid age (1-120 years)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Âge invalide (1-120 ans)</div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">
-                                    <i class="bi bi-globe"></i> Country of residence <span class="required">*</span>
+                                    <i class="bi bi-globe"></i> Pays de résidence <span class="required">*</span>
                                 </label>
                                 <div class="autocomplete-container" style="position: relative;">
                                     <i class="bi bi-globe input-icon"></i>
                                     <input type="text" 
                                            class="form-control"  
                                            id="country_search" 
-                                           placeholder="Search for a country..." 
+                                           placeholder="Rechercher un pays..." 
                                            autocomplete="off"
                                            required>
                                     <input type="hidden" name="country" id="selected_country" value="<?= set_value('country'); ?>">
                                     <div id="autocomplete_list" class="autocomplete-results"></div>
-                                    <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Please select a country</div>
+                                    <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Veuillez sélectionner un pays</div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="weight">
-                                    <i class="bi bi-speedometer"></i> Weight (kg) <span class="required">*</span>
+                                    <i class="bi bi-speedometer"></i> Poids (kg) <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-speedometer input-icon"></i>
@@ -1379,19 +1376,19 @@ textarea.form-control {
                                            class="form-control" 
                                            name="weight" 
                                            id="weight"
-                                           placeholder="e.g., 70"
+                                           placeholder="ex: 70"
                                            required
                                            min="1"
                                            max="300"
                                            step="0.1"
                                            value="<?= set_value('weight'); ?>">
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Invalid weight (1-300 kg)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Poids invalide (1-300 kg)</div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="height">
-                                    <i class="bi bi-rulers"></i> Height (cm) <span class="required">*</span>
+                                    <i class="bi bi-rulers"></i> Taille (cm) <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-rulers input-icon"></i>
@@ -1399,19 +1396,19 @@ textarea.form-control {
                                            class="form-control" 
                                            name="height" 
                                            id="height"
-                                           placeholder="e.g., 175"
+                                           placeholder="ex: 175"
                                            required
                                            min="50"
                                            max="250"
                                            value="<?= set_value('height'); ?>">
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Invalid height (50-250 cm)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Taille invalide (50-250 cm)</div>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" disabled><i class="bi bi-arrow-left"></i> Back</button>
-                            <button type="button" class="btn-next" onclick="nextStep(1)">Next <i class="bi bi-arrow-right"></i></button>
+                            <button type="button" class="btn-prev" disabled><i class="bi bi-arrow-left"></i> Précédent</button>
+                            <button type="button" class="btn-next" onclick="nextStep(1)">Suivant <i class="bi bi-arrow-right"></i></button>
                         </div>
                     </div>
 
@@ -1420,14 +1417,14 @@ textarea.form-control {
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-hospital"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-activity"></i> Symptom description</h2>
-                                <p><i class="bi bi-pencil-square"></i> Be as specific as possible</p>
+                                <h2><i class="bi bi-activity"></i> Description des symptômes</h2>
+                                <p><i class="bi bi-pencil-square"></i> Soyez le plus précis possible</p>
                             </div>
                         </div>
 
                         <div class="form-group full-width" style="margin-bottom: 20px;">
                             <label class="form-label" for="symptoms">
-                                <i class="bi bi-chat-text"></i> Detailed symptoms <span class="required">*</span>
+                                <i class="bi bi-chat-text"></i> Symptômes détaillés <span class="required">*</span>
                             </label>
                             <textarea class="form-control" 
                                       name="symptoms" 
@@ -1435,46 +1432,46 @@ textarea.form-control {
                                       rows="6"
                                       required
                                       minlength="20"
-                                      placeholder="e.g., I've had a headache for 3 days..."><?= set_value('symptoms'); ?></textarea>
-                            <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Please describe your symptoms (min. 20 characters)</div>
+                                      placeholder="ex: J'ai des maux de tête depuis 3 jours..."><?= set_value('symptoms'); ?></textarea>
+                            <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Veuillez décrire vos symptômes (minimum 20 caractères)</div>
                         </div>
 
                         <div class="form-group full-width" style="margin-bottom: 20px;">
                             <label class="form-label" for="symptoms_duration">
-                                <i class="bi bi-clock-history"></i> Duration of symptoms
+                                <i class="bi bi-clock-history"></i> Durée des symptômes
                             </label>
                             <div style="position: relative;">
                                 <i class="bi bi-clock input-icon" style="top: 12px; transform: none;"></i>
                                 <select class="form-select" name="symptoms_duration" id="symptoms_duration" style="padding-left: 40px;">
-                                    <option value="">Select a duration</option>
-                                    <option value="24h" <?= set_select('symptoms_duration', '24h'); ?>>Less than 24h</option>
-                                    <option value="2-3j" <?= set_select('symptoms_duration', '2-3j'); ?>>2-3 days</option>
-                                    <option value="1sem" <?= set_select('symptoms_duration', '1sem'); ?>>One week</option>
-                                    <option value="2sem" <?= set_select('symptoms_duration', '2sem'); ?>>2 weeks</option>
-                                    <option value="1mois" <?= set_select('symptoms_duration', '1mois'); ?>>1 month or more</option>
+                                    <option value="">Sélectionner une durée</option>
+                                    <option value="24h" <?= set_select('symptoms_duration', '24h'); ?>>Moins de 24h</option>
+                                    <option value="2-3j" <?= set_select('symptoms_duration', '2-3j'); ?>>2-3 jours</option>
+                                    <option value="1sem" <?= set_select('symptoms_duration', '1sem'); ?>>Une semaine</option>
+                                    <option value="2sem" <?= set_select('symptoms_duration', '2sem'); ?>>2 semaines</option>
+                                    <option value="1mois" <?= set_select('symptoms_duration', '1mois'); ?>>1 mois ou plus</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="form-group full-width" style="margin-bottom: 20px;">
                             <label class="form-label">
-                                <i class="bi bi-question-circle"></i> Have you already consulted for this issue?
+                                <i class="bi bi-question-circle"></i> Avez-vous déjà consulté pour ce problème ?
                             </label>
                             <div class="radio-group">
                                 <label class="radio-option">
                                     <input type="radio" name="previous_consultation" value="yes" <?= set_radio('previous_consultation', 'yes'); ?>> 
-                                    <span><i class="bi bi-check-lg"></i> Yes</span>
+                                    <span><i class="bi bi-check-lg"></i> Oui</span>
                                 </label>
                                 <label class="radio-option">
                                     <input type="radio" name="previous_consultation" value="no" <?= set_radio('previous_consultation', 'no', true); ?>> 
-                                    <span><i class="bi bi-x-lg"></i> No</span>
+                                    <span><i class="bi bi-x-lg"></i> Non</span>
                                 </label>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" onclick="prevStep(2)"><i class="bi bi-arrow-left"></i> Back</button>
-                            <button type="button" class="btn-next" onclick="nextStep(2)">Next <i class="bi bi-arrow-right"></i></button>
+                            <button type="button" class="btn-prev" onclick="prevStep(2)"><i class="bi bi-arrow-left"></i> Précédent</button>
+                            <button type="button" class="btn-next" onclick="nextStep(2)">Suivant <i class="bi bi-arrow-right"></i></button>
                         </div>
                     </div>
 
@@ -1483,8 +1480,8 @@ textarea.form-control {
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-file-earmark-medical"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-folder"></i> Medical documents</h2>
-                                <p><i class="bi bi-shield-lock"></i> Secure transfer</p>
+                                <h2><i class="bi bi-folder"></i> Documents médicaux</h2>
+                                <p><i class="bi bi-shield-lock"></i> Transfert sécurisé</p>
                             </div>
                         </div>
 
@@ -1492,15 +1489,15 @@ textarea.form-control {
                             <div class="upload-header">
                                 <div class="upload-icon"><i class="bi bi-file-earmark-text"></i></div>
                                 <div>
-                                    <h4><i class="bi bi-clipboard-data"></i> Medical tests</h4>
-                                    <p><i class="bi bi-info-circle"></i> Tests, X-rays, reports (optional)</p>
+                                    <h4><i class="bi bi-clipboard-data"></i> Analyses médicales</h4>
+                                    <p><i class="bi bi-info-circle"></i> Analyses, radiographies, comptes-rendus (optionnel)</p>
                                 </div>
                             </div>
 
                             <div class="upload-box" tabindex="0">
                                 <i class="bi bi-cloud-arrow-up"></i>
-                                <span style="display: block; font-weight: 500; margin-bottom: 4px;">Click to upload</span>
-                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> PDF, JPG, PNG - Max 5 MB per file</small>
+                                <span style="display: block; font-weight: 500; margin-bottom: 4px;">Cliquez pour télécharger</span>
+                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> PDF, JPG, PNG - 5 Mo max par fichier</small>
                                 <input type="file" name="medical_docs[]" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="previewFiles(this, 'medical-preview')">
                             </div>
                             <div id="medical-preview" class="upload-preview"></div>
@@ -1510,141 +1507,92 @@ textarea.form-control {
                             <div class="upload-header">
                                 <div class="upload-icon"><i class="bi bi-capsule"></i></div>
                                 <div>
-                                    <h4><i class="bi bi-prescription"></i> Previous prescriptions</h4>
-                                    <p><i class="bi bi-info-circle"></i> Previous prescriptions (optional)</p>
+                                    <h4><i class="bi bi-prescription"></i> Ordonnances précédentes</h4>
+                                    <p><i class="bi bi-info-circle"></i> Ordonnances antérieures (optionnel)</p>
                                 </div>
                             </div>
 
                             <div class="upload-box" tabindex="0">
                                 <i class="bi bi-cloud-arrow-up"></i>
-                                <span style="display: block; font-weight: 500; margin-bottom: 4px;">Click to upload</span>
-                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> PDF, JPG, PNG - Max 5 MB per file</small>
+                                <span style="display: block; font-weight: 500; margin-bottom: 4px;">Cliquez pour télécharger</span>
+                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> PDF, JPG, PNG - 5 Mo max par fichier</small>
                                 <input type="file" name="prescriptions[]" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="previewFiles(this, 'prescription-preview')">
                             </div>
                             <div id="prescription-preview" class="upload-preview"></div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" onclick="prevStep(3)"><i class="bi bi-arrow-left"></i> Back</button>
-                            <button type="button" class="btn-next" onclick="nextStep(3)">Next <i class="bi bi-arrow-right"></i></button>
+                            <button type="button" class="btn-prev" onclick="prevStep(3)"><i class="bi bi-arrow-left"></i> Précédent</button>
+                            <button type="button" class="btn-next" onclick="nextStep(3)">Suivant <i class="bi bi-arrow-right"></i></button>
                         </div>
                     </div>
 
-                    <!-- ÉTAPE 4: Paiement -->
+                    <!-- ÉTAPE 4: Confirmation (anciennement étape 5) -->
                     <div class="step-content hidden" id="step4">
-                        <div class="form-header">
-                            <div class="header-icon"><i class="bi bi-credit-card"></i></div>
-                            <div class="header-text">
-                                <h2><i class="bi bi-wallet2"></i> Secure payment</h2>
-                                <p><i class="bi bi-lock"></i> Encrypted transaction</p>
-                            </div>
-                        </div>
-
-                        <div class="payment-section">
-                            <div class="payment-header">
-                                <h3><i class="bi bi-cash-stack"></i> Consultation fee</h3>
-                                <div class="payment-amount" id="payment-amount-display">
-                                    <?= htmlspecialchars($medecin['honoraires_consultation'] ?? 50) ?> 
-                                    <small><?= htmlspecialchars($medecin['currency'] ?? 'USD') ?></small>
-                                </div>
-                            </div>
-
-                            <div class="payment-methods" role="radiogroup" aria-label="Payment methods">
-                                <?php foreach($mode_payements as $mode): ?>
-                                <div class="payment-method" onclick="selectPaymentMethod('<?= htmlspecialchars($mode['description']) ?>')" tabindex="0" role="radio" aria-checked="false">
-                                    <i class="bi <?php 
-                                        switch($mode['description']) {
-                                            case 'Carte bancaire': echo 'bi-credit-card'; break;
-                                            case 'PayPal': echo 'bi-paypal'; break;
-                                            case 'Mobile Money': echo 'bi-phone'; break;
-                                            case 'Virement': echo 'bi-bank'; break;
-                                            default: echo 'bi-cash';
-                                        }
-                                    ?>"></i>
-                                    <span><?= htmlspecialchars($mode['description']) ?></span>
-                                    <small><?= htmlspecialchars($mode['description'] ?? '') ?></small>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <div class="upload-section" style="margin-bottom: 0;">
-                                <div class="upload-header">
-                                    <div class="upload-icon"><i class="bi bi-receipt"></i></div>
-                                    <div>
-                                        <h4><i class="bi bi-file-earmark-check"></i> Proof of payment <span class="required">*</span></h4>
-                                        <p><i class="bi bi-info-circle"></i> Receipt, screenshot, or reference</p>
-                                    </div>
-                                </div>
-
-                                <div class="upload-box" tabindex="0">
-                                    <i class="bi bi-cloud-arrow-up"></i>
-                                    <span style="display: block; font-weight: 500; margin-bottom: 4px;">Upload your proof</span>
-                                    <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> PDF, JPG, PNG - Max 5 MB</small>
-                                    <input type="file" name="payment_proof" id="payment_proof" accept=".pdf,.jpg,.jpeg,.png" required onchange="previewFiles(this, 'payment-preview')">
-                                </div>
-                                <div id="payment-preview" class="upload-preview"></div>
-                            </div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="button" class="btn-prev" onclick="prevStep(4)"><i class="bi bi-arrow-left"></i> Back</button>
-                            <button type="button" class="btn-next" onclick="nextStep(4)">Next <i class="bi bi-arrow-right"></i></button>
-                        </div>
-                    </div>
-
-                    <!-- ÉTAPE 5: Confirmation -->
-                    <div class="step-content hidden" id="step5">
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-check-circle"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-eye"></i> Summary</h2>
-                                <p><i class="bi bi-info-circle"></i> Check your information before confirming</p>
+                                <h2><i class="bi bi-eye"></i> Récapitulatif</h2>
+                                <p><i class="bi bi-info-circle"></i> Vérifiez vos informations avant de confirmer</p>
                             </div>
                         </div>
 
                         <div class="consultation-summary">
-                            <div class="summary-title"><i class="bi bi-person"></i> Personal information</div>
+                            <div class="summary-title"><i class="bi bi-person"></i> Informations personnelles</div>
                             <div class="summary-grid">
                                 <div class="summary-item">
-                                    <label><i class="bi bi-person"></i> Full name</label>
+                                    <label><i class="bi bi-person"></i> Nom complet</label>
                                     <div class="value" id="summary-name">-</div>
                                 </div>
                                 <div class="summary-item">
-                                    <label><i class="bi bi-calendar"></i> Age</label>
+                                    <label><i class="bi bi-calendar"></i> Âge</label>
                                     <div class="value" id="summary-age">-</div>
                                 </div>
                                 <div class="summary-item">
-                                    <label><i class="bi bi-globe"></i> Country</label>
+                                    <label><i class="bi bi-globe"></i> Pays</label>
                                     <div class="value" id="summary-country">-</div>
                                 </div>
                                 <div class="summary-item">
-                                    <label><i class="bi bi-rulers"></i> Weight / Height</label>
+                                    <label><i class="bi bi-rulers"></i> Poids / Taille</label>
                                     <div class="value" id="summary-size">-</div>
                                 </div>
                             </div>
 
-                            <div class="summary-title" style="margin-top: 20px;"><i class="bi bi-activity"></i> Symptoms</div>
+                            <div class="summary-title" style="margin-top: 20px;"><i class="bi bi-activity"></i> Symptômes</div>
                             <div class="summary-item" style="margin-bottom: 15px;">
                                 <div class="value" id="summary-symptoms" style="white-space: pre-wrap;">-</div>
                             </div>
 
                             <div class="summary-total">
-                                <span><i class="bi bi-cash-stack"></i> Total to pay</span>
-                                <span id="summary-total"><?= htmlspecialchars($medecin['honoraires_consultation'] ?? 50) ?> <?= htmlspecialchars($medecin['currency'] ?? 'USD') ?></span>
+                                <span><i class="bi bi-cash-stack"></i> Total à payer</span>
+                                <?php
+                                    $taux = $this->config->item('taux_devise');
+                                    $prix_usd = isset($medecin['honoraires_consultation']) ? (float)$medecin['honoraires_consultation'] : 50;
+                                    $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
+                                    $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
+                                ?>
+                                <span id="summary-total">
+                                    <?= number_format($prix_usd, 2) ?> USD
+                                    <br>
+                                    <small>
+                                        ≈ <?= number_format($prix_eur, 2) ?> EUR |
+                                        ≈ <?= number_format($prix_bif, 0) ?> BIF
+                                    </small>
+                                </span>
                             </div>
                         </div>
 
                         <div class="terms-checkbox">
                             <input type="checkbox" name="terms" id="terms" required>
                             <label for="terms">
-                                <i class="bi bi-file-text"></i> I accept the <a href="<?= base_url('conditions'); ?>" target="_blank"><i class="bi bi-link-45deg"></i> general terms and conditions of consultation</a> and the medical data privacy policy.
+                                <i class="bi bi-file-text"></i> J'accepte les <a href="<?= base_url('conditions'); ?>" target="_blank"><i class="bi bi-link-45deg"></i> conditions générales de consultation</a> et la politique de confidentialité des données médicales.
                             </label>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" onclick="prevStep(5)"><i class="bi bi-arrow-left"></i> Back</button>
+                            <button type="button" class="btn-prev" onclick="prevStep(4)"><i class="bi bi-arrow-left"></i> Précédent</button>
                             <button type="submit" class="btn-submit" id="submitBtn">
-                                <i class="bi bi-check-lg"></i> Confirm consultation
+                                <i class="bi bi-check-lg"></i> Confirmer la consultation
                             </button>
                         </div>
                     </div>
@@ -1652,75 +1600,76 @@ textarea.form-control {
             </div>
         </div>
 
-        <!-- Sidebar info -->
+        <!-- Sidebar info (inchangée) -->
         <div class="col-lg-4">
             <div class="info-panel">
-                
-                <!-- Carte Médecin (depuis PHP) -->
                 <div id="doctor-card-container">
                     <div class="doctor-info-card">
                         <div class="doctor-avatar-container">
                             <img src="<?= base_url('attachments/Users/' . htmlspecialchars($medecin['photo'] ?? '')) ?>" 
-                                 alt="<?= htmlspecialchars($medecin['nom'] ?? 'Doctor') ?>" 
+                                 alt="<?= htmlspecialchars($medecin['nom'] ?? 'Médecin') ?>" 
                                  class="doctor-avatar" 
                                  onerror="this.src='<?= base_url('assets/images/default-doctor.png') ?>'">
                             <span class="doctor-status"></span>
                         </div>
                         <h4 class="doctor-name">
-                            <i class="bi bi-person-badge"></i> Dr. <?= htmlspecialchars($medecin['prenom'] ?? '') . ' ' . htmlspecialchars($medecin['nom'] ?? '') ?>
+                            <i class="bi bi-person-badge"></i><?= htmlspecialchars($medecin['prenom'] ?? '') . ' ' . htmlspecialchars($medecin['nom'] ?? '') ?>
                         </h4>
                         <p class="doctor-specialty">
-                            <i class="bi bi-star-fill" style="color: var(--accent);"></i> <?= htmlspecialchars($medecin['specialite'] ?? 'General Practitioner') ?>
+                            <i class="bi bi-star-fill" style="color: var(--accent);"></i> <?= htmlspecialchars($medecin['specialite'] ?? 'Médecin généraliste') ?>
                         </p>
                         <div class="doctor-price">
-                            <span class="amount"><?= htmlspecialchars($medecin['honoraires_consultation'] ?? 50) ?></span>
-                            <span class="currency"><?= htmlspecialchars($medecin['currency'] ?? 'USD') ?></span>
+                            <span class="amount"><?= number_format($prix_usd ?? 50, 2) ?> USD</span>
+                            <br>
+                            <small>
+                                ≈ <?= number_format($prix_eur ?? 46, 2) ?> EUR |
+                                ≈ <?= number_format($prix_bif ?? 145000, 0) ?> BIF
+                            </small>
                         </div>
                         <a style="text-decoration: none;" href="javascript:void(0)" onclick="confirmChangeDoctor()" class="change-doctor-btn">
-                          <i class="bi bi-arrow-left"></i> Change doctor
-                         </a>
+                            <i class="bi bi-arrow-left"></i> Changer de médecin
+                        </a>
                     </div>
                 </div>
 
-                <h3><i class="bi bi-question-circle"></i> How it works?</h3>
+                <h3><i class="bi bi-question-circle"></i> Comment ça marche ?</h3>
                 <ul>
-                    <li><span>1</span> <i class="bi bi-pencil-square"></i> Fill out the form</li>
-                    <li><span>2</span> <i class="bi bi-chat-text"></i> Describe your symptoms</li>
-                    <li><span>3</span> <i class="bi bi-upload"></i> Upload your documents</li>
-                    <li><span>4</span> <i class="bi bi-credit-card"></i> Make the payment</li>
-                    <li><span>5</span> <i class="bi bi-person-check"></i> A doctor will respond within 24h</li>
+                    <li><span>1</span> <i class="bi bi-pencil-square"></i> Remplissez le formulaire</li>
+                    <li><span>2</span> <i class="bi bi-chat-text"></i> Décrivez vos symptômes</li>
+                    <li><span>3</span> <i class="bi bi-upload"></i> Téléchargez vos documents</li>
+                    <li><span>4</span> <i class="bi bi-credit-card"></i> Effectuez le paiement</li>
+                    <li><span>5</span> <i class="bi bi-person-check"></i> Un médecin répondra sous 24h</li>
                 </ul>
 
                 <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
 
                 <div style="margin-bottom: 15px;">
-    <strong style="font-weight: bold; display: block; margin-bottom: 5px;">
-        <i class="bi bi-wallet2" style="margin-right: 5px;"></i> Accepted payment methods:
-    </strong>
-    <?php foreach($mode_payements as $mode): ?>
-    <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 24px; align-items: center;">
-        <i class="bi <?php 
-                        switch($mode['description']) {
-                            case 'Carte bancaire': echo 'bi-credit-card'; break;
-                            case 'PayPal': echo 'bi-paypal'; break;
-                            case 'Mobile Money': echo 'bi-phone'; break;
-                            case 'Virement': echo 'bi-bank'; break;
-                            default: echo 'bi-cash';
-                        }
-                    ?>" style="font-size: 24px;"></i>
-        <span style="font-size: 16px; font-weight: 500;"><?= htmlspecialchars($mode['description']) ?></span>
-        <small style="font-size: 12px; color: #6c757d; margin-left: auto;"><?= htmlspecialchars($mode['description'] ?? '') ?></small>
-    </div>
-    <?php endforeach; ?>
-</div>
+                    <strong style="font-weight: bold; display: block; margin-bottom: 5px;">
+                        <i class="bi bi-wallet2" style="margin-right: 5px;"></i> Modes de paiement acceptés :
+                    </strong>
+                    <?php foreach($mode_payements as $mode): ?>
+                    <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 24px; align-items: center;">
+                        <i class="bi <?php 
+                            switch($mode['description']) {
+                                case 'Carte bancaire': echo 'bi-credit-card'; break;
+                                case 'PayPal': echo 'bi-paypal'; break;
+                                case 'Mobile Money': echo 'bi-phone'; break;
+                                case 'Virement': echo 'bi-bank'; break;
+                                default: echo 'bi-cash';
+                            }
+                        ?>" style="font-size: 24px;"></i>
+                        <span style="font-size: 16px; font-weight: 500;"><?= htmlspecialchars($mode['description']) ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
 
                 <div class="alert alert-info">
                     <i class="bi bi-shield-check"></i>
-                    <small>100% secure and encrypted payment</small>
+                    <small>Paiement 100% sécurisé et crypté</small>
                 </div>
 
                 <div style="text-align: center; margin-top: 20px;">
-                    <small style="color: var(--text-muted);"><i class="bi bi-headset"></i> Need help?</small><br>
+                    <small style="color: var(--text-muted);"><i class="bi bi-headset"></i> Besoin d'aide ?</small><br>
                     <a href="tel:+25779666439" style="color: var(--primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
                         <i class="bi bi-telephone"></i> <?= $this->Model->get_setting('contact_whatsapp', '+257 79 666 439') ?>
                     </a>
@@ -1734,27 +1683,42 @@ textarea.form-control {
 <div class="success-modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="success-content">
         <div><i class="bi bi-check-circle-fill"></i></div>
-        <h2 id="modalTitle"><i class="bi bi-emoji-smile"></i> Thank you!</h2>
-        <p><i class="bi bi-envelope-check"></i> Your consultation request has been submitted successfully. A doctor will contact you within 24 hours.</p>
+        <h2 id="modalTitle"><i class="bi bi-emoji-smile"></i> Merci !</h2>
+        <p><i class="bi bi-envelope-check"></i> Votre demande de consultation a été soumise avec succès. Un médecin vous contactera dans les 24 heures.</p>
         
         <div class="tracking-box">
-            <label><i class="bi bi-upc-scan"></i> Tracking number</label>
+            <label><i class="bi bi-upc-scan"></i> Numéro de suivi</label>
             <div class="number" id="trackingNumber"><i class="bi bi-hash"></i> -</div>
         </div>
         
         <button class="btn" onclick="window.location.href='<?= base_url(); ?>'">
-            <i class="bi bi-house"></i> Back to home
+            <i class="bi bi-house"></i> Retour à l'accueil
         </button>
     </div>
 </div>
 
 <script>
+// Mettre à jour le nombre total d'étapes
+const CONFIG = {
+    totalSteps: 4,  // Changé de 5 à 4
+    currentStep: 1,
+    formData: {}
+};
 
+// Mettre à jour la fonction getStepIcon
+function getStepIcon(step) {
+    const icons = [
+        '<i class="bi bi-person"></i>', 
+        '<i class="bi bi-hospital"></i>', 
+        '<i class="bi bi-file-earmark-medical"></i>', 
+        '<i class="bi bi-check-lg"></i>'
+    ];
+    return icons[step - 1] || step;
+}
 
-    //suprimer les session
-
+// Le reste du script reste identique
 function confirmChangeDoctor() {
-    if (confirm('Are you sure you want to change doctor? The entered information will be lost.')) {
+    if (confirm('Êtes-vous sûr de vouloir changer de médecin ? Les informations saisies seront perdues.')) {
         var form = document.createElement('form');
         form.method = 'POST';
         form.action = '<?= base_url('Swap-medecin') ?>';
@@ -1773,9 +1737,6 @@ function confirmChangeDoctor() {
     }
 }
 
-// ============================================
-// DONNÉES PHP VERS JAVASCRIPT
-// ============================================
 const countries = <?= json_encode($pays ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 const doctorData = {
     nom: '<?= htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''), ENT_QUOTES) ?>',
@@ -1785,17 +1746,13 @@ const doctorData = {
     photo: '<?= base_url('attachments/Users/' . htmlspecialchars($medecin['photo'] ?? '', ENT_QUOTES)) ?>'
 };
 
-// ============================================
-// GESTION DE L'AUTOCOMPLETE PAYS
-// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     initializeAutocomplete();
     initializeFormValidation();
     
-    // Mettre à jour les titres avec le nom du médecin
     const heroTitle = document.querySelector('.consultation-hero h1');
     if (heroTitle) {
-        heroTitle.innerHTML = `<i class="bi bi-heart-pulse"></i> Consultation With ${doctorData.nom}`;
+        heroTitle.innerHTML = `<i class="bi bi-heart-pulse"></i> Consultation avec Dr. ${doctorData.nom}`;
     }
 });
 
@@ -1857,15 +1814,6 @@ function selectCountry(country, searchInput, hiddenInput, resultsList) {
     searchInput.classList.add('is-valid');
 }
 
-// ============================================
-// GESTION DU FORMULAIRE MULTI-ÉTAPES
-// ============================================
-const CONFIG = {
-    totalSteps: 5,
-    currentStep: 1,
-    formData: {}
-};
-
 function initializeFormValidation() {
     updateProgress();
     loadSavedData();
@@ -1919,11 +1867,6 @@ function updateProgress() {
     
     const progress = (CONFIG.currentStep / CONFIG.totalSteps) * 100;
     document.getElementById('progressBar').style.width = progress + '%';
-}
-
-function getStepIcon(step) {
-    const icons = ['<i class="bi bi-person"></i>', '<i class="bi bi-hospital"></i>', '<i class="bi bi-file-earmark-medical"></i>', '<i class="bi bi-credit-card"></i>', '<i class="bi bi-check-lg"></i>'];
-    return icons[step - 1] || step;
 }
 
 function nextStep(step) {
@@ -2024,18 +1967,8 @@ function validateStep(step) {
             }
             break;
             
-        case 4:
-            const paymentMethod = document.getElementById('payment_method_input');
-            if (!paymentMethod || !paymentMethod.value) {
-                showNotification('Veuillez sélectionner une méthode de paiement', 'error');
-                isValid = false;
-            }
-            
-            const paymentProof = document.getElementById('payment_proof');
-            if (paymentProof && !paymentProof.files.length) {
-                paymentProof.parentElement.style.borderColor = 'var(--error)';
-                isValid = false;
-            }
+        case 3:
+            // Validation des documents médicaux (optionnels, pas de validation stricte)
             break;
     }
     
@@ -2086,9 +2019,10 @@ function saveStepData(step) {
         case 2:
             CONFIG.formData.symptoms = document.getElementById('symptoms')?.value || '';
             CONFIG.formData.symptoms_duration = document.getElementById('symptoms_duration')?.value || '';
+            CONFIG.formData.previous_consultation = document.querySelector('input[name="previous_consultation"]:checked')?.value || '';
             break;
-        case 4:
-            CONFIG.formData.payment_method = document.getElementById('payment_method_input')?.value || '';
+        case 3:
+            // Documents optionnels
             break;
     }
     
@@ -2121,22 +2055,6 @@ function updateSummary() {
     document.getElementById('summary-symptoms').textContent = CONFIG.formData.symptoms || '-';
 }
 
-function selectPaymentMethod(method) {
-    document.querySelectorAll('.payment-method').forEach(el => {
-        el.classList.remove('selected');
-        el.setAttribute('aria-checked', 'false');
-    });
-    
-    const selected = event.currentTarget;
-    selected.classList.add('selected');
-    selected.setAttribute('aria-checked', 'true');
-    
-    const input = document.getElementById('payment_method_input');
-    if (input) {
-        input.value = method;
-    }
-}
-
 function previewFiles(input, previewId) {
     const preview = document.getElementById(previewId);
     const files = Array.from(input.files);
@@ -2163,7 +2081,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Gestion soumission formulaire
 document.getElementById('consultationForm').addEventListener('submit', function(e) {
     const terms = document.getElementById('terms');
     
@@ -2183,7 +2100,6 @@ document.getElementById('consultationForm').addEventListener('submit', function(
     sessionStorage.removeItem('consultation_form');
 });
 
-// Fermeture modal avec Escape
 document.addEventListener('keydown', function(e) {
     const modal = document.getElementById('successModal');
     if (e.key === 'Escape' && modal && modal.classList.contains('active')) {

@@ -84,6 +84,111 @@ class Model extends CI_Model {
 
 
 
+/**
+ * Récupérer une consultation par son ID
+ */
+public function getConsultationById($id) {
+    $this->db->select('c.*, u.nom as patient_nom, u.prenom as patient_prenom, u.email as patient_email');
+    $this->db->from('consultations c');
+    $this->db->join('users u', 'u.id = c.patient_id', 'left');
+    $this->db->where('c.id', $id);
+    $query = $this->db->get();
+    return $query->row_array();
+}
+
+/**
+ * Récupérer une consultation par son numéro de consultation
+ * @param string $numero Numéro de consultation
+ * @return array|false
+ */
+/**
+ * Récupérer une consultation par son numéro avec toutes les informations
+ * @param string $numero Numéro de consultation
+ * @return array|false
+ */
+/**
+ * Récupérer une consultation par son numéro avec toutes les informations
+ * @param string $numero Numéro de consultation
+ * @return array|false
+ */
+public function getConsultationByNumber($numero) {
+    $this->db->select('c.*, 
+                       u.nom as patient_nom, 
+                       u.prenom as patient_prenom, 
+                       u.email as patient_email,
+                       u.telephone as patient_telephone,
+                       p.pays as pays_nom,
+                       p.id_country as pays_code');
+    $this->db->from('consultations c');
+    $this->db->join('users u', 'u.id = c.patient_id', 'left');
+    $this->db->join('pays p', 'p.id = c.country_id', 'left');  // Utilisez country_id
+    $this->db->where('c.numero_consultation', $numero);
+    $query = $this->db->get();
+    return $query->row_array();
+}
+
+/**
+ * Récupérer un pays par son nom
+ * @param string $nom Nom du pays
+ * @return array|false
+ */
+public function getPaysByName($nom) {
+    $this->db->select('id, id_country, pays');
+    $this->db->where('pays', $nom);
+    $query = $this->db->get('pays');
+    return $query->row_array();
+}
+
+/**
+ * Vérifier s'il y a une consultation en attente de paiement pour un patient
+ * @param int $patient_id ID du patient
+ * @return array|false
+ */
+public function getPendingConsultationByPatient($patient_id) {
+    $this->db->select('id, numero_consultation, prix_ht, devise, paiement_statut, created_at');
+    $this->db->from('consultations');
+    $this->db->where('patient_id', $patient_id);
+    $this->db->where('paiement_statut', 'en_attente');
+    $this->db->order_by('created_at', 'DESC');
+    $this->db->limit(1);
+    $query = $this->db->get();
+    return $query->row_array();
+}
+
+/**
+ * Récupérer un médecin par son ID avec toutes les informations
+ * @param int $id ID du médecin
+ * @return array|false
+ */
+public function getDoctorById($id) {
+    $this->db->select('m.*, u.nom, u.prenom, u.email, u.telephone, u.photo');
+    $this->db->from('medecins m');
+    $this->db->join('users u', 'u.id = m.user_id', 'left');
+    $this->db->where('m.id', $id);
+    $query = $this->db->get();
+    return $query->row_array();
+}
+
+
+/**
+ * Récupérer un utilisateur par son ID
+ */
+public function getUserById($id) {
+    $this->db->select('id, nom, prenom, email, telephone');
+    $this->db->where('id', $id);
+    $query = $this->db->get('users');
+    return $query->row_array();
+}
+
+/**
+ * Récupérer les modes de paiement actifs
+ */
+public function getActivePaymentMethods() {
+    $this->db->where('est_actif', 1);
+    $this->db->order_by('id_mode_payement', 'ASC');
+    $query = $this->db->get('mode_payement');
+    return $query->result_array();
+}
     /**
      * Insertion multiple (batch)
      * 

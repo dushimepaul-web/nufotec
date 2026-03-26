@@ -56,8 +56,8 @@
                             <th width="15%">Patient</th>
                             <th width="12%">Médecin</th>
                             <th width="8%">Type</th>
-                            <th width="10%">Date</th>
-                            <th width="8%">Prix TTC</th>
+                            <th width="10%">Date debut Consultation</th>
+                            <th width="8%">Prix</th>
                             <th width="10%">Statut</th>
                             <th width="8%">Paiement</th>
                             <th width="12%">Actions</th>
@@ -131,15 +131,12 @@
                             <td><?= $type_badge ?></td>
 
                             <td>
-                                <small><?= !empty($value['date_souhaitee']) ? date('d/m/Y H:i', strtotime($value['date_souhaitee'])) : '-' ?></small>
-                                <?php if (!empty($value['duree_minutes'])): ?>
-                                    <br><small class="text-muted"><?= $value['duree_minutes'] ?> min</small>
-                                <?php endif; ?>
+                                <?= !empty($value['date_debut']) ? date('d/m/Y H:i', strtotime($value['date_debut'])) : '-' ?>
                             </td>
 
                             <td>
-                                <strong class="text-success"><?= number_format($value['prix_ttc'] ?? 0, 2, ',', ' ') ?> €</strong>
-                                <br><small class="text-muted">HT: <?= number_format($value['prix_ht'] ?? 0, 2, ',', ' ') ?> €</small>
+                                <strong class="text-success"><?= number_format($value['prix_ttc'] ?? 0, 2, ',', ' ') ?> $</strong>
+                                <br><small class="text-muted">HT: <?= number_format($value['prix_ht'] ?? 0, 2, ',', ' ') ?> $</small>
                             </td>
 
                             <td class="text-center">
@@ -239,7 +236,7 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <p><strong>Type :</strong> <?= strip_tags($type_badge) ?></p>
-                                                <p><strong>Date souhaitée :</strong> <?= !empty($value['date_souhaitee']) ? date('d/m/Y H:i', strtotime($value['date_souhaitee'])) : '-' ?></p>
+                                                <p><strong>Date souhaitée :</strong> <?= !empty($value['date_debut']) ? date('d/m/Y H:i', strtotime($value['date_debut'])) : '-' ?></p>
                                                 <p><strong>Durée prévue :</strong> <?= $value['duree_minutes'] ?? 30 ?> min</p>
                                                 <?php if (!empty($value['date_debut'])): ?>
                                                     <p><strong>Début effectif :</strong> <?= date('d/m/Y H:i', strtotime($value['date_debut'])) ?></p>
@@ -374,16 +371,13 @@
                                         <!-- Informations de paiement -->
                                         <div class="row mt-3 p-3 bg-light rounded">
                                             <div class="col-md-6">
-                                                <p><strong>Prix HT :</strong> <?= number_format($value['prix_ht'], 2, ',', ' ') ?> €</p>
-                                                <p><strong>TVA :</strong> <?= $value['tva'] ?>%</p>
-                                                <p><strong>Prix TTC :</strong> <?= number_format($value['prix_ttc'] ?? 0, 2, ',', ' ') ?> €</p>
+                                                <p><strong>Prix :</strong> <?= number_format($value['prix_ttc'] ?? 0, 2, ',', ' ') ?> $</p>
                                             </div>
                                             <div class="col-md-6">
                                                 <p><strong>Statut paiement :</strong> <?= strip_tags($paiement_badge) ?></p>
                                                 <?php if (!empty($value['mode_paiement'])): ?>
                                                     <p><strong>Mode de paiement :</strong> <?= htmlspecialchars($value['mode_paiement']) ?></p>
                                                 <?php endif; ?>
-                                                <p><strong>IP de création :</strong> <?= htmlspecialchars($value['ip_creation'] ?? '-') ?></p>
                                             </div>
                                         </div>
 
@@ -464,8 +458,8 @@
                                                         </div>
                                                         <div class="col-md-3">
                                                             <label class="form-label fw-bold">Date souhaitée <span class="text-danger">*</span></label>
-                                                            <input type="datetime-local" class="form-control" name="date_souhaitee" 
-                                                                   value="<?= !empty($value['date_souhaitee']) ? date('Y-m-d\TH:i', strtotime($value['date_souhaitee'])) : '' ?>" required>
+                                                            <input type="datetime-local" class="form-control" name="date_debut" 
+                                                                   value="<?= !empty($value['date_debut']) ? date('Y-m-d\TH:i', strtotime($value['date_debut'])) : '' ?>" required>
                                                         </div>
                                                         <div class="col-md-3">
                                                             <label class="form-label fw-bold">Date confirmée</label>
@@ -532,15 +526,9 @@
                                                     <h6 class="card-title text-primary mb-3"><i class="bx bx-euro me-2"></i>Finances</h6>
                                                     <div class="row g-3">
                                                         <div class="col-md-3">
-                                                            <label class="form-label fw-bold">Prix HT (€) <span class="text-danger">*</span></label>
-                                                            <input type="number" step="0.01" class="form-control" name="prix_ht" value="<?= $value['prix_ht'] ?>" required>
-                                                        </div>
+                                                            
                                                         <div class="col-md-3">
-                                                            <label class="form-label fw-bold">TVA (%)</label>
-                                                            <input type="number" step="0.01" class="form-control" name="tva" value="<?= $value['tva'] ?>">
-                                                        </div>
-                                                        <div class="col-md-3">
-                                                            <label class="form-label fw-bold">Prix TTC (€)</label>
+                                                            <label class="form-label fw-bold">Prix TTC ($)</label>
                                                             <input type="text" class="form-control" value="<?= number_format($value['prix_ttc'], 2) ?>" disabled>
                                                         </div>
                                                         <div class="col-md-3">
@@ -854,7 +842,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold">Date souhaitée <span class="text-danger">*</span></label>
-                                    <input type="datetime-local" class="form-control" name="date_souhaitee" required>
+                                    <input type="datetime-local" class="form-control" name="date_debut" required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold">Durée (min) <span class="text-danger">*</span></label>
@@ -897,7 +885,7 @@
                             <h6 class="card-title text-primary mb-3"><i class="bx bx-euro me-2"></i>Finances</h6>
                             <div class="row g-3">
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold">Prix HT (€) <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold">Prix HT ($) <span class="text-danger">*</span></label>
                                     <input type="number" step="0.01" class="form-control" name="prix_ht" required>
                                 </div>
                                 <div class="col-md-3">

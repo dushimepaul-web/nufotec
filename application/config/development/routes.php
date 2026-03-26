@@ -325,3 +325,8 @@ $route['actualite/(:any)'] = 'Home/Blog/article/$1';
 
 
 $route['question'] = 'Home/faq';
+
+
+
+$route['PatientForm'] = 'Consultations/PatientForm';
+

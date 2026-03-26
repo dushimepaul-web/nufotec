@@ -1447,16 +1447,16 @@
                     strtoupper(substr($user_name, 0, 2));
             }
             ?>
-            <a href="<?= $logged_in ? base_url('home-patient') : base_url('Auth') ?>" class="action-btn" title="<?= $logged_in ? 'My account' : 'Sign in' ?>">
-                <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
-                    <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
-                <?php elseif ($logged_in): ?>
-                    <div class="avatar-placeholder"><?= $initials ?></div>
-                <?php else: ?>
-                    <i class="bi bi-person-circle"></i>
-                <?php endif; ?>
-                <span class="d-none d-lg-inline"><?= $logged_in ? 'My account' : 'Sign in' ?></span>
-            </a>
+            <a href="<?= $logged_in ? base_url('home-patient') : base_url('Auth') ?>" class="action-btn d-none d-lg-flex" title="<?= $logged_in ? 'My account' : 'Sign in' ?>">
+    <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
+        <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
+    <?php elseif ($logged_in): ?>
+        <div class="avatar-placeholder"><?= $initials ?></div>
+    <?php else: ?>
+        <i class="bi bi-person-circle"></i>
+    <?php endif; ?>
+    <span class="d-none d-lg-inline"><?= $logged_in ? 'My account' : 'Sign in' ?></span>
+</a>
 
             <div class="lang-selector d-none d-lg-block">
                 <?php 

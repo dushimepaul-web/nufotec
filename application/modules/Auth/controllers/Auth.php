@@ -200,29 +200,52 @@ class Auth extends MY_Controller {
     }
 
     // ==================== API INSCRIPTION ====================
-    public function register() {
+    // ==================== API INSCRIPTION ====================
+public function register() {
+    // Activer l'affichage des erreurs pour le débogage
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    
+    try {
         if (!$this->input->is_ajax_request()) {
-            show_404();
+            $this->json_response(false, 'Requête non autorisée');
+            return;
         }
 
         $fullname = trim($this->input->post('fullname', TRUE));
-        $email = strtolower($this->input->post('email', TRUE));
+        $email = strtolower(trim($this->input->post('email', TRUE)));
+        $phone = trim($this->input->post('phone', TRUE));
         $password = $this->input->post('password');
         $confirm_password = $this->input->post('confirm_password');
-
+        
+        // Validation
         $errors = [];
 
+        // Validation nom
         if (empty($fullname) || strlen($fullname) < 2) {
             $errors[] = 'Le nom complet doit contenir au moins 2 caractères';
         }
+        
+        // Validation email
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Veuillez entrer une adresse email valide';
         }
+        
+        // Validation téléphone
+        if (empty($phone)) {
+            $errors[] = 'Le numéro de téléphone est requis';
+        } elseif (!preg_match('/^\+\d{8,15}$/', $phone)) {
+            $errors[] = 'Le numéro de téléphone doit être au format international (ex: +257XXXXXXXXX)';
+        }
+        
+        // Validation mot de passe
         if (empty($password) || strlen($password) < 8) {
             $errors[] = 'Le mot de passe doit contenir au moins 8 caractères';
         } elseif (!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
             $errors[] = 'Le mot de passe doit contenir au moins une majuscule et un chiffre';
         }
+        
+        // Confirmation mot de passe
         if ($password !== $confirm_password) {
             $errors[] = 'Les mots de passe ne correspondent pas';
         }
@@ -232,17 +255,37 @@ class Auth extends MY_Controller {
             return;
         }
 
+        // Séparer le nom et prénom
         $name_parts = explode(' ', $fullname, 2);
-        $prenom = $name_parts[0];
-        $nom = $name_parts[1] ?? '';
+        $nom = isset($name_parts[0]) ? strtoupper($name_parts[0]) : '';
+        $prenom = ucfirst(strtolower($name_parts[1]));
+        
+
+        // Hasher le mot de passe
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        // Vérifier si l'email existe déjà
+        if ($this->Login->email_exists($email)) {
+            $this->json_response(false, 'Cet email est déjà utilisé');
+            return;
+        }
+
+        // Vérifier si le téléphone existe déjà
+        if ($this->Login->phone_exists($phone)) {
+            $this->json_response(false, 'Ce numéro de téléphone est déjà utilisé');
+            return;
+        }
 
         $data = [
             'nom' => $nom,
             'prenom' => $prenom,
             'email' => $email,
-            'password' => $password,
-            'type_utilisateur' => 'patient',
-            'date_creation' => date('Y-m-d H:i:s')
+            'telephone' => $phone,
+            'password' => $hashed_password,
+            'type_utilisateur' => 'visiteur',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'is_active' => 1
         ];
 
         $result = $this->Login->create_user($data);
@@ -254,8 +297,41 @@ class Auth extends MY_Controller {
 
         $this->json_response(true, 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.', [
             'redirect' => base_url('Auth'),
-            'email' => $email
+            'email' => $email,
+            'phone' => $phone
         ]);
+        
+    } catch (Exception $e) {
+        log_message('error', 'Erreur inscription: ' . $e->getMessage());
+        $this->json_response(false, 'Erreur serveur: ' . $e->getMessage());
+    }
+}
+    /**
+     * Déterminer le type d'utilisateur selon l'URL de provenance
+     */
+    private function determine_user_type($referer) {
+        // Type par défaut
+        $default_type = 'visiteur';
+        
+        if (empty($referer)) {
+            return $default_type;
+        }
+        
+        $referer_lower = strtolower($referer);
+        
+        // Vérifier si l'utilisateur vient de la page médecin
+        if (strpos($referer_lower, 'medicins') !== false || 
+            strpos($referer_lower, 'doctor') !== false) {
+            return 'patient';
+        }
+        
+        // Vérifier si l'utilisateur vient de la page panier/commande (acheteur)
+        if (strpos($referer_lower, 'panier') !== false || 
+            strpos($referer_lower, 'commande') !== false) {
+            return 'acheteur';
+        }
+        
+        return $default_type;
     }
 
     // ==================== VÉRIFICATION EMAIL ====================
@@ -313,11 +389,13 @@ class Auth extends MY_Controller {
 
     // ==================== UTILITAIRES ====================
     private function json_response($success, $message, $data = []) {
-        header('Content-Type: application/json');
-        echo json_encode(array_merge(
+        $response = array_merge(
             ['success' => $success, 'message' => $message],
             $data
-        ));
-        exit;
+        );
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
     }
 }

@@ -34,70 +34,102 @@ class PatientForm extends MY_Controller {
     }
     
     public function index()
-    {   
-        // Check if user is logged in
-        if (!$this->session->userdata('user_id')) {
-            redirect('Auth'); // not logged in → login page
+{   
+    // Check if user is logged in
+    if (!$this->session->userdata('user_id')) {
+        redirect('Auth'); // not logged in → login page
+    }
+
+    // Automatic redirect if user tries to access the login page
+    if ($this->uri->segment(1) === 'Auth') {
+        redirect('Dashboard/patient_dashboard');
+    }
+
+    // ============================================
+    // VÉRIFIER S'IL Y A UNE CONSULTATION EN ATTENTE DE PAIEMENT
+    // ============================================
+    $patient_id = $this->session->userdata('user_id');
+    
+    // Vérifier s'il existe une consultation en attente de paiement pour ce patient
+    $pending_consultation = $this->Model->getPendingConsultationByPatient($patient_id);
+    
+    if ($pending_consultation) {
+        // Rediriger vers la page de paiement avec le numéro de consultation
+        $this->session->set_flashdata('warning', 'Vous avez une consultation en attente de paiement. Veuillez finaliser votre paiement.');
+        redirect('Consultations/Payment/index/' . $pending_consultation['numero_consultation']);
+        return;
+    }
+
+    // Check if a doctor UUID was sent via POST
+    // Récupérer l'UUID du médecin depuis GET ou POST
+    $doctor_uuid = $this->input->get('doctor_uuid') ?: $this->input->post('selected_doctor_uuid');
+
+    $medecin = null;
+
+    if ($doctor_uuid) {
+        // Fetch doctor directly from database
+        $medecin = $this->Model->getDoctorByUUID($doctor_uuid);
+
+        if (!$medecin) {
+            $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
+            redirect('Medicins');
         }
 
-        // Automatic redirect if user tries to access the login page
-        if ($this->uri->segment(1) === 'Auth') {
+        // Data is returned directly to the view, not stored in session
+
+    } else {
+        // No UUID in POST → check session
+        $doctor_data = $this->session->userdata('pending_doctor');
+
+        if (!$doctor_data || $doctor_data['expires_at'] < time()) {
+            // Session expired or not present
+            $this->session->unset_userdata('pending_doctor');
+            $this->session->set_flashdata('error', 'Please select a doctor.');
+            redirect('Medicins');
+        }
+
+        // Fetch doctor from database using UUID stored in session
+        $medecin = $this->Model->getDoctorByUUID($doctor_data['uuid']);
+
+        if (!$medecin) {
+            $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
             redirect('Dashboard/patient_dashboard');
         }
-
-        // Check if a doctor UUID was sent via POST
-        // Récupérer l'UUID du médecin depuis GET ou POST
-          $doctor_uuid = $this->input->get('doctor_uuid') ?: $this->input->post('selected_doctor_uuid');
-    
-          $medecin = null;
-       
-
-
-        if ($doctor_uuid) {
-            // Fetch doctor directly from database
-            $medecin = $this->Model->getDoctorByUUID($doctor_uuid);
-
-            if (!$medecin) {
-                $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
-                redirect('Medicins');
-            }
-
-            // Data is returned directly to the view, not stored in session
-
-        } else {
-            // No UUID in POST → check session
-            $doctor_data = $this->session->userdata('pending_doctor');
-
-
-            if (!$doctor_data || $doctor_data['expires_at'] < time()) {
-                // Session expired or not present
-                $this->session->unset_userdata('pending_doctor');
-                $this->session->set_flashdata('error', 'Please select a doctor.');
-                redirect('Medicins');
-            }
-
-            // Fetch doctor from database using UUID stored in session
-            $medecin = $this->Model->getDoctorByUUID($doctor_data['uuid']);
-
-            if (!$medecin) {
-                $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
-                redirect('Dashboard/patient_dashboard');
-            }
-        }
-
-        // Prepare data for the view
-        $data = [
-            'title'          => 'New Consultation - NUFOTEC',
-            'pays'           => $this->Model->read('pays', null, 'pays', 'ASC'),
-            'mode_payements' => $this->Model->read('mode_payement', null, 'id_mode_payement'),
-            'is_logged_in'   => TRUE,
-            'user_id'        => $this->session->userdata('user_id'),
-            'medecin'        => $medecin
-        ];
-
-        // Load the view
-        $this->load->view('PatientForm_View', $data);
     }
+
+    // Récupérer les taux depuis config.php
+    $taux = $this->config->item('taux_devise');
+
+    // ===== PRIX =====
+    $prix_usd = isset($medecin['honoraires_consultation']) 
+        ? (float)$medecin['honoraires_consultation'] 
+        : 50;
+
+    // ===== CONVERSIONS =====
+    $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
+    $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
+
+    // ===== DEVISE =====
+    $devise = $medecin['currency'] ?? 'USD';
+
+    // Prepare data for the view
+    $data = [
+        'title'          => 'Nouvelle consultation - NUFOTEC',
+        'pays'           => $this->Model->read('pays', null, 'pays', 'ASC'),
+        'mode_payements' => $this->Model->read('mode_payement', null, 'id_mode_payement'),
+        'is_logged_in'   => TRUE,
+        'user_id'        => $this->session->userdata('user_id'),
+        'medecin'        => $medecin,
+        'prix_usd'       => $prix_usd,
+        'prix_eur'       => $prix_eur,
+        'prix_bif'       => $prix_bif,
+        'devise'         => $devise,
+        'taux'           => $taux
+    ];
+
+    // Load the view
+    $this->load->view('PatientForm_View', $data);
+}
 
     /**
      * Change doctor via POST
@@ -165,170 +197,177 @@ class PatientForm extends MY_Controller {
 
     /**
      * Process the consultation form
-     */
-    public function create()
-    {    
-
-        // Check POST method
-       // if ($this->input->server('REQUEST_METHOD') !== 'POST') {
-       //     redirect('patient-form');
-       // }
-
-        // Check user login
-        $patient_id = $this->session->userdata('user_id');
-        if (!$patient_id) {
-            $this->session->set_flashdata('error', 'Please log in to submit a consultation.');
-            redirect('Auth');
-        }
-
-        // ========== VALIDATION ==========
-        $this->form_validation->set_rules('full_name', 'Full name', 'required|trim|min_length[3]|max_length[100]');
-        $this->form_validation->set_rules('age', 'Age', 'required|integer|greater_than[0]|less_than[121]');
-        $this->form_validation->set_rules('country', 'Country of residence', 'required|trim|max_length[100]');
-        $this->form_validation->set_rules('weight', 'Weight', 'required|numeric|greater_than[0]|less_than[300]');
-        $this->form_validation->set_rules('height', 'Height', 'required|integer|greater_than[50]|less_than[251]');
-        $this->form_validation->set_rules('symptoms', 'Symptoms', 'required|trim|min_length[20]|max_length[5000]');
-        $this->form_validation->set_rules('symptoms_duration', 'Duration of symptoms', 'trim');
-        $this->form_validation->set_rules('previous_consultation', 'Previous consultation', 'trim|in_list[yes,no]');
-        $this->form_validation->set_rules('payment_method', 'Payment method', 'required|trim');
-        $this->form_validation->set_rules('terms', 'Terms and conditions', 'required');
-
-        if ($this->form_validation->run() === FALSE) {
-            $this->session->set_flashdata('error', validation_errors('<div>', '</div>'));
-            redirect('PatientForm');
-        }
-
-        // Get doctor data from the form
-        $doctor_id = $this->input->post('doctor_id', TRUE);
-        $doctor_uuid = $this->input->post('doctor_uuid', TRUE);
-        $consultation_prix = $this->input->post('consultation_prix', TRUE) ?: 50;
-        $consultation_devise = $this->input->post('consultation_devise', TRUE) ?: 'USD';
-
-        // Verify that the doctor still exists
-        $medecin = null;
-        if ($doctor_uuid) {
-            $medecin = $this->Model->getDoctorByUUID($doctor_uuid);
-            if (!$medecin) {
-                $this->session->set_flashdata('error', 'The selected doctor is no longer available.');
-                redirect('Medicins');
-            }
-        }
-
-        // ========== GENERATE CONSULTATION NUMBER ==========
-        $numero_consultation = $this->_generate_consultation_number();
-
-        // ========== FILE UPLOADS USING YOUR FUNCTION ==========
-        
-        // 1. Medical documents (optional, multiple)
-        $medical_docs = [];
-        if (!empty($_FILES['medical_docs']['name'][0])) {
-            $medical_docs = $this->_upload_multiple_files_custom('medical_docs');
-        }
-        
-        // 2. Prescriptions (optional, multiple)
-        $prescriptions = [];
-        if (!empty($_FILES['prescriptions']['name'][0])) {
-            $prescriptions = $this->_upload_multiple_files_custom('prescriptions');
-        }
-        
-        // 3. Payment proof (required, single)
-        $payment_proof = '';
-        if (!empty($_FILES['payment_proof']['name'])) {
-            $payment_proof = $this->upload_image(
-                $_FILES['payment_proof']['tmp_name'],
-                $_FILES['payment_proof']['name']
-            );
-        }
-
-        if (empty($payment_proof)) {
-            // Clean up already uploaded files
-            $this->_cleanup_files(array_merge($medical_docs, $prescriptions));
-            
-            $this->session->set_flashdata('error', 'Payment proof is required (PDF, JPG, PNG - max 5MB).');
-            redirect('PatientForm');
-        }
-
-        // ========== PREPARE DATA ==========
-        $consultation_data = [
-            'numero_consultation' => $numero_consultation,
-            'patient_id'          => $patient_id,
-            'medecin_id'          => $doctor_id ?: NULL,
-            'type'                => 'video',
-            'poids'               => $this->input->post('weight', TRUE),
-            'taille'              => $this->input->post('height', TRUE),
-            'symptomes'           => $this->input->post('symptoms', TRUE),
-            'duree_symptomes'     => $this->input->post('symptoms_duration', TRUE),
-            'consultation_precedente' => $this->input->post('previous_consultation', TRUE),
-            'examens_demandes'    => !empty($medical_docs) ? json_encode($medical_docs) : NULL,
-            'ordonnances'         => !empty($prescriptions) ? json_encode($prescriptions) : NULL,
-            'diagnostic'          => NULL,
-            'traitement'          => NULL,
-            'notes_medecin'       => NULL,
-            'date_confirmee'      => NULL,
-            'date_debut'          => NULL,
-            'date_fin'            => NULL,
-            'duree_minutes'       => 30,
-            'room_id'             => NULL,
-            'statut'              => 'en_attente',
-            'motif_annulation'    => NULL,
-            'prix_ht'             => $consultation_prix,
-            'devise'              => $consultation_devise,
-            'tva'                 => 0.00,
-            'paiement_statut'     => 'paye',
-            'mode_paiement'       => $this->input->post('payment_method', TRUE),
-            'preuve_paiement'     => $payment_proof,
-            'ip_creation'         => $this->input->ip_address(),
-            'created_at'          => date('Y-m-d H:i:s'),
-            'updated_at'          => date('Y-m-d H:i:s')
-        ];
-
-        // ========== INSERT ==========
-        $insert_id = $this->Model->create('consultations', $consultation_data);
-
-        if (!$insert_id) {
-            // Clean up all files on failure
-            $all_files = array_merge($medical_docs, $prescriptions, [$payment_proof]);
-            $this->_cleanup_files($all_files);
-            
-            $this->session->set_flashdata('error', 'Error saving the consultation.');
-            redirect('PatientForm');
-        }
-
-        // Clear the pending_doctor session after success
-        $this->session->unset_userdata('pending_doctor');
-
-        // ========== SEND NOTIFICATION EMAILS ==========
-        // Prepare email data
-        $email_data = [
-            'consultation_id'     => $insert_id,
-            'numero_consultation' => $numero_consultation,
-            'patient_id'          => $patient_id,
-            'doctor_id'           => $doctor_id,
-            'full_name'           => $this->input->post('full_name', TRUE),
-            'age'                 => $this->input->post('age', TRUE),
-            'country'             => $this->input->post('country', TRUE),
-            'weight'              => $this->input->post('weight', TRUE),
-            'height'              => $this->input->post('height', TRUE),
-            'symptoms'            => $this->input->post('symptoms', TRUE),
-            'symptoms_duration'   => $this->input->post('symptoms_duration', TRUE),
-            'previous_consultation' => $this->input->post('previous_consultation', TRUE),
-            'payment_method'      => $this->input->post('payment_method', TRUE),
-            'consultation_prix'   => $consultation_prix,
-            'consultation_devise' => $consultation_devise,
-            'medecin'             => $medecin,
-            'medical_docs'        => $medical_docs,
-            'prescriptions'       => $prescriptions
-        ];
-        
-        // Send emails (non-blocking - don't stop if email fails)
-        $this->_send_consultation_emails($email_data);
-
-        // ========== SUCCESS ==========
-        $this->session->set_flashdata('success', 'Your consultation has been created successfully.');
-        $this->session->set_flashdata('tracking_number', $numero_consultation);
-        
-        redirect('home-patient');
+/**
+ * Créer une nouvelle consultation
+ */
+public function create()
+{    
+    // Vérifier la méthode POST
+    if ($this->input->server('REQUEST_METHOD') !== 'POST') {
+        redirect('PatientForm');
     }
+
+    // Check user login
+    $patient_id = $this->session->userdata('user_id');
+    if (!$patient_id) {
+        $this->session->set_flashdata('error', 'Veuillez vous connecter pour soumettre une consultation.');
+        redirect('Auth');
+    }
+
+    // ========== VALIDATION ==========
+    $this->form_validation->set_rules('full_name', 'Nom complet', 'required|trim|min_length[3]|max_length[100]');
+    $this->form_validation->set_rules('age', 'Âge', 'required|integer|greater_than[0]|less_than[121]');
+    $this->form_validation->set_rules('country', 'Pays de résidence', 'required|trim|max_length[100]');
+    $this->form_validation->set_rules('weight', 'Poids', 'required|numeric|greater_than[0]|less_than[300]');
+    $this->form_validation->set_rules('height', 'Taille', 'required|integer|greater_than[50]|less_than[251]');
+    $this->form_validation->set_rules('symptoms', 'Symptômes', 'required|trim|min_length[20]|max_length[5000]');
+    $this->form_validation->set_rules('symptoms_duration', 'Durée des symptômes', 'trim');
+    $this->form_validation->set_rules('previous_consultation', 'Consultation précédente', 'trim|in_list[yes,no]');
+    $this->form_validation->set_rules('terms', 'Conditions générales', 'required');
+
+    if ($this->form_validation->run() === FALSE) {
+        $this->session->set_flashdata('error', validation_errors('<div>', '</div>'));
+        redirect('PatientForm');
+    }
+
+    // Get doctor data from the form
+    $doctor_id = $this->input->post('doctor_id', TRUE);
+    $doctor_uuid = $this->input->post('doctor_uuid', TRUE);
+    $consultation_prix = $this->input->post('consultation_prix', TRUE) ?: 50;
+    $consultation_devise = $this->input->post('consultation_devise', TRUE) ?: 'USD';
+
+    // Verify that the doctor still exists
+    $medecin = null;
+    if ($doctor_uuid) {
+        $medecin = $this->Model->getDoctorByUUID($doctor_uuid);
+        if (!$medecin) {
+            $this->session->set_flashdata('error', 'Le médecin sélectionné n\'est plus disponible.');
+            redirect('Medicins');
+        }
+    }
+
+    // ========== RÉCUPÉRER L'ID DU PAYS ==========
+    $country_id = null;
+    $country_name = $this->input->post('country', TRUE);
+    if (!empty($country_name)) {
+        // Chercher l'ID du pays dans la table pays
+        $pays = $this->Model->getPaysByName($country_name);
+        if ($pays) {
+            $country_id = $pays['id'];
+        } else {
+            // Si le pays n'existe pas, on peut l'ajouter ou laisser NULL
+            // Pour l'instant on laisse NULL
+            $country_id = null;
+        }
+    }
+
+    // ========== RÉCUPÉRER L'ÂGE ==========
+    $age = $this->input->post('age', TRUE);
+
+    // ========== GENERATE CONSULTATION NUMBER ==========
+    $numero_consultation = $this->_generate_consultation_number();
+
+    // ========== FILE UPLOADS ==========
+    
+    // 1. Medical documents (optional, multiple)
+    $medical_docs = [];
+    if (!empty($_FILES['medical_docs']['name'][0])) {
+        $medical_docs = $this->_upload_multiple_files_custom('medical_docs');
+    }
+    
+    // 2. Prescriptions (optional, multiple)
+    $prescriptions = [];
+    if (!empty($_FILES['prescriptions']['name'][0])) {
+        $prescriptions = $this->_upload_multiple_files_custom('prescriptions');
+    }
+
+    // ========== PREPARE DATA ==========
+    $consultation_data = [
+        'numero_consultation' => $numero_consultation,
+        'patient_id'          => $patient_id,
+        'medecin_id'          => $doctor_id ?: NULL,
+        'type'                => 'video',
+        'poids'               => $this->input->post('weight', TRUE),
+        'taille'              => $this->input->post('height', TRUE),
+        'country_id'          => $country_id,           // NOUVEAU: ID du pays
+        'age'                 => $age,                  // NOUVEAU: Âge du patient
+        'symptomes'           => $this->input->post('symptoms', TRUE),
+        'duree_symptomes'     => $this->input->post('symptoms_duration', TRUE),
+        'consultation_precedente' => $this->input->post('previous_consultation', TRUE),
+        'examens_demandes'    => !empty($medical_docs) ? json_encode($medical_docs) : NULL,
+        'ordonnances'         => !empty($prescriptions) ? json_encode($prescriptions) : NULL,
+        'diagnostic'          => NULL,
+        'traitement'          => NULL,
+        'notes_medecin'       => NULL,
+        'date_souhaitee'      => date('Y-m-d H:i:s', strtotime('+7 days')), // Date souhaitée par défaut
+        'date_confirmee'      => NULL,
+        'date_debut'          => NULL,
+        'date_fin'            => NULL,
+        'duree_minutes'       => 30,
+        'room_id'             => NULL,
+        'room_url'            => NULL,
+        'statut'              => 'en_attente',
+        'honoraires_consultation' => 0.00,
+        'motif_annulation'    => NULL,
+        'prix_ht'             => $consultation_prix,
+        'devise'              => $consultation_devise,
+        'tva'                 => 0.00,
+        'paiement_statut'     => 'en_attente',
+        'mode_paiement'       => NULL,
+        'preuve_paiement'     => NULL,
+        'ip_creation'         => $this->input->ip_address(),
+        'created_at'          => date('Y-m-d H:i:s'),
+        'updated_at'          => date('Y-m-d H:i:s')
+    ];
+
+    // ========== INSERT ==========
+    $insert_id = $this->Model->create('consultations', $consultation_data);
+
+    if (!$insert_id) {
+        // Clean up all files on failure
+        $all_files = array_merge($medical_docs, $prescriptions);
+        $this->_cleanup_files($all_files);
+        
+        $this->session->set_flashdata('error', 'Erreur lors de l\'enregistrement de la consultation.');
+        redirect('PatientForm');
+    }
+
+    // Clear the pending_doctor session after success
+    $this->session->unset_userdata('pending_doctor');
+
+    // ========== SEND NOTIFICATION EMAILS ==========
+    $email_data = [
+        'consultation_id'     => $insert_id,
+        'numero_consultation' => $numero_consultation,
+        'patient_id'          => $patient_id,
+        'doctor_id'           => $doctor_id,
+        'full_name'           => $this->input->post('full_name', TRUE),
+        'age'                 => $age,
+        'country'             => $country_name,
+        'weight'              => $this->input->post('weight', TRUE),
+        'height'              => $this->input->post('height', TRUE),
+        'symptoms'            => $this->input->post('symptoms', TRUE),
+        'symptoms_duration'   => $this->input->post('symptoms_duration', TRUE),
+        'previous_consultation' => $this->input->post('previous_consultation', TRUE),
+        'consultation_prix'   => $consultation_prix,
+        'consultation_devise' => $consultation_devise,
+        'medecin'             => $medecin,
+        'medical_docs'        => $medical_docs,
+        'prescriptions'       => $prescriptions
+    ];
+    
+    // Send emails
+    $this->_send_consultation_emails($email_data);
+
+    // ========== SUCCESS ==========
+    $this->session->set_flashdata('success', 'Votre demande de consultation a été créée avec succès.');
+    $this->session->set_flashdata('tracking_number', $numero_consultation);
+    
+    // ========== REDIRECTION VERS LE PAIEMENT AVEC NUMERO DE CONSULTATION ==========
+    // Utiliser le numéro de consultation à la place de l'ID pour plus de sécurité
+    redirect('Consultations/Payment/index/' . $numero_consultation);
+}
+
 
     /**
      * Upload multiple files using your upload_image() function
@@ -417,13 +456,16 @@ class PatientForm extends MY_Controller {
         }
     }
 
-    /**
-     * Generate a unique consultation number
-     */
-    private function _generate_consultation_number()
-    {
-        return 'CONS-' . date('Ymd') . '-' . strtoupper(random_string('alnum', 6));
-    }
+       /**
+ * Générer un numéro de consultation unique
+ * Format: NUF-AAAAMMJJ-HHMMSS
+ * @return string
+ */
+private function _generate_consultation_number()
+{
+    // Format: NUF-20260326-120234
+    return 'NUF-' . date('Ymd') . '-' . date('His');
+}
 
     /**
      * AJAX API: Fetch countries
