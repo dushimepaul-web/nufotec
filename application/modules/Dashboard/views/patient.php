@@ -605,7 +605,7 @@
                                                 <td class="px-4 lg:px-6 py-3 lg:py-4">
                                                     <div class="flex items-center gap-2">
                                                         <?php 
-                                                        $rendez_vous_time = strtotime($consultation->date_souhaitee);
+                                                        $rendez_vous_time = strtotime($consultation->date_debut);
                                                         $ouverture_salle = $rendez_vous_time - (10 * 60); 
                                                         $maintenant = time();
 
@@ -619,12 +619,6 @@
                                                                 <i class="fas fa-video text-xs"></i>
                                                                 <span>Rejoindre</span>
                                                             </a>
-                                                        <?php elseif($consultation->statut == 'confirmee'): ?>
-                                                            <span class="inline-flex items-center gap-1 lg:gap-2 px-2 py-1 lg:px-4 lg:py-2 bg-slate-100 text-slate-400 text-xs lg:text-sm font-medium rounded-lg">
-                                                                <i class="fas fa-lock text-xs"></i>
-                                                                <span>Bientôt</span>
-                                                            </span>
-                                                        <?php endif; ?>
                                                     </div>
                                                  </tr>
                                         <?php endforeach; ?>
