@@ -4,104 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Titre de la page (affiché dans les résultats de recherche) -->
-    <title><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?></title>
-
-    <!-- Meta descriptions et mots-clés (pour le SEO) -->
-    <meta name="description" content="<?= htmlspecialchars($this->Model->get_setting('site_description', $this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi'))) ?>">
+    <?php 
+    // Vérifier si on est sur une page produit (contrôleur Products, méthode detail)
+    $is_product_page = (isset($product) && !empty($product) && isset($product['title']));
+    
+    if ($is_product_page): 
+        // Page produit - Meta tags spécifiques au produit
+        $product_title = htmlspecialchars($product['title']) . ' - ' . htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'));
+        $product_desc = !empty($product['description']) ? substr(htmlspecialchars($product['description']), 0, 160) : htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Produit NUFOTEC'));
+        $product_image = base_url('attachments/Products/'.$product['main_image']);
+        $product_url = base_url('product/'.($product['slug'] ?? $product['id']));
+    ?>
+    
+    <!-- Titre spécifique produit -->
+    <title><?= $product_title ?></title>
+    
+    <!-- Meta description produit -->
+    <meta name="description" content="<?= $product_desc ?>">
+    <meta name="keywords" content="<?= htmlspecialchars($product['title']) ?>, phytomédicaments, NUFOTEC, Burundi">
+    
+    <!-- URL canonique produit -->
+    <link rel="canonical" href="<?= $product_url ?>">
+    
+    <!-- Open Graph / Facebook - PRODUIT -->
+    <meta property="og:type" content="product">
+    <meta property="og:url" content="<?= $product_url ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($product['title']) ?>">
+    <meta property="og:description" content="<?= $product_desc ?>">
+    <meta property="og:image" content="<?= $product_image ?>">
+    <meta property="og:image:secure_url" content="<?= $product_image ?>">
+    <meta property="og:image:width" content="800">
+    <meta property="og:image:height" content="800">
+    <meta property="og:image:alt" content="<?= htmlspecialchars($product['title']) ?>">
+    <meta property="og:site_name" content="NUFOTEC">
+    <meta property="og:locale" content="fr_FR">
+    
+    <!-- Twitter Card - PRODUIT -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="<?= $product_url ?>">
+    <meta name="twitter:title" content="<?= htmlspecialchars($product['title']) ?>">
+    <meta name="twitter:description" content="<?= $product_desc ?>">
+    <meta name="twitter:image" content="<?= $product_image ?>">
+    
+    <!-- Prix produit (Open Graph) -->
+    <?php if (!empty($product['price'])): ?>
+    <meta property="product:price:amount" content="<?= preg_replace('/[^0-9.,]/', '', $product['price']) ?>">
+    <meta property="product:price:currency" content="BIF">
+    <?php endif; ?>
+    
+    <?php else: 
+        // Page normale - Meta tags génériques du site
+        $site_title = htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'));
+        $site_desc = htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi'));
+        $site_image = base_url($this->Model->get_setting('og_image', 'assets/fro.png'));
+    ?>
+    
+    <!-- Titre général du site -->
+    <title><?= $site_title ?></title>
+    
+    <!-- Meta description générale -->
+    <meta name="description" content="<?= $site_desc ?>">
     <meta name="keywords" content="<?= htmlspecialchars($this->Model->get_setting('site_keywords', 'phytomédicaments, agro-industrie, Burundi, santé naturelle, nutrition, NUFOTEC')) ?>">
+    
+    <!-- URL canonique -->
+    <link rel="canonical" href="<?= base_url() ?>">
+    
+    <!-- Open Graph général -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?= base_url() ?>">
+    <meta property="og:title" content="<?= $site_title ?>">
+    <meta property="og:description" content="<?= $site_desc ?>">
+    <meta property="og:image" content="<?= $site_image ?>">
+    <meta property="og:site_name" content="<?= $site_title ?>">
+    <meta property="og:locale" content="fr_FR">
+    
+    <!-- Twitter Card général -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= $site_title ?>">
+    <meta name="twitter:description" content="<?= $site_desc ?>">
+    <meta name="twitter:image" content="<?= $site_image ?>">
+    
+    <?php endif; ?>
+
     <meta name="author" content="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?>">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="<?= htmlspecialchars($this->Model->get_setting('theme_color', '#2c7a4b')) ?>">
 
-    <!-- URL canonique (évite le contenu dupliqué) -->
-    <link rel="canonical" href="<?= base_url() ?>">
-
-    <!-- Balises Open Graph (pour les réseaux sociaux et l’affichage enrichi) -->
-    <meta property="og:title" content="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?>">
-    <meta property="og:description" content="<?= htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi')) ?>">
-    <meta property="og:image" content="<?= base_url($this->Model->get_setting('og_image', 'assets/fro.png')) ?>">
-    <meta property="og:url" content="<?= base_url() ?>">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="fr_FR">
-    <meta property="og:site_name" content="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?>">
-
-    <!-- Balises Twitter Card (améliore l’affichage sur Twitter) -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?>">
-    <meta name="twitter:description" content="<?= htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi')) ?>">
-    <meta name="twitter:image" content="<?= base_url($this->Model->get_setting('og_image', 'assets/fro.png')) ?>">
-    <?php if ($twitter_site = $this->Model->get_setting('twitter_site')): ?>
-    <meta name="twitter:site" content="<?= htmlspecialchars($twitter_site) ?>">
-    <?php endif; ?>
-
-    <!-- Favicône (affichée dans l’onglet du navigateur) -->
+    <!-- Favicône -->
     <link rel="icon" href="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>" type="image/png">
     <link rel="apple-touch-icon" href="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>">
 
-    <!-- Préchargement et chargement optimisé des polices Google -->
+    <!-- Polices -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-    </noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
-    <!-- Styles CSS (Bootstrap et Font Awesome) -->
+    <!-- CSS -->
     <link href="<?= base_url('assets/backend/css/bootstrap.min.css') ?>" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css">
 
-    <!-- Données structurées JSON-LD (pour les rich snippets Google) -->
     <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?>",
-        "url": "<?= base_url() ?>",
-        "logo": "<?= base_url('attachments/Configurations/' . $this->Model->get_setting('site_logo', '')) ?>",
-        "description": "<?= htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi')) ?>",
-        "address": {
-            "@type": "PostalAddress",
-            "addressLocality": "Bujumbura",
-            "addressCountry": "BI"
-        },
-        "contactPoint": {
-            "@type": "ContactPoint",
-            "telephone": "<?= htmlspecialchars($this->Model->get_setting('site_phone', '+257 79 666 439')) ?>",
-            "contactType": "customer service",
-            "email": "<?= htmlspecialchars($this->Model->get_setting('smtp_email', '')) ?>"
-        },
-        "sameAs": [
-            "<?= htmlspecialchars($this->Model->get_setting('twitter_site', '#')) ?>"
-        ]
-    }
+<?php
+$jsonData = [
+    "@context" => "https://schema.org",
+    "@type" => $is_product_page ? "Product" : "Organization"
+];
 
+if ($is_product_page) {
+    $jsonData["name"] = $product['title'];
+    $jsonData["image"] = $product_image;
+    $jsonData["description"] = $product_desc;
+    $jsonData["url"] = $product_url;
+    $jsonData["offers"] = [
+        "@type" => "Offer",
+        "price" => preg_replace('/[^0-9.,]/', '', $product['price'] ?? '0'),
+        "priceCurrency" => "BIF",
+        "availability" => "https://schema.org/InStock"
+    ];
+} else {
+    $jsonData["name"] = $site_title;
+    $jsonData["url"] = base_url();
+    $jsonData["logo"] = base_url('attachments/Configurations/' . $this->Model->get_setting('site_logo', ''));
+    $jsonData["description"] = $site_desc;
+}
+echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+?>
+</script>
 
-//PRODUITE
- <?php if (!empty($product)): ?>
-<!-- Open Graph / Facebook -->
-<meta property="og:type" content="product">
-<meta property="og:url" content="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>">
-<meta property="og:title" content="<?= htmlspecialchars($product['title']) ?> - NUFOTEC">
-<meta property="og:description" content="<?= htmlspecialchars(substr($product['description'], 0, 160)) ?>">
-<meta property="og:image" content="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:site_name" content="NUFOTEC">
-
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>">
-<meta name="twitter:title" content="<?= htmlspecialchars($product['title']) ?> - NUFOTEC">
-<meta name="twitter:description" content="<?= htmlspecialchars(substr($product['description'], 0, 160)) ?>">
-<meta name="twitter:image" content="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
-
-<!-- WhatsApp -->
-<meta property="og:image:secure_url" content="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
-<?php endif; ?>
-
-    </script>
     <style>
         :root {
             --primary: #0f4c3a;

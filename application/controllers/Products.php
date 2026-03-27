@@ -9,20 +9,23 @@ class Products extends MY_Controller {
     }
     
     public function detail($slug)
-    {
-        // Chercher par slug ou par ID
-        $product = $this->Model->readOne('advertise_product', ['slug' => $slug]);
-        
-        if (empty($product)) {
-            // Essayer par ID si slug non trouvé
-            $product = $this->Model->readOne('advertise_product', ['id' => $slug]);
-        }
-        
-        if (empty($product)) {
-            show_404();
-        }
-        
-        $data['product'] = $product;
-        $this->load->view('sections/ProductDetail_View', $data);
+{
+    $product = $this->Model->readOne('advertise_product', ['slug' => $slug]);
+    
+    if (empty($product)) {
+        $product = $this->Model->readOne('advertise_product', ['id' => $slug]);
     }
+    
+    if (empty($product)) {
+        show_404();
+    }
+    
+    // Charger les produits similaires si nécessaire
+    $similar_products = []; // Récupérez vos produits similaires ici
+    
+    $data['product'] = $product;
+    $data['similar_products'] = $similar_products;
+    
+    $this->load->view('sections/ProductDetail_View', $data);
+}
 }  

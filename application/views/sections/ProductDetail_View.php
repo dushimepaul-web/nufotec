@@ -1,4 +1,13 @@
-<?php include VIEWPATH.'includes/frontend/Header.php'; ?>
+<?php 
+// ============================================
+// PASSER LE PRODUIT AU HEADER POUR LES META TAGS
+// ============================================
+if (isset($product) && !empty($product)) {
+    $this->load->vars(['product' => $product]);
+}
+
+include VIEWPATH.'includes/frontend/Header.php'; 
+?>
 
 <style>
 :root {
@@ -18,9 +27,19 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Styles existants conservés... */
-.product-detail-page { background: var(--light); min-height: 100vh; }
-.breadcrumb-item a { color: var(--primary); transition: var(--transition); }
+/* Page Produit */
+.product-detail-page { 
+    background: var(--light); 
+    min-height: 100vh;
+    padding-top: 20px;
+}
+
+/* Breadcrumb */
+.breadcrumb-item a { 
+    color: var(--primary); 
+    transition: var(--transition);
+    text-decoration: none;
+}
 .breadcrumb-item a:hover { color: var(--accent); }
 .text-accent { color: var(--accent) !important; }
 
@@ -32,8 +51,12 @@
     border-radius: 24px;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-light);
 }
-#mainProductImage { transition: transform 0.5s ease; }
+#mainProductImage { 
+    transition: transform 0.5s ease; 
+    min-height: 400px;
+}
 #mainProductImage:hover { transform: scale(1.02); }
 
 .product-badge-detail {
@@ -65,6 +88,9 @@
     color: var(--primary);
     box-shadow: var(--shadow);
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 .zoom-detail-btn:hover {
     background: var(--accent);
@@ -79,6 +105,7 @@
     color: var(--primary);
     position: relative;
     padding-bottom: 15px;
+    line-height: 1.2;
 }
 .product-detail-title::after {
     content: '';
@@ -99,41 +126,87 @@
     -webkit-text-fill-color: transparent;
 }
 
+/* Description */
+.product-detail-description {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+.product-detail-description p {
+    margin-bottom: 0;
+    text-align: justify;
+}
+
 /* Boutons */
 .btn-whatsapp {
-    background: #25D366;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
     border: none;
     color: white;
     border-radius: 50px;
-    padding: 14px;
+    padding: 16px 24px;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 1.1rem;
     transition: var(--transition);
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 .btn-whatsapp:hover {
-    background: #128C7E;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
     color: white;
 }
+.btn-whatsapp i { font-size: 1.3rem; }
 
 .btn-outline-share {
     background: transparent;
     border: 2px solid var(--primary);
     color: var(--primary);
     border-radius: 50px;
-    padding: 14px;
+    padding: 16px 24px;
     font-weight: 600;
+    font-size: 1rem;
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 .btn-outline-share:hover {
     background: var(--primary);
     color: white;
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+}
+.btn-outline-share i { font-size: 1.2rem; }
+
+/* Meta infos */
+.product-meta {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+.product-meta strong {
+    font-size: 1.1rem;
 }
 
 /* Produits similaires */
+.similar-products {
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    margin-top: 40px;
+}
+.section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
 .similar-product-card {
     background: white;
     border-radius: 16px;
@@ -141,12 +214,17 @@
     transition: var(--transition);
     box-shadow: var(--shadow);
     height: 100%;
+    border: 1px solid var(--gray-light);
 }
 .similar-product-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
     box-shadow: var(--shadow-xl);
 }
-.card-img-wrapper { height: 180px; overflow: hidden; }
+.card-img-wrapper { 
+    height: 200px; 
+    overflow: hidden;
+    position: relative;
+}
 .similar-card-img {
     width: 100%;
     height: 100%;
@@ -154,13 +232,47 @@
     transition: transform 0.5s ease;
 }
 .similar-product-card:hover .similar-card-img { transform: scale(1.1); }
+.card-body { padding: 20px; }
+.card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.card-price {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+}
+.btn-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    color: var(--primary);
+    text-decoration: none;
+    border: 1px solid var(--primary);
+    border-radius: 20px;
+    transition: var(--transition);
+    font-weight: 500;
+}
+.btn-view:hover {
+    background: var(--primary);
+    color: white;
+}
 
 /* Boutons de partage dans le modal */
 .btn-share {
     border: none;
     border-radius: 12px;
-    padding: 12px;
-    font-weight: 500;
+    padding: 14px;
+    font-weight: 600;
     transition: var(--transition);
     color: white;
     text-decoration: none;
@@ -168,69 +280,136 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    font-size: 0.95rem;
 }
 .btn-share:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     filter: brightness(1.1);
     color: white;
 }
 .whatsapp-share { background: #25D366; }
 .facebook-share { background: #1877F2; }
 .twitter-share { background: #1DA1F2; }
-.instagram-share { background: linear-gradient(45deg, #f09433, #d62976, #962fbf); }
-.tiktok-share { background: #000000; }
 .pinterest-share { background: #E60023; }
 .linkedin-share { background: #0A66C2; }
+.telegram-share { background: #0088cc; }
+.email-share { background: #6c757d; }
 
 .btn-copy {
     background: var(--primary);
     color: white;
     border: none;
     transition: var(--transition);
+    padding: 10px 20px;
+    font-weight: 600;
 }
 .btn-copy:hover {
     background: var(--accent);
     color: var(--primary-dark);
 }
 
-/* Modal */
-.modal-content { border-radius: 24px; overflow: hidden; }
+/* Modal amélioré */
+.modal-content { 
+    border-radius: 24px; 
+    overflow: hidden;
+    border: none;
+}
+.modal-header {
+    padding: 20px 24px;
+}
+.modal-body { padding: 24px; }
+.modal-footer { padding: 20px 24px; }
+
 .btn-whatsapp-send {
-    background: #25D366;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
     border: none;
     color: white;
     border-radius: 50px;
-    padding: 10px 24px;
+    padding: 12px 28px;
     font-weight: 600;
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 .btn-whatsapp-send:hover {
-    background: #128C7E;
     transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
     color: white;
 }
 
+/* Order info dans le modal */
+.order-product-info {
+    background: linear-gradient(135deg, var(--primary-lighter, #e8f5f0) 0%, white 100%);
+    border: 1px solid var(--gray-light);
+    border-radius: 16px;
+    padding: 16px;
+}
+
+/* Form styling */
+.form-control:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+}
+
 /* Responsive */
+@media (max-width: 991px) {
+    .product-detail-title { font-size: 2rem; }
+    .price-large { font-size: 2rem; }
+    .btn-whatsapp, .btn-outline-share { 
+        padding: 14px 20px; 
+        font-size: 1rem;
+    }
+    .similar-products { padding: 30px 20px; }
+}
+
 @media (max-width: 768px) {
-    .product-detail-title { font-size: 1.8rem; }
-    .price-large { font-size: 1.8rem; }
-    .btn-whatsapp, .btn-outline-share { padding: 10px; font-size: 0.85rem; }
+    .product-detail-title { font-size: 1.6rem; }
+    .price-large { font-size: 1.6rem; }
+    .product-detail-page { padding-top: 10px; }
+    
+    .btn-whatsapp, .btn-outline-share { 
+        padding: 12px 16px; 
+        font-size: 0.9rem;
+        width: 100%;
+    }
+    .product-cta .d-flex {
+        flex-direction: column;
+    }
+    .similar-products { 
+        padding: 20px 15px; 
+        border-radius: 16px;
+    }
+    .section-title { font-size: 1.5rem; }
+}
+
+@media (max-width: 576px) {
+    .product-detail-title { font-size: 1.4rem; }
+    .price-large { font-size: 1.4rem; }
+    .main-image-container { border-radius: 16px; }
+    #mainProductImage { min-height: 300px; }
 }
 </style>
 
 <div class="product-detail-page">
-    <div class="container py-5">
+    <div class="container py-4">
         <!-- Breadcrumb -->
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="<?= base_url() ?>" class="text-decoration-none">Accueil</a></li>
-                <li class="breadcrumb-item"><a href="<?= base_url('products') ?>" class="text-decoration-none">Nos Produits</a></li>
-                <li class="breadcrumb-item active text-accent" aria-current="page"><?= htmlspecialchars($product['title'] ?? 'Détail produit') ?></li>
+                <li class="breadcrumb-item"><a href="<?= base_url() ?>">Accueil</a></li>
+                <li class="breadcrumb-item"><a href="<?= base_url('products') ?>">Nos Produits</a></li>
+                <li class="breadcrumb-item active text-accent" aria-current="page">
+                    <?= htmlspecialchars($product['title'] ?? 'Détail produit') ?>
+                </li>
             </ol>
         </nav>
 
         <?php if (!empty($product)): ?>
-        <div class="row g-5">
+        
+        <!-- DEBUG: Confirmer que le produit est chargé -->
+        <!-- Produit: <?= htmlspecialchars($product['title']) ?> | ID: <?= $product['id'] ?> -->
+        
+        <div class="row g-4 g-lg-5">
             <!-- Colonne Image -->
             <div class="col-lg-6">
                 <div class="product-detail-image-wrapper">
@@ -240,11 +419,13 @@
                              class="img-fluid w-100"
                              style="cursor: zoom-in; max-height: 500px; object-fit: contain; background: var(--light);"
                              alt="<?= htmlspecialchars($product['title']) ?>"
-                             data-image-url="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
+                             onerror="this.src='<?= base_url('assets/fro.png') ?>'">
                         
+                        <?php if (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days')): ?>
                         <div class="product-badge-detail">
                             <span class="badge">✨ Nouveau</span>
                         </div>
+                        <?php endif; ?>
                         
                         <button class="btn zoom-detail-btn" id="zoomDetailBtn">
                             <i class="bx bx-search-alt"></i> Zoom
@@ -265,21 +446,23 @@
                     </div>
                     
                     <div class="product-detail-description mb-4">
-                        <h5 class="fw-semibold mb-3" style="color: var(--primary);">Description</h5>
+                        <h5 class="fw-semibold mb-3" style="color: var(--primary);">
+                            <i class="bx bx-info-circle me-2"></i>Description
+                        </h5>
                         <p class="text-muted lh-lg">
-                            <?= nl2br(htmlspecialchars($product['description'])) ?>
+                            <?= nl2br(htmlspecialchars($product['description'] ?? 'Aucune description disponible.')) ?>
                         </p>
                     </div>
                     
                     <!-- Boutons d'action -->
                     <div class="product-cta mt-4">
-                        <div class="d-flex gap-3">
+                        <div class="d-flex gap-3 flex-wrap">
                             <button class="btn btn-whatsapp flex-grow-1" id="openOrderModalBtn" 
                                     data-title="<?= htmlspecialchars($product['title']) ?>"
                                     data-price="<?= htmlspecialchars($product['price']) ?>"
                                     data-id="<?= $product['id'] ?>"
                                     data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
-                                <i class="bx bxl-whatsapp me-2"></i> Commander
+                                <i class="bx bxl-whatsapp"></i> Commander sur WhatsApp
                             </button>
                             
                             <button class="btn btn-outline-share flex-grow-1" id="openShareModalBtn"
@@ -287,21 +470,37 @@
                                     data-url="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>"
                                     data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>"
                                     data-price="<?= htmlspecialchars($product['price']) ?>">
-                                <i class="bx bx-share-alt me-2"></i> Partager
+                                <i class="bx bx-share-alt"></i> Partager
                             </button>
                         </div>
                     </div>
                     
-                    <div class="product-meta mt-4 pt-3" style="border-top: 1px solid var(--gray-light);">
+                    <div class="product-meta mt-4">
                         <div class="row g-3">
                             <div class="col-6">
-                                <small class="text-muted d-block">Référence produit</small>
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bx bx-hash me-1"></i>Référence
+                                </small>
                                 <strong style="color: var(--primary);">#<?= $product['id'] ?></strong>
                             </div>
                             <div class="col-6">
-                                <small class="text-muted d-block">Date d'ajout</small>
-                                <strong style="color: var(--primary);"><?= date('d/m/Y', strtotime($product['created_at'])) ?></strong>
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bx bx-calendar me-1"></i>Ajouté le
+                                </small>
+                                <strong style="color: var(--primary);">
+                                    <?= date('d/m/Y', strtotime($product['created_at'])) ?>
+                                </strong>
                             </div>
+                            <?php if (!empty($product['stock']) && $product['stock'] > 0): ?>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bx bx-package me-1"></i>Stock
+                                </small>
+                                <strong style="color: var(--success, #198754);">
+                                    <?= $product['stock'] ?> disponible(s)
+                                </strong>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -310,24 +509,25 @@
         
         <!-- Produits similaires -->
         <?php if (!empty($similar_products)): ?>
-        <div class="similar-products mt-5 pt-5">
+        <div class="similar-products">
             <div class="section-header text-center mb-4">
                 <h2 class="section-title">Produits <span style="color: var(--accent);">similaires</span></h2>
-                <div class="title-border" style="width: 80px; height: 3px; background: var(--accent); margin: 10px auto; border-radius: 3px;"></div>
+                <div class="title-border" style="width: 80px; height: 3px; background: var(--accent); margin: 15px auto 0; border-radius: 3px;"></div>
             </div>
             <div class="row g-4">
                 <?php foreach ($similar_products as $similar): ?>
-                <div class="col-12 col-sm-6 col-md-3">
-                    <div class="similar-product-card">
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="similar-product-card h-100">
                         <div class="card-img-wrapper">
                             <img src="<?= base_url('attachments/Products/'.$similar['main_image']) ?>" 
                                  class="similar-card-img" 
-                                 alt="<?= htmlspecialchars($similar['title']) ?>">
+                                 alt="<?= htmlspecialchars($similar['title']) ?>"
+                                 onerror="this.src='<?= base_url('assets/fro.png') ?>'">
                         </div>
-                        <div class="card-body p-3 text-center">
-                            <h6 class="card-title text-truncate"><?= htmlspecialchars($similar['title']) ?></h6>
-                            <p class="card-price text-accent fw-bold"><?= htmlspecialchars($similar['price']) ?></p>
-                            <a href="<?= base_url('product/'.($similar['slug'] ?? $similar['id'])) ?>" class="btn btn-sm btn-outline-primary rounded-pill">
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title"><?= htmlspecialchars($similar['title']) ?></h6>
+                            <p class="card-price mt-auto"><?= htmlspecialchars($similar['price']) ?></p>
+                            <a href="<?= base_url('product/'.($similar['slug'] ?? $similar['id'])) ?>" class="btn-view mt-2">
                                 Voir détails <i class="bx bx-right-arrow-alt"></i>
                             </a>
                         </div>
@@ -339,11 +539,14 @@
         <?php endif; ?>
         
         <?php else: ?>
+        <!-- Produit non trouvé -->
         <div class="text-center py-5">
-            <i class="bx bx-package text-muted" style="font-size: 4rem;"></i>
-            <h3 class="mt-3">Produit non trouvé</h3>
-            <p class="text-muted">Le produit que vous recherchez n'existe pas ou a été supprimé.</p>
-            <a href="<?= base_url('products') ?>" class="btn btn-primary mt-3">
+            <div class="mb-4">
+                <i class="bx bx-package text-muted" style="font-size: 5rem; opacity: 0.5;"></i>
+            </div>
+            <h3 class="mb-3" style="color: var(--primary);">Produit non trouvé</h3>
+            <p class="text-muted mb-4">Le produit que vous recherchez n'existe pas ou a été supprimé.</p>
+            <a href="<?= base_url('products') ?>" class="btn btn-lg" style="background: var(--primary); color: white; border-radius: 50px; padding: 12px 30px;">
                 <i class="bx bx-arrow-back me-2"></i>Retour aux produits
             </a>
         </div>
@@ -352,61 +555,94 @@
 </div>
 
 <!-- MODAL DE COMMANDE -->
-<div class="modal fade" id="orderInfoModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="orderInfoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header" style="background: var(--primary); color: white; border: none;">
+            <div class="modal-header" style="background: var(--primary); color: white;">
                 <h5 class="modal-title">
-                    <i class="bx bxl-whatsapp me-2"></i>Informations de livraison
+                    <i class="bx bxl-whatsapp me-2"></i>Finaliser votre commande
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="order-product-info mb-4 p-3 bg-light rounded">
+            <div class="modal-body">
+                <!-- Info produit -->
+                <div class="order-product-info mb-4">
                     <div class="d-flex gap-3 align-items-center">
-                        <img id="orderProductImage" src="" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                        <img id="orderProductImage" src="" class="rounded" 
+                             style="width: 80px; height: 80px; object-fit: cover; border: 2px solid var(--accent);">
                         <div>
-                            <h6 id="orderProductTitle" class="mb-1 fw-bold" style="color: var(--primary);"></h6>
-                            <span id="orderProductPrice" class="text-accent fw-bold"></span>
-                            <small id="orderProductRef" class="d-block text-muted"></small>
+                            <h6 id="orderProductTitle" class="mb-1 fw-bold" style="color: var(--primary); font-size: 1.1rem;"></h6>
+                            <span id="orderProductPrice" class="text-accent fw-bold fs-5"></span>
+                            <small id="orderProductRef" class="d-block text-muted mt-1"></small>
                         </div>
                     </div>
                 </div>
                 
                 <form id="orderForm">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nom complet <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="customerName" required placeholder="Entrez votre nom et prénom">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nom complet <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bx bx-user"></i></span>
+                                <input type="text" class="form-control" id="customerName" required 
+                                       placeholder="Votre nom et prénom">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Téléphone <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bx bx-phone"></i></span>
+                                <input type="tel" class="form-control" id="customerPhone" required 
+                                       placeholder="Ex: 25779666439">
+                            </div>
+                            <small class="text-muted">Numéro WhatsApp pour vous contacter</small>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Téléphone <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control" id="customerPhone" required placeholder="Ex: 25779666439">
-                        <small class="text-muted">Numéro WhatsApp pour vous contacter</small>
-                    </div>
-                    <div class="row g-3 mb-3">
+                    
+                    <div class="row g-3 mt-1">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Pays <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="customerCountry" required placeholder="Pays">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bx bx-globe"></i></span>
+                                <input type="text" class="form-control" id="customerCountry" required 
+                                       placeholder="Votre pays" value="Burundi">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Ville <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="customerCity" required placeholder="Ville">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bx bx-map"></i></span>
+                                <input type="text" class="form-control" id="customerCity" required 
+                                       placeholder="Votre ville" value="Bujumbura">
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Adresse de livraison <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="customerAddress" rows="2" required placeholder="Quartier, rue, numéro, point de repère..."></textarea>
+                    
+                    <div class="mt-3">
+                        <label class="form-label fw-bold">Adresse de livraison complète <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bx bx-home"></i></span>
+                            <textarea class="form-control" id="customerAddress" rows="2" required 
+                                      placeholder="Quartier, rue, numéro, point de repère..."></textarea>
+                        </div>
                     </div>
-                    <div class="mb-3">
+                    
+                    <div class="mt-3">
                         <label class="form-label fw-bold">Instructions supplémentaires</label>
-                        <textarea class="form-control" id="customerNotes" rows="2" placeholder="Horaires de livraison, code d'accès, etc."></textarea>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bx bx-note"></i></span>
+                            <textarea class="form-control" id="customerNotes" rows="2" 
+                                      placeholder="Horaires de livraison préférés, code d'accès, etc."></textarea>
+                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bx bx-x me-1"></i>Annuler
+                </button>
                 <button type="button" class="btn btn-whatsapp-send" id="sendWhatsAppOrderBtn">
-                    <i class="bx bxl-whatsapp me-2"></i>Envoyer la commande
+                    <i class="bx bxl-whatsapp"></i>Envoyer la commande
                 </button>
             </div>
         </div>
@@ -414,79 +650,93 @@
 </div>
 
 <!-- MODAL DE PARTAGE -->
-<div class="modal fade" id="shareModal" tabindex="-1">
+<div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0">
-            <div class="modal-header" style="background: var(--primary); color: white; border: none;">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header" style="background: var(--primary); color: white;">
                 <h5 class="modal-title">
                     <i class="bx bx-share-alt me-2"></i>Partager ce produit
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body">
+                <!-- Info produit -->
                 <div class="share-product-info mb-4 text-center">
-                    <img id="shareProductImage" src="" class="rounded mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid var(--accent);">
-                    <h6 id="shareProductTitle" class="mb-1 fw-bold" style="color: var(--primary);"></h6>
-                    <p id="shareProductPrice" class="text-accent fw-bold mb-0"></p>
+                    <img id="shareProductImage" src="" class="rounded mb-3" 
+                         style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--accent);">
+                    <h6 id="shareProductTitle" class="mb-1 fw-bold" style="color: var(--primary); font-size: 1.1rem;"></h6>
+                    <p id="shareProductPrice" class="text-accent fw-bold mb-0 fs-5"></p>
                 </div>
                 
+                <!-- Boutons de partage -->
                 <div class="share-buttons mb-4">
                     <div class="row g-3">
-                        <!-- WhatsApp -->
                         <div class="col-6">
-                            <a href="#" id="shareWhatsapp" class="btn btn-share whatsapp-share w-100" target="_blank">
+                            <a href="#" id="shareWhatsapp" class="btn btn-share whatsapp-share w-100" target="_blank" rel="noopener">
                                 <i class="bx bxl-whatsapp"></i> WhatsApp
                             </a>
                         </div>
-                        <!-- Facebook -->
                         <div class="col-6">
-                            <a href="#" id="shareFacebook" class="btn btn-share facebook-share w-100" target="_blank">
+                            <a href="#" id="shareFacebook" class="btn btn-share facebook-share w-100" target="_blank" rel="noopener">
                                 <i class="bx bxl-facebook"></i> Facebook
                             </a>
                         </div>
-                        <!-- Twitter/X -->
                         <div class="col-6">
-                            <a href="#" id="shareTwitter" class="btn btn-share twitter-share w-100" target="_blank">
+                            <a href="#" id="shareTwitter" class="btn btn-share twitter-share w-100" target="_blank" rel="noopener">
                                 <i class="bx bxl-twitter"></i> Twitter/X
                             </a>
                         </div>
-                        <!-- Pinterest -->
                         <div class="col-6">
-                            <a href="#" id="sharePinterest" class="btn btn-share pinterest-share w-100" target="_blank">
+                            <a href="#" id="sharePinterest" class="btn btn-share pinterest-share w-100" target="_blank" rel="noopener">
                                 <i class="bx bxl-pinterest"></i> Pinterest
                             </a>
                         </div>
-                        <!-- LinkedIn -->
                         <div class="col-6">
-                            <a href="#" id="shareLinkedIn" class="btn btn-share linkedin-share w-100" target="_blank">
+                            <a href="#" id="shareLinkedIn" class="btn btn-share linkedin-share w-100" target="_blank" rel="noopener">
                                 <i class="bx bxl-linkedin"></i> LinkedIn
                             </a>
                         </div>
-                        <!-- Native Share (Mobile) -->
+                        <div class="col-6">
+                            <a href="#" id="shareTelegram" class="btn btn-share telegram-share w-100" target="_blank" rel="noopener">
+                                <i class="bx bxl-telegram"></i> Telegram
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="#" id="shareEmail" class="btn btn-share email-share w-100">
+                                <i class="bx bx-envelope"></i> Email
+                            </a>
+                        </div>
                         <div class="col-6">
                             <button id="shareNativeBtn" class="btn btn-share w-100" style="background: #6c757d;">
-                                <i class="bx bx-share-alt"></i> Plus d'options
+                                <i class="bx bx-dots-horizontal-rounded"></i> Autres apps
                             </button>
                         </div>
                     </div>
                 </div>
                 
-                <hr>
+                <hr class="my-4">
                 
-                <div class="share-link mt-3">
-                    <label class="form-label fw-bold">Lien du produit</label>
-                    <div class="input-group">
+                <!-- Lien à copier -->
+                <div class="share-link">
+                    <label class="form-label fw-bold mb-2">
+                        <i class="bx bx-link me-1"></i>Lien du produit
+                    </label>
+                    <div class="input-group input-group-lg">
                         <input type="text" id="shareLink" class="form-control bg-light" readonly>
                         <button class="btn btn-copy" type="button" id="copyLinkBtn">
-                            <i class="bx bx-copy"></i> Copier
+                            <i class="bx bx-copy me-1"></i>Copier
                         </button>
                     </div>
                 </div>
                 
+                <!-- Astuce -->
                 <div class="mt-3 p-3 bg-light rounded">
-                    <small class="text-muted">
-                        <i class="bx bx-info-circle me-1"></i>
-                        <strong>Astuce :</strong> Sur mobile, utilisez "Plus d'options" pour partager directement sur Instagram ou TikTok.
+                    <small class="text-muted d-flex align-items-start gap-2">
+                        <i class="bx bx-info-circle mt-1"></i>
+                        <span>
+                            <strong>Astuce :</strong> Sur mobile, utilisez "Autres apps" pour partager 
+                            directement sur Instagram, TikTok ou vos applications favorites.
+                        </span>
                     </small>
                 </div>
             </div>
@@ -495,19 +745,20 @@
 </div>
 
 <!-- MODAL ZOOM -->
-<div class="modal fade" id="zoomModal" tabindex="-1">
+<div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-dark border-0">
-            <div class="modal-header border-0">
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
-            <div class="modal-body p-0 text-center">
-                <img id="zoomImage" src="" class="img-fluid" style="max-height: 85vh;">
+            <div class="modal-body p-0 text-center d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+                <img id="zoomImage" src="" class="img-fluid" style="max-height: 85vh; max-width: 95%; object-fit: contain;">
             </div>
         </div>
     </div>
 </div>
 
+<!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -515,8 +766,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Numéro WhatsApp du vendeur
+    // Configuration
     const WHATSAPP_NUMBER = "25779666439";
+    const SITE_NAME = "NUFOTEC";
     
     // Variables globales
     let currentProduct = {
@@ -527,41 +779,54 @@ document.addEventListener('DOMContentLoaded', function() {
         url: ''
     };
     
-    // Initialisation des modals
+    // Initialisation des modals Bootstrap
     const orderModal = new bootstrap.Modal(document.getElementById('orderInfoModal'));
     const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-    const zoomModalElement = document.getElementById('zoomModal');
     
-    // ========== MODAL DE COMMANDE ==========
+    // ==========================================
+    // MODAL DE COMMANDE
+    // ==========================================
     const openOrderBtn = document.getElementById('openOrderModalBtn');
     const sendOrderBtn = document.getElementById('sendWhatsAppOrderBtn');
     
     if (openOrderBtn) {
         openOrderBtn.addEventListener('click', function() {
+            // Récupérer les données du produit
             currentProduct = {
-                title: this.getAttribute('data-title') || '',
-                price: this.getAttribute('data-price') || '',
-                id: this.getAttribute('data-id') || '',
-                image: this.getAttribute('data-image') || '',
+                title: this.dataset.title || '',
+                price: this.dataset.price || '',
+                id: this.dataset.id || '',
+                image: this.dataset.image || '',
                 url: window.location.href
             };
+            
+            // Vérifier que l'ID existe
+            if (!currentProduct.id) {
+                console.error('ID produit manquant');
+                Swal.fire('Erreur', 'Impossible de charger les informations du produit', 'error');
+                return;
+            }
             
             // Remplir le modal
             document.getElementById('orderProductTitle').textContent = currentProduct.title;
             document.getElementById('orderProductPrice').textContent = currentProduct.price;
             document.getElementById('orderProductImage').src = currentProduct.image;
-            document.getElementById('orderProductRef').textContent = 'Réf: #' + currentProduct.id;
+            document.getElementById('orderProductRef').textContent = `Référence: #${currentProduct.id}`;
             
             // Réinitialiser le formulaire
             document.getElementById('orderForm').reset();
+            
+            // Focus sur le premier champ
+            setTimeout(() => document.getElementById('customerName').focus(), 100);
             
             orderModal.show();
         });
     }
     
-    // Envoi de la commande WhatsApp
+    // Envoi WhatsApp
     if (sendOrderBtn) {
         sendOrderBtn.addEventListener('click', function() {
+            // Récupérer les valeurs du formulaire
             const formData = {
                 name: document.getElementById('customerName').value.trim(),
                 phone: document.getElementById('customerPhone').value.trim(),
@@ -572,8 +837,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             // Validation
-            const requiredFields = ['name', 'phone', 'country', 'city', 'address'];
-            const fieldNames = {
+            const requiredFields = {
                 name: 'Nom complet',
                 phone: 'Téléphone',
                 country: 'Pays',
@@ -581,62 +845,76 @@ document.addEventListener('DOMContentLoaded', function() {
                 address: 'Adresse de livraison'
             };
             
-            for (let field of requiredFields) {
+            for (const [field, label] of Object.entries(requiredFields)) {
                 if (!formData[field]) {
                     Swal.fire({
                         title: 'Champ requis',
-                        text: `Veuillez entrer votre ${fieldNames[field]}`,
+                        text: `Veuillez entrer votre ${label}`,
                         icon: 'warning',
                         confirmButtonColor: '#0f4c3a'
                     });
-                    document.getElementById('customer' + field.charAt(0).toUpperCase() + field.slice(1)).focus();
+                    const input = document.getElementById('customer' + field.charAt(0).toUpperCase() + field.slice(1));
+                    input.focus();
+                    input.classList.add('is-invalid');
+                    setTimeout(() => input.classList.remove('is-invalid'), 3000);
                     return;
                 }
             }
             
-            // Construction du message
-            const date = new Date().toLocaleString('fr-FR');
-            const productUrl = currentProduct.url;
+            // Construction du message WhatsApp formaté
+            const now = new Date();
+            const dateStr = now.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
             
-            let message = `*🛒 NOUVELLE COMMANDE - NUFOTEC*%0A`;
-            message += `═══════════════════════%0A%0A`;
+            const message = [
+                `🛒 *NOUVELLE COMMANDE - ${SITE_NAME}*`,
+                ``,
+                `📦 *PRODUIT*`,
+                `Nom: ${currentProduct.title}`,
+                `Prix: ${currentProduct.price}`,
+                `Référence: #${currentProduct.id}`,
+                `Lien: ${currentProduct.url}`,
+                ``,
+                `👤 *CLIENT*`,
+                `Nom: ${formData.name}`,
+                `Téléphone: ${formData.phone}`,
+                `Pays: ${formData.country}`,
+                `Ville: ${formData.city}`,
+                `Adresse: ${formData.address}`,
+                formData.notes ? `Notes: ${formData.notes}` : '',
+                ``,
+                `📅 Commande passée le: ${dateStr}`,
+                `⏳ Statut: En attente de confirmation`
+            ].filter(Boolean).join('\n');
             
-            message += `*📦 PRODUIT*%0A`;
-            message += `Nom: ${currentProduct.title}%0A`;
-            message += `Prix: ${currentProduct.price}%0A`;
-            message += `Référence: #${currentProduct.id}%0A`;
-            message += `Lien: ${productUrl}%0A%0A`;
+            // Encoder pour URL
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
             
-            message += `*👤 CLIENT*%0A`;
-            message += `Nom: ${formData.name}%0A`;
-            message += `Téléphone: ${formData.phone}%0A`;
-            message += `Pays: ${formData.country}%0A`;
-            message += `Ville: ${formData.city}%0A`;
-            message += `Adresse: ${formData.address}%0A`;
-            
-            if (formData.notes) {
-                message += `Notes: ${formData.notes}%0A`;
-            }
-            
-            message += `%0A═══════════════════════%0A`;
-            message += `📅 Date: ${date}%0A`;
-            message += `⏳ Statut: En attente de confirmation%0A%0A`;
-            message += `Merci de traiter cette commande rapidement.`;
-            
-            // URL WhatsApp
-            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-            
-            // Fermer le modal et rediriger
+            // Fermer le modal
             orderModal.hide();
             
+            // Confirmation avant redirection
             Swal.fire({
                 title: '✅ Commande prête !',
-                text: `Référence: #${currentProduct.id}`,
+                html: `
+                    <div class="text-start">
+                        <p class="mb-2"><strong>Produit:</strong> ${currentProduct.title}</p>
+                        <p class="mb-2"><strong>Référence:</strong> #${currentProduct.id}</p>
+                        <p class="mb-0 text-muted">Vous allez être redirigé vers WhatsApp...</p>
+                    </div>
+                `,
                 icon: 'success',
-                confirmButtonText: 'Ouvrir WhatsApp',
-                confirmButtonColor: '#25D366',
                 showCancelButton: true,
-                cancelButtonText: 'Fermer'
+                confirmButtonText: '<i class="bx bxl-whatsapp me-1"></i>Ouvrir WhatsApp',
+                confirmButtonColor: '#25D366',
+                cancelButtonText: 'Fermer',
+                cancelButtonColor: '#6c757d'
             }).then((result) => {
                 if (result.isConfirmed) {
                     window.open(whatsappUrl, '_blank');
@@ -645,17 +923,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== MODAL DE PARTAGE ==========
+    // ==========================================
+    // MODAL DE PARTAGE
+    // ==========================================
     const openShareBtn = document.getElementById('openShareModalBtn');
     
     if (openShareBtn) {
         openShareBtn.addEventListener('click', function() {
-            const title = this.getAttribute('data-title') || '';
-            const url = this.getAttribute('data-url') || window.location.href;
-            const image = this.getAttribute('data-image') || '';
-            const price = this.getAttribute('data-price') || '';
+            const title = this.dataset.title || '';
+            const url = this.dataset.url || window.location.href;
+            const image = this.dataset.image || '';
+            const price = this.dataset.price || '';
             
-            // Stocker pour usage natif
             currentProduct = { title, url, image, price };
             
             // Remplir le modal
@@ -664,30 +943,28 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('shareProductImage').src = image;
             document.getElementById('shareLink').value = url;
             
-            // Préparer les liens de partage
+            // Encoder pour URLs
             const encodedUrl = encodeURIComponent(url);
-            const encodedTitle = encodeURIComponent(`${title} - ${price} sur NUFOTEC`);
+            const encodedTitle = encodeURIComponent(`${title} - ${price} sur ${SITE_NAME}`);
             const encodedImage = encodeURIComponent(image);
+            const encodedDesc = encodeURIComponent(`Découvrez ${title} sur ${SITE_NAME}`);
             
-            // WhatsApp
-            document.getElementById('shareWhatsapp').href = 
-                `https://wa.me/?text=${encodedTitle}%0A%0A${encodedUrl}`;
+            // Configurer les liens de partage
+            const shareLinks = {
+                shareWhatsapp: `https://wa.me/?text=${encodedTitle}%0A%0A${encodedUrl}`,
+                shareFacebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
+                shareTwitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+                sharePinterest: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&media=${encodedImage}&description=${encodedTitle}`,
+                shareLinkedIn: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+                shareTelegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+                shareEmail: `mailto:?subject=${encodedTitle}&body=${encodedDesc}%0A%0A${encodedUrl}`
+            };
             
-            // Facebook
-            document.getElementById('shareFacebook').href = 
-                `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`;
-            
-            // Twitter/X
-            document.getElementById('shareTwitter').href = 
-                `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;
-            
-            // Pinterest (nécessite une image)
-            document.getElementById('sharePinterest').href = 
-                `https://pinterest.com/pin/create/button/?url=${encodedUrl}&media=${encodedImage}&description=${encodedTitle}`;
-            
-            // LinkedIn
-            document.getElementById('shareLinkedIn').href = 
-                `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+            // Appliquer les liens
+            Object.entries(shareLinks).forEach(([id, href]) => {
+                const element = document.getElementById(id);
+                if (element) element.href = href;
+            });
             
             shareModal.show();
         });
@@ -701,17 +978,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     await navigator.share({
                         title: currentProduct.title,
-                        text: `Découvrez ${currentProduct.title} à ${currentProduct.price} sur NUFOTEC`,
+                        text: `Découvrez ${currentProduct.title} à ${currentProduct.price} sur ${SITE_NAME}`,
                         url: currentProduct.url
                     });
                 } catch (err) {
-                    console.log('Partage annulé');
+                    // L'utilisateur a annulé ou erreur
+                    console.log('Partage annulé:', err);
                 }
             } else {
+                // Fallback: copier le lien
+                copyToClipboard(currentProduct.url);
                 Swal.fire({
-                    title: 'Partage',
-                    text: 'Copiez le lien ci-dessus pour partager sur Instagram ou TikTok',
-                    icon: 'info'
+                    title: 'Lien copié !',
+                    text: 'Le lien a été copié dans votre presse-papiers',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
                 });
             }
         });
@@ -720,39 +1002,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Copier le lien
     const copyBtn = document.getElementById('copyLinkBtn');
     if (copyBtn) {
-        copyBtn.addEventListener('click', async function() {
+        copyBtn.addEventListener('click', function() {
             const linkInput = document.getElementById('shareLink');
+            copyToClipboard(linkInput.value);
             
-            try {
-                await navigator.clipboard.writeText(linkInput.value);
-                
-                // Feedback visuel
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="bx bx-check"></i> Copié !';
-                this.style.background = '#25D366';
-                
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.style.background = '';
-                }, 2000);
-                
-            } catch (err) {
-                // Fallback pour anciens navigateurs
-                linkInput.select();
-                document.execCommand('copy');
-            }
+            // Feedback visuel
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="bx bx-check"></i> Copié !';
+            this.style.background = '#25D366';
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.innerHTML = originalHTML;
+                this.style.background = '';
+                this.disabled = false;
+            }, 2000);
         });
     }
     
-    // ========== ZOOM IMAGE ==========
+    // Fonction utilitaire: copier dans le presse-papiers
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (err) {
+            // Fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+    }
+    
+    // ==========================================
+    // ZOOM IMAGE
+    // ==========================================
     const mainImage = document.getElementById('mainProductImage');
     const zoomBtn = document.getElementById('zoomDetailBtn');
     const zoomImage = document.getElementById('zoomImage');
+    const zoomModalEl = document.getElementById('zoomModal');
     
     function openZoom() {
-        if (mainImage && zoomImage) {
+        if (mainImage && zoomImage && zoomModalEl) {
             zoomImage.src = mainImage.src;
-            const zoomModal = new bootstrap.Modal(zoomModalElement);
+            const zoomModal = new bootstrap.Modal(zoomModalEl);
             zoomModal.show();
         }
     }
@@ -760,7 +1056,34 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mainImage) mainImage.addEventListener('click', openZoom);
     if (zoomBtn) zoomBtn.addEventListener('click', openZoom);
     
-    console.log('✅ Product Detail scripts loaded');
+    // ==========================================
+    // EFFETS VISUELS
+    // ==========================================
+    
+    // Animation au scroll pour les éléments
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+    
+    // Observer les cartes de produits similaires
+    document.querySelectorAll('.similar-product-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`;
+        observer.observe(card);
+    });
+    
+    console.log('✅ Product Detail View initialized');
 });
 </script>
 
