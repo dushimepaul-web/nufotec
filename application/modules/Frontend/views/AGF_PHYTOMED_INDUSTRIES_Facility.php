@@ -1,4 +1,4 @@
-VOIC MA PAGE AGF-PHYTOMED INDUSTRIES FACILITY <?php include VIEWPATH.'includes/frontend/Header.php'; ?>
+<?php include VIEWPATH.'includes/frontend/Header.php'; ?>
 
 <style>
 /* ============================================
@@ -750,7 +750,7 @@ body {
 <!-- PAGE HERO -->
 <section class="page-hero">
     <div class="page-hero-content">
-        <h1 class="page-hero-title">AGF-PHYTOMED <span>INDUSTRIES</span></h1>
+        <h1 class="page-hero-title">NUFOTEC-PHYTOMED <span>INDUSTRIES</span></h1>
         <p class="page-hero-subtitle">State-of-the-Art GMP-Compliant Manufacturing Facility - Complete Layout Plan Report</p>
     </div>
 </section>

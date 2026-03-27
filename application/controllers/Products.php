@@ -25,4 +25,4 @@ class Products extends MY_Controller {
         $data['product'] = $product;
         $this->load->view('sections/ProductDetail_View', $data);
     }
-}
+}  

@@ -76,6 +76,31 @@
             "<?= htmlspecialchars($this->Model->get_setting('twitter_site', '#')) ?>"
         ]
     }
+
+
+//PRODUITE
+ <?php if (!empty($product)): ?>
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="product">
+<meta property="og:url" content="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>">
+<meta property="og:title" content="<?= htmlspecialchars($product['title']) ?> - NUFOTEC">
+<meta property="og:description" content="<?= htmlspecialchars(substr($product['description'], 0, 160)) ?>">
+<meta property="og:image" content="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="NUFOTEC">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>">
+<meta name="twitter:title" content="<?= htmlspecialchars($product['title']) ?> - NUFOTEC">
+<meta name="twitter:description" content="<?= htmlspecialchars(substr($product['description'], 0, 160)) ?>">
+<meta name="twitter:image" content="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
+
+<!-- WhatsApp -->
+<meta property="og:image:secure_url" content="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
+<?php endif; ?>
+
     </script>
     <style>
         :root {
