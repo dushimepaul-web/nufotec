@@ -332,10 +332,25 @@ $route['PatientForm'] = 'Consultations/PatientForm';
 
 
 
+// Routes pour Advertise Product
 $route['advertise-product'] = 'Advertise_product/index';
-$route['advertise-product-create'] = 'Advertise_product/Create';
-$route['advertise-product-update'] = 'Advertise_product/Update';
-$route['advertise-product-delete'] = 'Advertise_product/Delete';
+$route['advertise-product-create'] = 'Advertise_product/create';
+$route['advertise-product-update'] = 'Advertise_product/update';
+$route['advertise-product-delete'] = 'Advertise_product/delete';
+$route['advertise-product-change-status'] = 'Advertise_product/changeStatus';
+$route['advertise-product-change-featured'] = 'Advertise_product/changeFeatured';
+$route['advertise-product/view/(:any)'] = 'Advertise_product/productDetail/$1';
 
 $route['product/(:any)'] = 'Products/detail/$1';
+
+
+
+$route['product_categories'] = 'Advertise_product/Product_categories/index';
+$route['product_categories/index'] = 'Advertise_product/Product_categories/index';
+
+// CRUD Operations
+$route['product_categories/create'] = 'Advertise_product/Product_categories/create';
+$route['product_categories/update'] = 'Advertise_product/Product_categories/update';
+$route['product_categories/delete'] = 'Advertise_product/Product_categories/delete';
+$route['product_categories/view/(:num)'] = 'Advertise_product/Product_categories/view/$1';
 

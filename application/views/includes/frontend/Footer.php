@@ -197,7 +197,11 @@
         <i class="bi bi-house-door-fill"></i>
         <span>Accueil</span>
     </a>
-    <a href="<?= base_url('boutique') ?>" class="sticky-nav-item">
+    <!-- <a href="" class="sticky-nav-item">
+        <i class="bi bi-shop"></i>
+        <span>Boutique</span>
+    </a> -->
+    <a href="<?= base_url('Products') ?>" class="sticky-nav-item">
         <i class="bi bi-shop"></i>
         <span>Boutique</span>
     </a>
@@ -209,10 +213,15 @@
         <i class="bi bi-graph-up-arrow"></i>
         <span>Investir</span>
     </a>
-    <a href="<?= base_url('panier') ?>" class="sticky-nav-item cart-item">
+    <!-- <a href="" class="sticky-nav-item cart-item">
         <i class="bi bi-cart3"></i>
         <span>Panier</span>
         <span class="sticky-badge" id="cart">0</span>
+    </a>-->
+
+    <a href="<?= base_url('media') ?>" class="sticky-nav-item">
+        <i class="bi bi-collection"></i>
+        <span>media</span>
     </a>
     
     <?php 

@@ -113,7 +113,8 @@
                 <li><a href="<?= base_url('Commandes') ?>" class="<?= $this->uri->segment(1) == 'Commandes' ? 'active' : '' ?>"><i class='bx bx-receipt'></i>Commandes</a></li>
                 <li><a href="<?= base_url('Paniers') ?>" class="<?= $this->uri->segment(1) == 'Paniers' ? 'active' : '' ?>"><i class='bx bx-cart'></i>Paniers</a></li>
                 <li><a href="<?= base_url('Adresses') ?>" class="<?= $this->uri->segment(1) == 'Adresses' ? 'active' : '' ?>"><i class='bx bx-map'></i>Adresses</a></li>
-                <li><a href="<?= base_url('advertise-product') ?>" class="<?= $this->uri->segment(1) == 'advertise-product' ? 'active' : '' ?>"><i class='bx bx-map'></i>advertise product</a></li>
+                <li><a href="<?= base_url('advertise-product') ?>" class="<?= $this->uri->segment(1) == 'advertise-product' ? 'active' : '' ?>"><i class='bx bx-map'></i>advertise product</a></li> 
+                <li><a href="<?= base_url('product_categories') ?>" class="<?= $this->uri->segment(1) == 'product_categories' ? 'active' : '' ?>"><i class='bx bx-map'></i>product categories</a></li>
             </ul>
         </li>
 <?php endif; ?>

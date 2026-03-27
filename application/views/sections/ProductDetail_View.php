@@ -393,16 +393,96 @@ include VIEWPATH.'includes/frontend/Header.php';
 
 <div class="product-detail-page">
     <div class="container py-4">
-        <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="<?= base_url() ?>">Accueil</a></li>
-                <li class="breadcrumb-item"><a href="<?= base_url('products') ?>">Nos Produits</a></li>
-                <li class="breadcrumb-item active text-accent" aria-current="page">
-                    <?= htmlspecialchars($product['title'] ?? 'Détail produit') ?>
-                </li>
-            </ol>
-        </nav>
+        <!-- ============================================
+        MINI HERO - Simple & Élégante
+        ============================================ -->
+        <div class="mini-hero">
+            <div class="container">
+                <div class="mini-hero-content">
+                    <?php if (!empty($product)): ?>
+                    <!-- Titre principal -->
+                    <h1 class="mini-title">
+                        <?= htmlspecialchars($product['title']) ?>
+                    </h1>
+                    
+                    <!-- Description courte -->
+                    <p class="mini-desc">
+                        Découvrez notre gamme de produits naturels, conçus avec passion et expertise pour votre bien-être. Chaque produit est élaboré à partir d'ingrédients soigneusement sélectionnés, respectueux de l'environnement et de votre santé.
+                    </p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        /* ============================================
+        MINI HERO - Style épuré
+        ============================================ */
+
+        .mini-hero {
+            background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+            padding: 30px 0 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mini-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .mini-hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .mini-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary, #0f4c3a);
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        .mini-desc {
+            font-size: 1rem;
+            color: var(--gray, #6c757d);
+            line-height: 1.6;
+            max-width: 650px;
+            margin: 0 auto 0;
+        }
+
+        @media (max-width: 768px) {
+            .mini-hero {
+                padding: 25px 0 30px;
+            }
+            .mini-title {
+                font-size: 1.5rem;
+            }
+            .mini-desc {
+                font-size: 0.9rem;
+                padding: 0 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .mini-title {
+                font-size: 1.3rem;
+            }
+        }
+        </style>
 
         <?php if (!empty($product)): ?>
         
@@ -467,7 +547,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                             
                             <button class="btn btn-outline-share flex-grow-1" id="openShareModalBtn"
                                     data-title="<?= htmlspecialchars($product['title']) ?>"
-                                    data-url="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>"
+                                    data-url="<?= base_url('Products/detail/'.($product['slug'] ?? $product['id'])) ?>"
                                     data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>"
                                     data-price="<?= htmlspecialchars($product['price']) ?>">
                                 <i class="bx bx-share-alt"></i> Partager
@@ -477,12 +557,6 @@ include VIEWPATH.'includes/frontend/Header.php';
                     
                     <div class="product-meta mt-4">
                         <div class="row g-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block mb-1">
-                                    <i class="bx bx-hash me-1"></i>Référence
-                                </small>
-                                <strong style="color: var(--primary);">#<?= $product['id'] ?></strong>
-                            </div>
                             <div class="col-6">
                                 <small class="text-muted d-block mb-1">
                                     <i class="bx bx-calendar me-1"></i>Ajouté le
@@ -527,7 +601,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                         <div class="card-body d-flex flex-column">
                             <h6 class="card-title"><?= htmlspecialchars($similar['title']) ?></h6>
                             <p class="card-price mt-auto"><?= htmlspecialchars($similar['price']) ?></p>
-                            <a href="<?= base_url('product/'.($similar['slug'] ?? $similar['id'])) ?>" class="btn-view mt-2">
+                            <a href="<?= base_url('Products/detail/'.($similar['slug'] ?? $similar['id'])) ?>" class="btn-view mt-2">
                                 Voir détails <i class="bx bx-right-arrow-alt"></i>
                             </a>
                         </div>
@@ -627,14 +701,6 @@ include VIEWPATH.'includes/frontend/Header.php';
                         </div>
                     </div>
                     
-                    <div class="mt-3">
-                        <label class="form-label fw-bold">Instructions supplémentaires</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="bx bx-note"></i></span>
-                            <textarea class="form-control" id="customerNotes" rows="2" 
-                                      placeholder="Horaires de livraison préférés, code d'accès, etc."></textarea>
-                        </div>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer bg-light">
@@ -729,15 +795,39 @@ include VIEWPATH.'includes/frontend/Header.php';
                     </div>
                 </div>
                 
-                <!-- Astuce -->
-                <div class="mt-3 p-3 bg-light rounded">
-                    <small class="text-muted d-flex align-items-start gap-2">
-                        <i class="bx bx-info-circle mt-1"></i>
-                        <span>
-                            <strong>Astuce :</strong> Sur mobile, utilisez "Autres apps" pour partager 
-                            directement sur Instagram, TikTok ou vos applications favorites.
-                        </span>
-                    </small>
+                <!-- Astuce Partage Solidaire -->
+                <div class="mt-3 p-3 bg-light rounded" style="border-left: 4px solid var(--accent, #d4af37);">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <i class="bx bx-heart" style="font-size: 24px; color: var(--accent, #d4af37);"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong style="color: var(--primary, #0f4c3a); display: block; margin-bottom: 5px;">
+                                <i class="bx bx-share-alt me-1"></i> Partagez et aidez ceux qui en ont besoin
+                            </strong>
+                            <p class="text-muted mb-2" style="font-size: 0.85rem;">
+                                Connaissez-vous quelqu'un qui pourrait bénéficier de ce produit ? 
+                                Un proche, un ami ou une personne vulnérable ? 
+                                <strong>Votre partage peut faire la différence !</strong>
+                            </p>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <span class="badge bg-success">
+                                    <i class="bx bx-group me-1"></i> Aidez un proche
+                                </span>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bx bx-trending-up me-1"></i> 128 partages cette semaine
+                                </span>
+                                <span class="badge bg-info text-dark">
+                                    <i class="bx bx-smile me-1"></i> Ensemble, on est plus forts
+                                </span>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bx bx-question-mark me-1"></i> 
+                                Chaque partage permet à plus de personnes de découvrir des solutions naturelles 
+                                pour améliorer leur bien-être.
+                            </small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -811,7 +901,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('orderProductTitle').textContent = currentProduct.title;
             document.getElementById('orderProductPrice').textContent = currentProduct.price;
             document.getElementById('orderProductImage').src = currentProduct.image;
-            document.getElementById('orderProductRef').textContent = `Référence: #${currentProduct.id}`;
+            document.getElementById('orderProductRef').textContent = 'Réf: #' + currentProduct.id;
             
             // Réinitialiser le formulaire
             document.getElementById('orderForm').reset();
@@ -833,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 country: document.getElementById('customerCountry').value.trim(),
                 city: document.getElementById('customerCity').value.trim(),
                 address: document.getElementById('customerAddress').value.trim(),
-                notes: document.getElementById('customerNotes').value.trim()
+                notes: document.getElementById('customerNotes')?.value.trim() || ''
             };
             
             // Validation
@@ -854,9 +944,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         confirmButtonColor: '#0f4c3a'
                     });
                     const input = document.getElementById('customer' + field.charAt(0).toUpperCase() + field.slice(1));
-                    input.focus();
-                    input.classList.add('is-invalid');
-                    setTimeout(() => input.classList.remove('is-invalid'), 3000);
+                    if (input) {
+                        input.focus();
+                        input.classList.add('is-invalid');
+                        setTimeout(() => input.classList.remove('is-invalid'), 3000);
+                    }
                     return;
                 }
             }
@@ -906,6 +998,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="text-start">
                         <p class="mb-2"><strong>Produit:</strong> ${currentProduct.title}</p>
                         <p class="mb-2"><strong>Référence:</strong> #${currentProduct.id}</p>
+                        <p class="mb-2"><strong>Client:</strong> ${formData.name}</p>
                         <p class="mb-0 text-muted">Vous allez être redirigé vers WhatsApp...</p>
                     </div>
                 `,
@@ -982,7 +1075,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         url: currentProduct.url
                     });
                 } catch (err) {
-                    // L'utilisateur a annulé ou erreur
                     console.log('Partage annulé:', err);
                 }
             } else {
@@ -1025,7 +1117,6 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             await navigator.clipboard.writeText(text);
         } catch (err) {
-            // Fallback
             const textarea = document.createElement('textarea');
             textarea.value = text;
             textarea.style.position = 'fixed';
