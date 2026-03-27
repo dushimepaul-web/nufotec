@@ -60,6 +60,8 @@ class PatientForm extends MY_Controller {
         return;
     }
 
+
+
     // Check if a doctor UUID was sent via POST
     // Récupérer l'UUID du médecin depuis GET ou POST
     $doctor_uuid = $this->input->get('doctor_uuid') ?: $this->input->post('selected_doctor_uuid');
@@ -116,6 +118,7 @@ class PatientForm extends MY_Controller {
     $data = [
         'title'          => 'Nouvelle consultation - NUFOTEC',
         'pays'           => $this->Model->read('pays', null, 'pays', 'ASC'),
+        'products'       => $this->Model->read('advertise_product', null, 'id', 'DESC'),
         'mode_payements' => $this->Model->read('mode_payement', null, 'id_mode_payement'),
         'is_logged_in'   => TRUE,
         'user_id'        => $this->session->userdata('user_id'),
@@ -529,7 +532,7 @@ private function _generate_consultation_number()
         
         $data['jours_semaine'] = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
-
+        $data['products'] = $this->Model->read('advertise_product', null, 'id', 'DESC');
         $this->load->view('Medecin_present_View', $data);
     }
 

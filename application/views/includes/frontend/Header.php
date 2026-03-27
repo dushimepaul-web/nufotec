@@ -1534,7 +1534,7 @@
                         <div class="mega-column">
                             <h3><i class="bi bi-gear-wide-connected"></i> Facilities</h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('agf-phytomed-facility') ?>"><i class="bi bi-chevron-right"></i> AGF-PHYTOMED Facility</a></li>
+                                <li><a href="<?= base_url('nufotec-phytomed-facility') ?>"><i class="bi bi-chevron-right"></i> NUFOTEC PHYTOMED Facility</a></li>
                                 <li><a href="<?= base_url('manufacturing-facility') ?>"><i class="bi bi-chevron-right"></i> Manufacturing Facility</a></li>
                             </ul>
                         </div>

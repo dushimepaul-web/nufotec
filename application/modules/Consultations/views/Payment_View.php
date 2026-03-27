@@ -877,6 +877,18 @@
     </div>
 </div>
 
+
+<?php 
+        // Vérifier si la variable $products existe et contient des données
+        if (!isset($products)) {
+            // Si les produits ne sont pas encore chargés, on les récupère
+            $products = $this->Model->read('advertise_product', null, 'id', 'DESC');
+        }
+        ?>
+<?php include VIEWPATH.'sections/Products_Section.php'; ?>
+
+
+
 <script>
 let selectedPaymentMethod = null;
 let selectedMethodElement = null;

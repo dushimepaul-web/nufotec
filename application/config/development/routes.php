@@ -111,7 +111,7 @@ $route['actualites'] = 'Home/Actualites/index';
 $route['commande'] = 'Home/Commande/index'; 
 
 
-$route['agf-phytomed-facility'] = 'Frontend/AGF_PHYTOMED_INDUSTRIES_Facility';
+$route['nufotec-phytomed-facility'] = 'Frontend/NUFOTEC_PHYTOMED_INDUSTRIES_Facility';
 $route['risk-analysis'] = 'Frontend/Risk_Analysis_Mitigation_Strategies';  
 $route['strategic-partnerships'] = 'Frontend/Strategic_Partnerships'; 
 $route['broker-commission'] = 'Frontend/Commission_Fee_Payment_to_Brokers';    
@@ -329,4 +329,13 @@ $route['question'] = 'Home/faq';
 
 
 $route['PatientForm'] = 'Consultations/PatientForm';
+
+
+
+$route['advertise-product'] = 'Advertise_product/index';
+$route['advertise-product-create'] = 'Advertise_product/Create';
+$route['advertise-product-update'] = 'Advertise_product/Update';
+$route['advertise-product-delete'] = 'Advertise_product/Delete';
+
+$route['product/(:any)'] = 'Products/detail/$1';
 

@@ -1697,6 +1697,16 @@ textarea.form-control {
     </div>
 </div>
 
+<?php 
+        // Vérifier si la variable $products existe et contient des données
+        if (!isset($products)) {
+            // Si les produits ne sont pas encore chargés, on les récupère
+            $products = $this->Model->read('advertise_product', null, 'id', 'DESC');
+        }
+        ?>
+<?php include VIEWPATH.'sections/Products_Section.php'; ?>
+
+
 <script>
 // Mettre à jour le nombre total d'étapes
 const CONFIG = {

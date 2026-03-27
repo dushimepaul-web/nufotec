@@ -3,7 +3,7 @@
  <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class AGF_PHYTOMED_INDUSTRIES_Facility extends Public_Controller {
+class NUFOTEC_PHYTOMED_INDUSTRIES_Facility extends Public_Controller {
 
     public function __construct() {
         parent::__construct();
