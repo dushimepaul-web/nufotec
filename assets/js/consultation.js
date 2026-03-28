@@ -1,7 +1,7 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.1.0 - CodeIgniter 3
-// Description : Consultation vidéo peer-to-peer robuste
+// Version : 5.2.0 - CodeIgniter 3
+// Description : Consultation vidéo peer-to-peer - Mode Polling Robuste
 // ============================================
 
 (function() {
@@ -22,12 +22,13 @@
             : { id: 'other', name: 'Autre', avatar: '/assets/img/default-avatar.png' },
         currentRole: window.currentRole || 'participant',
         consultationId: window.consultationId || null,
-        maxReconnectionAttempts: 30,
+        maxReconnectionAttempts: 50,
         iceServers: null,
         debug: true,
-        // ✅ AJOUT: Configuration pour la stabilité
-        connectionTimeout: 10000,
-        iceGatheringTimeout: 8000
+        // ✅ FORCER POLLING pour hébergement mutualisé
+        forcePolling: true,
+        connectionTimeout: 15000,
+        iceGatheringTimeout: 10000
     };
 
     // ============================================
@@ -49,12 +50,13 @@
         reconnectionAttempts: 0,
         initializationComplete: false,
         heartbeatInterval: null,
-        // ✅ AJOUT: Nouveaux états pour la robustesse
-        connectionState: 'new', // new, connecting, connected, disconnected, failed, closed
+        connectionState: 'new',
         makingOffer: false,
         ignoreOffer: false,
-        polite: false, // true si ID plus petit (évite les collisions)
-        remoteStream: null
+        polite: false,
+        remoteStream: null,
+        // ✅ AJOUT: État de transport
+        transportReady: false
     };
 
     // ============================================
@@ -86,7 +88,7 @@
         log: function(level, ...args) {
             if (!CONFIG.debug && level !== 'error') return;
             const prefix = `[${new Date().toLocaleTimeString()}]`;
-            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍' }[level] || '';
+            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍', polling: '📮' }[level] || '';
             const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
             logFn(prefix, emoji, ...args);
         },
@@ -198,7 +200,6 @@
 
         loadDevices: async function() {
             try {
-                // ✅ CORRECTION: Demander la permission d'abord avec contraintes basiques
                 const tempStream = await navigator.mediaDevices.getUserMedia({ 
                     video: true, 
                     audio: true 
@@ -247,7 +248,6 @@
                 };
             }
             
-            // Sélection par défaut
             if (this.devices.cameras.length) {
                 cameraSelect.value = this.devices.cameras[0].deviceId;
                 this.selectedCamera = this.devices.cameras[0].deviceId;
@@ -265,7 +265,7 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: this.selectedCamera ? { deviceId: { exact: this.selectedCamera } } : true,
-                    audio: false // Pas d'audio en preview pour éviter l'écho
+                    audio: false
                 });
                 this.previewStream = stream;
                 const previewVideo = document.getElementById('previewVideo');
@@ -362,7 +362,7 @@
                 utils.log('success', '✅ Serveurs ICE chargés');
                 return CONFIG.iceServers;
             } catch (error) {
-                utils.log('warn', '⚠️ Utilisation des serveurs STUN publics');
+                utils.log('polling', '📮 Mode polling - Utilisation STUN publics');
                 CONFIG.iceServers = { 
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
@@ -375,17 +375,14 @@
             }
         },
 
-        // ✅ CORRECTION: Création de PeerConnection avec gestion d'état stricte
         async createPeerConnection() {
             try {
-                // Si existe déjà et est en bon état, réutiliser
                 if (state.peerConnection && 
                     ['new', 'checking', 'connected', 'completed'].includes(state.peerConnection.iceConnectionState)) {
                     utils.log('info', 'ℹ️ Réutilisation PeerConnection existante');
                     return state.peerConnection;
                 }
 
-                // Fermer l'ancienne si existe
                 if (state.peerConnection) {
                     state.peerConnection.close();
                     state.peerConnection = null;
@@ -399,7 +396,7 @@
                     iceCandidatePoolSize: 10, 
                     bundlePolicy: 'max-bundle', 
                     rtcpMuxPolicy: 'require',
-                    sdpSemantics: 'unified-plan' // ✅ IMPORTANT: Utiliser unified-plan
+                    sdpSemantics: 'unified-plan'
                 };
 
                 state.peerConnection = new RTCPeerConnection(config);
@@ -418,7 +415,6 @@
         setupPeerConnectionListeners() {
             if (!state.peerConnection) return;
 
-            // ✅ CORRECTION: Gestion complète des états de connexion
             state.peerConnection.onconnectionstatechange = () => {
                 const connState = state.peerConnection.connectionState;
                 state.connectionState = connState;
@@ -471,30 +467,24 @@
                 }
             };
 
-            // ✅ CORRECTION CRITIQUE: Gestion robuste des tracks entrants
             state.peerConnection.ontrack = (event) => {
                 utils.log('info', `📹 Track reçu: ${event.track.kind}`);
                 
-                // Créer ou réutiliser le stream distant
                 if (!state.remoteStream) {
                     state.remoteStream = new MediaStream();
                 }
                 
-                // Ajouter le track au stream
                 state.remoteStream.addTrack(event.track);
                 
-                // Attacher au video element
                 if (elements.remoteVideo) {
                     if (elements.remoteVideo.srcObject !== state.remoteStream) {
                         elements.remoteVideo.srcObject = state.remoteStream;
                         utils.log('success', '✅ Stream distant attaché');
                     }
                     
-                    // ✅ CORRECTION: Lecture avec gestion d'erreur améliorée
                     this.playRemoteVideo();
                 }
                 
-                // Mettre à jour l'état
                 if (event.track.kind === 'video') {
                     state.isConnected = true;
                     utils.closeWaitingOverlay();
@@ -520,7 +510,6 @@
             };
         },
 
-        // ✅ NOUVELLE MÉTHODE: Lecture vidéo robuste
         async playRemoteVideo() {
             if (!elements.remoteVideo) return;
             
@@ -534,7 +523,6 @@
                     utils.log('warn', `⚠️ Erreur lecture vidéo (tentative ${retryCount + 1}):`, error.name);
                     
                     if (error.name === 'NotAllowedError' && retryCount < 3) {
-                        // Politique d'autoplay - essayer en muted
                         elements.remoteVideo.muted = true;
                         setTimeout(() => attemptPlay(retryCount + 1), 200);
                     } else if (retryCount < 3) {
@@ -554,7 +542,6 @@
             const senders = state.peerConnection.getSenders();
             
             state.localStream.getTracks().forEach(track => {
-                // Vérifier si déjà ajouté
                 const alreadyAdded = senders.some(sender => sender.track === track);
                 if (alreadyAdded) {
                     utils.log('debug', `ℹ️ Track ${track.kind} déjà présent`);
@@ -570,14 +557,12 @@
             });
         },
 
-        // ✅ CORRECTION: Création d'offre avec gestion de collision
         async createOffer() {
             try {
                 if (!state.peerConnection) {
                     await this.createPeerConnection();
                 }
 
-                // ✅ CORRECTION: Vérifier qu'on n'est pas déjà en train de faire une offre
                 if (state.makingOffer) {
                     utils.log('warn', '⚠️ Offre déjà en cours de création');
                     return;
@@ -586,7 +571,6 @@
                 state.makingOffer = true;
                 utils.log('info', '🎯 Création offre...');
 
-                // Créer le data channel si initiateur et pas encore créé
                 if (state.isInitiator && !state.dataChannel) {
                     const dataChannel = state.peerConnection.createDataChannel('chat', { 
                         ordered: true, 
@@ -601,15 +585,12 @@
                 });
 
                 await state.peerConnection.setLocalDescription(offer);
-                
-                // Attendre que la gathering soit complète ou timeout
                 await this.waitForIceGathering();
 
                 if (!state.otherSocketId || !state.socket) {
                     throw new Error('Socket non disponible');
                 }
 
-                // Envoyer l'offre avec le SDP final
                 const finalOffer = state.peerConnection.localDescription;
                 utils.log('info', `📤 Envoi offre à: ${state.otherSocketId}`);
                 
@@ -626,7 +607,6 @@
             }
         },
 
-        // ✅ NOUVELLE MÉTHODE: Attendre la gathering ICE
         waitForIceGathering() {
             return new Promise((resolve) => {
                 if (!state.peerConnection) {
@@ -661,7 +641,6 @@
             });
         },
 
-        // ✅ CORRECTION MAJEURE: Gestion robuste des offres avec collision
         async handleOffer(data) {
             if (!data?.sdp || !data?.sender) { 
                 utils.log('error', '❌ Offre invalide'); 
@@ -671,12 +650,10 @@
             utils.log('info', `📩 Offre reçue de: ${data.sender}`);
 
             try {
-                // Déterminer la politesse (celui avec le plus petit ID est poli)
                 const myId = state.socket?.id || '';
                 const otherId = data.sender;
                 state.polite = myId < otherId;
 
-                // ✅ CORRECTION: Gestion de la collision d'offres (Perfect Negotiation)
                 const readyForOffer = !state.makingOffer && 
                     (state.peerConnection?.signalingState === 'stable' || state.peerConnection?.signalingState === 'have-remote-offer');
 
@@ -685,14 +662,12 @@
                 if (offerCollision) {
                     if (!state.polite) {
                         utils.log('warn', '⚔️ Collision d\'offres - je suis impoli, j\'ignore cette offre');
-                        return; // Ignorer l'offre de l'autre
+                        return;
                     } else {
                         utils.log('info', '⚔️ Collision d\'offres - je suis poli, j\'accepte cette offre');
-                        // Continuer et remplacer notre offre
                     }
                 }
 
-                // Créer la connexion si nécessaire
                 if (!state.peerConnection) {
                     await this.createPeerConnection();
                 }
@@ -701,9 +676,7 @@
                 const signalingState = pc.signalingState;
                 utils.log('info', `📊 État de signalisation: ${signalingState}`);
 
-                // ✅ CORRECTION: Gérer les différents états
                 if (signalingState === 'have-local-offer') {
-                    // Collision - rollback nécessaire si on est poli
                     if (state.polite) {
                         utils.log('info', '🔄 Rollback de mon offre locale');
                         await pc.setLocalDescription({type: "rollback"});
@@ -713,18 +686,13 @@
                     }
                 }
 
-                // Définir la description distante
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
                 utils.log('success', '✅ Description distante définie');
 
-                // Traiter les candidats en attente
                 await this.processPendingCandidates();
 
-                // Créer et envoyer la réponse
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
-                
-                // Attendre la gathering
                 await this.waitForIceGathering();
 
                 const finalAnswer = pc.localDescription;
@@ -742,7 +710,6 @@
             }
         },
 
-        // ✅ CORRECTION: Gestion robuste des réponses
         async handleAnswer(data) {
             if (!data?.sdp || !data?.sender) { 
                 utils.log('error', '❌ Réponse invalide'); 
@@ -762,7 +729,6 @@
                 
                 utils.log('info', `📊 État de signalisation: ${signalingState}`);
 
-                // ✅ CORRECTION: Vérifier l'état avant d'appliquer
                 if (signalingState === 'have-local-offer') {
                     await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
                     utils.log('success', '✅ Réponse appliquée');
@@ -771,7 +737,6 @@
                     utils.log('warn', '⚠️ Déjà en état stable, réponse ignorée');
                 } else {
                     utils.log('warn', `⚠️ État inattendu ${signalingState}, réponse mise en attente`);
-                    // Réessayer après un délai
                     setTimeout(() => this.handleAnswer(data), 500);
                 }
 
@@ -780,7 +745,6 @@
             }
         },
 
-        // ✅ CORRECTION: Gestion des candidats ICE avec file d'attente
         async handleIceCandidate(data) {
             if (!data?.candidate) return;
 
@@ -788,11 +752,9 @@
                 const pc = state.peerConnection;
                 
                 if (pc && pc.remoteDescription && pc.remoteDescription.type) {
-                    // Ajouter immédiatement si remote description existe
                     await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
                     utils.log('debug', '✅ Candidat ICE ajouté');
                 } else {
-                    // Mettre en attente
                     state.pendingIceCandidates.push(data.candidate);
                     utils.log('debug', `⏳ Candidat mis en attente (${state.pendingIceCandidates.length})`);
                 }
@@ -816,16 +778,13 @@
             }
         },
 
-        // ✅ NOUVELLE MÉTHODE: Gestion des échecs de connexion
         async handleConnectionFailure() {
             utils.log('error', '❌ Échec de connexion détecté');
             utils.showToast('Problème de connexion - tentative de reconnexion...', 'warning');
             
-            // Nettoyer et réinitialiser
             this.cleanup();
             utils.showWaitingOverlay();
             
-            // Si on est l'initiateur, réessayer
             if (state.isInitiator && state.otherSocketId) {
                 setTimeout(() => {
                     utils.log('info', '🔄 Tentative de reconnexion...');
@@ -834,7 +793,6 @@
             }
         },
 
-        // ✅ NOUVELLE MÉTHODE: Gestion des échecs ICE
         async handleIceFailure() {
             if (!state.peerConnection) return;
 
@@ -1168,7 +1126,7 @@
     };
 
     // ============================================
-    // ⭐ SOCKET.IO - VERSION ROBUSTE
+    // ⭐ SOCKET.IO - MODE POLLING UNIQUEMENT
     // ============================================
     function initSocket() {
         if (!window.io) { 
@@ -1177,29 +1135,50 @@
             return; 
         }
 
-        utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
+        utils.log('polling', '📮 Initialisation socket en mode POLLING...');
         
         try {
-            state.socket = io(CONFIG.socketUrl, {
+            // ✅ CORRECTION CRITIQUE: Forcer polling uniquement pour hébergement mutualisé
+            const socketOptions = {
                 path: CONFIG.socketPath,
-                transports: ['websocket', 'polling'], // ✅ CORRECTION: Essayer WebSocket d'abord
+                transports: ['polling'], // ✅ UNIQUEMENT POLLING - pas de WebSocket
                 withCredentials: true,
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-                timeout: 20000,
+                reconnectionDelay: 2000,        // ✅ Délai plus long pour polling
+                reconnectionDelayMax: 10000,    // ✅ Max 10 secondes
+                timeout: 30000,                 // ✅ Timeout augmenté
                 autoConnect: true,
-                forceNew: true
-            });
+                forceNew: true,
+                // ✅ Options spécifiques au polling
+                transportOptions: {
+                    polling: {
+                        extraHeaders: {
+                            'X-Client-Version': '5.2.0',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        // ✅ Important pour certains hébergeurs
+                        xhr: {
+                            withCredentials: true
+                        }
+                    }
+                }
+            };
+
+            state.socket = io(CONFIG.socketUrl, socketOptions);
 
             // Gestion des événements de transport
             state.socket.io.on("transport", (transport) => { 
-                utils.log('info', `📡 Transport utilisé: ${transport.name}`); 
+                utils.log('polling', `📮 Transport actif: ${transport.name}`); 
+            });
+
+            // ✅ CORRECTION: Gestion du upgrade échoué (WebSocket non disponible)
+            state.socket.io.on("upgrade_error", (err) => {
+                utils.log('polling', '📮 Upgrade WebSocket échoué - maintien du polling');
             });
 
             state.socket.io.on("reconnect_attempt", (attempt) => { 
-                utils.log('info', `🔄 Tentative de reconnexion ${attempt}/${CONFIG.maxReconnectionAttempts}`); 
+                utils.log('polling', `📮 Tentative de reconnexion ${attempt}/${CONFIG.maxReconnectionAttempts}`); 
                 state.reconnectionAttempts = attempt; 
             });
 
@@ -1217,8 +1196,17 @@
                 }, 5000);
             });
 
+            // ✅ NOUVEAU: Gestion de l'état de transport
+            state.socket.io.engine.on("packet", (packet) => {
+                if (packet.type === "ping") {
+                    state.transportReady = true;
+                }
+            });
+
             setupSocketListeners();
             startHeartbeat();
+            
+            utils.log('polling', '📮 Socket configuré en mode POLLING uniquement');
             
         } catch (error) { 
             utils.log('error', '❌ Erreur création socket:', error); 
@@ -1232,24 +1220,31 @@
         state.heartbeatInterval = setInterval(() => {
             if (state.socket && state.socket.connected) {
                 state.socket.emit('ping', { time: Date.now(), role: CONFIG.currentRole });
+                utils.log('debug', '💓 Heartbeat envoyé (polling)');
             } else if (state.socket && !state.socket.connected) {
                 utils.log('warn', '⚠️ Heartbeat - Socket déconnecté');
+                
+                // ✅ CORRECTION: Forcer la reconnexion si nécessaire
+                if (!state.socket.io._reconnecting) {
+                    utils.log('info', '🔄 Tentative de reconnexion forcée...');
+                    state.socket.connect();
+                }
             }
-        }, 30000);
+        }, 20000); // ✅ Heartbeat plus fréquent pour polling (20s)
 
         window.addEventListener('beforeunload', () => { 
             if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); 
         });
     }
 
-    // ✅ CORRECTION MAJEURE: Gestion robuste des événements socket
     function setupSocketListeners() {
         if (!state.socket) return;
         
         state.socket.removeAllListeners();
 
         state.socket.on('connect', () => {
-            utils.log('success', `✅ Socket connecté: ${state.socket.id}`);
+            utils.log('success', `✅ Socket connecté (polling): ${state.socket.id}`);
+            state.transportReady = true;
             utils.updateOtherStatus(true);
             
             if (CONFIG.roomId) { 
@@ -1257,35 +1252,50 @@
                 state.socket.emit('join-room', CONFIG.roomId); 
             }
             
-            utils.showToast('Connecté au serveur', 'success', 2000);
+            utils.showToast('Connecté au serveur (mode polling)', 'success', 3000);
             state.reconnectionAttempts = 0;
         });
 
         state.socket.on('connect_error', (error) => { 
-            utils.log('error', '❌ Erreur socket:', error.message); 
-            if (state.reconnectionAttempts % 3 === 0) {
-                utils.showToast('Problème de connexion au serveur', 'warning', 3000); 
+            utils.log('error', '❌ Erreur connexion socket:', error.message); 
+            
+            // ✅ CORRECTION: Si erreur persiste, afficher message utilisateur
+            if (state.reconnectionAttempts > 5 && state.reconnectionAttempts % 5 === 0) {
+                utils.showToast('Problème de connexion persistant. Vérifiez votre réseau.', 'warning', 5000); 
             }
         });
 
         state.socket.on('disconnect', (reason) => { 
             utils.log('warn', `❌ Déconnecté: ${reason}`); 
+            state.transportReady = false;
             utils.updateOtherStatus(false);
             
-            // Si déconnexion serveur, tenter de reconnecter
-            if (reason === 'io server disconnect') {
+            // ✅ CORRECTION: Reconnexion automatique pour déconnexion serveur
+            if (reason === 'io server disconnect' || reason === 'transport close') {
                 setTimeout(() => { 
-                    if (state.socket) state.socket.connect(); 
-                }, 1000); 
+                    if (state.socket && !state.socket.connected) {
+                        utils.log('info', '🔄 Reconnexion après déconnexion serveur...');
+                        state.socket.connect(); 
+                    }
+                }, 2000); 
             }
         });
 
         state.socket.on('reconnect', (attemptNumber) => { 
-            utils.log('info', `🔄 Reconnecté après ${attemptNumber} tentatives`); 
+            utils.log('success', `🔄 Reconnecté après ${attemptNumber} tentatives (polling)`); 
             if (CONFIG.roomId && state.socket) {
                 state.socket.emit('join-room', CONFIG.roomId); 
             }
             utils.showToast('Reconnecté au serveur', 'success', 2000); 
+        });
+
+        state.socket.on('reconnect_attempt', (attempt) => { 
+            utils.log('polling', `📮 Tentative ${attempt} (polling)`); 
+            state.reconnectionAttempts = attempt; 
+        });
+
+        state.socket.on('error', (error) => {
+            utils.log('error', '❌ Erreur socket générale:', error);
         });
 
         state.socket.on('room-full', (data) => { 
@@ -1293,7 +1303,7 @@
             setTimeout(() => window.location.href = '/', 3000); 
         });
 
-        // ✅ CORRECTION CRITIQUE: Gestion de user-connected avec logique d'initiateur robuste
+        // ✅ CORRECTION: Gestion robuste de user-connected
         state.socket.on('user-connected', (data) => {
             const socketId = data?.id || data;
             
@@ -1302,13 +1312,11 @@
                 return;
             }
 
-            // Ignorer sa propre connexion
             if (socketId === state.socket.id) {
                 utils.log('debug', 'ℹ️ Ignoré: propre connexion');
                 return;
             }
 
-            // Éviter les doublons
             if (state.otherSocketId === socketId) {
                 utils.log('warn', '⚠️ Utilisateur déjà connecté');
                 return;
@@ -1321,23 +1329,21 @@
             const otherName = CONFIG.otherUser.name || 'Participant';
             utils.showToast(`${otherName} a rejoint la consultation.`, 'success');
 
-            // ✅ CORRECTION: Décision d'initiateur basée sur comparaison d'IDs (déterministe)
+            // Décision d'initiateur
             const myId = state.socket.id;
             const otherId = socketId;
             
-            // Celui avec le plus petit ID initie (polite peer)
             state.isInitiator = myId < otherId;
             state.polite = state.isInitiator;
 
-            utils.log('info', `🎯 Rôle: ${state.isInitiator ? 'Initiateur' : 'Récepteur'} (mon ID: ${myId}, autre: ${otherId})`);
+            utils.log('info', `🎯 Rôle: ${state.isInitiator ? 'Initiateur' : 'Récepteur'}`);
 
-            // L'initiateur crée l'offre après un court délai pour s'assurer que tout est prêt
             if (state.isInitiator) {
                 setTimeout(() => {
                     if (!state.peerConnection) {
                         webrtc.createOffer();
                     }
-                }, 800);
+                }, 1000); // ✅ Délai augmenté pour polling
             }
         });
 
@@ -1366,7 +1372,6 @@
             } 
         });
 
-        // ✅ CORRECTION: Gestion des messages WebRTC avec vérifications
         state.socket.on('offer', (data) => {
             if (data?.sdp && data?.sender) {
                 webrtc.handleOffer(data);
@@ -1400,7 +1405,6 @@
     // ⭐ INITIALISATION DES ÉVÉNEMENTS UI
     // ============================================
     function initEventListeners() {
-        // Chat
         if (elements.chatSend && elements.chatInput) {
             elements.chatSend.addEventListener('click', (e) => { 
                 e.preventDefault(); 
@@ -1415,7 +1419,6 @@
             });
         }
 
-        // Fichiers
         if (elements.fileInput) { 
             elements.fileInput.addEventListener('change', (e) => { 
                 chat.sendFiles(e.target.files); 
@@ -1423,7 +1426,6 @@
             }); 
         }
 
-        // Contrôles média
         if (elements.muteAudioBtn) { 
             elements.muteAudioBtn.addEventListener('click', (e) => { 
                 e.preventDefault(); 
@@ -1438,7 +1440,6 @@
             }); 
         }
 
-        // Quitter
         if (elements.leaveBtn) {
             elements.leaveBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1449,7 +1450,6 @@
             });
         }
 
-        // Chat toggle
         if (elements.toggleChatBtn && elements.chatArea) { 
             elements.toggleChatBtn.addEventListener('click', (e) => { 
                 e.preventDefault(); 
@@ -1464,15 +1464,7 @@
             }); 
         }
 
-        // Gestion de la fermeture de page
         window.addEventListener('beforeunload', (e) => {
-            if (state.isConnected) {
-                // Optionnel: demander confirmation si en consultation
-                // e.preventDefault();
-                // e.returnValue = '';
-            }
-            
-            // Nettoyage propre
             if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); 
             if (state.socket) { 
                 state.socket.removeAllListeners(); 
@@ -1481,7 +1473,6 @@
             webrtc.disconnect();
         });
 
-        // Responsive
         window.addEventListener('resize', () => { 
             if (window.innerWidth > 768 && elements.chatArea) {
                 elements.chatArea.classList.remove('chat-visible'); 
@@ -1489,7 +1480,6 @@
         });
     }
 
-    // ✅ NOUVELLE MÉTHODE: Terminaison propre de consultation
     async function endConsultation() {
         if (CONFIG.consultationId) {
             utils.log('info', `📤 Terminaison consultation ${CONFIG.consultationId}`);
@@ -1576,9 +1566,8 @@
     // ============================================
     async function init() {
         try {
-            utils.log('info', '🚀 Initialisation consultation v5.1.0...');
+            utils.log('info', '🚀 Initialisation consultation v5.2.0 (Mode Polling)...');
             
-            // Vérifications
             if (!utils.checkBrowserCompatibility()) {
                 throw new Error('Navigateur non compatible');
             }
@@ -1590,7 +1579,6 @@
             utils.showWaitingOverlay();
             utils.log('info', '📹 Demande de permission caméra/micro...');
 
-            // Obtenir le stream local
             let stream;
             try {
                 stream = await initWithPermission();
@@ -1618,13 +1606,12 @@
                 return;
             }
 
-            // Initialiser Socket et WebRTC
             initSocket();
             await webrtc.loadIceServers();
             initEventListeners();
             
             state.initializationComplete = true;
-            utils.log('success', '✅ Consultation prête - en attente de l\'autre participant');
+            utils.log('success', '✅ Consultation prête - en attente de l\'autre participant (mode polling)');
             
         } catch (error) {
             utils.log('error', '❌ Échec initialisation:', error.message);
@@ -1647,8 +1634,7 @@
         webrtc, 
         chat, 
         CONFIG, 
-        version: '5.1.0',
-        // ✅ AJOUT: Méthodes utiles pour debug
+        version: '5.2.0-polling',
         restart: () => {
             webrtc.cleanup();
             if (state.otherSocketId) {
