@@ -129,17 +129,8 @@ io.on('connection', (socket) => {
 });
 
 // Écouter sur toutes les interfaces pour les tests directs
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`
-    ═══════════════════════════════════════════════════
-    ✅ SERVEUR DE SIGNALISATION (POLLING UNIQUEMENT)
-    ═══════════════════════════════════════════════════
-    📡 Port: ${PORT}
-    🔗 Path: ${BASE_PATH}/socket.io
-    🌐 Transport: POLLING (HTTP uniquement)
-    📍 Adresse: 0.0.0.0:${PORT}
-    ═══════════════════════════════════════════════════
-    `);
+server.listen(PORT, '127.0.0.1', () => {
+    console.log(`✅ Serveur démarré sur le port ${PORT}`);
 });
 
 process.on('uncaughtException', (error) => {
