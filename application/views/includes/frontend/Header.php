@@ -1743,27 +1743,17 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                         <a href="<?= base_url('Frontend/Esg_Sustainability') ?>" class="mobile-submenu-item">ESG & Sustainability</a>
                         <a href="<?= base_url('risk-analysis') ?>" class="mobile-submenu-item">Risk Analysis</a>
                         <a href="<?= base_url('Frontend/Research_Innovation') ?>" class="mobile-submenu-item">Research & Innovation</a>
-                        <a href="<?= base_url('agf-phytomed-facility') ?>" class="mobile-submenu-item">AGF-PHYTOMED Facility</a>
-                        <a href="<?= base_url('manufacturing-facility') ?>" class="mobile-submenu-item">Manufacturing Facility</a>
+                        <a href="<?= base_url('nufotec-phytomed-facility') ?>" class="mobile-submenu-item">NUFOTEC-PHYTOMED Facility</a>
+                        <a href="<?= base_url('digital-growth') ?>" class="mobile-submenu-item">Digital Growth</a>
+                        <a href="<?= base_url('market-outlook') ?>" class="mobile-submenu-item">Market Outlook</a>
                     </div>
                 </li>
 
-
-                <!-- Teleconsultation with submenu -->
                 <li class="mobile-nav-item">
-                    <button class="mobile-nav-link has-submenu" data-submenu="teleconsultation">
+                    <a href="<?= base_url('Medicins') ?>" class="mobile-nav-link">
                         <i class="bi bi-camera-video"></i>
                         <span>Teleconsultation</span>
-                        <i class="bi bi-chevron-right chevron"></i>
-                    </button>
-                    <div class="mobile-submenu" id="submenu-teleconsultation">
-                        <a href="<?= base_url('Medicins') ?>" class="mobile-submenu-item">Health Consultation</a>
-                        <a href="<?= base_url('digital-growth') ?>" class="mobile-submenu-item">Digital Growth</a>
-                        <a href="<?= base_url('market-outlook') ?>" class="mobile-submenu-item">Market Outlook</a>
-                        <a href="<?= base_url('industry-reports') ?>" class="mobile-submenu-item">Industry Reports</a>
-                        <a href="<?= base_url('publications') ?>" class="mobile-submenu-item">Publications</a>
-                        <a href="<?= base_url('telemedicine-platform') ?>" class="mobile-submenu-item">Telemedicine Platform</a>
-                    </div>
+                    </a>
                 </li>
 
                 <!-- Investment with submenu -->
@@ -1775,8 +1765,6 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                     </button>
                     <div class="mobile-submenu" id="submenu-investment">
                         <a href="<?= base_url('investment-projection') ?>" class="mobile-submenu-item">Investment Projection</a>
-                        <a href="<?= base_url('seed-capital-allocation') ?>" class="mobile-submenu-item">Seed Capital Allocation</a>
-                        <a href="<?= base_url('financial-projections') ?>" class="mobile-submenu-item">Financial Projections</a>
                         <a href="<?= base_url('investor-commitment') ?>" class="mobile-submenu-item">Investor Commitment</a>
                         <a href="<?= base_url('strategic-partnerships') ?>" class="mobile-submenu-item">Strategic Partnerships</a>
                         <a href="<?= base_url('broker-commission') ?>" class="mobile-submenu-item">Broker Commission</a>
@@ -2032,7 +2020,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             if (data.produits?.length > 0) {
                 html += '<div class="result-category">Produits</div>';
                 data.produits.slice(0, 4).forEach(item => {
-                    html += `<a href="<?= base_url("boutique/detail/") ?>${item.slug}" class="result-item">
+                    html += `<a href="<?= base_url("Products/detail/") ?>${item.slug}" class="result-item">
                         <i class="bi bi-box-seam"></i>
                         <div class="result-content">
                             <div class="result-title">${escapeHtml(item.titre)}</div>
