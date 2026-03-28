@@ -148,7 +148,7 @@ io.on('connection', (socket) => {
 });
 
 // UN SEUL listen()
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`
     ═══════════════════════════════════════════════════
     ✅ SERVEUR DE SIGNALISATION DÉMARRÉ
