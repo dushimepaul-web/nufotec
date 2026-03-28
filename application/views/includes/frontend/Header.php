@@ -1422,20 +1422,6 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     <!-- Loading Spinner - UNIQUEMENT sur la page d'accueil -->
 
 
-<!-- ===== LOADING SPINNER NUFOTEC ===== -->
-<?php 
-    $seg1 = strtolower((string)$this->uri->segment(1));
-    // S'affiche si vide (accueil) ou si le contrôleur est Home
-    if($seg1 == '' || $seg1 == 'Home/Home'): 
-?>
-<div class="loading-spinner" id="loadingSpinner">
-    <div class="spinner-box">
-        <img src="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>" class="logo-center" alt="Logo">
-        <div class="spinner-ring"></div>
-    </div>
-    <p class="loader-text"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?></p>
-</div>
-<?php endif; ?>
 
 
 

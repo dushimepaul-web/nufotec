@@ -84,6 +84,10 @@ class Media extends Public_Controller {
     /**
  * Vue filtrée par type de média
  */
+/**
+ * Vue filtrée par type de média
+ * Pour les vidéos, on affiche aussi les liens vidéo (type 'link')
+ */
 public function type($type)
 {
     $valid_types = ['video', 'audio', 'image', 'document', 'link', 'autre'];
@@ -95,22 +99,14 @@ public function type($type)
     
     $user = $this->getCurrentUser();
     
-    // CORRECTION : On passe UNIQUEMENT le type, pas le user_id
-    $medias = $this->db->query("
-        SELECT g.*,
-               (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-               (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-               (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-               (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-               (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-               (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-               (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-        FROM galerie_medias g
-        WHERE g.est_actif = 1 AND g.type = ?
-        ORDER BY g.created_at DESC
-    ", [$type])->result_array();  // UN SEUL paramètre
+    // Récupérer les médias selon le type
+    $medias = $this->getMediasByType($type);
     
     $medias = $this->formatMedias($medias);
+    
+    // Récupérer les statistiques
+    $stats = $this->getTypeStats($type);
+    
     $categories = $this->getCategoriesWithCount();
     
     $data = [
@@ -119,10 +115,115 @@ public function type($type)
         'current_type' => $type,
         'search_query' => null,
         'results_count' => count($medias),
-        'user' => $user
+        'user' => $user,
+        'stats' => $stats
     ];
     
     $this->load->view('Media_View', $data);
+}
+
+/**
+ * Récupérer les médias par type avec gestion spéciale pour les vidéos
+ */
+private function getMediasByType($type)
+{
+    if ($type === 'video') {
+        // Inclure les vidéos locales et les liens vidéo
+        $sql = "
+            SELECT g.*,
+                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings,
+                   1 as is_video_content
+            FROM galerie_medias g
+            WHERE g.est_actif = 1 
+            AND (
+                g.type = 'video' 
+                OR (g.type = 'link' AND g.lien IS NOT NULL AND (
+                    g.lien LIKE '%youtube%' OR 
+                    g.lien LIKE '%youtu.be%' OR 
+                    g.lien LIKE '%vimeo%' OR 
+                    g.lien LIKE '%dailymotion%' OR
+                    g.lien LIKE '%facebook.com/watch%' OR
+                    g.lien LIKE '%twitch.tv%'
+                ))
+            )
+            ORDER BY 
+                CASE 
+                    WHEN g.type = 'video' THEN 0
+                    ELSE 1
+                END,
+                g.created_at DESC
+        ";
+        
+        return $this->db->query($sql)->result_array();
+        
+    } else {
+        // Pour les autres types, requête simple
+        $sql = "
+            SELECT g.*,
+                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings,
+                   0 as is_video_content
+            FROM galerie_medias g
+            WHERE g.est_actif = 1 AND g.type = ?
+            ORDER BY g.created_at DESC
+        ";
+        
+        return $this->db->query($sql, [$type])->result_array();
+    }
+}
+
+/**
+ * Obtenir les statistiques par type
+ */
+private function getTypeStats($type)
+{
+    if ($type === 'video') {
+        $result = $this->db->query("
+            SELECT 
+                COUNT(CASE WHEN g.type = 'video' THEN 1 END) as local_videos,
+                COUNT(CASE WHEN g.type = 'link' AND (
+                    g.lien LIKE '%youtube%' OR 
+                    g.lien LIKE '%youtu.be%' OR 
+                    g.lien LIKE '%vimeo%' OR 
+                    g.lien LIKE '%dailymotion%' OR
+                    g.lien LIKE '%facebook.com/watch%' OR
+                    g.lien LIKE '%twitch.tv%'
+                ) THEN 1 END) as external_videos,
+                COUNT(*) as total
+            FROM galerie_medias g
+            WHERE g.est_actif = 1 
+            AND (
+                g.type = 'video' 
+                OR (g.type = 'link' AND g.lien IS NOT NULL AND (
+                    g.lien LIKE '%youtube%' OR 
+                    g.lien LIKE '%youtu.be%' OR 
+                    g.lien LIKE '%vimeo%' OR 
+                    g.lien LIKE '%dailymotion%' OR
+                    g.lien LIKE '%facebook.com/watch%' OR
+                    g.lien LIKE '%twitch.tv%'
+                ))
+            )
+        ")->row_array();
+        
+        return [
+            'videos_locales' => (int)($result['local_videos'] ?? 0),
+            'videos_externes' => (int)($result['external_videos'] ?? 0),
+            'total' => (int)($result['total'] ?? 0)
+        ];
+    }
+    
+    return null;
 }
 
     /**
