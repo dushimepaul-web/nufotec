@@ -207,7 +207,7 @@
     </a>
     <a href="<?= base_url('Medicins') ?>" class="sticky-nav-item">
         <i class="bi bi-camera-video"></i>
-        <span>Téléconsult</span>
+        <span>Téléconsultation</span>
     </a>
     <a href="<?= base_url('investissement') ?>" class="sticky-nav-item">
         <i class="bi bi-graph-up-arrow"></i>

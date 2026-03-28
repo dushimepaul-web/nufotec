@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!D<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,7 @@
         $product_title = htmlspecialchars($product['title']) . ' - ' . htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'));
         $product_desc = !empty($product['description']) ? substr(htmlspecialchars($product['description']), 0, 160) : htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Produit NUFOTEC'));
         $product_image = base_url('attachments/Products/'.$product['main_image']);
-        $product_url = base_url('product/'.($product['slug'] ?? $product['id']));
+        $product_url = base_url('Products/detail/'.($product['slug'] ?? $product['id']));
     ?>
     
     <!-- Titre spécifique produit -->
@@ -56,7 +56,10 @@
         // Page normale - Meta tags génériques du site
         $site_title = htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'));
         $site_desc = htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Projet intégré de transformation agro-alimentaire et de production phytomédicinale au Burundi'));
-        $site_image = base_url($this->Model->get_setting('og_image', 'assets/fro.png'));
+        
+        // ✅ CORRECTION: Image OG avec fallback
+        $site_logo = $this->Model->get_setting('site_logo', 'assets/fro.png');
+        $site_image = base_url('attachments/Configurations/' . $site_logo);
     ?>
     
     <!-- Titre général du site -->
@@ -69,20 +72,26 @@
     <!-- URL canonique -->
     <link rel="canonical" href="<?= base_url() ?>">
     
-    <!-- Open Graph général -->
+    <!-- ✅ Open Graph général - OPTIMISÉ -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?= base_url() ?>">
     <meta property="og:title" content="<?= $site_title ?>">
     <meta property="og:description" content="<?= $site_desc ?>">
     <meta property="og:image" content="<?= $site_image ?>">
+    <meta property="og:image:secure_url" content="<?= str_replace('http://', 'https://', $site_image) ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Logo <?= $site_title ?>">
     <meta property="og:site_name" content="<?= $site_title ?>">
     <meta property="og:locale" content="fr_FR">
     
-    <!-- Twitter Card général -->
+    <!-- ✅ Twitter Card général - OPTIMISÉ -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="<?= base_url() ?>">
     <meta name="twitter:title" content="<?= $site_title ?>">
     <meta name="twitter:description" content="<?= $site_desc ?>">
     <meta name="twitter:image" content="<?= $site_image ?>">
+    <meta name="twitter:image:alt" content="Logo <?= $site_title ?>">
     
     <?php endif; ?>
 
@@ -126,7 +135,7 @@ if ($is_product_page) {
 } else {
     $jsonData["name"] = $site_title;
     $jsonData["url"] = base_url();
-    $jsonData["logo"] = base_url('attachments/Configurations/' . $this->Model->get_setting('site_logo', ''));
+    $jsonData["logo"] = $site_image;
     $jsonData["description"] = $site_desc;
 }
 echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
