@@ -1,8 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.2.0 - CodeIgniter 3
+// Version : 5.3.0 - CodeIgniter 3
 // Description : Consultation vidéo peer-to-peer avec modal de permission
-// FIX: Utilisation exclusive du transport polling (WebSocket bloqué sur hébergement mutualisé)
+// FIX: Compatibilité Socket.IO - Configuration simple et robuste
 // ============================================
 
 (function() {
@@ -156,7 +156,13 @@
 
         cleanup: function() {
             if (state.heartbeatInterval) { clearInterval(state.heartbeatInterval); state.heartbeatInterval = null; }
-            if (state.socket) { state.socket.removeAllListeners(); state.socket.disconnect(); state.socket = null; }
+            if (state.socket) { 
+                try {
+                    state.socket.removeAllListeners(); 
+                    state.socket.disconnect(); 
+                } catch(e) {}
+                state.socket = null; 
+            }
             webrtc.cleanup();
         },
 
@@ -826,7 +832,7 @@
     };
 
     // ============================================
-    // ⭐ SOCKET.IO - CONFIGURATION POLLING UNIQUEMENT
+    // ⭐ SOCKET.IO - CONFIGURATION SIMPLIFIÉE
     // ============================================
     function initSocket() {
         if (!window.io) { 
@@ -835,56 +841,19 @@
             return; 
         }
         
-        utils.log('info', '🔌 Initialisation socket avec transport polling uniquement...', CONFIG.socketUrl + CONFIG.socketPath);
+        utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
         
         try {
-            // Configuration avec polling uniquement (WebSocket désactivé)
+            // Configuration SIMPLE et compatible
             state.socket = io(CONFIG.socketUrl, {
                 path: CONFIG.socketPath,
-                transports: ['polling'], // UNIQUEMENT POLLING - pas de WebSocket
-                withCredentials: true,
+                transports: ['polling'], // Uniquement polling
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
                 reconnectionDelay: 1000,
-                reconnectionDelayMax: 8000,
-                timeout: 45000,
-                autoConnect: true,
-                forceNew: true,
-                rememberUpgrade: false, // Important: ne pas tenter d'upgrader vers WebSocket
-                upgrade: false, // Désactiver l'upgrade automatique
-                transportOptions: {
-                    polling: {
-                        extraHeaders: { 'X-Client-Version': '5.2.0' },
-                        timeout: 60000
-                    }
-                }
-            });
-            
-            // Forcer le transport polling (désactiver toute tentative d'upgrade)
-            if (state.socket.io && state.socket.io.engine) {
-                state.socket.io.engine.transport = 'polling';
-            }
-            
-            state.socket.io.on("transport", (transport) => { 
-                utils.log('info', `📡 Transport utilisé: ${transport.name}`); 
-            });
-            
-            state.socket.io.on("reconnect_attempt", (attempt) => { 
-                utils.log('info', `🔄 Tentative de reconnexion ${attempt}/${CONFIG.maxReconnectionAttempts}`); 
-                state.reconnectionAttempts = attempt; 
-            });
-            
-            state.socket.io.on("reconnect_error", (error) => { 
-                utils.log('error', '❌ Erreur de reconnexion:', error.message); 
-            });
-            
-            state.socket.io.on("reconnect_failed", () => {
-                utils.log('error', `❌ Échec de reconnexion après ${CONFIG.maxReconnectionAttempts} tentatives`);
-                utils.showToast('Connexion perdue. Veuillez recharger la page.', 'error');
-                setTimeout(() => { 
-                    if (confirm('La connexion au serveur est perdue. Recharger la page ?')) 
-                        window.location.reload(); 
-                }, 5000);
+                reconnectionDelayMax: 5000,
+                timeout: 20000,
+                autoConnect: true
             });
             
             setupSocketListeners();
@@ -893,50 +862,7 @@
         } catch (error) { 
             utils.log('error', '❌ Erreur création socket:', error); 
             utils.showToast('Erreur de connexion', 'error'); 
-            tryFallbackConnection(); 
         }
-    }
-
-    function tryFallbackConnection() {
-        utils.log('info', '🔄 Tentative de connexion alternative avec polling pur...');
-        setTimeout(() => {
-            try {
-                if (state.socket && state.socket.connected) return;
-                
-                state.socket = io(CONFIG.socketUrl, { 
-                    path: CONFIG.socketPath, 
-                    transports: ['polling'], // Uniquement polling
-                    reconnectionAttempts: 50, 
-                    timeout: 60000, 
-                    reconnectionDelay: 2000, 
-                    reconnectionDelayMax: 10000,
-                    upgrade: false,
-                    rememberUpgrade: false
-                });
-                
-                setupSocketListeners();
-                startHeartbeat();
-                utils.log('success', '✅ Connexion établie avec configuration polling');
-                utils.showToast('Connecté au serveur', 'info', 3000);
-                
-            } catch (e) { 
-                utils.log('error', '❌ Échec total de connexion:', e.message); 
-                utils.showToast('Impossible de se connecter au serveur', 'error');
-                
-                // Afficher un message d'erreur plus visible
-                if (elements.waitingOverlay) {
-                    elements.waitingOverlay.innerHTML = `
-                        <div class="waiting-content" style="background: #1e2a2f; border-radius: 16px;">
-                            <i class="fas fa-wifi" style="font-size: 48px; color: #F44336; margin-bottom: 20px;"></i>
-                            <h3>Problème de connexion</h3>
-                            <p>Impossible de se connecter au serveur de consultation.</p>
-                            <p style="font-size: 12px; margin-top: 10px;">Vérifiez votre connexion internet et rechargez la page.</p>
-                            <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #00a884; border: none; border-radius: 8px; color: white; cursor: pointer;">Recharger</button>
-                        </div>
-                    `;
-                }
-            }
-        }, 2000);
     }
 
     function startHeartbeat() {
@@ -944,13 +870,11 @@
         state.heartbeatInterval = setInterval(() => {
             if (state.socket && state.socket.connected) {
                 utils.log('debug', '💓 Heartbeat - Socket OK');
-                state.socket.emit('ping', { time: Date.now(), role: CONFIG.currentRole });
+                try {
+                    state.socket.emit('ping', { time: Date.now(), role: CONFIG.currentRole });
+                } catch(e) {}
             } else if (state.socket && !state.socket.connected) {
                 utils.log('warn', '⚠️ Heartbeat - Socket déconnectée');
-                if (state.socket.io && !state.socket.io._reconnecting) { 
-                    utils.log('info', '🔄 Reconnexion forcée...'); 
-                    state.socket.connect(); 
-                }
             }
         }, 30000);
         window.addEventListener('beforeunload', () => { if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); });
@@ -974,7 +898,7 @@
         
         state.socket.on('connect_error', (error) => { 
             utils.log('error', '❌ Erreur socket:', error.message); 
-            if (state.reconnectionAttempts % 3 === 0 && state.reconnectionAttempts > 0) {
+            if (state.reconnectionAttempts % 5 === 0) {
                 utils.showToast('Problème de connexion au serveur', 'warning', 3000);
             }
         });
@@ -982,9 +906,6 @@
         state.socket.on('disconnect', (reason) => { 
             utils.log('warn', `❌ Déconnecté: ${reason}`); 
             utils.updateOtherStatus(false); 
-            if (reason === 'io server disconnect') {
-                setTimeout(() => { if (state.socket) state.socket.connect(); }, 1000);
-            }
         });
         
         state.socket.on('reconnect', (attemptNumber) => { 
@@ -996,6 +917,15 @@
         state.socket.on('reconnect_attempt', (attempt) => { 
             utils.log('debug', `🔄 Tentative ${attempt}`); 
             state.reconnectionAttempts = attempt; 
+        });
+        
+        state.socket.on('reconnect_error', (error) => { 
+            utils.log('error', '❌ Erreur reconnexion:', error.message); 
+        });
+        
+        state.socket.on('reconnect_failed', () => {
+            utils.log('error', `❌ Échec reconnexion après ${CONFIG.maxReconnectionAttempts} tentatives`);
+            utils.showToast('Connexion perdue. Rechargez la page.', 'error');
         });
         
         state.socket.on('room-full', (data) => { 
@@ -1080,7 +1010,7 @@
         }
         if (elements.toggleChatBtn && elements.chatArea) { elements.toggleChatBtn.addEventListener('click', (e) => { e.preventDefault(); elements.chatArea.classList.add('chat-visible'); }); }
         if (elements.chatCloseBtn && elements.chatArea) { elements.chatCloseBtn.addEventListener('click', (e) => { e.preventDefault(); elements.chatArea.classList.remove('chat-visible'); }); }
-        window.addEventListener('beforeunload', () => { if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); if (state.socket) { state.socket.removeAllListeners(); state.socket.disconnect(); } webrtc.disconnect(); });
+        window.addEventListener('beforeunload', () => { if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); if (state.socket) { try { state.socket.removeAllListeners(); state.socket.disconnect(); } catch(e) {} } webrtc.disconnect(); });
         window.addEventListener('resize', () => { if (window.innerWidth > 768 && elements.chatArea) elements.chatArea.classList.remove('chat-visible'); });
     }
 
@@ -1159,5 +1089,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 
-    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '5.2.0' };
+    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '5.3.0' };
 })();
