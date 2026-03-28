@@ -407,7 +407,7 @@ public function apiSearch()
     $data['medias'] = $medias;
 
     // Charger ta vue media_view
-    $this->load->view('media_view', $data);
+    $this->load->view('Media_View', $data);
 }
 
     /**
