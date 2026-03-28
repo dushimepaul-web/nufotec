@@ -1,8 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.3.0 - CodeIgniter 3
+// Version : 5.3.1 - Optimisé mutualisé
 // Description : Consultation vidéo peer-to-peer
-// Optimisé pour hébergement mutualisé (polling uniquement)
+// Signalisation via polling/websocket (adaptatif)
 // ============================================
 
 (function() {
@@ -53,7 +53,8 @@
         videoRetryCount: 0,
         remoteStream: null,
         iceConnectionStartTime: null,
-        reconnectTimer: null
+        reconnectTimer: null,
+        currentTransport: null
     };
 
     // ============================================
@@ -194,7 +195,7 @@
     };
 
     // ============================================
-    // ⭐ GESTIONNAIRE PERMISSIONS
+    // ⭐ GESTIONNAIRE PERMISSIONS (inchangé, votre code est bon)
     // ============================================
     const PermissionManager = {
         devices: { cameras: [], micros: [] },
@@ -322,7 +323,7 @@
     };
 
     // ============================================
-    // ⭐ WEBRTC
+    // ⭐ WEBRTC (version optimisée)
     // ============================================
     const webrtc = {
         async loadIceServers() {
@@ -330,18 +331,21 @@
                 utils.log('info', '🌐 Chargement ICE...');
                 const response = await fetch('/socket/api/ice-servers');
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                CONFIG.iceServers = await response.json();
+                const data = await response.json();
+                CONFIG.iceServers = data;
                 utils.log('success', '✅ Serveurs ICE chargés');
                 return CONFIG.iceServers;
             } catch (error) {
                 utils.log('error', '❌ Erreur ICE:', error.message);
-                CONFIG.iceServers = { iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' }
-                ]};
+                CONFIG.iceServers = { 
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' }
+                    ]
+                };
                 utils.showToast('Utilisation des serveurs STUN publics', 'info');
                 return CONFIG.iceServers;
             }
@@ -382,7 +386,7 @@
                 }
                 if (!CONFIG.iceServers) await this.loadIceServers();
                 const config = { 
-                    ...CONFIG.iceServers, 
+                    iceServers: CONFIG.iceServers.iceServers || CONFIG.iceServers,
                     iceTransportPolicy: 'all', 
                     iceCandidatePoolSize: 10, 
                     bundlePolicy: 'max-bundle', 
@@ -668,7 +672,7 @@
     };
 
     // ============================================
-    // ⭐ CHAT
+    // ⭐ CHAT (inchangé, votre code est bon)
     // ============================================
     const chat = {
         setDataChannel: function(channel) {
@@ -824,7 +828,7 @@
     };
 
     // ============================================
-    // ⭐ SOCKET.IO - CONFIGURATION SIMPLIFIÉE
+    // ⭐ SOCKET.IO - CONFIGURATION ADAPTATIVE
     // ============================================
     function initSocket() {
         if (!window.io) { 
@@ -836,15 +840,16 @@
         utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
         
         try {
-            // Configuration SIMPLE et fiable
+            // Configuration ADAPTATIVE - WebSocket si possible, sinon polling
             state.socket = io(CONFIG.socketUrl, {
                 path: CONFIG.socketPath,
-                transports: ['polling'],
+                transports: ['websocket', 'polling'],  // WebSocket d'abord, polling en fallback
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
                 reconnectionDelay: 1000,
                 reconnectionDelayMax: 5000,
-                timeout: 20000
+                timeout: 20000,
+                upgrade: true  // Permet l'upgrade vers WebSocket si possible
             });
             
             setupSocketListeners();
@@ -874,19 +879,30 @@
         state.socket.removeAllListeners();
         
         state.socket.on('connect', () => {
+            // Récupérer le transport utilisé
+            state.currentTransport = state.socket.io?.engine?.transport?.name || 'unknown';
             utils.log('success', `✅ Socket connectée: ${state.socket.id}`);
-            utils.log('info', `📡 Transport: ${state.socket.io?.engine?.transport?.name || 'polling'}`);
+            utils.log('info', `📡 Transport: ${state.currentTransport} (${state.currentTransport === 'websocket' ? 'temps réel' : 'polling HTTP'})`);
+            
+            if (state.currentTransport === 'polling') {
+                utils.showToast('Mode dégradé: polling HTTP', 'info', 3000);
+            } else {
+                utils.showToast('Connecté en temps réel', 'success', 2000);
+            }
+            
             utils.updateOtherStatus(true);
             if (CONFIG.roomId) { 
                 utils.log('info', `📤 Rejoindre salle: ${CONFIG.roomId}`); 
                 state.socket.emit('join-room', CONFIG.roomId); 
             }
-            utils.showToast('Connecté au serveur', 'success', 2000);
             state.reconnectionAttempts = 0;
         });
         
         state.socket.on('connect_error', (error) => { 
             utils.log('error', '❌ Erreur socket:', error.message); 
+            if (error.message.includes('websocket')) {
+                utils.log('info', '🔄 WebSocket échoué, fallback sur polling...');
+            }
         });
         
         state.socket.on('disconnect', (reason) => { 
@@ -905,6 +921,19 @@
             state.reconnectionAttempts = attempt; 
         });
         
+        state.socket.on('participants-list', (data) => {
+            utils.log('info', `👥 Participants existants:`, data.participants);
+            if (data.participants && data.participants.length > 0) {
+                // Prendre le premier participant comme interlocuteur
+                state.otherSocketId = data.participants[0];
+                utils.log('info', `🎯 Cible définie: ${state.otherSocketId}`);
+                if (!state.peerConnection && !state.isInitiator) {
+                    state.isInitiator = true;
+                    setTimeout(() => webrtc.createOffer(), 500);
+                }
+            }
+        });
+        
         state.socket.on('room-full', (data) => { 
             utils.showToast(data?.message || 'Salle pleine', 'error', 5000); 
             setTimeout(() => window.location.href = '/', 3000); 
@@ -913,7 +942,7 @@
         state.socket.on('user-connected', (data) => {
             const socketId = data?.id || data;
             if (!socketId || socketId === state.otherSocketId) return;
-            utils.log('info', `👤 Utilisateur connecté: ${socketId}`);
+            utils.log('info', `👤 Utilisateur connecté: ${socketId} (transport: ${data?.transport || 'unknown'})`);
             state.otherSocketId = socketId;
             utils.updateOtherStatus(true);
             const otherName = CONFIG.otherUser.name || 'Participant';
@@ -921,7 +950,7 @@
             
             if (!state.peerConnection && !state.isInitiator) { 
                 state.isInitiator = true; 
-                webrtc.createOffer(); 
+                setTimeout(() => webrtc.createOffer(), 500);
             }
         });
         
@@ -957,7 +986,7 @@
     }
 
     // ============================================
-    // ⭐ INITIALISATION DES ÉVÉNEMENTS UI
+    // ⭐ INITIALISATION DES ÉVÉNEMENTS UI (inchangé)
     // ============================================
     function initEventListeners() {
         if (elements.chatSend && elements.chatInput) {
@@ -992,7 +1021,7 @@
     }
 
     // ============================================
-    // ⭐ INITIALISATION AVEC PERMISSION
+    // ⭐ INITIALISATION AVEC PERMISSION (inchangé)
     // ============================================
     async function initWithPermission() {
         try {
@@ -1066,5 +1095,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 
-    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '5.3.0' };
+    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '5.3.1' };
 })();
