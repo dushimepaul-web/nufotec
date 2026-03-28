@@ -238,6 +238,8 @@ $route['Media'] = 'Home/Media/index';
 // Route pour la recherche HTML (AFFICHAGE DES RÉSULTATS)
 $route['media/search'] = 'Home/Media/search';
 
+$route['media/search/(:any)'] = 'Home/Media/search/$1';
+
 // Route pour la recherche AJAX (JSON)
 $route['media/searchAjax'] = 'Home/Media/apiSearch';
 $route['media/apiSearch'] = 'Home/Media/apiSearch'; // Ajout pour compatibilité

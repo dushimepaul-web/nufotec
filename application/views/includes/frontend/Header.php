@@ -1484,7 +1484,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         <!-- Search Desktop -->
         <div class="search-container" id="searchContainer">
             <div class="search-box">
-                <input type="text" id="searchInput" class="search-input" placeholder="Search products, categories..." autocomplete="off">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search products..." autocomplete="off">
                 <button class="search-btn" id="searchBtn">
                     <i class="bi bi-search"></i>
                 </button>
@@ -2066,12 +2066,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                     <i class="bi bi-search" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
                     Aucun résultat trouvé pour "${escapeHtml(query)}"
                 </div>`;
-            } else {
-                html += `<a href="<?= base_url("search/index?q=") ?>${encodeURIComponent(query)}" class="result-view-all">
-                    Voir tous les résultats <i class="bi bi-arrow-right"></i>
-                </a>`;
-            }
-
+            } 
             searchResults.innerHTML = html;
         }
 
