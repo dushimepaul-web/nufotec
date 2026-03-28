@@ -1,8 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
 // Version : 5.3.0 - CodeIgniter 3
-// Description : Consultation vidéo peer-to-peer avec modal de permission
-// FIX: Compatibilité Socket.IO - Configuration simple et robuste
+// Description : Consultation vidéo peer-to-peer
+// Optimisé pour hébergement mutualisé (polling uniquement)
 // ============================================
 
 (function() {
@@ -52,7 +52,8 @@
         heartbeatInterval: null,
         videoRetryCount: 0,
         remoteStream: null,
-        iceConnectionStartTime: null
+        iceConnectionStartTime: null,
+        reconnectTimer: null
     };
 
     // ============================================
@@ -156,11 +157,12 @@
 
         cleanup: function() {
             if (state.heartbeatInterval) { clearInterval(state.heartbeatInterval); state.heartbeatInterval = null; }
+            if (state.reconnectTimer) { clearTimeout(state.reconnectTimer); state.reconnectTimer = null; }
             if (state.socket) { 
                 try {
                     state.socket.removeAllListeners(); 
                     state.socket.disconnect(); 
-                } catch(e) {}
+                } catch(e) { utils.log('warn', 'Erreur nettoyage socket:', e); }
                 state.socket = null; 
             }
             webrtc.cleanup();
@@ -402,19 +404,20 @@
         setupPeerConnectionListeners() {
             const startTime = Date.now();
             
-            const iceTimeout = setTimeout(() => {
+            let iceTimeout = setTimeout(() => {
                 if (!state.isConnected && state.peerConnection && 
                     state.peerConnection.iceConnectionState !== 'connected' &&
-                    state.peerConnection.iceConnectionState !== 'completed') {
+                    state.peerConnection.iceConnectionState !== 'completed' &&
+                    state.peerConnection.iceConnectionState !== 'failed') {
                     utils.log('warn', '⚠️ Timeout connexion ICE, tentative de renégociation...');
-                    if (state.otherSocketId && state.socket) {
+                    if (state.otherSocketId && state.socket && state.socket.connected) {
                         webrtc.createOffer();
                     }
                 }
             }, CONFIG.iceConnectionTimeout);
             
             state.peerConnection.onicecandidate = (event) => {
-                if (event.candidate && state.otherSocketId && state.socket) {
+                if (event.candidate && state.otherSocketId && state.socket && state.socket.connected) {
                     try {
                         const candidateStr = event.candidate.candidate;
                         if (candidateStr.includes('relay')) {
@@ -438,7 +441,7 @@
                         utils.closeWaitingOverlay();
                         utils.updateOtherStatus(true);
                         utils.showToast('Connexion vidéo établie', 'success', 2000);
-                        if (state.socket) {
+                        if (state.socket && state.socket.connected) {
                             state.socket.emit('connection-quality', { 
                                 quality: state.usingRelay ? 'relay' : 'direct', 
                                 duration: duration 
@@ -482,8 +485,7 @@
                                 utils.updateOtherStatus(true);
                             })
                             .catch(error => {
-                                utils.log('error', '❌ Échec lecture vidéo après plusieurs tentatives:', error);
-                                utils.showToast('Problème de lecture vidéo', 'warning');
+                                utils.log('error', '❌ Échec lecture vidéo:', error);
                             });
                     };
                     
@@ -512,7 +514,7 @@
                 utils.log('info', '🔌 État connexion:', state.peerConnection.connectionState);
                 if (state.peerConnection.connectionState === 'failed') {
                     utils.showToast('Échec de connexion, tentative de reconnexion...', 'error');
-                    if (state.otherSocketId && state.socket && !state.isInitiator) {
+                    if (state.otherSocketId && state.socket && state.socket.connected && !state.isInitiator) {
                         setTimeout(() => webrtc.createOffer(), 2000);
                     }
                 }
@@ -546,7 +548,7 @@
                     iceRestart: false 
                 });
                 await state.peerConnection.setLocalDescription(offer);
-                if (!state.otherSocketId || !state.socket) throw new Error('Socket non disponible');
+                if (!state.otherSocketId || !state.socket || !state.socket.connected) throw new Error('Socket non disponible');
                 utils.log('info', `📤 Envoi offre à: ${state.otherSocketId}`);
                 state.socket.emit('offer', { target: state.otherSocketId, sdp: offer });
             } catch (error) { 
@@ -566,7 +568,7 @@
                 const answer = await state.peerConnection.createAnswer();
                 await state.peerConnection.setLocalDescription(answer);
                 utils.log('info', `📤 Envoi réponse à: ${data.sender}`);
-                if (state.socket) state.socket.emit('answer', { target: data.sender, sdp: answer });
+                if (state.socket && state.socket.connected) state.socket.emit('answer', { target: data.sender, sdp: answer });
             } catch (error) { 
                 utils.log('error', '❌ Erreur traitement offre:', error); 
             }
@@ -680,16 +682,6 @@
             state.dataChannel.onopen = () => { 
                 utils.log('success', '✅ Canal de données ouvert'); 
                 utils.showToast('Chat connecté', 'success');
-                
-                const welcomeMsg = {
-                    type: 'chat',
-                    sender: utils.getCurrentUserId(),
-                    timestamp: Date.now(),
-                    message: 'Chat connecté'
-                };
-                try {
-                    state.dataChannel.send(JSON.stringify(welcomeMsg));
-                } catch(e) { utils.log('warn', 'Erreur envoi message bienvenue:', e); }
             };
             state.dataChannel.onclose = () => utils.log('warn', '❌ Canal de données fermé');
             state.dataChannel.onerror = (error) => { 
@@ -844,16 +836,15 @@
         utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
         
         try {
-            // Configuration SIMPLE et compatible
+            // Configuration SIMPLE et fiable
             state.socket = io(CONFIG.socketUrl, {
                 path: CONFIG.socketPath,
-                transports: ['polling'], // Uniquement polling
+                transports: ['polling'],
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
                 reconnectionDelay: 1000,
                 reconnectionDelayMax: 5000,
-                timeout: 20000,
-                autoConnect: true
+                timeout: 20000
             });
             
             setupSocketListeners();
@@ -873,8 +864,6 @@
                 try {
                     state.socket.emit('ping', { time: Date.now(), role: CONFIG.currentRole });
                 } catch(e) {}
-            } else if (state.socket && !state.socket.connected) {
-                utils.log('warn', '⚠️ Heartbeat - Socket déconnectée');
             }
         }, 30000);
         window.addEventListener('beforeunload', () => { if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); });
@@ -898,9 +887,6 @@
         
         state.socket.on('connect_error', (error) => { 
             utils.log('error', '❌ Erreur socket:', error.message); 
-            if (state.reconnectionAttempts % 5 === 0) {
-                utils.showToast('Problème de connexion au serveur', 'warning', 3000);
-            }
         });
         
         state.socket.on('disconnect', (reason) => { 
@@ -917,15 +903,6 @@
         state.socket.on('reconnect_attempt', (attempt) => { 
             utils.log('debug', `🔄 Tentative ${attempt}`); 
             state.reconnectionAttempts = attempt; 
-        });
-        
-        state.socket.on('reconnect_error', (error) => { 
-            utils.log('error', '❌ Erreur reconnexion:', error.message); 
-        });
-        
-        state.socket.on('reconnect_failed', () => {
-            utils.log('error', `❌ Échec reconnexion après ${CONFIG.maxReconnectionAttempts} tentatives`);
-            utils.showToast('Connexion perdue. Rechargez la page.', 'error');
         });
         
         state.socket.on('room-full', (data) => { 
