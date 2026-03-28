@@ -685,87 +685,115 @@
             });
         },
 
-        // ✅ CORRECTION: Gestion robuste des offres avec logs de débogage
-        async handleOffer(data) {
-            // ✅ NOUVEAU: Logs de débogage détaillés
-            utils.log('offer', '📨 handleOffer appelé avec:', {
-                sender: data?.sender,
-                sdpType: data?.sdp?.type,
-                hasSdp: !!data?.sdp?.sdp,
-                sdpLength: data?.sdp?.sdp?.length || 0
-            });
-            
-            if (!data?.sdp || !data?.sender) { 
-                utils.log('error', '❌ Offre invalide - données manquantes'); 
-                return; 
-            }
+       // ✅ CORRECTION: Gestion robuste des offres avec logs de débogage et meilleure gestion des collisions
+async handleOffer(data) {
+    // ✅ NOUVEAU: Logs de débogage détaillés
+    utils.log('offer', '📨 handleOffer appelé avec:', {
+        sender: data?.sender,
+        sdpType: data?.sdp?.type,
+        hasSdp: !!data?.sdp?.sdp,
+        sdpLength: data?.sdp?.sdp?.length || 0
+    });
+    
+    if (!data?.sdp || !data?.sender) { 
+        utils.log('error', '❌ Offre invalide - données manquantes'); 
+        return; 
+    }
 
-            utils.log('offer', `📩 Offre reçue de: ${data.sender}`);
+    utils.log('offer', `📩 Offre reçue de: ${data.sender}`);
 
-            try {
-                const myId = state.socket?.id || '';
-                const otherId = data.sender;
-                state.polite = myId < otherId;
+    try {
+        const myId = state.socket?.id || '';
+        const otherId = data.sender;
+        state.polite = myId < otherId;
 
-                const readyForOffer = !state.makingOffer && 
-                    (state.peerConnection?.signalingState === 'stable' || state.peerConnection?.signalingState === 'have-remote-offer');
+        const readyForOffer = !state.makingOffer && 
+            (state.peerConnection?.signalingState === 'stable' || 
+             state.peerConnection?.signalingState === 'have-remote-offer');
 
-                const offerCollision = !readyForOffer;
+        const offerCollision = !readyForOffer;
 
-                if (offerCollision) {
-                    if (!state.polite) {
-                        utils.log('warn', '⚔️ Collision d\'offres - je suis impoli, j\'ignore cette offre');
-                        return;
-                    } else {
-                        utils.log('info', '⚔️ Collision d\'offres - je suis poli, j\'accepte cette offre');
-                    }
-                }
-
-                if (!state.peerConnection) {
-                    utils.log('info', '🔧 Création PeerConnection pour répondre...');
-                    await this.createPeerConnection();
-                }
-
-                const pc = state.peerConnection;
-                const signalingState = pc.signalingState;
-                utils.log('info', `📊 État de signalisation: ${signalingState}`);
-
-                if (signalingState === 'have-local-offer') {
-                    if (state.polite) {
-                        utils.log('info', '🔄 Rollback de mon offre locale');
-                        await pc.setLocalDescription({type: "rollback"});
-                    } else {
-                        utils.log('warn', '⚠️ État inattendu have-local-offer');
-                        return;
-                    }
-                }
-
-                utils.log('info', '📥 Application de la description distante...');
-                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                utils.log('success', '✅ Description distante définie');
-
-                await this.processPendingCandidates();
-
-                utils.log('info', '📝 Création de la réponse...');
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                await this.waitForIceGathering();
-
-                const finalAnswer = pc.localDescription;
-                utils.log('answer', `📤 Envoi réponse à: ${data.sender}`);
+        if (offerCollision) {
+            if (!state.polite) {
+                // ✅ CORRECTION: Au lieu d'ignorer l'offre, réinitialiser et accepter
+                utils.log('warn', '⚔️ Collision d\'offres - je suis impoli, je réinitialise et accepte cette offre');
                 
-                if (state.socket) {
-                    state.socket.emit('answer', { 
-                        target: data.sender, 
-                        sdp: finalAnswer 
-                    });
-                    utils.log('success', '✅ Réponse envoyée avec succès');
+                // Réinitialiser l'état pour accepter la nouvelle offre
+                if (state.peerConnection) {
+                    const pc = state.peerConnection;
+                    if (pc.signalingState !== 'closed') {
+                        await pc.setLocalDescription({type: "rollback"});
+                        utils.log('info', '🔄 Rollback effectué pour accepter la nouvelle offre');
+                    }
                 }
-
-            } catch (error) { 
-                utils.log('error', '❌ Erreur traitement offre:', error); 
+                
+                // Réinitialiser les compteurs
+                state.makingOffer = false;
+                state.offerRetryCount = 0;
+                if (state.offerTimeout) {
+                    clearTimeout(state.offerTimeout);
+                    state.offerTimeout = null;
+                }
+                
+                // Continuer le traitement normal
+            } else {
+                utils.log('info', '⚔️ Collision d\'offres - je suis poli, j\'accepte cette offre');
             }
-        },
+        }
+
+        if (!state.peerConnection) {
+            utils.log('info', '🔧 Création PeerConnection pour répondre...');
+            await this.createPeerConnection();
+        }
+
+        const pc = state.peerConnection;
+        const signalingState = pc.signalingState;
+        utils.log('info', `📊 État de signalisation: ${signalingState}`);
+
+        if (signalingState === 'have-local-offer') {
+            if (state.polite) {
+                utils.log('info', '🔄 Rollback de mon offre locale');
+                await pc.setLocalDescription({type: "rollback"});
+            } else {
+                // ✅ CORRECTION: Si impoli mais qu'on est là, on a déjà fait le rollback plus haut
+                if (!offerCollision || (offerCollision && !state.polite)) {
+                    utils.log('warn', '⚠️ État inattendu have-local-offer, tentative de rollback');
+                    try {
+                        await pc.setLocalDescription({type: "rollback"});
+                    } catch (err) {
+                        utils.log('error', '❌ Échec du rollback:', err);
+                        return;
+                    }
+                }
+            }
+        }
+
+        utils.log('info', '📥 Application de la description distante...');
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        utils.log('success', '✅ Description distante définie');
+
+        await this.processPendingCandidates();
+
+        utils.log('info', '📝 Création de la réponse...');
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await this.waitForIceGathering();
+
+        const finalAnswer = pc.localDescription;
+        utils.log('answer', `📤 Envoi réponse à: ${data.sender}`);
+        
+        if (state.socket) {
+            state.socket.emit('answer', { 
+                target: data.sender, 
+                sdp: finalAnswer 
+            });
+            utils.log('success', '✅ Réponse envoyée avec succès');
+        }
+
+    } catch (error) { 
+        utils.log('error', '❌ Erreur traitement offre:', error); 
+    }
+}
 
         // ✅ CORRECTION: Gestion des réponses avec flag
         async handleAnswer(data) {
