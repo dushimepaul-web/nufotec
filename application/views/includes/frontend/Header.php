@@ -1748,13 +1748,6 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                     </div>
                 </li>
 
-                <!-- Shop -->
-                <li class="mobile-nav-item">
-                    <a href="<?= base_url('boutique') ?>" class="mobile-nav-link">
-                        <i class="bi bi-shop"></i>
-                        <span>Shop</span>
-                    </a>
-                </li>
 
                 <!-- Teleconsultation with submenu -->
                 <li class="mobile-nav-item">
@@ -1792,24 +1785,19 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                     </div>
                 </li>
 
-                <!-- News & Media with submenu -->
+                
+
                 <li class="mobile-nav-item">
-                    <button class="mobile-nav-link has-submenu" data-submenu="news">
-                        <i class="bi bi-newspaper"></i>
-                        <span>News & Media</span>
-                        <i class="bi bi-chevron-right chevron"></i>
-                    </button>
-                    <div class="mobile-submenu" id="submenu-news">
-                        <a href="<?= base_url('Media') ?>" class="mobile-submenu-item">All Media</a>
-                        <a href="<?= base_url('Media/view/video') ?>" class="mobile-submenu-item">Videos & Links</a>
-                        <a href="<?= base_url('Media/view/audio') ?>" class="mobile-submenu-item">Audio</a>
-                        <a href="<?= base_url('Media/view/image') ?>" class="mobile-submenu-item">Images</a>
-                        <a href="<?= base_url('Media/view/book') ?>" class="mobile-submenu-item">Books & E-books</a>
-                        <a href="<?= base_url('blog') ?>" class="mobile-submenu-item">Latest News</a>
-                        <a href="<?= base_url('events') ?>" class="mobile-submenu-item">Events</a>
-                        <a href="<?= base_url('press-releases') ?>" class="mobile-submenu-item">Press Releases</a>
-                        <a href="<?= base_url('question') ?>" class="mobile-submenu-item">FAQ</a>
-                    </div>
+                    <a href="<?= base_url('blog') ?>" class="mobile-nav-link">
+                        <i class="bi bi-envelope"></i>
+                        <span>Actualites</span>
+                    </a>
+                </li>
+                <li class="mobile-nav-item">
+                    <a href="<?= base_url('Home/Faq') ?>" class="mobile-nav-link">
+                        <i class="bi bi-envelope"></i>
+                        <span>Faq</span>
+                    </a>
                 </li>
 
                 <!-- Contact direct -->
