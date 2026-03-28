@@ -456,7 +456,7 @@
                                                     </div>
                                                     <div class="flex-1">
                                                         <p class="font-semibold text-sm lg:text-base text-slate-800">
-                                                            Dr. <?= htmlspecialchars($consultation->medecin_prenom . ' ' . $consultation->medecin_nom) ?>
+                                                            <?= htmlspecialchars($consultation->medecin_prenom . ' ' . $consultation->medecin_nom) ?>
                                                         </p>
                                                         <p class="text-xs lg:text-sm text-slate-500">
                                                             <?= htmlspecialchars($consultation->specialite) ?> • 
@@ -504,7 +504,7 @@
                                                              class="w-10 h-10 rounded-full object-cover">
                                                         <div class="flex-1 min-w-0">
                                                             <p class="font-medium text-sm text-slate-800 truncate">
-                                                                Dr. <?= htmlspecialchars($msg->sender_prenom . ' ' . $msg->sender_nom) ?>
+                                                                <?= htmlspecialchars($msg->sender_prenom . ' ' . $msg->sender_nom) ?>
                                                             </p>
                                                             <p class="text-xs text-slate-500 truncate"><?= htmlspecialchars($msg->message) ?></p>
                                                             <p class="text-xs text-slate-400 mt-1"><?= timeAgo($msg->created_at) ?></p>
@@ -532,7 +532,7 @@
                                                         <img src="<?= base_url('attachments/Users/' . ($doc->photo ?? 'default-avatar.png')) ?>" 
                                                              class="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover">
                                                         <div class="flex-1">
-                                                            <p class="font-medium text-sm text-slate-800">Dr. <?= htmlspecialchars($doc->prenom . ' ' . $doc->nom) ?></p>
+                                                            <p class="font-medium text-sm text-slate-800"><?= htmlspecialchars($doc->prenom . ' ' . $doc->nom) ?></p>
                                                             <p class="text-xs text-slate-500"><?= htmlspecialchars($doc->specialite) ?></p>
                                                         </div>
                                                         <div class="text-right">
@@ -552,81 +552,92 @@
                         </div>
                     </section>
 
-                    <!-- SECTION: CONSULTATIONS -->
-                    <section id="section-consultations" class="section-content hidden section-transition">
-                        <div class="bg-white rounded-xl lg:rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                            <div class="p-4 lg:p-6 border-b border-slate-100">
-                                <h3 class="font-bold text-xl text-slate-800">Historique des Consultations</h3>
-                                <p class="text-sm text-slate-500 mt-1">Toutes vos consultations passées et à venir</p>
-                            </div>
-                            
-                            <div class="overflow-x-auto">
-                                <table class="w-full min-w-[600px] lg:min-w-full">
-                                    <thead class="bg-slate-50">
-                                        <tr>
-                                            <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Médecin</th>
-                                            <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Date</th>
-                                            <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Type</th>
-                                            <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Statut</th>
-                                            <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        <?php foreach($all_consultations as $consultation): ?>
-                                            <tr class="hover:bg-slate-50 transition-colors consultation-row" data-status="<?= $consultation->statut ?>">
-                                                <td class="px-4 lg:px-6 py-3 lg:py-4">
-                                                    <div class="flex items-center gap-2 lg:gap-3">
-                                                        <img src="<?= base_url('attachments/Users/' . ($consultation->medecin_photo ?? 'default-avatar.png')) ?>" 
-                                                             class="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover">
-                                                        <div>
-                                                            <p class="font-medium text-sm text-slate-800">Dr. <?= htmlspecialchars($consultation->medecin_prenom . ' ' . $consultation->medecin_nom) ?></p>
-                                                            <p class="text-xs text-slate-500"><?= htmlspecialchars($consultation->specialite) ?></p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 lg:px-6 py-3 lg:py-4">
-                                                    <p class="text-sm text-slate-800"><?= date('d/m/Y', strtotime($consultation->date_souhaitee ?? $consultation->date_fin)) ?></p>
-                                                    <p class="text-xs text-slate-500"><?= date('H:i', strtotime($consultation->date_souhaitee ?? $consultation->date_fin)) ?></p>
-                                                </td>
-                                                <td class="px-4 lg:px-6 py-3 lg:py-4">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                                                        <i class="fas fa-<?= $consultation->type == 'video' ? 'video' : ($consultation->type == 'telephone' ? 'phone' : 'hospital') ?> text-xs"></i>
-                                                        <?= ucfirst($consultation->type) ?>
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 lg:px-6 py-3 lg:py-4">
-                                                    <span class="px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium 
-                                                        <?= $consultation->statut == 'terminee' ? 'bg-medical-100 text-medical-700' : 
-                                                           ($consultation->statut == 'confirmee' ? 'bg-primary-100 text-primary-700' : 
-                                                           ($consultation->statut == 'annulee' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')) ?>">
-                                                        <?= ucfirst(str_replace('_', ' ', $consultation->statut)) ?>
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 lg:px-6 py-3 lg:py-4">
-                                                    <div class="flex items-center gap-2">
-                                                        <?php 
-                                                        $rendez_vous_time = strtotime($consultation->date_debut);
-                                                        $ouverture_salle = $rendez_vous_time - (10 * 60); 
-                                                        $maintenant = time();
+                   <!-- SECTION: CONSULTATIONS -->
+<section id="section-consultations" class="section-content hidden section-transition">
+    <div class="bg-white rounded-xl lg:rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-4 lg:p-6 border-b border-slate-100">
+            <h3 class="font-bold text-xl text-slate-800">Historique des Consultations</h3>
+            <p class="text-sm text-slate-500 mt-1">Toutes vos consultations passées et à venir</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px] lg:min-w-full">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Médecin</th>
+                        <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Date</th>
+                        <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Type</th>
+                        <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Statut</th>
+                        <th class="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-semibold text-slate-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <?php if (!empty($all_consultations)): ?>
+                        <?php foreach($all_consultations as $consultation): ?>
+                            <tr class="hover:bg-slate-50 transition-colors consultation-row" data-status="<?= $consultation->statut ?>">
+                                <td class="px-4 lg:px-6 py-3 lg:py-4">
+                                    <div class="flex items-center gap-2 lg:gap-3">
+                                        <img src="<?= base_url('attachments/Users/' . ($consultation->medecin_photo ?? 'default-avatar.png')) ?>" 
+                                             class="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover">
+                                        <div>
+                                            <p class="font-medium text-sm text-slate-800"><?= htmlspecialchars($consultation->medecin_prenom . ' ' . $consultation->medecin_nom) ?></p>
+                                            <p class="text-xs text-slate-500"><?= htmlspecialchars($consultation->specialite) ?></p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 lg:px-6 py-3 lg:py-4">
+                                    <p class="text-sm text-slate-800"><?= date('d/m/Y', strtotime($consultation->date_souhaitee ?? $consultation->date_fin)) ?></p>
+                                    <p class="text-xs text-slate-500"><?= date('H:i', strtotime($consultation->date_souhaitee ?? $consultation->date_fin)) ?></p>
+                                </td>
+                                <td class="px-4 lg:px-6 py-3 lg:py-4">
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                        <i class="fas fa-<?= $consultation->type == 'video' ? 'video' : ($consultation->type == 'telephone' ? 'phone' : 'hospital') ?> text-xs"></i>
+                                        <?= ucfirst($consultation->type) ?>
+                                    </span>
+                                </td>
+                                <td class="px-4 lg:px-6 py-3 lg:py-4">
+                                    <span class="px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium 
+                                        <?= $consultation->statut == 'terminee' ? 'bg-medical-100 text-medical-700' : 
+                                           ($consultation->statut == 'confirmee' ? 'bg-primary-100 text-primary-700' : 
+                                           ($consultation->statut == 'annulee' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')) ?>">
+                                        <?= ucfirst(str_replace('_', ' ', $consultation->statut)) ?>
+                                    </span>
+                                </td>
+                                <td class="px-4 lg:px-6 py-3 lg:py-4">
+                                    <div class="flex items-center gap-2">
+                                        <?php 
+                                        $rendez_vous_time = strtotime($consultation->date_debut);
+                                        $ouverture_salle = $rendez_vous_time - (10 * 60); 
+                                        $maintenant = time();
 
-                                                        if (!empty($consultation->room_id) && 
-                                                            in_array($consultation->statut, ['confirmee', 'en_cours']) && 
-                                                            ($maintenant >= $ouverture_salle || $consultation->statut == 'en_cours')
-                                                        ): ?>
-                                                            <a href="<?= base_url('Joinconsultation/index?room=' . urlencode($consultation->room_id) . '&user=' . $this->session->userdata('user_id')) ?>" 
-                                                               target="_blank" 
-                                                               class="inline-flex items-center gap-1 lg:gap-2 px-2 py-1 lg:px-4 lg:py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs lg:text-sm font-medium rounded-lg transition-all shadow-sm">
-                                                                <i class="fas fa-video text-xs"></i>
-                                                                <span>Rejoindre</span>
-                                                            </a>
-                                                    </div>
-                                                 </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </section>
+                                        if (!empty($consultation->room_id) && 
+                                            in_array($consultation->statut, ['confirmee', 'en_cours']) && 
+                                            ($maintenant >= $ouverture_salle || $consultation->statut == 'en_cours')
+                                        ): ?>
+                                            <a href="<?= base_url('Joinconsultation/index?room=' . urlencode($consultation->room_id) . '&user=' . $this->session->userdata('user_id')) ?>" 
+                                               target="_blank" 
+                                               class="inline-flex items-center gap-1 lg:gap-2 px-2 py-1 lg:px-4 lg:py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs lg:text-sm font-medium rounded-lg transition-all shadow-sm">
+                                                <i class="fas fa-video text-xs"></i>
+                                                <span>Rejoindre</span>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="5" class="px-4 lg:px-6 py-8 text-center text-slate-500">
+                                <i class="fas fa-calendar-xmark text-3xl mb-2"></i>
+                                <p>Aucune consultation trouvée</p>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
                     <!-- SECTION: ORDONNANCES (Version simplifiée pour mobile) -->
                     <section id="section-ordonnances" class="section-content hidden section-transition">
@@ -647,7 +658,7 @@
                                                     </div>
                                                     <div>
                                                         <p class="font-semibold text-slate-800"><?= htmlspecialchars($prescription->medicament) ?></p>
-                                                        <p class="text-xs lg:text-sm text-slate-500">Dr. <?= htmlspecialchars($prescription->medecin_prenom . ' ' . $prescription->medecin_nom) ?></p>
+                                                        <p class="text-xs lg:text-sm text-slate-500"><?= htmlspecialchars($prescription->medecin_prenom . ' ' . $prescription->medecin_nom) ?></p>
                                                     </div>
                                                 </div>
                                                 <span class="px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium <?= $prescription->is_active ? 'bg-medical-100 text-medical-700' : 'bg-slate-100 text-slate-600' ?>">
@@ -758,7 +769,7 @@
                                             <?php foreach($payment_history as $payment): ?>
                                                 <tr class="hover:bg-slate-50 transition-colors">
                                                     <td class="px-4 lg:px-6 py-3 lg:py-4 font-medium text-sm text-slate-800"><?= $payment->numero_consultation ?></td>
-                                                    <td class="px-4 lg:px-6 py-3 lg:py-4 text-sm">Dr. <?= htmlspecialchars($payment->medecin_prenom . ' ' . $payment->medecin_nom) ?></td>
+                                                    <td class="px-4 lg:px-6 py-3 lg:py-4 text-sm"><?= htmlspecialchars($payment->medecin_prenom . ' ' . $payment->medecin_nom) ?></td>
                                                     <td class="px-4 lg:px-6 py-3 lg:py-4 text-sm text-slate-600"><?= date('d/m/Y', strtotime($payment->payment_date)) ?></td>
                                                     <td class="px-4 lg:px-6 py-3 lg:py-4 font-semibold text-sm text-slate-800"><?= number_format($payment->prix_ttc, 2) ?> <?= $payment->devise ?></td>
                                                     <td class="px-4 lg:px-6 py-3 lg:py-4">
@@ -1264,7 +1275,7 @@
                             ${conv.unread > 0 ? `<span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">${conv.unread}</span>` : ''}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="font-medium text-sm text-slate-800 truncate">Dr. ${conv.doctor}</p>
+                            <p class="font-medium text-sm text-slate-800 truncate">${conv.doctor}</p>
                             <p class="text-xs text-slate-500 truncate">${conv.lastMessage.message || 'Message'}</p>
                         </div>
                         <span class="text-xs text-slate-400">${timeAgo(conv.lastMessage.created_at)}</span>
@@ -1300,7 +1311,7 @@
                         </button>
                         <img src="<?= base_url('attachments/Users/') ?>${photo || 'default-avatar.png'}" class="w-10 h-10 rounded-full object-cover">
                         <div>
-                            <p class="font-semibold text-slate-800">Dr. ${doctorName}</p>
+                            <p class="font-semibold text-slate-800">${doctorName}</p>
                             <p class="text-xs text-slate-500">${specialty}</p>
                         </div>
                     </div>

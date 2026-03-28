@@ -528,14 +528,7 @@
     </div>
 </div>
 
-<!-- Footer -->
-<footer>
-    <div class="container-fluid px-3">
-        <div class="text-center">
-            <p class="mb-0">&copy; <?= date('Y') ?> Notre Boutique. Tous droits réservés.</p>
-        </div>
-    </div>
-</footer>
+
 
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
