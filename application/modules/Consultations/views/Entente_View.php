@@ -785,7 +785,6 @@
     </div>
 
 </div>
-</div>
 
 <!-- ==================== MODAL CREATE CONSULTATION ==================== -->
 <div class="modal fade" id="create_consultation" data-bs-backdrop="static" tabindex="-1">
