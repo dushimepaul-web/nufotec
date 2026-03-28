@@ -372,6 +372,44 @@ public function detail($identifier)
         ]);
     }
 
+public function apiSearch()
+{
+    $query = $this->input->get('q');
+    $limit = (int)($this->input->get('limit') ?? 10);
+    
+    if (empty($query) || strlen($query) < 2) {
+        redirect('media');
+    }
+    
+    $like = '%' . $this->db->escape_like_str($query) . '%';
+    
+    $medias = $this->db->query("
+        SELECT g.id_media, g.titre, g.type, g.slug, g.miniature,
+               (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count
+        FROM galerie_medias g
+        WHERE g.est_actif = 1 
+        AND (g.titre LIKE ? OR g.credits LIKE ?)
+        ORDER BY 
+            CASE 
+                WHEN g.titre LIKE ? THEN 10
+                ELSE 1
+            END DESC
+        LIMIT ?
+    ", [
+        $like, $like,
+        $like,
+        $limit
+    ])->result_array();
+
+    // 🔥 IMPORTANT : envoyer les données à la vue
+    $data['search_query'] = $query;
+    $data['results_count'] = count($medias);
+    $data['medias'] = $medias;
+
+    // Charger ta vue media_view
+    $this->load->view('media_view', $data);
+}
+
     /**
      * API: Ajouter un commentaire
      */

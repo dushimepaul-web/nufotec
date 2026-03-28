@@ -625,7 +625,7 @@
                 </a>
             </div>
             <div class="search-container">
-                <form action="<?= base_url('media/search') ?>" method="GET" class="search-form">
+                <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form">
                     <input type="text" name="q" class="search-input" placeholder="Rechercher des médias..." value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>">
                     <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
                 </form>
@@ -661,12 +661,17 @@
     </aside>
 
     <main class="main-content">
-        <?php if (isset($search_query)): ?>
-        <div class="search-header">
-            <h4><i class="bi bi-search me-2"></i>Résultats pour "<?= htmlspecialchars($search_query) ?>"</h4>
-            <span><?= $results_count ?> média<?= $results_count > 1 ? 's' : '' ?> trouvé<?= $results_count > 1 ? 's' : '' ?></span>
-        </div>
-        <?php endif; ?>
+       <?php if (!empty($search_query)): ?>
+    <div class="search-header">
+        <h4>
+            <i class="bi bi-search me-2"></i>
+            Résultats pour "<?= htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8') ?>"
+        </h4>
+        <span>
+            <?= (int)$results_count ?> média<?= $results_count > 1 ? 's' : '' ?> trouvé<?= $results_count > 1 ? 's' : '' ?>
+        </span>
+    </div>
+<?php endif; ?>
 
         <div class="media-grid">
             <?php if (!empty($medias)): ?>
