@@ -1,6 +1,6 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.2.0 - CodeIgniter 3
+// Version : 5.3.0 - CodeIgniter 3
 // Description : Consultation vidéo peer-to-peer - Mode Polling Robuste
 // ============================================
 
@@ -25,10 +25,12 @@
         maxReconnectionAttempts: 50,
         iceServers: null,
         debug: true,
-        // ✅ FORCER POLLING pour hébergement mutualisé
         forcePolling: true,
         connectionTimeout: 15000,
-        iceGatheringTimeout: 10000
+        iceGatheringTimeout: 10000,
+        // ✅ NOUVEAU: Configuration pour le renvoi d'offre
+        offerRetryDelay: 3000,
+        offerMaxRetries: 3
     };
 
     // ============================================
@@ -55,8 +57,11 @@
         ignoreOffer: false,
         polite: false,
         remoteStream: null,
-        // ✅ AJOUT: État de transport
-        transportReady: false
+        transportReady: false,
+        // ✅ NOUVEAU: État pour le renvoi d'offre
+        offerRetryCount: 0,
+        offerTimeout: null,
+        answerReceived: false
     };
 
     // ============================================
@@ -88,7 +93,7 @@
         log: function(level, ...args) {
             if (!CONFIG.debug && level !== 'error') return;
             const prefix = `[${new Date().toLocaleTimeString()}]`;
-            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍', polling: '📮' }[level] || '';
+            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍', polling: '📮', offer: '📤', answer: '📩' }[level] || '';
             const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
             logFn(prefix, emoji, ...args);
         },
@@ -426,6 +431,13 @@
                         utils.closeWaitingOverlay();
                         utils.updateOtherStatus(true);
                         utils.showToast('Consultation vidéo établie', 'success');
+                        // ✅ NOUVEAU: Réinitialiser le compteur de renvoi
+                        state.offerRetryCount = 0;
+                        state.answerReceived = true;
+                        if (state.offerTimeout) {
+                            clearTimeout(state.offerTimeout);
+                            state.offerTimeout = null;
+                        }
                         break;
                     case 'disconnected':
                         state.isConnected = false;
@@ -498,23 +510,22 @@
             };
 
             state.peerConnection.onnegotiationneeded = async () => {
-    utils.log('info', '🔄 Négociation nécessaire');
-    
-    // ✅ CORRECTION: Vérifier si déjà en cours
-    if (state.makingOffer) {
-        utils.log('debug', 'ℹ️ Négociation déjà en cours, ignorée');
-        return;
-    }
-    
-    try {
-        state.makingOffer = true;
-        await this.createOffer();
-    } catch (err) {
-        utils.log('error', '❌ Erreur négociation:', err);
-    } finally {
-        state.makingOffer = false;
-    }
-};
+                utils.log('info', '🔄 Négociation nécessaire');
+                
+                if (state.makingOffer) {
+                    utils.log('debug', 'ℹ️ Négociation déjà en cours, ignorée');
+                    return;
+                }
+                
+                try {
+                    state.makingOffer = true;
+                    await this.createOffer();
+                } catch (err) {
+                    utils.log('error', '❌ Erreur négociation:', err);
+                } finally {
+                    state.makingOffer = false;
+                }
+            };
         },
 
         async playRemoteVideo() {
@@ -564,6 +575,7 @@
             });
         },
 
+        // ✅ CORRECTION: Création d'offre avec mécanisme de renvoi
         async createOffer() {
             try {
                 if (!state.peerConnection) {
@@ -575,8 +587,15 @@
                     return;
                 }
 
+                // ✅ NOUVEAU: Vérifier si on a déjà reçu une réponse
+                if (state.answerReceived) {
+                    utils.log('info', '✅ Réponse déjà reçue, pas besoin de renvoyer');
+                    return;
+                }
+
                 state.makingOffer = true;
-                utils.log('info', '🎯 Création offre...');
+                state.offerRetryCount++;
+                utils.log('offer', `🎯 Création offre (tentative ${state.offerRetryCount}/${CONFIG.offerMaxRetries})...`);
 
                 if (state.isInitiator && !state.dataChannel) {
                     const dataChannel = state.peerConnection.createDataChannel('chat', { 
@@ -599,12 +618,30 @@
                 }
 
                 const finalOffer = state.peerConnection.localDescription;
-                utils.log('info', `📤 Envoi offre à: ${state.otherSocketId}`);
+                utils.log('offer', `📤 Envoi offre à: ${state.otherSocketId}`);
                 
                 state.socket.emit('offer', { 
                     target: state.otherSocketId, 
                     sdp: finalOffer 
                 });
+
+                // ✅ NOUVEAU: Planifier le renvoi si pas de réponse
+                if (state.offerTimeout) {
+                    clearTimeout(state.offerTimeout);
+                }
+                
+                if (state.offerRetryCount < CONFIG.offerMaxRetries && !state.answerReceived) {
+                    state.offerTimeout = setTimeout(() => {
+                        if (!state.answerReceived && state.otherSocketId) {
+                            utils.log('offer', `⏰ Pas de réponse, tentative de renvoi ${state.offerRetryCount + 1}...`);
+                            state.makingOffer = false;
+                            this.createOffer();
+                        }
+                    }, CONFIG.offerRetryDelay);
+                } else if (state.offerRetryCount >= CONFIG.offerMaxRetries) {
+                    utils.log('error', '❌ Nombre maximum de tentatives atteint');
+                    utils.showToast('Impossible d\'établir la connexion. Veuillez rafraîchir.', 'error');
+                }
 
             } catch (error) { 
                 utils.log('error', '❌ Erreur création offre:', error); 
@@ -648,13 +685,22 @@
             });
         },
 
+        // ✅ CORRECTION: Gestion robuste des offres avec logs de débogage
         async handleOffer(data) {
+            // ✅ NOUVEAU: Logs de débogage détaillés
+            utils.log('offer', '📨 handleOffer appelé avec:', {
+                sender: data?.sender,
+                sdpType: data?.sdp?.type,
+                hasSdp: !!data?.sdp?.sdp,
+                sdpLength: data?.sdp?.sdp?.length || 0
+            });
+            
             if (!data?.sdp || !data?.sender) { 
-                utils.log('error', '❌ Offre invalide'); 
+                utils.log('error', '❌ Offre invalide - données manquantes'); 
                 return; 
             }
 
-            utils.log('info', `📩 Offre reçue de: ${data.sender}`);
+            utils.log('offer', `📩 Offre reçue de: ${data.sender}`);
 
             try {
                 const myId = state.socket?.id || '';
@@ -676,6 +722,7 @@
                 }
 
                 if (!state.peerConnection) {
+                    utils.log('info', '🔧 Création PeerConnection pour répondre...');
                     await this.createPeerConnection();
                 }
 
@@ -693,23 +740,26 @@
                     }
                 }
 
+                utils.log('info', '📥 Application de la description distante...');
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
                 utils.log('success', '✅ Description distante définie');
 
                 await this.processPendingCandidates();
 
+                utils.log('info', '📝 Création de la réponse...');
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
                 await this.waitForIceGathering();
 
                 const finalAnswer = pc.localDescription;
-                utils.log('info', `📤 Envoi réponse à: ${data.sender}`);
+                utils.log('answer', `📤 Envoi réponse à: ${data.sender}`);
                 
                 if (state.socket) {
                     state.socket.emit('answer', { 
                         target: data.sender, 
                         sdp: finalAnswer 
                     });
+                    utils.log('success', '✅ Réponse envoyée avec succès');
                 }
 
             } catch (error) { 
@@ -717,13 +767,21 @@
             }
         },
 
+        // ✅ CORRECTION: Gestion des réponses avec flag
         async handleAnswer(data) {
             if (!data?.sdp || !data?.sender) { 
                 utils.log('error', '❌ Réponse invalide'); 
                 return; 
             }
 
-            utils.log('info', `📩 Réponse reçue de: ${data.sender}`);
+            utils.log('answer', `📩 Réponse reçue de: ${data.sender}`);
+
+            // ✅ NOUVEAU: Marquer qu'on a reçu une réponse
+            state.answerReceived = true;
+            if (state.offerTimeout) {
+                clearTimeout(state.offerTimeout);
+                state.offerTimeout = null;
+            }
 
             if (!state.peerConnection) { 
                 utils.log('error', '❌ Pas de PeerConnection'); 
@@ -791,6 +849,10 @@
             
             this.cleanup();
             utils.showWaitingOverlay();
+            
+            // ✅ NOUVEAU: Réinitialiser pour permettre une nouvelle tentative
+            state.offerRetryCount = 0;
+            state.answerReceived = false;
             
             if (state.isInitiator && state.otherSocketId) {
                 setTimeout(() => {
@@ -889,6 +951,11 @@
             state.connectionState = 'new';
             state.makingOffer = false;
             state.ignoreOffer = false;
+            // ✅ NOUVEAU: Nettoyer les timeouts
+            if (state.offerTimeout) {
+                clearTimeout(state.offerTimeout);
+                state.offerTimeout = null;
+            }
             utils.log('info', '🧹 Nettoyage WebRTC effectué');
         },
 
@@ -1145,26 +1212,23 @@
         utils.log('polling', '📮 Initialisation socket en mode POLLING...');
         
         try {
-            // ✅ CORRECTION CRITIQUE: Forcer polling uniquement pour hébergement mutualisé
             const socketOptions = {
                 path: CONFIG.socketPath,
-                transports: ['polling'], // ✅ UNIQUEMENT POLLING - pas de WebSocket
+                transports: ['polling'],
                 withCredentials: true,
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
-                reconnectionDelay: 2000,        // ✅ Délai plus long pour polling
-                reconnectionDelayMax: 10000,    // ✅ Max 10 secondes
-                timeout: 30000,                 // ✅ Timeout augmenté
+                reconnectionDelay: 2000,
+                reconnectionDelayMax: 10000,
+                timeout: 30000,
                 autoConnect: true,
                 forceNew: true,
-                // ✅ Options spécifiques au polling
                 transportOptions: {
                     polling: {
                         extraHeaders: {
-                            'X-Client-Version': '5.2.0',
+                            'X-Client-Version': '5.3.0',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        // ✅ Important pour certains hébergeurs
                         xhr: {
                             withCredentials: true
                         }
@@ -1174,12 +1238,10 @@
 
             state.socket = io(CONFIG.socketUrl, socketOptions);
 
-            // Gestion des événements de transport
             state.socket.io.on("transport", (transport) => { 
                 utils.log('polling', `📮 Transport actif: ${transport.name}`); 
             });
 
-            // ✅ CORRECTION: Gestion du upgrade échoué (WebSocket non disponible)
             state.socket.io.on("upgrade_error", (err) => {
                 utils.log('polling', '📮 Upgrade WebSocket échoué - maintien du polling');
             });
@@ -1203,7 +1265,6 @@
                 }, 5000);
             });
 
-            // ✅ NOUVEAU: Gestion de l'état de transport
             state.socket.io.engine.on("packet", (packet) => {
                 if (packet.type === "ping") {
                     state.transportReady = true;
@@ -1231,19 +1292,19 @@
             } else if (state.socket && !state.socket.connected) {
                 utils.log('warn', '⚠️ Heartbeat - Socket déconnecté');
                 
-                // ✅ CORRECTION: Forcer la reconnexion si nécessaire
                 if (!state.socket.io._reconnecting) {
                     utils.log('info', '🔄 Tentative de reconnexion forcée...');
                     state.socket.connect();
                 }
             }
-        }, 20000); // ✅ Heartbeat plus fréquent pour polling (20s)
+        }, 20000);
 
         window.addEventListener('beforeunload', () => { 
             if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); 
         });
     }
 
+    // ✅ CORRECTION MAJEURE: Gestion améliorée de user-connected
     function setupSocketListeners() {
         if (!state.socket) return;
         
@@ -1266,7 +1327,6 @@
         state.socket.on('connect_error', (error) => { 
             utils.log('error', '❌ Erreur connexion socket:', error.message); 
             
-            // ✅ CORRECTION: Si erreur persiste, afficher message utilisateur
             if (state.reconnectionAttempts > 5 && state.reconnectionAttempts % 5 === 0) {
                 utils.showToast('Problème de connexion persistant. Vérifiez votre réseau.', 'warning', 5000); 
             }
@@ -1277,7 +1337,6 @@
             state.transportReady = false;
             utils.updateOtherStatus(false);
             
-            // ✅ CORRECTION: Reconnexion automatique pour déconnexion serveur
             if (reason === 'io server disconnect' || reason === 'transport close') {
                 setTimeout(() => { 
                     if (state.socket && !state.socket.connected) {
@@ -1310,7 +1369,7 @@
             setTimeout(() => window.location.href = '/', 3000); 
         });
 
-        // ✅ CORRECTION: Gestion robuste de user-connected
+        // ✅ CORRECTION CRITIQUE: Gestion robuste de user-connected avec délai
         state.socket.on('user-connected', (data) => {
             const socketId = data?.id || data;
             
@@ -1324,9 +1383,17 @@
                 return;
             }
 
-            if (state.otherSocketId === socketId) {
-                utils.log('warn', '⚠️ Utilisateur déjà connecté');
-                return;
+            // ✅ CORRECTION: Mettre à jour même si changement d'ID (reconnexion)
+            if (state.otherSocketId && state.otherSocketId !== socketId) {
+                utils.log('warn', `⚠️ Changement d'ID détecté: ${state.otherSocketId} → ${socketId}`);
+                webrtc.cleanup();
+                // Réinitialiser les états de connexion
+                state.offerRetryCount = 0;
+                state.answerReceived = false;
+                if (state.offerTimeout) {
+                    clearTimeout(state.offerTimeout);
+                    state.offerTimeout = null;
+                }
             }
 
             utils.log('info', `👤 Utilisateur connecté: ${socketId}`);
@@ -1343,14 +1410,22 @@
             state.isInitiator = myId < otherId;
             state.polite = state.isInitiator;
 
-            utils.log('info', `🎯 Rôle: ${state.isInitiator ? 'Initiateur' : 'Récepteur'}`);
+            utils.log('info', `🎯 Rôle: ${state.isInitiator ? 'Initiateur' : 'Récepteur'} (mon ID: ${myId}, autre: ${otherId})`);
 
+            // ✅ CORRECTION: Délai plus long pour s'assurer que les deux sont prêts
             if (state.isInitiator) {
+                // Attendre que le récepteur soit prêt
                 setTimeout(() => {
-                    if (!state.peerConnection) {
+                    utils.log('info', '🚀 Lancement de la création d\'offre...');
+                    // Forcer la création même si une connexion existe (elle a été nettoyée si changement d'ID)
+                    if (!state.peerConnection || state.peerConnection.signalingState === 'closed') {
                         webrtc.createOffer();
+                    } else if (state.peerConnection.signalingState === 'stable') {
+                        // Si stable mais pas connecté, c'est une reconnexion
+                        webrtc.cleanup();
+                        setTimeout(() => webrtc.createOffer(), 500);
                     }
-                }, 1000); // ✅ Délai augmenté pour polling
+                }, 2000); // ✅ Délai de 2 secondes pour laisser le temps au récepteur de s'initialiser
             }
         });
 
@@ -1363,6 +1438,12 @@
             state.otherSocketId = null;
             state.isInitiator = false;
             state.polite = false;
+            state.answerReceived = false;
+            state.offerRetryCount = 0;
+            if (state.offerTimeout) {
+                clearTimeout(state.offerTimeout);
+                state.offerTimeout = null;
+            }
             utils.updateOtherStatus(false);
             
             const otherName = CONFIG.otherUser.name || 'Participant';
@@ -1380,18 +1461,20 @@
         });
 
         state.socket.on('offer', (data) => {
+            utils.log('offer', '📨 Événement offer reçu du serveur');
             if (data?.sdp && data?.sender) {
                 webrtc.handleOffer(data);
             } else {
-                utils.log('error', '❌ Offre malformée reçue');
+                utils.log('error', '❌ Offre malformée reçue:', data);
             }
         });
 
         state.socket.on('answer', (data) => {
+            utils.log('answer', '📨 Événement answer reçu du serveur');
             if (data?.sdp && data?.sender) {
                 webrtc.handleAnswer(data);
             } else {
-                utils.log('error', '❌ Réponse malformée reçue');
+                utils.log('error', '❌ Réponse malformée reçue:', data);
             }
         });
 
@@ -1573,7 +1656,7 @@
     // ============================================
     async function init() {
         try {
-            utils.log('info', '🚀 Initialisation consultation v5.2.0 (Mode Polling)...');
+            utils.log('info', '🚀 Initialisation consultation v5.3.0 (Mode Polling + Retry)...');
             
             if (!utils.checkBrowserCompatibility()) {
                 throw new Error('Navigateur non compatible');
@@ -1618,7 +1701,7 @@
             initEventListeners();
             
             state.initializationComplete = true;
-            utils.log('success', '✅ Consultation prête - en attente de l\'autre participant (mode polling)');
+            utils.log('success', '✅ Consultation prête - en attente de l\'autre participant (mode polling + retry)');
             
         } catch (error) {
             utils.log('error', '❌ Échec initialisation:', error.message);
@@ -1641,9 +1724,15 @@
         webrtc, 
         chat, 
         CONFIG, 
-        version: '5.2.0-polling',
+        version: '5.3.0-polling-retry',
         restart: () => {
             webrtc.cleanup();
+            state.offerRetryCount = 0;
+            state.answerReceived = false;
+            if (state.offerTimeout) {
+                clearTimeout(state.offerTimeout);
+                state.offerTimeout = null;
+            }
             if (state.otherSocketId) {
                 setTimeout(() => webrtc.createOffer(), 500);
             }
