@@ -552,7 +552,7 @@
                         </div>
                     </section>
 
-                   <!-- SECTION: CONSULTATIONS -->
+ <!-- SECTION: CONSULTATIONS -->
 <section id="section-consultations" class="section-content hidden section-transition">
     <div class="bg-white rounded-xl lg:rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="p-4 lg:p-6 border-b border-slate-100">

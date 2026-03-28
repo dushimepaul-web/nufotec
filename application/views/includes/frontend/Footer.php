@@ -247,9 +247,9 @@
     $account_link = base_url('Auth');
     if ($is_logged_in) {
         if ($user_type == 'medecin') {
-            $account_link = base_url('home-medecin');
+            $account_link = base_url('Admin');
         } elseif ($user_type == 'admin') {
-            $account_link = base_url('admin/dashboard');
+            $account_link = base_url('Admin');
         } else {
             $account_link = base_url('home-patient');
         }
