@@ -1,8 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.3.1 - Optimisé mutualisé
+// Version : 6.0.0 - POLLING UNIQUEMENT
 // Description : Consultation vidéo peer-to-peer
-// Signalisation via polling/websocket (adaptatif)
+// Signalisation via POLLING (compatible mutualisé)
 // ============================================
 
 (function() {
@@ -12,8 +12,9 @@
     // ⭐ CONFIGURATION
     // ============================================
     const CONFIG = {
-        socketUrl: window.location.origin,
-        socketPath: '/socket/socket.io',
+        // Utiliser le port direct pour éviter les problèmes de proxy
+        socketUrl: 'https://nufotec.com:3002',  // ← PORT DIRECT
+        socketPath: '/socket.io',
         roomId: window.roomId || null,
         currentUser: window.currentUser && typeof window.currentUser === 'object' 
             ? window.currentUser 
@@ -53,8 +54,7 @@
         videoRetryCount: 0,
         remoteStream: null,
         iceConnectionStartTime: null,
-        reconnectTimer: null,
-        currentTransport: null
+        reconnectTimer: null
     };
 
     // ============================================
@@ -195,7 +195,7 @@
     };
 
     // ============================================
-    // ⭐ GESTIONNAIRE PERMISSIONS (inchangé, votre code est bon)
+    // ⭐ GESTIONNAIRE PERMISSIONS
     // ============================================
     const PermissionManager = {
         devices: { cameras: [], micros: [] },
@@ -323,13 +323,13 @@
     };
 
     // ============================================
-    // ⭐ WEBRTC (version optimisée)
+    // ⭐ WEBRTC
     // ============================================
     const webrtc = {
         async loadIceServers() {
             try {
                 utils.log('info', '🌐 Chargement ICE...');
-                const response = await fetch('/socket/api/ice-servers');
+                const response = await fetch(CONFIG.socketUrl + '/api/ice-servers');
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 CONFIG.iceServers = data;
@@ -445,12 +445,6 @@
                         utils.closeWaitingOverlay();
                         utils.updateOtherStatus(true);
                         utils.showToast('Connexion vidéo établie', 'success', 2000);
-                        if (state.socket && state.socket.connected) {
-                            state.socket.emit('connection-quality', { 
-                                quality: state.usingRelay ? 'relay' : 'direct', 
-                                duration: duration 
-                            });
-                        }
                         break;
                     case 'failed':
                         utils.log('error', '❌ Échec connexion ICE');
@@ -672,7 +666,7 @@
     };
 
     // ============================================
-    // ⭐ CHAT (inchangé, votre code est bon)
+    // ⭐ CHAT
     // ============================================
     const chat = {
         setDataChannel: function(channel) {
@@ -828,7 +822,7 @@
     };
 
     // ============================================
-    // ⭐ SOCKET.IO - CONFIGURATION ADAPTATIVE
+    // ⭐ SOCKET.IO - POLLING UNIQUEMENT
     // ============================================
     function initSocket() {
         if (!window.io) { 
@@ -840,16 +834,17 @@
         utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
         
         try {
-            // Configuration ADAPTATIVE - WebSocket si possible, sinon polling
+            // POLLING UNIQUEMENT - pas de WebSocket
             state.socket = io(CONFIG.socketUrl, {
                 path: CONFIG.socketPath,
-                transports: ['websocket', 'polling'],  // WebSocket d'abord, polling en fallback
+                transports: ['polling'],           // ← UNIQUEMENT POLLING
+                upgrade: false,                     // ← PAS D'UPGRADE
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
                 reconnectionDelay: 1000,
                 reconnectionDelayMax: 5000,
                 timeout: 20000,
-                upgrade: true  // Permet l'upgrade vers WebSocket si possible
+                forceNew: true
             });
             
             setupSocketListeners();
@@ -865,7 +860,6 @@
         if (state.heartbeatInterval) clearInterval(state.heartbeatInterval);
         state.heartbeatInterval = setInterval(() => {
             if (state.socket && state.socket.connected) {
-                utils.log('debug', '💓 Heartbeat - Socket OK');
                 try {
                     state.socket.emit('ping', { time: Date.now(), role: CONFIG.currentRole });
                 } catch(e) {}
@@ -879,30 +873,19 @@
         state.socket.removeAllListeners();
         
         state.socket.on('connect', () => {
-            // Récupérer le transport utilisé
-            state.currentTransport = state.socket.io?.engine?.transport?.name || 'unknown';
-            utils.log('success', `✅ Socket connectée: ${state.socket.id}`);
-            utils.log('info', `📡 Transport: ${state.currentTransport} (${state.currentTransport === 'websocket' ? 'temps réel' : 'polling HTTP'})`);
-            
-            if (state.currentTransport === 'polling') {
-                utils.showToast('Mode dégradé: polling HTTP', 'info', 3000);
-            } else {
-                utils.showToast('Connecté en temps réel', 'success', 2000);
-            }
-            
+            utils.log('success', `✅ Socket connectée (polling): ${state.socket.id}`);
             utils.updateOtherStatus(true);
             if (CONFIG.roomId) { 
                 utils.log('info', `📤 Rejoindre salle: ${CONFIG.roomId}`); 
                 state.socket.emit('join-room', CONFIG.roomId); 
             }
+            utils.showToast('Connecté au serveur (mode polling)', 'success', 2000);
             state.reconnectionAttempts = 0;
         });
         
         state.socket.on('connect_error', (error) => { 
-            utils.log('error', '❌ Erreur socket:', error.message); 
-            if (error.message.includes('websocket')) {
-                utils.log('info', '🔄 WebSocket échoué, fallback sur polling...');
-            }
+            utils.log('error', '❌ Erreur connexion:', error.message);
+            utils.showToast('Erreur de connexion au serveur', 'error');
         });
         
         state.socket.on('disconnect', (reason) => { 
@@ -916,15 +899,9 @@
             utils.showToast('Reconnecté au serveur', 'success', 2000); 
         });
         
-        state.socket.on('reconnect_attempt', (attempt) => { 
-            utils.log('debug', `🔄 Tentative ${attempt}`); 
-            state.reconnectionAttempts = attempt; 
-        });
-        
         state.socket.on('participants-list', (data) => {
             utils.log('info', `👥 Participants existants:`, data.participants);
             if (data.participants && data.participants.length > 0) {
-                // Prendre le premier participant comme interlocuteur
                 state.otherSocketId = data.participants[0];
                 utils.log('info', `🎯 Cible définie: ${state.otherSocketId}`);
                 if (!state.peerConnection && !state.isInitiator) {
@@ -942,7 +919,7 @@
         state.socket.on('user-connected', (data) => {
             const socketId = data?.id || data;
             if (!socketId || socketId === state.otherSocketId) return;
-            utils.log('info', `👤 Utilisateur connecté: ${socketId} (transport: ${data?.transport || 'unknown'})`);
+            utils.log('info', `👤 Utilisateur connecté: ${socketId}`);
             state.otherSocketId = socketId;
             utils.updateOtherStatus(true);
             const otherName = CONFIG.otherUser.name || 'Participant';
@@ -967,13 +944,6 @@
             utils.showWaitingOverlay();
         });
         
-        state.socket.on('ice-servers', (servers) => { 
-            if (servers) { 
-                CONFIG.iceServers = servers; 
-                utils.log('info', '📡 Configuration ICE mise à jour'); 
-            } 
-        });
-        
         state.socket.on('offer', (data) => webrtc.handleOffer(data));
         state.socket.on('answer', (data) => webrtc.handleAnswer(data));
         state.socket.on('ice-candidate', (data) => webrtc.handleIceCandidate(data));
@@ -986,7 +956,7 @@
     }
 
     // ============================================
-    // ⭐ INITIALISATION DES ÉVÉNEMENTS UI (inchangé)
+    // ⭐ INITIALISATION DES ÉVÉNEMENTS UI
     // ============================================
     function initEventListeners() {
         if (elements.chatSend && elements.chatInput) {
@@ -1007,10 +977,10 @@
                             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' } 
                         })
                             .then(response => response.json())
-                            .then(data => { if (data.success) utils.log('success', `✅ Consultation terminée - Durée: ${data.duration} minutes`); })
-                            .catch(err => utils.log('error', '❌ Erreur API fin consultation:', err))
+                            .then(data => { if (data.success) utils.log('success', `✅ Consultation terminée`); })
+                            .catch(err => utils.log('error', '❌ Erreur API:', err))
                             .finally(() => { utils.cleanup(); setTimeout(() => window.location.href = '/', 500); });
-                    } else { utils.log('warn', '⚠️ Aucun ID de consultation trouvé'); utils.cleanup(); window.location.href = '/'; }
+                    } else { utils.log('warn', '⚠️ Aucun ID de consultation'); utils.cleanup(); window.location.href = '/'; }
                 }
             });
         }
@@ -1021,7 +991,7 @@
     }
 
     // ============================================
-    // ⭐ INITIALISATION AVEC PERMISSION (inchangé)
+    // ⭐ INITIALISATION AVEC PERMISSION
     // ============================================
     async function initWithPermission() {
         try {
@@ -1075,8 +1045,7 @@
                 utils.showToast('Caméra et micro autorisés', 'success');
             } catch (error) {
                 utils.log('error', '❌ Permission refusée:', error.message);
-                utils.showToast('Impossible d\'accéder à la caméra/microphone. La consultation ne peut pas continuer.', 'error', 5000);
-                setTimeout(() => { if (confirm('Voulez-vous réessayer d\'autoriser la caméra et le micro ?')) window.location.reload(); else window.location.href = '/'; }, 2000);
+                utils.showToast('Impossible d\'accéder à la caméra/microphone.', 'error', 5000);
                 return;
             }
             initSocket();
@@ -1087,7 +1056,6 @@
         } catch (error) {
             utils.log('error', '❌ Échec initialisation:', error.message);
             utils.showToast('Erreur de démarrage: ' + error.message, 'error', 5000);
-            setTimeout(() => window.location.reload(), 3000);
         }
     }
 
@@ -1095,5 +1063,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 
-    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '5.3.1' };
+    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '6.0.0' };
 })();
