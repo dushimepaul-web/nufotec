@@ -1,7 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.3.0 - CodeIgniter 3
+// Version : 5.4.0 - CodeIgniter 3
 // Description : Consultation vidéo peer-to-peer - Mode Polling Robuste
+// Améliorations : Gestion optimisée des collisions d'offres, reconnexion améliorée
 // ============================================
 
 (function() {
@@ -28,9 +29,11 @@
         forcePolling: true,
         connectionTimeout: 15000,
         iceGatheringTimeout: 10000,
-        // ✅ NOUVEAU: Configuration pour le renvoi d'offre
         offerRetryDelay: 3000,
-        offerMaxRetries: 3
+        offerMaxRetries: 3,
+        // Nouveau: Configuration pour la gestion des collisions
+        collisionRetryDelay: 1000,
+        maxCollisionRetries: 2
     };
 
     // ============================================
@@ -58,10 +61,11 @@
         polite: false,
         remoteStream: null,
         transportReady: false,
-        // ✅ NOUVEAU: État pour le renvoi d'offre
         offerRetryCount: 0,
         offerTimeout: null,
-        answerReceived: false
+        answerReceived: false,
+        collisionRetryCount: 0, // Nouveau: compteur pour les collisions
+        lastOfferTime: 0 // Nouveau: timestamp du dernier envoi d'offre
     };
 
     // ============================================
@@ -93,7 +97,7 @@
         log: function(level, ...args) {
             if (!CONFIG.debug && level !== 'error') return;
             const prefix = `[${new Date().toLocaleTimeString()}]`;
-            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍', polling: '📮', offer: '📤', answer: '📩' }[level] || '';
+            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍', polling: '📮', offer: '📤', answer: '📩', collision: '⚔️' }[level] || '';
             const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
             logFn(prefix, emoji, ...args);
         },
@@ -355,7 +359,7 @@
     };
 
     // ============================================
-    // ⭐ WEBRTC - VERSION ROBUSTE
+    // ⭐ WEBRTC - VERSION ROBUSTE AVEC GESTION AMÉLIORÉE DES COLLISIONS
     // ============================================
     const webrtc = {
         async loadIceServers() {
@@ -431,8 +435,8 @@
                         utils.closeWaitingOverlay();
                         utils.updateOtherStatus(true);
                         utils.showToast('Consultation vidéo établie', 'success');
-                        // ✅ NOUVEAU: Réinitialiser le compteur de renvoi
                         state.offerRetryCount = 0;
+                        state.collisionRetryCount = 0;
                         state.answerReceived = true;
                         if (state.offerTimeout) {
                             clearTimeout(state.offerTimeout);
@@ -575,7 +579,6 @@
             });
         },
 
-        // ✅ CORRECTION: Création d'offre avec mécanisme de renvoi
         async createOffer() {
             try {
                 if (!state.peerConnection) {
@@ -587,11 +590,18 @@
                     return;
                 }
 
-                // ✅ NOUVEAU: Vérifier si on a déjà reçu une réponse
                 if (state.answerReceived) {
                     utils.log('info', '✅ Réponse déjà reçue, pas besoin de renvoyer');
                     return;
                 }
+
+                // Éviter les envois trop fréquents
+                const now = Date.now();
+                if (now - state.lastOfferTime < 1000 && state.offerRetryCount > 0) {
+                    utils.log('debug', '⏳ Envoi d\'offre trop rapide, attente...');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                state.lastOfferTime = now;
 
                 state.makingOffer = true;
                 state.offerRetryCount++;
@@ -625,20 +635,19 @@
                     sdp: finalOffer 
                 });
 
-                // ✅ NOUVEAU: Planifier le renvoi si pas de réponse
                 if (state.offerTimeout) {
                     clearTimeout(state.offerTimeout);
                 }
                 
                 if (state.offerRetryCount < CONFIG.offerMaxRetries && !state.answerReceived) {
                     state.offerTimeout = setTimeout(() => {
-                        if (!state.answerReceived && state.otherSocketId) {
+                        if (!state.answerReceived && state.otherSocketId && !state.isConnected) {
                             utils.log('offer', `⏰ Pas de réponse, tentative de renvoi ${state.offerRetryCount + 1}...`);
                             state.makingOffer = false;
                             this.createOffer();
                         }
                     }, CONFIG.offerRetryDelay);
-                } else if (state.offerRetryCount >= CONFIG.offerMaxRetries) {
+                } else if (state.offerRetryCount >= CONFIG.offerMaxRetries && !state.answerReceived) {
                     utils.log('error', '❌ Nombre maximum de tentatives atteint');
                     utils.showToast('Impossible d\'établir la connexion. Veuillez rafraîchir.', 'error');
                 }
@@ -685,117 +694,113 @@
             });
         },
 
-       // ✅ CORRECTION: Gestion robuste des offres avec logs de débogage et meilleure gestion des collisions
-async handleOffer(data) {
-    // ✅ NOUVEAU: Logs de débogage détaillés
-    utils.log('offer', '📨 handleOffer appelé avec:', {
-        sender: data?.sender,
-        sdpType: data?.sdp?.type,
-        hasSdp: !!data?.sdp?.sdp,
-        sdpLength: data?.sdp?.sdp?.length || 0
-    });
-    
-    if (!data?.sdp || !data?.sender) { 
-        utils.log('error', '❌ Offre invalide - données manquantes'); 
-        return; 
-    }
+        // ✅ Gestion optimisée des collisions d'offres
+        async handleOffer(data) {
+            utils.log('offer', '📨 handleOffer appelé avec:', {
+                sender: data?.sender,
+                sdpType: data?.sdp?.type,
+                hasSdp: !!data?.sdp?.sdp,
+                sdpLength: data?.sdp?.sdp?.length || 0
+            });
+            
+            if (!data?.sdp || !data?.sender) { 
+                utils.log('error', '❌ Offre invalide - données manquantes'); 
+                return; 
+            }
 
-    utils.log('offer', `📩 Offre reçue de: ${data.sender}`);
+            utils.log('offer', `📩 Offre reçue de: ${data.sender}`);
 
-    try {
-        const myId = state.socket?.id || '';
-        const otherId = data.sender;
-        state.polite = myId < otherId;
+            try {
+                const myId = state.socket?.id || '';
+                const otherId = data.sender;
+                state.polite = myId < otherId;
 
-        const readyForOffer = !state.makingOffer && 
-            (state.peerConnection?.signalingState === 'stable' || 
-             state.peerConnection?.signalingState === 'have-remote-offer');
-
-        const offerCollision = !readyForOffer;
-
-        if (offerCollision) {
-            if (!state.polite) {
-                // ✅ CORRECTION: Au lieu d'ignorer l'offre, réinitialiser et accepter
-                utils.log('warn', '⚔️ Collision d\'offres - je suis impoli, je réinitialise et accepte cette offre');
+                const signalingState = state.peerConnection?.signalingState || 'new';
+                const isMakingOffer = state.makingOffer;
+                const hasLocalOffer = signalingState === 'have-local-offer';
                 
-                // Réinitialiser l'état pour accepter la nouvelle offre
-                if (state.peerConnection) {
-                    const pc = state.peerConnection;
-                    if (pc.signalingState !== 'closed') {
-                        await pc.setLocalDescription({type: "rollback"});
-                        utils.log('info', '🔄 Rollback effectué pour accepter la nouvelle offre');
+                // Détection de collision
+                if (isMakingOffer && !hasLocalOffer) {
+                    if (!state.polite) {
+                        utils.log('collision', '⚔️ Collision - impoli, j\'attends');
+                        state.collisionRetryCount++;
+                        
+                        if (state.collisionRetryCount <= CONFIG.maxCollisionRetries) {
+                            setTimeout(() => {
+                                utils.log('collision', `🔄 Retry après collision (${state.collisionRetryCount})`);
+                                this.handleOffer(data);
+                            }, CONFIG.collisionRetryDelay);
+                        } else {
+                            utils.log('error', '❌ Trop de collisions, abandon');
+                            state.collisionRetryCount = 0;
+                        }
+                        return;
+                    } else {
+                        utils.log('collision', '⚔️ Collision - poli, j\'abandonne mon offre');
+                        state.makingOffer = false;
+                        if (state.peerConnection && hasLocalOffer) {
+                            await state.peerConnection.setLocalDescription({type: "rollback"});
+                        }
                     }
                 }
-                
-                // Réinitialiser les compteurs
-                state.makingOffer = false;
-                state.offerRetryCount = 0;
-                if (state.offerTimeout) {
-                    clearTimeout(state.offerTimeout);
-                    state.offerTimeout = null;
+
+                if (!state.peerConnection) {
+                    utils.log('info', '🔧 Création PeerConnection pour répondre...');
+                    await this.createPeerConnection();
                 }
-                
-                // Continuer le traitement normal
-            } else {
-                utils.log('info', '⚔️ Collision d\'offres - je suis poli, j\'accepte cette offre');
-            }
-        }
 
-        if (!state.peerConnection) {
-            utils.log('info', '🔧 Création PeerConnection pour répondre...');
-            await this.createPeerConnection();
-        }
+                const pc = state.peerConnection;
+                const currentSignalingState = pc.signalingState;
+                utils.log('info', `📊 État de signalisation: ${currentSignalingState}`);
 
-        const pc = state.peerConnection;
-        const signalingState = pc.signalingState;
-        utils.log('info', `📊 État de signalisation: ${signalingState}`);
-
-        if (signalingState === 'have-local-offer') {
-            if (state.polite) {
-                utils.log('info', '🔄 Rollback de mon offre locale');
-                await pc.setLocalDescription({type: "rollback"});
-            } else {
-                // ✅ CORRECTION: Si impoli mais qu'on est là, on a déjà fait le rollback plus haut
-                if (!offerCollision || (offerCollision && !state.polite)) {
-                    utils.log('warn', '⚠️ État inattendu have-local-offer, tentative de rollback');
-                    try {
+                if (currentSignalingState === 'have-local-offer') {
+                    if (state.polite) {
+                        utils.log('info', '🔄 Rollback de mon offre locale');
                         await pc.setLocalDescription({type: "rollback"});
-                    } catch (err) {
-                        utils.log('error', '❌ Échec du rollback:', err);
+                    } else {
+                        utils.log('warn', '⚠️ État have-local-offer mais impoli, attente...');
+                        setTimeout(() => this.handleOffer(data), 500);
                         return;
                     }
                 }
+
+                utils.log('info', '📥 Application de la description distante...');
+                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                utils.log('success', '✅ Description distante définie');
+
+                await this.processPendingCandidates();
+
+                utils.log('info', '📝 Création de la réponse...');
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                await this.waitForIceGathering();
+
+                const finalAnswer = pc.localDescription;
+                utils.log('answer', `📤 Envoi réponse à: ${data.sender}`);
+                
+                if (state.socket) {
+                    state.socket.emit('answer', { 
+                        target: data.sender, 
+                        sdp: finalAnswer 
+                    });
+                    utils.log('success', '✅ Réponse envoyée avec succès');
+                    state.collisionRetryCount = 0;
+                }
+
+            } catch (error) { 
+                utils.log('error', '❌ Erreur traitement offre:', error);
+                
+                state.makingOffer = false;
+                if (state.peerConnection) {
+                    try {
+                        await state.peerConnection.setLocalDescription({type: "rollback"});
+                    } catch (err) {
+                        utils.log('error', '❌ Échec du rollback de secours:', err);
+                    }
+                }
             }
-        }
+        },
 
-        utils.log('info', '📥 Application de la description distante...');
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        utils.log('success', '✅ Description distante définie');
-
-        await this.processPendingCandidates();
-
-        utils.log('info', '📝 Création de la réponse...');
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await this.waitForIceGathering();
-
-        const finalAnswer = pc.localDescription;
-        utils.log('answer', `📤 Envoi réponse à: ${data.sender}`);
-        
-        if (state.socket) {
-            state.socket.emit('answer', { 
-                target: data.sender, 
-                sdp: finalAnswer 
-            });
-            utils.log('success', '✅ Réponse envoyée avec succès');
-        }
-
-    } catch (error) { 
-        utils.log('error', '❌ Erreur traitement offre:', error); 
-    }
-}
-
-        // ✅ CORRECTION: Gestion des réponses avec flag
         async handleAnswer(data) {
             if (!data?.sdp || !data?.sender) { 
                 utils.log('error', '❌ Réponse invalide'); 
@@ -804,8 +809,8 @@ async handleOffer(data) {
 
             utils.log('answer', `📩 Réponse reçue de: ${data.sender}`);
 
-            // ✅ NOUVEAU: Marquer qu'on a reçu une réponse
             state.answerReceived = true;
+            state.collisionRetryCount = 0;
             if (state.offerTimeout) {
                 clearTimeout(state.offerTimeout);
                 state.offerTimeout = null;
@@ -878,9 +883,9 @@ async handleOffer(data) {
             this.cleanup();
             utils.showWaitingOverlay();
             
-            // ✅ NOUVEAU: Réinitialiser pour permettre une nouvelle tentative
             state.offerRetryCount = 0;
             state.answerReceived = false;
+            state.collisionRetryCount = 0;
             
             if (state.isInitiator && state.otherSocketId) {
                 setTimeout(() => {
@@ -965,6 +970,34 @@ async handleOffer(data) {
             return state.videoEnabled;
         },
 
+        resetConnection: async function() {
+            utils.log('info', '🔄 Réinitialisation complète de la connexion...');
+            
+            this.cleanup();
+            
+            state.makingOffer = false;
+            state.offerRetryCount = 0;
+            state.answerReceived = false;
+            state.isConnected = false;
+            state.collisionRetryCount = 0;
+            
+            if (state.offerTimeout) {
+                clearTimeout(state.offerTimeout);
+                state.offerTimeout = null;
+            }
+            
+            await this.createPeerConnection();
+            
+            if (state.isInitiator && state.otherSocketId) {
+                setTimeout(() => {
+                    utils.log('info', '🚀 Relance de l\'offre après réinitialisation');
+                    this.createOffer();
+                }, 1000);
+            }
+            
+            utils.log('success', '✅ Réinitialisation terminée');
+        },
+
         cleanup: function() {
             if (state.peerConnection) { 
                 state.peerConnection.close(); 
@@ -979,7 +1012,6 @@ async handleOffer(data) {
             state.connectionState = 'new';
             state.makingOffer = false;
             state.ignoreOffer = false;
-            // ✅ NOUVEAU: Nettoyer les timeouts
             if (state.offerTimeout) {
                 clearTimeout(state.offerTimeout);
                 state.offerTimeout = null;
@@ -997,7 +1029,7 @@ async handleOffer(data) {
     };
 
     // ============================================
-    // ⭐ CHAT
+    // ⭐ CHAT (inchangé)
     // ============================================
     const chat = {
         setDataChannel: function(channel) {
@@ -1254,7 +1286,7 @@ async handleOffer(data) {
                 transportOptions: {
                     polling: {
                         extraHeaders: {
-                            'X-Client-Version': '5.3.0',
+                            'X-Client-Version': '5.4.0',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         xhr: {
@@ -1332,7 +1364,6 @@ async handleOffer(data) {
         });
     }
 
-    // ✅ CORRECTION MAJEURE: Gestion améliorée de user-connected
     function setupSocketListeners() {
         if (!state.socket) return;
         
@@ -1397,7 +1428,6 @@ async handleOffer(data) {
             setTimeout(() => window.location.href = '/', 3000); 
         });
 
-        // ✅ CORRECTION CRITIQUE: Gestion robuste de user-connected avec délai
         state.socket.on('user-connected', (data) => {
             const socketId = data?.id || data;
             
@@ -1411,13 +1441,12 @@ async handleOffer(data) {
                 return;
             }
 
-            // ✅ CORRECTION: Mettre à jour même si changement d'ID (reconnexion)
             if (state.otherSocketId && state.otherSocketId !== socketId) {
                 utils.log('warn', `⚠️ Changement d'ID détecté: ${state.otherSocketId} → ${socketId}`);
-                webrtc.cleanup();
-                // Réinitialiser les états de connexion
+                webrtc.resetConnection();
                 state.offerRetryCount = 0;
                 state.answerReceived = false;
+                state.collisionRetryCount = 0;
                 if (state.offerTimeout) {
                     clearTimeout(state.offerTimeout);
                     state.offerTimeout = null;
@@ -1431,7 +1460,6 @@ async handleOffer(data) {
             const otherName = CONFIG.otherUser.name || 'Participant';
             utils.showToast(`${otherName} a rejoint la consultation.`, 'success');
 
-            // Décision d'initiateur
             const myId = state.socket.id;
             const otherId = socketId;
             
@@ -1440,20 +1468,16 @@ async handleOffer(data) {
 
             utils.log('info', `🎯 Rôle: ${state.isInitiator ? 'Initiateur' : 'Récepteur'} (mon ID: ${myId}, autre: ${otherId})`);
 
-            // ✅ CORRECTION: Délai plus long pour s'assurer que les deux sont prêts
             if (state.isInitiator) {
-                // Attendre que le récepteur soit prêt
-                setTimeout(() => {
+                setTimeout(async () => {
                     utils.log('info', '🚀 Lancement de la création d\'offre...');
-                    // Forcer la création même si une connexion existe (elle a été nettoyée si changement d'ID)
+                    
                     if (!state.peerConnection || state.peerConnection.signalingState === 'closed') {
-                        webrtc.createOffer();
-                    } else if (state.peerConnection.signalingState === 'stable') {
-                        // Si stable mais pas connecté, c'est une reconnexion
-                        webrtc.cleanup();
-                        setTimeout(() => webrtc.createOffer(), 500);
+                        await webrtc.createPeerConnection();
                     }
-                }, 2000); // ✅ Délai de 2 secondes pour laisser le temps au récepteur de s'initialiser
+                    
+                    webrtc.createOffer();
+                }, 2000);
             }
         });
 
@@ -1468,6 +1492,7 @@ async handleOffer(data) {
             state.polite = false;
             state.answerReceived = false;
             state.offerRetryCount = 0;
+            state.collisionRetryCount = 0;
             if (state.offerTimeout) {
                 clearTimeout(state.offerTimeout);
                 state.offerTimeout = null;
@@ -1684,7 +1709,7 @@ async handleOffer(data) {
     // ============================================
     async function init() {
         try {
-            utils.log('info', '🚀 Initialisation consultation v5.3.0 (Mode Polling + Retry)...');
+            utils.log('info', '🚀 Initialisation consultation v5.4.0 (Mode Polling + Gestion collisions améliorée)...');
             
             if (!utils.checkBrowserCompatibility()) {
                 throw new Error('Navigateur non compatible');
@@ -1729,7 +1754,7 @@ async handleOffer(data) {
             initEventListeners();
             
             state.initializationComplete = true;
-            utils.log('success', '✅ Consultation prête - en attente de l\'autre participant (mode polling + retry)');
+            utils.log('success', '✅ Consultation prête - en attente de l\'autre participant');
             
         } catch (error) {
             utils.log('error', '❌ Échec initialisation:', error.message);
@@ -1752,18 +1777,9 @@ async handleOffer(data) {
         webrtc, 
         chat, 
         CONFIG, 
-        version: '5.3.0-polling-retry',
+        version: '5.4.0-polling-collision-fixed',
         restart: () => {
-            webrtc.cleanup();
-            state.offerRetryCount = 0;
-            state.answerReceived = false;
-            if (state.offerTimeout) {
-                clearTimeout(state.offerTimeout);
-                state.offerTimeout = null;
-            }
-            if (state.otherSocketId) {
-                setTimeout(() => webrtc.createOffer(), 500);
-            }
+            webrtc.resetConnection();
         }
     };
 })();
