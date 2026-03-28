@@ -498,16 +498,23 @@
             };
 
             state.peerConnection.onnegotiationneeded = async () => {
-                utils.log('info', '🔄 Négociation nécessaire');
-                try {
-                    state.makingOffer = true;
-                    await this.createOffer();
-                } catch (err) {
-                    utils.log('error', '❌ Erreur négociation:', err);
-                } finally {
-                    state.makingOffer = false;
-                }
-            };
+    utils.log('info', '🔄 Négociation nécessaire');
+    
+    // ✅ CORRECTION: Vérifier si déjà en cours
+    if (state.makingOffer) {
+        utils.log('debug', 'ℹ️ Négociation déjà en cours, ignorée');
+        return;
+    }
+    
+    try {
+        state.makingOffer = true;
+        await this.createOffer();
+    } catch (err) {
+        utils.log('error', '❌ Erreur négociation:', err);
+    } finally {
+        state.makingOffer = false;
+    }
+};
         },
 
         async playRemoteVideo() {
