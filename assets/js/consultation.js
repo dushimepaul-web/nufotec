@@ -1,8 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.1.0 - CodeIgniter 3
+// Version : 5.2.0 - CodeIgniter 3
 // Description : Consultation vidéo peer-to-peer avec modal de permission
-// FIX: Correction des problèmes de flux vidéo
+// FIX: Utilisation exclusive du transport polling (WebSocket bloqué sur hébergement mutualisé)
 // ============================================
 
 (function() {
@@ -26,7 +26,7 @@
         maxReconnectionAttempts: 30,
         iceServers: null,
         debug: true,
-        iceConnectionTimeout: 30000, // 30 secondes timeout
+        iceConnectionTimeout: 30000,
         videoRetryAttempts: 3,
         videoRetryDelay: 1000
     };
@@ -396,7 +396,6 @@
         setupPeerConnectionListeners() {
             const startTime = Date.now();
             
-            // Timeout pour la connexion ICE
             const iceTimeout = setTimeout(() => {
                 if (!state.isConnected && state.peerConnection && 
                     state.peerConnection.iceConnectionState !== 'connected' &&
@@ -464,12 +463,10 @@
                 if (elements.remoteVideo && event.streams[0]) {
                     state.remoteStream = event.streams[0];
                     
-                    // Important: Ne pas réassigner srcObject si c'est déjà le même
                     if (elements.remoteVideo.srcObject !== event.streams[0]) {
                         elements.remoteVideo.srcObject = event.streams[0];
                     }
                     
-                    // Attendre que le flux soit chargé avant de jouer
                     const playVideo = () => {
                         utils.playVideoWithRetry(elements.remoteVideo, 5, 500)
                             .then(() => {
@@ -484,11 +481,9 @@
                             });
                     };
                     
-                    // Si le flux a déjà des tracks, jouer immédiatement
                     if (event.streams[0].getTracks().length > 0) {
                         playVideo();
                     } else {
-                        // Sinon attendre l'événement loadedmetadata
                         elements.remoteVideo.addEventListener('loadedmetadata', playVideo, { once: true });
                     }
                 }
@@ -534,7 +529,6 @@
                 if (!state.peerConnection) await this.createPeerConnection();
                 if (!state.peerConnection) throw new Error('PeerConnection non créée');
                 
-                // Créer le data channel seulement si ce n'est pas déjà fait
                 if (!state.dataChannel) {
                     const dataChannel = state.peerConnection.createDataChannel('chat', { ordered: true, maxRetransmits: 3 });
                     chat.setDataChannel(dataChannel);
@@ -681,7 +675,6 @@
                 utils.log('success', '✅ Canal de données ouvert'); 
                 utils.showToast('Chat connecté', 'success');
                 
-                // Envoyer un message de bienvenue
                 const welcomeMsg = {
                     type: 'chat',
                     sender: utils.getCurrentUserId(),
@@ -833,15 +826,22 @@
     };
 
     // ============================================
-    // ⭐ SOCKET.IO
+    // ⭐ SOCKET.IO - CONFIGURATION POLLING UNIQUEMENT
     // ============================================
     function initSocket() {
-        if (!window.io) { utils.log('error', 'Socket.IO non chargé'); utils.showToast('Erreur de chargement du chat', 'error'); return; }
-        utils.log('info', '🔌 Initialisation socket...', CONFIG.socketUrl + CONFIG.socketPath);
+        if (!window.io) { 
+            utils.log('error', 'Socket.IO non chargé'); 
+            utils.showToast('Erreur de chargement du chat', 'error'); 
+            return; 
+        }
+        
+        utils.log('info', '🔌 Initialisation socket avec transport polling uniquement...', CONFIG.socketUrl + CONFIG.socketPath);
+        
         try {
+            // Configuration avec polling uniquement (WebSocket désactivé)
             state.socket = io(CONFIG.socketUrl, {
                 path: CONFIG.socketPath,
-                transports: ['websocket', 'polling'], // Priorité au WebSocket
+                transports: ['polling'], // UNIQUEMENT POLLING - pas de WebSocket
                 withCredentials: true,
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
@@ -850,39 +850,92 @@
                 timeout: 45000,
                 autoConnect: true,
                 forceNew: true,
-                rememberUpgrade: true
+                rememberUpgrade: false, // Important: ne pas tenter d'upgrader vers WebSocket
+                upgrade: false, // Désactiver l'upgrade automatique
+                transportOptions: {
+                    polling: {
+                        extraHeaders: { 'X-Client-Version': '5.2.0' },
+                        timeout: 60000
+                    }
+                }
             });
-            state.socket.io.on("transport", (transport) => { utils.log('info', `📡 Transport utilisé: ${transport.name}`); });
-            state.socket.io.on("reconnect_attempt", (attempt) => { utils.log('info', `🔄 Tentative de reconnexion ${attempt}/${CONFIG.maxReconnectionAttempts}`); state.reconnectionAttempts = attempt; });
-            state.socket.io.on("reconnect_error", (error) => { utils.log('error', '❌ Erreur de reconnexion:', error.message); });
+            
+            // Forcer le transport polling (désactiver toute tentative d'upgrade)
+            if (state.socket.io && state.socket.io.engine) {
+                state.socket.io.engine.transport = 'polling';
+            }
+            
+            state.socket.io.on("transport", (transport) => { 
+                utils.log('info', `📡 Transport utilisé: ${transport.name}`); 
+            });
+            
+            state.socket.io.on("reconnect_attempt", (attempt) => { 
+                utils.log('info', `🔄 Tentative de reconnexion ${attempt}/${CONFIG.maxReconnectionAttempts}`); 
+                state.reconnectionAttempts = attempt; 
+            });
+            
+            state.socket.io.on("reconnect_error", (error) => { 
+                utils.log('error', '❌ Erreur de reconnexion:', error.message); 
+            });
+            
             state.socket.io.on("reconnect_failed", () => {
                 utils.log('error', `❌ Échec de reconnexion après ${CONFIG.maxReconnectionAttempts} tentatives`);
                 utils.showToast('Connexion perdue. Veuillez recharger la page.', 'error');
-                setTimeout(() => { if (confirm('La connexion au serveur est perdue. Recharger la page ?')) window.location.reload(); }, 5000);
+                setTimeout(() => { 
+                    if (confirm('La connexion au serveur est perdue. Recharger la page ?')) 
+                        window.location.reload(); 
+                }, 5000);
             });
+            
             setupSocketListeners();
             startHeartbeat();
-        } catch (error) { utils.log('error', '❌ Erreur création socket:', error); utils.showToast('Erreur de connexion', 'error'); tryFallbackConnection(); }
+            
+        } catch (error) { 
+            utils.log('error', '❌ Erreur création socket:', error); 
+            utils.showToast('Erreur de connexion', 'error'); 
+            tryFallbackConnection(); 
+        }
     }
 
     function tryFallbackConnection() {
-        utils.log('info', '🔄 Tentative de connexion alternative...');
+        utils.log('info', '🔄 Tentative de connexion alternative avec polling pur...');
         setTimeout(() => {
             try {
                 if (state.socket && state.socket.connected) return;
+                
                 state.socket = io(CONFIG.socketUrl, { 
                     path: CONFIG.socketPath, 
-                    transports: ['polling'], 
+                    transports: ['polling'], // Uniquement polling
                     reconnectionAttempts: 50, 
                     timeout: 60000, 
                     reconnectionDelay: 2000, 
-                    reconnectionDelayMax: 10000 
+                    reconnectionDelayMax: 10000,
+                    upgrade: false,
+                    rememberUpgrade: false
                 });
+                
                 setupSocketListeners();
                 startHeartbeat();
-                utils.log('success', '✅ Connexion établie avec configuration de secours');
-                utils.showToast('Connecté au serveur (mode dégradé)', 'info', 3000);
-            } catch (e) { utils.log('error', '❌ Échec total de connexion:', e.message); utils.showToast('Impossible de se connecter au serveur', 'error'); }
+                utils.log('success', '✅ Connexion établie avec configuration polling');
+                utils.showToast('Connecté au serveur', 'info', 3000);
+                
+            } catch (e) { 
+                utils.log('error', '❌ Échec total de connexion:', e.message); 
+                utils.showToast('Impossible de se connecter au serveur', 'error');
+                
+                // Afficher un message d'erreur plus visible
+                if (elements.waitingOverlay) {
+                    elements.waitingOverlay.innerHTML = `
+                        <div class="waiting-content" style="background: #1e2a2f; border-radius: 16px;">
+                            <i class="fas fa-wifi" style="font-size: 48px; color: #F44336; margin-bottom: 20px;"></i>
+                            <h3>Problème de connexion</h3>
+                            <p>Impossible de se connecter au serveur de consultation.</p>
+                            <p style="font-size: 12px; margin-top: 10px;">Vérifiez votre connexion internet et rechargez la page.</p>
+                            <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #00a884; border: none; border-radius: 8px; color: white; cursor: pointer;">Recharger</button>
+                        </div>
+                    `;
+                }
+            }
         }, 2000);
     }
 
@@ -906,6 +959,7 @@
     function setupSocketListeners() {
         if (!state.socket) return;
         state.socket.removeAllListeners();
+        
         state.socket.on('connect', () => {
             utils.log('success', `✅ Socket connectée: ${state.socket.id}`);
             utils.log('info', `📡 Transport: ${state.socket.io?.engine?.transport?.name || 'polling'}`);
@@ -917,22 +971,38 @@
             utils.showToast('Connecté au serveur', 'success', 2000);
             state.reconnectionAttempts = 0;
         });
+        
         state.socket.on('connect_error', (error) => { 
             utils.log('error', '❌ Erreur socket:', error.message); 
-            if (state.reconnectionAttempts % 3 === 0) utils.showToast('Problème de connexion au serveur', 'warning', 3000); 
+            if (state.reconnectionAttempts % 3 === 0 && state.reconnectionAttempts > 0) {
+                utils.showToast('Problème de connexion au serveur', 'warning', 3000);
+            }
         });
+        
         state.socket.on('disconnect', (reason) => { 
             utils.log('warn', `❌ Déconnecté: ${reason}`); 
             utils.updateOtherStatus(false); 
-            if (reason === 'io server disconnect') setTimeout(() => { if (state.socket) state.socket.connect(); }, 1000); 
+            if (reason === 'io server disconnect') {
+                setTimeout(() => { if (state.socket) state.socket.connect(); }, 1000);
+            }
         });
+        
         state.socket.on('reconnect', (attemptNumber) => { 
             utils.log('info', `🔄 Reconnecté après ${attemptNumber} tentatives`); 
             if (CONFIG.roomId && state.socket) state.socket.emit('join-room', CONFIG.roomId); 
             utils.showToast('Reconnecté au serveur', 'success', 2000); 
         });
-        state.socket.on('reconnect_attempt', (attempt) => { utils.log('debug', `🔄 Tentative ${attempt}`); state.reconnectionAttempts = attempt; });
-        state.socket.on('room-full', (data) => { utils.showToast(data?.message || 'Salle pleine', 'error', 5000); setTimeout(() => window.location.href = '/', 3000); });
+        
+        state.socket.on('reconnect_attempt', (attempt) => { 
+            utils.log('debug', `🔄 Tentative ${attempt}`); 
+            state.reconnectionAttempts = attempt; 
+        });
+        
+        state.socket.on('room-full', (data) => { 
+            utils.showToast(data?.message || 'Salle pleine', 'error', 5000); 
+            setTimeout(() => window.location.href = '/', 3000); 
+        });
+        
         state.socket.on('user-connected', (data) => {
             const socketId = data?.id || data;
             if (!socketId || socketId === state.otherSocketId) return;
@@ -941,12 +1011,13 @@
             utils.updateOtherStatus(true);
             const otherName = CONFIG.otherUser.name || 'Participant';
             utils.showToast(`${otherName} a rejoint la consultation.`, 'success');
-            // L'initiateur crée l'offre, l'autre attend
+            
             if (!state.peerConnection && !state.isInitiator) { 
                 state.isInitiator = true; 
                 webrtc.createOffer(); 
             }
         });
+        
         state.socket.on('user-disconnected', (data) => {
             const socketId = data?.id || data;
             if (!socketId || socketId !== state.otherSocketId) return;
@@ -959,10 +1030,18 @@
             webrtc.cleanup();
             utils.showWaitingOverlay();
         });
-        state.socket.on('ice-servers', (servers) => { if (servers) { CONFIG.iceServers = servers; utils.log('info', '📡 Configuration ICE mise à jour'); } });
+        
+        state.socket.on('ice-servers', (servers) => { 
+            if (servers) { 
+                CONFIG.iceServers = servers; 
+                utils.log('info', '📡 Configuration ICE mise à jour'); 
+            } 
+        });
+        
         state.socket.on('offer', (data) => webrtc.handleOffer(data));
         state.socket.on('answer', (data) => webrtc.handleAnswer(data));
         state.socket.on('ice-candidate', (data) => webrtc.handleIceCandidate(data));
+        
         state.socket.on('pong', (data) => { 
             const latency = Date.now() - data.time; 
             utils.log('debug', `📊 Latence: ${latency}ms`); 
@@ -1080,5 +1159,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 
-    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '5.1.0' };
+    window.consultation = { state, utils, webrtc, chat, CONFIG, version: '5.2.0' };
 })();
