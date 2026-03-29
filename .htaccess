@@ -1,20 +1,12 @@
 RewriteEngine On
 
-# ============================================================
-# 1. WEBSOCKET PROXY (Priorité absolue)
-# ============================================================
-# Détecter et rediriger les WebSockets
-RewriteCond %{HTTP:Upgrade} =websocket [NC]
-RewriteRule ^socket/(.*) ws://127.0.0.1:3002/socket/$1 [P,L]
+# ============================================
+# NE RIEN FAIRE D'AUTRE - JUSTE PROXY HTTP
+# ============================================
+# Pas de WebSocket, pas de condition spéciale
+RewriteRule ^socket/(.*)$ http://127.0.0.1:3002/socket/$1 [P,L]
 
-# ============================================================
-# 2. PROXY HTTP NORMAL
-# ============================================================
-RewriteRule ^socket/(.*) http://127.0.0.1:3002/socket/$1 [P,L]
-
-# ============================================================
-# 3. CODEIGNITER
-# ============================================================
+# CodeIgniter
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [L]
