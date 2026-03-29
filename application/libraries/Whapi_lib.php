@@ -385,22 +385,7 @@ public function envoyer_document($groupe_id, $file_path, $filename = '', $captio
 /**
  * Envoi via l'endpoint générique /messages/media (alternative)
  */
-public function envoyer_media_generique($groupe_id, $file_path, $caption = '') {
-    $upload_result = $this->uploader_fichier($file_path);
-    if (!$upload_result['success']) {
-        return $upload_result;
-    }
-    
-    $url = $this->base_url . '/messages/media';
-    
-    $payload = array(
-        'to' => $groupe_id,
-        'media' => $upload_result['url'],
-        'caption' => $caption
-    );
-    
-    return $this->requete_api('POST', $url, $payload);
-}
+
 
 /**
  * Envoi via l'endpoint générique /messages/media
