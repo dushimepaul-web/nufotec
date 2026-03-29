@@ -143,14 +143,15 @@ class Joinconsultation extends MY_Controller {
     $current_user_data = $this->session->userdata();
     $current_user_data['id'] = $current_user_data['user_id'];
 
-    
+    $waitingMessage = ($current_role === 'patient') ? 'En attente du médecin...' : 'En attente du patient...';
 
     $data = array(
         'room_id'       => $room_id,
         'current_user'  => $current_user_data,
         'other_user'    => $other_user,
         'consultation'  => $consultation,
-        'current_role'  => $current_role
+        'current_role'  => $current_role,
+        'waitingMessage' => $waitingMessage 
     );
 
     $this->load->view('consultation_video', $data);

@@ -121,7 +121,7 @@
 <div id="waiting-overlay">
     <div class="waiting-content">
         <div class="spinner"></div>
-        <h3><?= htmlspecialchars($waitingMessage) ?></h3>
+        <h3><?= htmlspecialchars($waitingMessage ?? 'En attente du participant...') ?></h3>
         <p>Préparation de la consultation...</p>
     </div>
 </div>
@@ -136,6 +136,7 @@
 const roomId = <?= json_encode($room_id ?? null) ?>;
 const consultationId = <?= json_encode($consultation->id ?? $consultation['id'] ?? null) ?>;
 const userName = <?= json_encode(($current_role === 'patient' ? 'Patient' : 'Dr. ') . ($current_user['prenom'] ?? 'Utilisateur')) ?>;
+const waitingMessageText = <?= json_encode($waitingMessage ?? 'En attente du participant...') ?>;
 
 // Éléments DOM
 const leaveBtn = document.getElementById('leave-call');
