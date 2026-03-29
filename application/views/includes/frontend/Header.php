@@ -1425,7 +1425,6 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
 
 
-
  <!-- Top Bar -->
 <div class="top-bar" id="topBar">
     <div class="top-bar-content">
