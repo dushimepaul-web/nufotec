@@ -1,11 +1,6 @@
 RewriteEngine On
+RewriteRule ^socket/(.*)$ http://127.0.0.1:3002/socket/$1 [P,L]
 
-# Redirection HTTPS (optionnel mais recommandé)
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
-
-# Proxy pour Daily.co (pas nécessaire car Daily.co est externe)
-# CodeIgniter - ignorer les fichiers et dossiers existants
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [L]
