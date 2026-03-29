@@ -122,26 +122,45 @@ class Whatsapp extends MY_Controller {
             return;
         }
         
+        // ✅ CORRECTION: Forcer type audio si MIME type audio
+        $type_envoi = $input['type_envoi'];
+        $filetype = $input['filetype'];
+        $filename = $input['filename'];
+        
+        if (strpos($filetype, 'audio/') === 0 || $this->is_audio_file($filename)) {
+            $type_envoi = 'audio';
+            log_message('info', "Forçage type audio: $filename | MIME: $filetype");
+        }
+        
         // Sauvegarder les métadonnées
         $meta = [
             'upload_id' => $upload_id,
-            'filename' => $input['filename'],
+            'filename' => $filename,
             'filesize' => $input['filesize'],
-            'filetype' => $input['filetype'],
+            'filetype' => $filetype,
             'total_chunks' => $input['total_chunks'],
             'received_chunks' => [],
             'groupes_ids' => $input['groupes_ids'],
             'message' => $input['message'],
-            'type_envoi' => $input['type_envoi'],
+            'type_envoi' => $type_envoi, // Type corrigé
             'created_at' => time()
         ];
         
         file_put_contents($upload_dir . 'meta.json', json_encode($meta));
         
-        log_message('info', "Whapi Upload initié: $upload_id - {$input['total_chunks']} chunks, " . 
+        log_message('info', "Whapi Upload initié: $upload_id - {$input['total_chunks']} chunks, Type: $type_envoi, " . 
                    round($input['filesize']/1024/1024, 2) . " MB");
         
         echo json_encode(['success' => true, 'upload_id' => $upload_id]);
+    }
+    
+    /**
+     * Vérifie si c'est un fichier audio par extension
+     */
+    private function is_audio_file($filename) {
+        $audio_exts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma', 'opus', 'weba', 'webm'];
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        return in_array($ext, $audio_exts);
     }
     
     /**
@@ -255,7 +274,7 @@ class Whatsapp extends MY_Controller {
             'job_id' => $job_id,
             'groupes_ids' => $meta['groupes_ids'],
             'message' => $meta['message'],
-            'type_envoi' => $meta['type_envoi'],
+            'type_envoi' => $meta['type_envoi'], // Type déjà corrigé dans init
             'delai' => 1000,
             'file_info' => [
                 'name' => $meta['filename'],
@@ -302,6 +321,11 @@ class Whatsapp extends MY_Controller {
         
         $filepath = $file_info ? $file_info['path'] : null;
         
+        // ✅ LOG détaillé pour debug audio
+        if ($type_envoi === 'audio') {
+            log_message('info', "TRAITEMENT AUDIO - Job: $job_id | Fichier: " . ($filepath ? basename($filepath) : 'AUCUN') . " | Groupes: " . count($groupes_ids));
+        }
+        
         foreach ($groupes_ids as $index => $groupe_id) {
             // Mettre à jour la progression
             $job['current_group'] = $groupe_id;
@@ -316,8 +340,13 @@ class Whatsapp extends MY_Controller {
                 if ($type_envoi === 'texte') {
                     $result = $this->whapi_lib->envoyer_message($groupe_id, $message);
                 } else {
-                    // Envoi fichier via Whapi
+                    // ✅ Envoi fichier via Whapi - la librairie gère la conversion audio
                     $result = $this->whapi_lib->envoyer_fichier($groupe_id, $filepath, $message);
+                    
+                    // Log spécial pour audio
+                    if ($type_envoi === 'audio') {
+                        log_message('info', "Résultat envoi audio à $groupe_id: " . ($result['success'] ? 'SUCCÈS' : 'ÉCHEC') . ' - ' . ($result['error'] ?? 'OK'));
+                    }
                 }
                 
                 $success = $result['success'] ?? false;

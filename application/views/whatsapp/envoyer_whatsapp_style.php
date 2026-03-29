@@ -907,6 +907,7 @@ let recordingStartTime = null;
 let recordingTimer = null;
 let audioBlob = null;
 let isRecording = false;
+let audioStream = null; // Stocker le stream pour le nettoyer
 
 // État
 let selectedGroupes = [];
@@ -1037,7 +1038,7 @@ function handleFileSelect(input) {
     selectedFile = input.files[0];
     const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
     
-    log('Fichier sélectionné: ' + selectedFile.name + ' (' + sizeMB + ' MB)');
+    log('Fichier sélectionné: ' + selectedFile.name + ' (' + sizeMB + ' MB) - Type: ' + selectedFile.type);
     
     // Détecter le type automatiquement
     if (selectedFile.type.startsWith('video/')) currentType = 'video';
@@ -1082,7 +1083,7 @@ function clearFile() {
     }
 }
 
-// ==================== ENREGISTREMENT AUDIO - Style WhatsApp ====================
+// ==================== ENREGISTREMENT AUDIO - CORRIGÉ ====================
 
 function initWaveBars() {
     const container = document.getElementById('waveContainer');
@@ -1106,25 +1107,74 @@ async function startRecording() {
             return;
         }
         
+        // Configuration audio optimale pour WhatsApp
+        const audioConstraints = {
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                sampleRate: 44100,
+                channelCount: 1 // Mono pour réduire la taille
+            }
+        };
+        
         // Demander permission microphone
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
         
-        // Configurer le recorder
-        mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'audio/webm;codecs=opus'
-        });
+        // Détecter le meilleur format supporté
+        // Priorité: audio/ogg (Opus) > audio/webm > audio/mp4
+        const mimeTypes = [
+            'audio/ogg;codecs=opus',
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4'
+        ];
         
+        let selectedMime = '';
+        for (let type of mimeTypes) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                selectedMime = type;
+                log('Format audio sélectionné: ' + type);
+                break;
+            }
+        }
+        
+        if (!selectedMime) {
+            alert('Aucun format audio supporté par ce navigateur');
+            setType('texte', document.getElementById('btnTexte'));
+            return;
+        }
+        
+        // Configurer le recorder avec le format optimal
+        const options = {
+            mimeType: selectedMime,
+            audioBitsPerSecond: 128000 // 128 kbps qualité voix
+        };
+        
+        mediaRecorder = new MediaRecorder(audioStream, options);
         audioChunks = [];
         
         mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) {
+            if (e.data && e.data.size > 0) {
                 audioChunks.push(e.data);
+                log('Chunk audio reçu: ' + e.data.size + ' bytes');
             }
         };
         
         mediaRecorder.onstop = () => {
-            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const audioFile = new File([audioBlob], 'note_vocale_' + Date.now() + '.webm', { type: 'audio/webm' });
+            // Créer le blob avec le type exact utilisé
+            const actualMimeType = mediaRecorder.mimeType || selectedMime;
+            audioBlob = new Blob(audioChunks, { type: actualMimeType });
+            
+            // Déterminer l'extension selon le MIME type
+            let extension = 'webm';
+            if (actualMimeType.includes('ogg')) extension = 'ogg';
+            if (actualMimeType.includes('mp4') || actualMimeType.includes('m4a')) extension = 'm4a';
+            
+            // Créer le fichier avec le bon type MIME
+            const audioFile = new File([audioBlob], 'note_vocale_' + Date.now() + '.' + extension, { 
+                type: actualMimeType 
+            });
             
             // Stocker comme fichier sélectionné
             selectedFile = audioFile;
@@ -1135,16 +1185,29 @@ async function startRecording() {
             const mins = Math.floor(duration / 60).toString().padStart(2, '0');
             const secs = (duration % 60).toString().padStart(2, '0');
             
-            showFilePreview('Note vocale', `Durée: ${mins}:${secs} • ${(audioFile.size/1024).toFixed(1)} KB`, 'audio');
+            showFilePreview(
+                'Note vocale (' + extension.toUpperCase() + ')', 
+                `Durée: ${mins}:${secs} • ${(audioFile.size/1024).toFixed(1)} KB • ${actualMimeType}`, 
+                'audio'
+            );
             
-            // Arrêter le stream
-            stream.getTracks().forEach(track => track.stop());
+            log('Audio enregistré: ' + audioFile.size + ' bytes, type: ' + actualMimeType + ', ext: ' + extension);
             
-            log('Audio enregistré: ' + audioFile.size + ' bytes');
+            // Nettoyer le stream
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+                audioStream = null;
+            }
+        };
+        
+        mediaRecorder.onerror = (e) => {
+            console.error('Erreur MediaRecorder:', e);
+            alert('Erreur lors de l\'enregistrement audio');
+            cancelRecording();
         };
         
         // Démarrer l'enregistrement
-        mediaRecorder.start(100); // Collecter données toutes les 100ms
+        mediaRecorder.start(100); // Collecte toutes les 100ms
         recordingStartTime = Date.now();
         isRecording = true;
         
@@ -1162,12 +1225,18 @@ async function startRecording() {
         // Mettre à jour le bouton audio
         document.getElementById('btnAudio').classList.add('active');
         
-        log('Enregistrement audio démarré');
+        log('Enregistrement audio démarré avec format: ' + selectedMime);
         
     } catch (err) {
         console.error('Erreur microphone:', err);
         alert('Erreur d\'accès au microphone: ' + err.message);
         setType('texte', document.getElementById('btnTexte'));
+        
+        // Nettoyer en cas d'erreur
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
     }
 }
 
@@ -1179,15 +1248,26 @@ function updateRecordingTime() {
 }
 
 function cancelRecording() {
+    // Arrêter le recorder si actif
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        mediaRecorder = null;
+        try {
+            mediaRecorder.stop();
+        } catch (e) {
+            console.error('Erreur arrêt recorder:', e);
+        }
+    }
+    
+    // Nettoyer le stream
+    if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+        audioStream = null;
     }
     
     clearInterval(recordingTimer);
     audioChunks = [];
     audioBlob = null;
     isRecording = false;
+    mediaRecorder = null;
     
     // Réinitialiser l'interface
     document.getElementById('normalInputArea').style.display = 'flex';
@@ -1200,10 +1280,16 @@ function cancelRecording() {
 }
 
 function stopRecordingAndSend() {
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        log('Recorder déjà inactif');
+        return;
+    }
     
-    // Arrêter l'enregistrement
+    log('Arrêt de l\'enregistrement...');
+    
+    // Arrêter l'enregistrement - le onstop handler va créer le fichier
     mediaRecorder.stop();
+    
     clearInterval(recordingTimer);
     isRecording = false;
     
@@ -1211,9 +1297,7 @@ function stopRecordingAndSend() {
     document.getElementById('normalInputArea').style.display = 'flex';
     document.getElementById('recordingInputArea').style.display = 'none';
     
-    // Le fichier audio est maintenant dans selectedFile via l'event onstop
-    // On peut envoyer directement ou laisser l'utilisateur cliquer sur envoyer
-    log('Enregistrement terminé, prêt à envoyer');
+    log('Enregistrement terminé, fichier prêt à envoyer');
 }
 
 function clearAudio() {
@@ -1270,7 +1354,10 @@ async function submitForm() {
             await envoyerTexte(groupesIds, message);
         } else {
             // Envoi fichier par chunks (y compris audio)
-            await envoyerFichierChunks(groupesIds, message, currentType, selectedFile);
+            // FORCER le type audio si c'est un fichier audio
+            const typeToSend = selectedFile.type.startsWith('audio/') ? 'audio' : currentType;
+            log('Envoi fichier type: ' + typeToSend + ', MIME: ' + selectedFile.type);
+            await envoyerFichierChunks(groupesIds, message, typeToSend, selectedFile);
         }
     } catch (error) {
         log('Erreur: ' + error.message);
@@ -1313,7 +1400,7 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
     
     abortController = new AbortController();
     
-    log(`Upload démarré: ${totalChunks} chunks de 1.5 MB`);
+    log(`Upload démarré: ${totalChunks} chunks de 1.5 MB, type: ${type}, mime: ${file.type}`);
     showUploadProgress(0, 'Préparation de l\'upload...', 'bi-cloud-arrow-up');
     
     // Étape 1: Initialiser
@@ -1324,11 +1411,11 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
             upload_id: uploadId,
             filename: file.name,
             filesize: totalSize,
-            filetype: file.type,
+            filetype: file.type, // Envoyer le vrai MIME type
             total_chunks: totalChunks,
             groupes_ids: groupesIds,
             message: message,
-            type_envoi: type
+            type_envoi: type // 'audio', 'video', 'image', 'document'
         }),
         signal: abortController.signal
     });

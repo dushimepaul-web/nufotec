@@ -5,6 +5,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Whapi_lib - Librairie robuste pour WhatsApp API
  * Support: texte, image, vidéo, audio, document
  * Gestion: retry, compression, timeouts adaptatifs
+ * CORRECTION: Conversion audio WebM/Opus -> MP3 obligatoire pour WhatsApp
  */
 class Whapi_lib {
     
@@ -34,6 +35,10 @@ class Whapi_lib {
         
         // Vérifier FFmpeg disponible
         $this->ffmpeg_available = $this->_check_ffmpeg();
+        
+        if ($this->debug) {
+            log_message('info', 'Whapi_lib initialisé - FFmpeg disponible: ' . ($this->ffmpeg_available ? 'OUI' : 'NON'));
+        }
     }
     
     /**
@@ -43,7 +48,13 @@ class Whapi_lib {
         $output = array();
         $return_var = 0;
         @exec('ffmpeg -version 2>&1', $output, $return_var);
-        return ($return_var === 0);
+        $available = ($return_var === 0);
+        
+        if ($this->debug) {
+            log_message('debug', 'FFmpeg check: ' . ($available ? 'disponible' : 'indisponible') . ' (return: ' . $return_var . ')');
+        }
+        
+        return $available;
     }
     
     /**
@@ -159,32 +170,125 @@ class Whapi_lib {
     }
     
     /**
-     * ✅ ROBUSTE: Compression audio
+     * ✅ CORRECTION: Compression audio avec conversion en MP3
+     * WhatsApp ne lit pas bien WebM/Opus sur iOS, MP3 est universel
      */
     private function compresser_audio($input_path, $output_path) {
         if (!$this->ffmpeg_available) {
+            log_message('error', 'FFmpeg non disponible pour conversion audio');
             return false;
         }
         
-        // Compression MP3 128kbps
+        // Conversion MP3 128kbps mono (optimal pour voix WhatsApp)
         $cmd = sprintf(
-            'ffmpeg -i %s -codec:a libmp3lame -q:a 4 %s 2>&1',
+            'ffmpeg -i %s -vn -ar 44100 -ac 1 -b:a 128k -codec:a libmp3lame -q:a 2 %s 2>&1',
             escapeshellarg($input_path),
             escapeshellarg($output_path)
         );
         
         exec($cmd, $output, $return_var);
         
-        return ($return_var === 0 && file_exists($output_path) && filesize($output_path) > 0);
+        $success = ($return_var === 0 && file_exists($output_path) && filesize($output_path) > 0);
+        
+        if ($this->debug) {
+            log_message('debug', 'Conversion audio: ' . ($success ? 'SUCCÈS' : 'ÉCHEC') . ' (return: ' . $return_var . ')');
+            if (!$success && !empty($output)) {
+                log_message('error', 'FFmpeg output: ' . implode("\n", $output));
+            }
+        }
+        
+        return $success;
     }
     
     /**
-     * ✅ ROBUSTE: Préparation fichier avec compression si nécessaire
+     * ✅ NOUVEAU: Conversion forcée WebM/Opus -> MP3 pour audio
+     * Cette fonction est appelée systématiquement pour les fichiers audio
+     */
+    private function convertir_audio_mp3($input_path) {
+        $temp_dir = sys_get_temp_dir();
+        $output_path = $temp_dir . '/whapi_audio_' . uniqid() . '.mp3';
+        
+        log_message('info', 'Conversion audio en MP3: ' . basename($input_path) . ' -> ' . basename($output_path));
+        
+        if ($this->compresser_audio($input_path, $output_path)) {
+            $original_size = filesize($input_path);
+            $new_size = filesize($output_path);
+            
+            log_message('info', sprintf(
+                'Audio converti: %s -> %s (%.1f%% de réduction)',
+                $this->format_bytes($original_size),
+                $this->format_bytes($new_size),
+                (1 - $new_size/$original_size) * 100
+            ));
+            
+            return array(
+                'success' => true,
+                'path' => $output_path,
+                'temp' => true,
+                'original_size' => $original_size,
+                'final_size' => $new_size
+            );
+        }
+        
+        // Échec conversion
+        if (file_exists($output_path)) {
+            @unlink($output_path);
+        }
+        
+        return array(
+            'success' => false,
+            'error' => 'Échec conversion audio en MP3'
+        );
+    }
+    
+    /**
+     * Helper: Formater taille en bytes
+     */
+    private function format_bytes($bytes) {
+        if ($bytes >= 1048576) return round($bytes/1048576, 2) . ' MB';
+        if ($bytes >= 1024) return round($bytes/1024, 2) . ' KB';
+        return $bytes . ' B';
+    }
+    
+    /**
+     * ✅ ROBUSTE: Préparation fichier avec conversion audio obligatoire
      */
     private function preparer_fichier($file_path, $type) {
         $file_size = filesize($file_path);
         
-        // Si fichier < 16MB, pas besoin de compression
+        // ✅ CORRECTION: Pour l'audio, TOUJOURS convertir en MP3
+        // Même si < 16MB, car WebM/Opus n'est pas bien supporté par WhatsApp iOS
+        if ($type === 'audio') {
+            $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+            $mime = mime_content_type($file_path);
+            
+            log_message('info', "Préparation audio: $extension | MIME: $mime | Taille: " . $this->format_bytes($file_size));
+            
+            // Si c'est déjà du MP3, pas besoin de conversion
+            if ($extension === 'mp3' && strpos($mime, 'audio/mpeg') !== false) {
+                log_message('info', 'Audio déjà en MP3, pas de conversion nécessaire');
+                return array(
+                    'path' => $file_path,
+                    'temp' => false,
+                    'original_size' => $file_size,
+                    'final_size' => $file_size
+                );
+            }
+            
+            // Conversion obligatoire en MP3
+            $conversion = $this->convertir_audio_mp3($file_path);
+            
+            if (!$conversion['success']) {
+                return array(
+                    'error' => 'Impossible de convertir l\'audio en MP3. FFmpeg est-il installé?',
+                    'path' => null
+                );
+            }
+            
+            return $conversion;
+        }
+        
+        // Pour les autres types: compression seulement si > 16MB
         if ($file_size < $this->compression_threshold) {
             return array(
                 'path' => $file_path,
@@ -196,7 +300,6 @@ class Whapi_lib {
         
         // Si fichier > 100MB, impossible même avec compression
         if ($file_size > $this->max_file_size) {
-            // Essayer compression quand même
             if (!$this->ffmpeg_available) {
                 return array(
                     'error' => 'Fichier trop gros (>100MB) et FFmpeg non disponible pour compression',
@@ -205,7 +308,7 @@ class Whapi_lib {
             }
         }
         
-        // Compression
+        // Compression vidéo uniquement (pas audio ici, déjà géré)
         $temp_dir = sys_get_temp_dir();
         $temp_path = $temp_dir . '/whapi_' . uniqid() . '_' . basename($file_path);
         
@@ -213,8 +316,6 @@ class Whapi_lib {
         
         if ($type === 'video' && $this->ffmpeg_available) {
             $compressed = $this->compresser_video($file_path, $temp_path);
-        } elseif ($type === 'audio' && $this->ffmpeg_available) {
-            $compressed = $this->compresser_audio($file_path, $temp_path);
         }
         
         if ($compressed && filesize($temp_path) < $this->max_file_size) {
@@ -249,7 +350,7 @@ class Whapi_lib {
             );
         }
         
-        // Préparer fichier (compression si nécessaire)
+        // Préparer fichier (conversion MP3 pour audio)
         $preparation = $this->preparer_fichier($file_path, $type);
         
         if (isset($preparation['error'])) {
@@ -279,6 +380,22 @@ class Whapi_lib {
         
         if ($type === 'document') {
             $post_data['filename'] = $filename ? $filename : basename($file_path);
+        }
+        
+        // Log détaillé pour debug audio
+        if ($type === 'audio') {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $final_mime = finfo_file($finfo, $file_to_send);
+            finfo_close($finfo);
+            
+            log_message('info', sprintf(
+                'Envoi audio à %s | Endpoint: %s | Fichier: %s | MIME: %s | Taille: %s',
+                $groupe_id,
+                $endpoint,
+                basename($file_to_send),
+                $final_mime,
+                $this->format_bytes($file_size)
+            ));
         }
         
         // Envoi avec retry
@@ -349,6 +466,7 @@ class Whapi_lib {
         // Nettoyage fichier temporaire
         if ($is_temp && file_exists($file_to_send)) {
             @unlink($file_to_send);
+            log_message('debug', 'Fichier temporaire nettoyé: ' . $file_to_send);
         }
         
         // Log debug
@@ -356,6 +474,9 @@ class Whapi_lib {
             log_message('debug', 'Whapi envoi - Type: ' . $type . ' | Endpoint: ' . $endpoint);
             log_message('debug', 'Whapi envoi - Taille: ' . $file_size . ' | Tentatives: ' . $tentative);
             log_message('debug', 'Whapi envoi - HTTP: ' . $last_http_code . ' | Success: ' . ($success ? 'OUI' : 'NON'));
+            if (!$success && $last_error) {
+                log_message('error', 'Whapi erreur: ' . $last_error);
+            }
         }
         
         return array(
@@ -377,7 +498,7 @@ class Whapi_lib {
         $endpoints = array(
             'image' => '/messages/image',
             'video' => '/messages/video',
-            'audio' => '/messages/audio',
+            'audio' => '/messages/audio',  // Endpoint spécifique audio
             'document' => '/messages/document'
         );
         
@@ -401,7 +522,7 @@ class Whapi_lib {
     }
     
     /**
-     * Détecte le type de fichier
+     * ✅ CORRECTION: Détection type de fichier avec priorité audio
      */
     public function envoyer_fichier($groupe_id, $file_path, $caption = '') {
         if (!file_exists($file_path)) {
@@ -415,6 +536,8 @@ class Whapi_lib {
         $mime_type = mime_content_type($file_path);
         $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
         
+        log_message('debug', "Détection fichier: $file_path | MIME: $mime_type | Ext: $extension");
+        
         // Détection par MIME prioritaire
         if (strpos($mime_type, 'image/') === 0) {
             $type = 'image';
@@ -423,11 +546,11 @@ class Whapi_lib {
         } elseif (strpos($mime_type, 'audio/') === 0) {
             $type = 'audio';
         } else {
-            // Fallback extension
+            // Fallback extension avec détection audio améliorée
             $types = array(
                 'image' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'],
                 'video' => ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', '3gp', 'm4v'],
-                'audio' => ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma', 'opus']
+                'audio' => ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma', 'opus', 'weba']
             );
             
             $type = 'document';
@@ -438,6 +561,14 @@ class Whapi_lib {
                 }
             }
         }
+        
+        // ✅ FORCER type audio si extension audio (sécurité)
+        if (in_array($extension, ['mp3', 'wav', 'ogg', 'm4a', 'opus', 'weba', 'webm']) && $type !== 'audio') {
+            log_message('warning', "Forçage type audio pour extension: $extension");
+            $type = 'audio';
+        }
+        
+        log_message('info', "Type détecté: $type pour $file_path");
         
         return $this->envoyer_fichier_direct($groupe_id, $file_path, $type, $caption);
     }
