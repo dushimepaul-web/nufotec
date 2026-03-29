@@ -497,4 +497,80 @@ public function traiter_envoi_fichier() {
     
     $this->load->view('whatsapp/resultat_envoi_fichier', $data);
 }
+
+public function test_document() {
+    $this->load->library('whapi_lib');
+    
+    // Chemin du fichier à tester
+    $file_path = FCPATH . 'uploads/whatsapp/contrat_nufotec.docx';
+    
+    echo "<h1>Test d'envoi de document .docx</h1>";
+    
+    // 1. Vérifier que le fichier existe
+    echo "<h3>1. Vérification du fichier</h3>";
+    if (!file_exists($file_path)) {
+        echo "❌ Fichier introuvable: " . $file_path . "<br>";
+        return;
+    }
+    echo "✅ Fichier trouvé<br>";
+    echo "Chemin: " . $file_path . "<br>";
+    echo "Taille: " . round(filesize($file_path) / 1024, 2) . " KB<br>";
+    echo "Extension: " . pathinfo($file_path, PATHINFO_EXTENSION) . "<br>";
+    
+    // 2. Test d'upload
+    echo "<h3>2. Test d'upload du fichier</h3>";
+    $upload = $this->whapi_lib->uploader_fichier($file_path);
+    echo "<pre>";
+    print_r($upload);
+    echo "</pre>";
+    
+    if (!$upload['success']) {
+        echo "❌ Upload échoué<br>";
+        return;
+    }
+    
+    echo "✅ Upload réussi<br>";
+    echo "URL du fichier: " . $upload['url'] . "<br>";
+    
+    // 3. Test d'envoi via /messages/document
+    echo "<h3>3. Test d'envoi via /messages/document</h3>";
+    $resultat = $this->whapi_lib->envoyer_document(
+        '120363265564772421@g.us', // ID du groupe de test
+        $file_path,
+        'contrat_nufotec.docx',
+        'Test d\'envoi de document .docx'
+    );
+    
+    echo "<pre>";
+    print_r($resultat);
+    echo "</pre>";
+    
+    // 4. Alternative: essayer l'endpoint générique
+    echo "<h3>4. Alternative: via /messages/media</h3>";
+    $resultat2 = $this->whapi_lib->envoyer_media_generique(
+        '120363265564772421@g.us',
+        $file_path,
+        'Test via endpoint générique'
+    );
+    
+    echo "<pre>";
+    print_r($resultat2);
+    echo "</pre>";
+    
+    // 5. Alternative: envoyer via URL (si fichier accessible publiquement)
+    echo "<h3>5. Alternative: via URL publique</h3>";
+    $public_url = base_url('uploads/whatsapp/contrat_nufotec.docx');
+    echo "URL publique: " . $public_url . "<br>";
+    
+    $resultat3 = $this->whapi_lib->envoyer_document_url(
+        '120363265564772421@g.us',
+        $public_url,
+        'contrat_nufotec.docx',
+        'Test via URL publique'
+    );
+    
+    echo "<pre>";
+    print_r($resultat3);
+    echo "</pre>";
+}
 }

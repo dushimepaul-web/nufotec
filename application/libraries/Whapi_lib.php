@@ -117,23 +117,6 @@ class Whapi_lib {
     /**
      * Envoie un document (PDF, DOC, etc.)
      */
-    public function envoyer_document($groupe_id, $file_path, $filename = '', $caption = '') {
-        $url = $this->base_url . '/messages/document';
-        
-        $upload_result = $this->uploader_fichier($file_path);
-        if (!$upload_result['success']) {
-            return $upload_result;
-        }
-        
-        $payload = array(
-            'to' => $groupe_id,
-            'media' => $upload_result['url'],
-            'filename' => $filename ?: basename($file_path),
-            'caption' => $caption
-        );
-        
-        return $this->requete_api('POST', $url, $payload);
-    }
     
     /**
      * Envoie une vidéo à un groupe
@@ -335,4 +318,87 @@ class Whapi_lib {
         
         return $result;
     }
+
+    /**
+ * Envoie un document (PDF, DOC, DOCX, etc.) à un groupe
+ * Endpoint: /messages/document (selon documentation)
+ */
+public function envoyer_document($groupe_id, $file_path, $filename = '', $caption = '') {
+    // 1. Upload du fichier vers Whapi
+    $upload_result = $this->uploader_fichier($file_path);
+    if (!$upload_result['success']) {
+        log_message('error', 'Upload échoué: ' . ($upload_result['error'] ?? 'Erreur inconnue'));
+        return $upload_result;
+    }
+    
+    // 2. Préparer le payload pour l'envoi du document
+    $url = $this->base_url . '/messages/document';
+    
+    $payload = array(
+        'to' => $groupe_id,
+        'media' => $upload_result['url'],
+        'filename' => $filename ?: basename($file_path),
+        'caption' => $caption
+    );
+    
+    // Ajouter le type MIME pour les documents Word
+    $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+    $mime_types = [
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt' => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'txt' => 'text/plain',
+        'csv' => 'text/csv',
+        'zip' => 'application/zip',
+        'rar' => 'application/x-rar-compressed'
+    ];
+    
+    if (isset($mime_types[$extension])) {
+        $payload['mimetype'] = $mime_types[$extension];
+    }
+    
+    // 3. Envoyer la requête
+    $resultat = $this->requete_api('POST', $url, $payload);
+    
+    // 4. Log pour debug
+    if ($this->debug) {
+        log_message('debug', 'Envoi document - Groupe: ' . $groupe_id);
+        log_message('debug', 'Envoi document - URL média: ' . $upload_result['url']);
+        log_message('debug', 'Envoi document - Statut: ' . ($resultat['success'] ? 'Succès' : 'Échec'));
+        if (!$resultat['success']) {
+            log_message('error', 'Envoi document - Erreur: ' . ($resultat['error'] ?? json_encode($resultat['response'])));
+        }
+    }
+    
+    return $resultat;
+}
+
+/**
+ * Envoi d'un document avec URL externe (sans upload)
+ */
+
+
+/**
+ * Envoi via l'endpoint générique /messages/media (alternative)
+ */
+public function envoyer_media_generique($groupe_id, $file_path, $caption = '') {
+    $upload_result = $this->uploader_fichier($file_path);
+    if (!$upload_result['success']) {
+        return $upload_result;
+    }
+    
+    $url = $this->base_url . '/messages/media';
+    
+    $payload = array(
+        'to' => $groupe_id,
+        'media' => $upload_result['url'],
+        'caption' => $caption
+    );
+    
+    return $this->requete_api('POST', $url, $payload);
+}
 }
