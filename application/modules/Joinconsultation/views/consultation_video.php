@@ -21,7 +21,7 @@
         .header-actions button { background: none; border: none; color: #aebac1; font-size: 1.2rem; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
         .header-actions button:hover { background: #2a3942; color: #fff; }
         .main { flex: 1; display: flex; overflow: hidden; }
-        .video-area { flex: 2; background: #0b141a; display: flex; flex-direction: column; padding: 10px; position: relative; }
+        .video-area { flex: 1; background: #0b141a; display: flex; flex-direction: column; padding: 10px; position: relative; }
         .video-container { position: relative; flex: 1; background: #1f2c33; border-radius: 12px; overflow: hidden; }
         .remote-video { width: 100%; height: 100%; object-fit: cover; background: #000; }
         .local-video { position: absolute; bottom: 20px; right: 20px; width: 150px; height: 100px; border-radius: 8px; object-fit: cover; border: 2px solid #00a884; background: #2a3942; z-index: 10; }
@@ -31,28 +31,6 @@
         .call-controls button:not(.active) { background: #374045; }
         .call-controls button.danger { background: #dc3c3c !important; }
         .call-controls button:hover { transform: scale(1.1); }
-        .chat-area { width: 350px; background: #202c33; border-left: 1px solid #2a3942; display: flex; flex-direction: column; transition: transform 0.3s; }
-        .chat-header { padding: 15px; background: #2a3942; display: flex; justify-content: space-between; align-items: center; }
-        .chat-header span { font-weight: 600; }
-        .chat-close { display: none; background: none; border: none; color: #aebac1; font-size: 1.2rem; cursor: pointer; }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .message { display: flex; gap: 8px; max-width: 80%; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .message.own { align-self: flex-end; flex-direction: row-reverse; }
-        .message .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; align-self: flex-end; }
-        .message .bubble { background: #2a3942; padding: 8px 12px; border-radius: 16px; word-break: break-word; position: relative; max-width: 100%; }
-        .message.own .bubble { background: #005c4b; color: white; border-bottom-right-radius: 4px; }
-        .message .sender { font-size: 0.75rem; font-weight: 600; margin-bottom: 2px; color: #00a884; }
-        .message .text { font-size: 0.9rem; line-height: 1.4; }
-        .message .time { font-size: 0.65rem; opacity: 0.7; text-align: right; margin-top: 4px; }
-        .chat-footer { padding: 10px; background: #2a3942; display: flex; gap: 10px; align-items: center; }
-        .chat-footer input[type="text"] { flex: 1; padding: 10px 15px; border: none; border-radius: 24px; background: #202c33; color: white; outline: none; font-size: 0.95rem; }
-        .chat-footer input[type="text"]::placeholder { color: #8696a0; }
-        .chat-footer button { background: none; border: none; color: #00a884; font-size: 1.5rem; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
-        .chat-footer button:hover { background: #202c33; }
-        .chat-footer label { color: #aebac1; font-size: 1.3rem; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
-        .chat-footer label:hover { background: #202c33; color: #fff; }
-        #file-input { display: none; }
         #waiting-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11,20,26,0.95); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .waiting-content { text-align: center; color: white; padding: 40px; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #00a884; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
@@ -64,13 +42,10 @@
         .toast.error { background: #F44336; }
         .toast.warning { background: #FF9800; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .offline-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #8696a0; display: none; }
+        .offline-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #8696a0; display: none; z-index: 5; background: rgba(0,0,0,0.7); padding: 20px; border-radius: 12px; }
         .offline-indicator i { font-size: 4rem; margin-bottom: 15px; display: block; }
         .offline-indicator.show { display: block; }
         @media (max-width: 768px) {
-            .chat-area { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; z-index: 1000; transform: translateX(100%); border-left: none; }
-            .chat-area.chat-visible { transform: translateX(0); }
-            .chat-close { display: block; }
             .local-video { width: 100px; height: 75px; bottom: 100px; }
             .call-controls button { width: 40px; height: 40px; }
         }
@@ -108,7 +83,6 @@ $other_photo = getProp($other_user, 'photo', '');
 $current_prenom = $current_user['prenom'] ?? '';
 $current_nom = $current_user['nom'] ?? '';
 $current_photo = $current_user['photo'] ?? '';
-$current_id = $current_user['user_id'] ?? $current_user['id'] ?? '';
 $other_avatar_url = (!empty($other_photo) && $other_photo !== 'default-avatar.png') ? base_url('attachments/Users/' . $other_photo) : 'https://ui-avatars.com/api/?name=' . urlencode(strtoupper(substr($other_prenom,0,1).substr($other_nom,0,1) ?: 'U')) . '&size=128&background=random&color=fff';
 $current_avatar_url = (!empty($current_photo) && $current_photo !== 'default-avatar.png') ? base_url('attachments/Users/' . $current_photo) : 'https://ui-avatars.com/api/?name=' . urlencode(strtoupper(substr($current_prenom,0,1).substr($current_nom,0,1) ?: 'U')) . '&size=128&background=random&color=fff';
 $waitingMessage = ($current_role === 'patient') ? 'En attente du médecin...' : 'En attente du patient...';
@@ -124,7 +98,6 @@ $otherRoleLabel = ($current_role === 'patient') ? 'Dr. ' : '';
             </div>
         </div>
         <div class="header-actions">
-            <button id="toggle-chat"><i class="fas fa-comment"></i></button>
             <button id="leave-call" class="danger"><i class="fas fa-phone-slash"></i></button>
         </div>
     </div>
@@ -138,16 +111,6 @@ $otherRoleLabel = ($current_role === 'patient') ? 'Dr. ' : '';
                     <button id="mute-audio" class="active"><i class="fas fa-microphone"></i></button>
                     <button id="mute-video" class="active"><i class="fas fa-video"></i></button>
                 </div>
-            </div>
-        </div>
-        <div class="chat-area" id="chat-area">
-            <div class="chat-header"><span><i class="fas fa-comment"></i> Chat</span><button id="chat-close" class="chat-close"><i class="fas fa-times"></i></button></div>
-            <div id="chat-messages" class="chat-messages"></div>
-            <div class="chat-footer">
-                <label for="file-input"><i class="fas fa-paperclip"></i></label>
-                <input type="file" id="file-input" multiple accept="image/*,.pdf,.doc,.docx,.txt">
-                <input type="text" id="chat-input" placeholder="Écrivez un message...">
-                <button id="chat-send"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>

@@ -4,12 +4,19 @@ const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const PORT = 3002;
+const PORT = process.env.PORT || 3002;  // Utiliser variable d'environnement
 const BASE_PATH = '/socket';
 
-// CORS configuration
+// CORS configuration - Plus restrictive pour la sécurité
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : ['*'];
+
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin || '*');
+    }
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, X-Client-Version');
     res.header('Access-Control-Allow-Credentials', 'true');
@@ -26,26 +33,37 @@ app.get(BASE_PATH + '/health', (req, res) => {
         status: 'healthy', 
         port: PORT, 
         time: new Date().toISOString(),
-        transport: 'polling-compatible'
+        transport: 'polling-compatible',
+        version: '6.0.0'
     });
 });
 
 app.get(BASE_PATH + '/api/ice-servers', (req, res) => {
-    res.json({
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' }
-        ]
-    });
+    // Configuration ICE avec TURN si disponible
+    const iceServers = [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' }
+    ];
+    
+    // Ajouter TURN si configuré
+    if (process.env.TURN_SERVER) {
+        iceServers.push({
+            urls: process.env.TURN_SERVER,
+            username: process.env.TURN_USERNAME,
+            credential: process.env.TURN_CREDENTIAL
+        });
+    }
+    
+    res.json({ iceServers });
 });
 
-// Socket.IO configuration
+// Socket.IO configuration optimisée
 const io = socketIo(server, {
     path: BASE_PATH + '/socket.io',
     cors: { 
-        origin: "*", 
+        origin: allowedOrigins.includes('*') ? "*" : allowedOrigins,
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["Content-Type", "X-Requested-With", "X-Client-Version"]
@@ -55,8 +73,20 @@ const io = socketIo(server, {
     pingInterval: 25000,
     allowUpgrades: true,
     upgradeTimeout: 10000,
+    // Optimisations pour serveur mutualisé
+    maxHttpBufferSize: 1e6, // 1MB max
+    perMessageDeflate: {
+        threshold: 1024 // Compresser les messages > 1KB
+    },
     transportOptions: {
         polling: {
+            maxPayload: 1000000, // 1MB max payload
+            closeTimeout: 30000,
+            extraHeaders: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        },
+        websocket: {
             extraHeaders: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
@@ -64,33 +94,65 @@ const io = socketIo(server, {
     }
 });
 
+// Gestionnaire de rooms avec nettoyage automatique
 const rooms = new Map();
+const userRooms = new Map(); // Pour un accès rapide
+
+// Nettoyage périodique des rooms vides (optionnel)
+setInterval(() => {
+    rooms.forEach((participants, roomId) => {
+        if (participants.size === 0) {
+            rooms.delete(roomId);
+            console.log(`🧹 Nettoyage automatique: room ${roomId} supprimée`);
+        }
+    });
+}, 3600000); // Toutes les heures
 
 io.on('connection', (socket) => {
-    console.log(`✅ Client connecté: ${socket.id} (transport: ${socket.conn.transport.name})`);
+    const transport = socket.conn.transport.name;
+    console.log(`✅ Client connecté: ${socket.id} (transport: ${transport})`);
     
+    // Enregistrer l'heure de connexion
+    socket.connectedAt = Date.now();
+
+    // Gestion des pings avec latence
     socket.on('ping', (data) => {
+        const latency = Date.now() - (data.time || 0);
         socket.emit('pong', { 
             time: data.time, 
             serverTime: Date.now(),
-            role: data.role || 'unknown'
+            role: data.role || 'unknown',
+            latency: latency
         });
+        
+        // Log si latence élevée
+        if (latency > 1000) {
+            console.log(`⚠️ Latence élevée pour ${socket.id}: ${latency}ms`);
+        }
     });
 
     socket.on('join-room', (roomId) => {
-        if (!roomId) {
-            console.log(`❌ Tentative de join sans roomId par ${socket.id}`);
+        if (!roomId || typeof roomId !== 'string') {
+            console.log(`❌ Tentative de join sans roomId valide par ${socket.id}`);
+            socket.emit('error', { message: 'Invalid room ID' });
             return;
         }
 
-        socket.rooms.forEach(room => {
-            if (room !== socket.id) {
-                socket.leave(room);
-                console.log(`📤 ${socket.id} a quitté ${room}`);
+        // Nettoyer les anciennes rooms de l'utilisateur
+        if (userRooms.has(socket.id)) {
+            const oldRoom = userRooms.get(socket.id);
+            if (oldRoom !== roomId) {
+                socket.leave(oldRoom);
+                if (rooms.has(oldRoom)) {
+                    rooms.get(oldRoom).delete(socket.id);
+                }
+                console.log(`📤 ${socket.id} a quitté ${oldRoom}`);
             }
-        });
+        }
 
+        // Rejoindre la nouvelle room
         socket.join(roomId);
+        userRooms.set(socket.id, roomId);
         
         if (!rooms.has(roomId)) {
             rooms.set(roomId, new Set());
@@ -100,36 +162,43 @@ io.on('connection', (socket) => {
         const roomSize = rooms.get(roomId).size;
         console.log(`📌 ${socket.id} → salle ${roomId} (${roomSize} participant(s))`);
 
+        // Informer les autres participants
         socket.to(roomId).emit('user-connected', { 
             id: socket.id,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            role: socket.handshake.query.role || 'participant'
         });
 
+        // Vérifier la limite de participants
         if (roomSize > 2) {
             socket.emit('room-full', { 
                 message: 'Cette consultation est déjà en cours (2 participants maximum)',
                 currentParticipants: roomSize
             });
+            // Optionnel: déconnecter le 3ème participant
+            // socket.disconnect();
         }
     });
 
     socket.on('offer', (data) => {
         if (!data?.target || !data?.sdp) {
             console.log(`❌ Offre invalide de ${socket.id}`);
+            socket.emit('error', { message: 'Invalid offer data' });
             return;
         }
         
         console.log(`📤 Offre de ${socket.id} vers ${data.target}`);
         
         const targetSocket = io.sockets.sockets.get(data.target);
-        if (targetSocket) {
+        if (targetSocket && targetSocket.connected) {
             targetSocket.emit('offer', { 
                 sdp: data.sdp, 
                 sender: socket.id,
                 timestamp: Date.now()
             });
         } else {
-            console.log(`⚠️ Cible ${data.target} non trouvée pour l'offre`);
+            console.log(`⚠️ Cible ${data.target} non trouvée ou déconnectée`);
+            socket.emit('error', { message: 'Target user not found' });
         }
     });
 
@@ -142,7 +211,7 @@ io.on('connection', (socket) => {
         console.log(`📤 Réponse de ${socket.id} vers ${data.target}`);
         
         const targetSocket = io.sockets.sockets.get(data.target);
-        if (targetSocket) {
+        if (targetSocket && targetSocket.connected) {
             targetSocket.emit('answer', { 
                 sdp: data.sdp, 
                 sender: socket.id,
@@ -160,7 +229,7 @@ io.on('connection', (socket) => {
         }
         
         const targetSocket = io.sockets.sockets.get(data.target);
-        if (targetSocket) {
+        if (targetSocket && targetSocket.connected) {
             targetSocket.emit('ice-candidate', { 
                 candidate: data.candidate, 
                 sender: socket.id 
@@ -169,32 +238,64 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', (reason) => {
-        console.log(`❌ Client déconnecté: ${socket.id} (raison: ${reason})`);
+        const duration = Date.now() - (socket.connectedAt || Date.now());
+        console.log(`❌ Client déconnecté: ${socket.id} (raison: ${reason}, durée: ${Math.round(duration/1000)}s)`);
         
-        rooms.forEach((participants, roomId) => {
-            if (participants.has(socket.id)) {
-                participants.delete(socket.id);
-                socket.to(roomId).emit('user-disconnected', { 
-                    id: socket.id,
-                    timestamp: Date.now()
-                });
-                console.log(`📤 ${socket.id} déconnecté de la room ${roomId}`);
-                
-                if (participants.size === 0) {
-                    rooms.delete(roomId);
-                    console.log(`🗑️ Room ${roomId} supprimée (vide)`);
-                }
+        // Nettoyer les rooms
+        const roomId = userRooms.get(socket.id);
+        if (roomId && rooms.has(roomId)) {
+            rooms.get(roomId).delete(socket.id);
+            socket.to(roomId).emit('user-disconnected', { 
+                id: socket.id,
+                timestamp: Date.now(),
+                reason: reason
+            });
+            console.log(`📤 ${socket.id} déconnecté de la room ${roomId}`);
+            
+            // Supprimer la room si vide
+            if (rooms.get(roomId).size === 0) {
+                rooms.delete(roomId);
+                console.log(`🗑️ Room ${roomId} supprimée (vide)`);
             }
-        });
+        }
+        
+        userRooms.delete(socket.id);
     });
 
     socket.on('error', (error) => {
-        console.error(`❌ Erreur socket ${socket.id}:`, error);
+        console.error(`❌ Erreur socket ${socket.id}:`, error.message);
     });
 });
 
+// Gestion des erreurs serveur
+server.on('error', (error) => {
+    console.error('❌ Erreur serveur HTTP:', error);
+    if (error.code === 'EADDRINUSE') {
+        console.error(`⚠️ Le port ${PORT} est déjà utilisé`);
+        process.exit(1);
+    }
+});
+
+// Démarrage du serveur
 server.listen(PORT, '127.0.0.1', () => {
-    console.log(`✅ Serveur Socket.IO démarré sur le port ${PORT}`);
+    console.log(`✅ Serveur Socket.IO démarré avec succès`);
+    console.log(`📡 Port: ${PORT}`);
     console.log(`📮 Mode polling activé (compatible hébergement mutualisé)`);
     console.log(`🌐 Path: ${BASE_PATH}/socket.io`);
+    console.log(`🔄 Transports supportés: polling, websocket`);
+    console.log(`💾 Mémoire: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
 });
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('🛑 Arrêt du serveur...');
+    io.close(() => {
+        server.close(() => {
+            console.log('✅ Serveur arrêté');
+            process.exit(0);
+        });
+    });
+});
+
+// Export pour tests
+module.exports = { app, server, io };
