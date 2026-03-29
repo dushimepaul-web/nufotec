@@ -450,6 +450,12 @@ if (!isset($groupes)) {
             border-radius: 10px;
             margin-left: 8px;
         }
+        
+        .alert-compact {
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -467,6 +473,9 @@ if (!isset($groupes)) {
             <i class="bi bi-info-circle me-1"></i>
             <span id="compressionDetail">Préparation...</span>
         </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-3" onclick="cancelCompression()" id="cancelBtn" style="display:none;">
+            Annuler
+        </button>
     </div>
 </div>
 
@@ -475,10 +484,10 @@ if (!isset($groupes)) {
 
 <div class="whatsapp-container">
 	<?php if ($this->session->flashdata('error')): ?>
-    <div class="alert alert-danger"><?php echo $this->session->flashdata('error'); ?></div>
+    <div class="alert alert-danger alert-compact"><?php echo $this->session->flashdata('error'); ?></div>
 <?php endif; ?>
 <?php if ($this->session->flashdata('success')): ?>
-    <div class="alert alert-success"><?php echo $this->session->flashdata('success'); ?></div>
+    <div class="alert alert-success alert-compact"><?php echo $this->session->flashdata('success'); ?></div>
 <?php endif; ?>
     <!-- Sidebar Groupes -->
     <div class="sidebar-groupes">
@@ -678,8 +687,6 @@ if (!isset($groupes)) {
             <div class="chat-input-area">
                 <div class="input-container">
                     <input type="file" name="fichier" id="fileInput" style="display: none;" onchange="handleFileSelect(this)" accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
-                    <!-- Champ caché pour fichier compressé -->
-                    <input type="hidden" name="fichier_compresse" id="fichierCompresse">
                     
                     <textarea name="message" class="message-input" id="messageInput" 
                               rows="1" placeholder="Votre message..." 
@@ -695,9 +702,8 @@ if (!isset($groupes)) {
                 </div>
                 
                 <div class="mt-2 d-flex justify-content-between align-items-center">
-                    <small class="text-muted">
-                        <i class="bi bi-shield-check me-1"></i>
-                        <span id="statusText">Envoi sécurisé via WhatsApp API</span>
+                    <small class="text-muted" id="statusText">
+                        <i class="bi bi-shield-check me-1"></i>Envoi sécurisé via WhatsApp API
                     </small>
                     <div class="d-flex align-items-center gap-2">
                         <label class="text-muted small me-2">Délai:</label>
@@ -718,21 +724,48 @@ if (!isset($groupes)) {
 
 </form> <!-- ✅ FIN DU FORMULAIRE -->
 
-<!-- FFmpeg.js pour compression côté client -->
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/index.js"></script>
-
 <script>
 // Variables globales
 let compressedFile = null;
 let originalFile = null;
-const ffmpeg = FFmpeg.createFFmpeg({ 
-    log: true,
-    progress: ({ ratio }) => {
-        const percent = Math.round(ratio * 100);
-        document.getElementById('compressionProgress').style.width = percent + '%';
-        document.getElementById('compressionDetail').textContent = `Encodage: ${percent}%`;
+let ffmpegLoaded = false;
+let compressionCancelled = false;
+
+// CDN URLs pour FFmpeg avec fallback
+const FFMPEG_CDNS = [
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.7/ffmpeg.min.js',
+    'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js'
+];
+
+// Charger FFmpeg dynamiquement
+async function loadFFmpeg() {
+    if (ffmpegLoaded) return true;
+    
+    for (const cdn of FFMPEG_CDNS) {
+        try {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = cdn;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+            
+            // Vérifier si FFmpeg est disponible
+            if (typeof FFmpeg !== 'undefined') {
+                ffmpegLoaded = true;
+                console.log('FFmpeg chargé depuis:', cdn);
+                return true;
+            }
+        } catch (e) {
+            console.warn('Échec chargement depuis:', cdn);
+            continue;
+        }
     }
-});
+    
+    return false;
+}
 
 function toggleGroupe(element) {
     const checkbox = element.querySelector('.groupe-checkbox');
@@ -816,7 +849,13 @@ async function handleFileSelect(input) {
     if (originalFile.size > COMPRESSION_THRESHOLD && 
         (originalFile.type.startsWith('video/') || originalFile.type.startsWith('audio/'))) {
         
-        await compressFile(originalFile);
+        const compressed = await compressFile(originalFile);
+        if (!compressed) {
+            // Compression échouée ou annulée, utiliser fichier original
+            compressedFile = originalFile;
+            document.getElementById('statusText').innerHTML = 
+                '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Compression impossible - envoi original';
+        }
     } else {
         compressedFile = originalFile;
         document.getElementById('compressionBadge').style.display = 'none';
@@ -824,75 +863,104 @@ async function handleFileSelect(input) {
 }
 
 async function compressFile(file) {
+    compressionCancelled = false;
     const overlay = document.getElementById('compressionOverlay');
     const title = document.getElementById('compressionTitle');
     const text = document.getElementById('compressionText');
     const detail = document.getElementById('compressionDetail');
+    const cancelBtn = document.getElementById('cancelBtn');
     
     overlay.style.display = 'flex';
-    title.textContent = 'Compression vidéo...';
-    text.textContent = 'Chargement de FFmpeg...';
-    detail.textContent = 'Initialisation...';
+    title.textContent = 'Préparation...';
+    text.textContent = 'Chargement des outils de compression...';
+    detail.textContent = 'Veuillez patienter';
+    cancelBtn.style.display = 'inline-block';
     
     try {
-        // Charger FFmpeg si pas déjà chargé
-        if (!ffmpeg.isLoaded()) {
-            await ffmpeg.load();
+        // Charger FFmpeg
+        const loaded = await loadFFmpeg();
+        if (!loaded) {
+            throw new Error('Impossible de charger FFmpeg');
         }
         
-        text.textContent = 'Lecture du fichier...';
-        detail.textContent = 'Préparation de la compression';
+        if (compressionCancelled) return false;
+        
+        title.textContent = 'Compression vidéo...';
+        text.textContent = 'Initialisation...';
+        detail.textContent = 'Lecture du fichier';
+        
+        // Créer instance FFmpeg
+        const ffmpeg = FFmpeg.createFFmpeg({
+            log: true,
+            progress: ({ ratio }) => {
+                if (compressionCancelled) return;
+                const percent = Math.round(ratio * 100);
+                document.getElementById('compressionProgress').style.width = percent + '%';
+                detail.textContent = `Encodage: ${percent}%`;
+            }
+        });
+        
+        await ffmpeg.load();
+        
+        if (compressionCancelled) {
+            ffmpeg.exit();
+            return false;
+        }
+        
+        text.textContent = 'Analyse du fichier...';
         
         // Écrire fichier dans mémoire FFmpeg
-        const inputName = 'input_' + Date.now() + '.' + file.name.split('.').pop();
+        const inputName = 'input_' + Date.now() + '.mp4';
         const outputName = 'output_' + Date.now() + '.mp4';
         
-        ffmpeg.FS('writeFile', inputName, await fetchFile(file));
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        ffmpeg.FS('writeFile', inputName, uint8Array);
+        
+        if (compressionCancelled) {
+            ffmpeg.exit();
+            return false;
+        }
         
         text.textContent = 'Compression en cours...';
-        detail.textContent = 'Cela peut prendre quelques minutes';
+        detail.textContent = 'Cela peut prendre 1-2 minutes';
         
-        // Paramètres de compression optimisés
-        const isVideo = file.type.startsWith('video/');
+        // Paramètres de compression optimisés pour WhatsApp
+        await ffmpeg.run(
+            '-i', inputName,
+            '-vcodec', 'libx264',
+            '-crf', '28',
+            '-preset', 'fast',
+            '-acodec', 'aac',
+            '-b:a', '128k',
+            '-movflags', '+faststart',
+            '-vf', 'scale=-2:720',
+            '-r', '30',
+            '-maxrate', '2M',
+            '-bufsize', '2M',
+            outputName
+        );
         
-        if (isVideo) {
-            // Compression vidéo: cible ~8MB pour fichier 23MB
-            await ffmpeg.run(
-                '-i', inputName,
-                '-vcodec', 'libx264',
-                '-crf', '28',           // Qualité (23-28 = bon compromis)
-                '-preset', 'fast',      // Vitesse/qualité
-                '-acodec', 'aac',
-                '-b:a', '128k',         // Audio 128kbps
-                '-movflags', '+faststart',
-                '-vf', 'scale=-2:720',  // Max 720p (réduit taille)
-                '-r', '30',             // 30fps max
-                outputName
-            );
-        } else {
-            // Compression audio
-            await ffmpeg.run(
-                '-i', inputName,
-                '-codec:a', 'libmp3lame',
-                '-q:a', '4',            // Qualité VBR
-                '-ar', '44100',         // Sample rate
-                outputName.replace('.mp4', '.mp3')
-            );
+        if (compressionCancelled) {
+            ffmpeg.exit();
+            return false;
         }
         
         // Lire fichier compressé
         const data = ffmpeg.FS('readFile', outputName);
         const compressedSize = data.length;
         
-        // Créer Blob et File
-        const blob = new Blob([data.buffer], { type: isVideo ? 'video/mp4' : 'audio/mpeg' });
-        compressedFile = new File([blob], isVideo ? 'compressed.mp4' : 'compressed.mp3', {
-            type: isVideo ? 'video/mp4' : 'audio/mpeg'
-        });
-        
-        // Nettoyer mémoire FFmpeg
+        // Nettoyer
         ffmpeg.FS('unlink', inputName);
         ffmpeg.FS('unlink', outputName);
+        ffmpeg.exit();
+        
+        // Créer nouveau fichier
+        const blob = new Blob([data.buffer], { type: 'video/mp4' });
+        compressedFile = new File([blob], 'compressed_' + file.name, {
+            type: 'video/mp4',
+            lastModified: Date.now()
+        });
         
         // Mettre à jour l'interface
         const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
@@ -906,42 +974,32 @@ async function compressFile(file) {
         
         document.getElementById('compressionBadge').style.display = 'inline-block';
         
-        // Stocker dans champ caché pour envoi
+        // Remplacer dans l'input file
         const dt = new DataTransfer();
         dt.items.add(compressedFile);
         document.getElementById('fileInput').files = dt.files;
         
         title.textContent = 'Compression terminée !';
-        text.textContent = `Réduction: ${reduction}% (${originalSizeMB}MB → ${compressedSizeMB}MB)`;
+        text.textContent = `Réduction: ${reduction}%`;
         detail.textContent = 'Prêt pour l\'envoi';
         
         setTimeout(() => {
             overlay.style.display = 'none';
         }, 1500);
         
+        return true;
+        
     } catch (error) {
         console.error('Erreur compression:', error);
-        title.textContent = 'Erreur de compression';
-        text.textContent = 'Envoi du fichier original...';
-        detail.textContent = error.message;
-        
-        compressedFile = file; // Fallback sur original
-        
-        setTimeout(() => {
-            overlay.style.display = 'none';
-        }, 2000);
+        overlay.style.display = 'none';
+        return false;
     }
 }
 
-async function fetchFile(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const array = new Uint8Array(e.target.result);
-            resolve(array);
-        };
-        reader.readAsArrayBuffer(file);
-    });
+function cancelCompression() {
+    compressionCancelled = true;
+    document.getElementById('compressionTitle').textContent = 'Annulation...';
+    document.getElementById('compressionText').textContent = 'Annulation en cours';
 }
 
 function clearFile() {
@@ -998,7 +1056,7 @@ document.getElementById('envoiForm').addEventListener('submit', function(e) {
         return false;
     }
     
-    // Vérifier taille finale
+    // Vérifier taille finale (max 100MB WhatsApp)
     if (file && file.size > 100 * 1024 * 1024) {
         e.preventDefault();
         alert('Fichier trop gros même après compression (max 100MB)');
