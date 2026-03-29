@@ -128,6 +128,53 @@
         </div>
     </div>
     
+    <!-- Bouton pour envoyer à tous -->
+<div class="mb-3">
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEnvoyerTous">
+        <i class="fas fa-broadcast-tower"></i> Envoyer à TOUS les groupes
+    </button>
+    <a href="<?= site_url('whatsapp/synchroniser') ?>" class="btn btn-primary">
+        <i class="fas fa-sync-alt"></i> Synchroniser
+    </a>
+    <a href="<?= site_url('whatsapp/envoyer_par_nom') ?>" class="btn btn-success">
+        <i class="fas fa-paper-plane"></i> Envoi sélectif
+    </a>
+</div>
+
+<!-- Modal pour envoyer à tous -->
+<div class="modal fade" id="modalEnvoyerTous" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-broadcast-tower"></i> Envoyer à TOUS les groupes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="<?= site_url('whatsapp/envoyer_a_tous') ?>">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Attention :</strong> Ce message sera envoyé à <strong><?= $total ?></strong> groupe(s).
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Message :</label>
+                        <textarea name="message" class="form-control" rows="5" required 
+                                  placeholder="Saisissez votre message ici..."></textarea>
+                        <small class="text-muted">Ce message sera envoyé à tous les groupes WhatsApp actifs.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-paper-plane"></i> Envoyer à tous
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
     <script>
         function copierId(id) {
             navigator.clipboard.writeText(id).then(function() {

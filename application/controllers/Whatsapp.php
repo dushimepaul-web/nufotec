@@ -278,4 +278,138 @@ class Whatsapp extends MY_Controller {
         echo "<br><a href='" . site_url('whatsapp/liste_groupes') . "'>Retour à la liste</a>";
         exit;
     }
+
+    /**
+ * Méthode de test pour envoyer un message à un groupe spécifique
+ * Utilisée par le bouton "Test" dans la liste des groupes
+ */
+public function envoyer_test() {
+    // Récupérer les paramètres
+    $groupe_id = $this->input->get('groupe_id');
+    $message = $this->input->get('message');
+    
+    // Vérifier les paramètres
+    if (empty($groupe_id) || empty($message)) {
+        $this->session->set_flashdata('error', 'Paramètres manquants pour le test');
+        redirect('whatsapp/liste_groupes');
+        return;
+    }
+    
+    // Décoder l'ID du groupe (l'URL l'a déjà décodé, mais on s'assure)
+    $groupe_id = urldecode($groupe_id);
+    
+    // Charger la library
+    $this->load->library('whapi_lib');
+    
+    // Envoyer le message
+    $resultat = $this->whapi_lib->envoyer_message_groupe($groupe_id, $message);
+    
+    // Récupérer le nom du groupe pour l'affichage
+    $groupe = $this->Groupe_model->get_groupe_par_id_whatsapp($groupe_id);
+    $nom_groupe = $groupe ? $groupe['nom'] : $groupe_id;
+    
+    if ($resultat['success']) {
+        $this->session->set_flashdata('success', "Message test envoyé avec succès au groupe '{$nom_groupe}'");
+    } else {
+        $error_msg = "Échec de l'envoi au groupe '{$nom_groupe}': ";
+        if (isset($resultat['status_code'])) {
+            $error_msg .= "HTTP " . $resultat['status_code'] . " - ";
+        }
+        $error_msg .= $resultat['error'] ?? 'Erreur inconnue';
+        $this->session->set_flashdata('error', $error_msg);
+    }
+    
+    redirect('whatsapp/liste_groupes');
+}
+
+/**
+ * Envoie un message à tous les groupes actifs
+ */
+public function envoyer_a_tous() {
+    // Vérifier si c'est une requête POST
+    if ($this->input->server('REQUEST_METHOD') !== 'POST') {
+        show_error('Méthode non autorisée', 405);
+        return;
+    }
+    
+    $message = $this->input->post('message');
+    
+    if (empty($message)) {
+        $this->session->set_flashdata('error', 'Veuillez saisir un message');
+        redirect('whatsapp/liste_groupes');
+        return;
+    }
+    
+    // Récupérer tous les groupes actifs
+    $groupes = $this->Groupe_model->get_all_groupes();
+    
+    if (empty($groupes)) {
+        $this->session->set_flashdata('error', 'Aucun groupe trouvé. Synchronisez d\'abord les groupes.');
+        redirect('whatsapp/liste_groupes');
+        return;
+    }
+    
+    // Extraire les IDs des groupes
+    $groupes_ids = array_column($groupes, 'groupe_id');
+    $total_groupes = count($groupes_ids);
+    
+    // Confirmation avant envoi (optionnel)
+    $confirm = $this->input->post('confirm');
+    if (!$confirm) {
+        // Afficher une page de confirmation
+        $data['message'] = $message;
+        $data['groupes'] = $groupes;
+        $data['total_groupes'] = $total_groupes;
+        $this->load->view('whatsapp/confirmation_envoi_tous', $data);
+        return;
+    }
+    
+    // Envoyer le message à tous les groupes
+    $resultat = $this->whapi_lib->envoyer_message_multigroupes($groupes_ids, $message, 1000);
+    
+    // Préparer les résultats
+    $data['resultat'] = $resultat;
+    $data['groupes'] = $groupes;
+    $data['message'] = $message;
+    $data['total_groupes'] = $total_groupes;
+    
+    $this->load->view('whatsapp/resultat_envoi_tous', $data);
+}
+
+/**
+ * API: Envoyer un message à tous les groupes via API
+ */
+public function api_envoyer_tous() {
+    // Vérifier la clé API
+    $api_key = $this->input->get_request_header('X-API-Key');
+    $config = $this->config->item('whapi');
+    
+    if (!$api_key || $api_key != $config['api_key']) {
+        $this->output
+            ->set_status_header(401)
+            ->set_content_type('application/json')
+            ->set_output(json_encode(['error' => 'Clé API invalide']));
+        return;
+    }
+    
+    $message = $this->input->post('message');
+    
+    if (empty($message)) {
+        $this->output
+            ->set_status_header(400)
+            ->set_content_type('application/json')
+            ->set_output(json_encode(['error' => 'Message requis']));
+        return;
+    }
+    
+    // Récupérer tous les groupes
+    $groupes = $this->Groupe_model->get_all_groupes();
+    $groupes_ids = array_column($groupes, 'groupe_id');
+    
+    $resultat = $this->whapi_lib->envoyer_message_multigroupes($groupes_ids, $message);
+    
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode($resultat));
+}
 }
