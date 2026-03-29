@@ -84,7 +84,7 @@ class Joinconsultation extends MY_Controller {
             show_404();
         }
 
-        // Extraction des données (support objet et tableau)
+        // Extraction des données
         $consultation_id = is_object($consultation) ? $consultation->id : $consultation['id'];
         $patient_user_id = is_object($consultation) ? $consultation->patient_user_id : $consultation['patient_user_id'];
         $medecin_user_id = is_object($consultation) ? $consultation->medecin_user_id : $consultation['medecin_user_id'];
@@ -122,6 +122,9 @@ class Joinconsultation extends MY_Controller {
             show_error('L\'autre participant est introuvable.', 404);
         }
 
+        // 🔑 CRÉER LE SALON DAILY.CO AVEC LE room_id EXISTANT
+        $daily_room_url = $this->JoinConsultation_model->getOrCreateDailyRoom($room_id, $consultation_id);
+        
         // Préparer les données pour la vue
         $current_user_data = $this->session->userdata();
         $current_user_data['id'] = $current_user_data['user_id'];
@@ -139,6 +142,7 @@ class Joinconsultation extends MY_Controller {
 
         $data = array(
             'room_id'           => $room_id,
+            'daily_room_url'    => $daily_room_url,  // ← URL du salon Daily.co
             'current_user'      => $current_user_data,
             'other_user'        => $other_user,
             'consultation'      => $consultation,

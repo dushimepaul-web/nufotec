@@ -6,6 +6,7 @@
     <title>Consultation avec <?= htmlspecialchars($other_prenom . ' ' . $other_nom) ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <style>
+        /* Vos styles existants */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #111b21; height: 100vh; overflow: hidden; }
         
@@ -132,8 +133,9 @@
 <script src="https://unpkg.com/@daily-co/daily-js@0.45.0"></script>
 
 <script>
-// Configuration
+// Configuration - Utilisation du room_id de votre consultation
 const roomId = <?= json_encode($room_id) ?>;
+const dailyRoomUrl = <?= json_encode($daily_room_url) ?>;
 const consultationId = <?= json_encode(is_object($consultation) ? $consultation->id : $consultation['id']) ?>;
 const userName = <?= json_encode(($current_role === 'patient' ? 'Patient' : 'Dr. ') . ($current_user['prenom'] ?? 'Utilisateur')) ?>;
 
@@ -169,20 +171,18 @@ function closeWaitingOverlay() {
 
 async function startCall() {
     console.log('🚀 Démarrage Daily.co...');
+    console.log('📌 Room ID consultation:', roomId);
+    console.log('📌 Daily URL:', dailyRoomUrl);
+    console.log('👤 Utilisateur:', userName);
+    
     updateStatus('Connexion...', true);
     
-    if (!roomId) {
-        console.error('❌ Pas de roomId');
-        showToast('Erreur: Identifiant de consultation manquant', 'error');
+    if (!dailyRoomUrl) {
+        console.error('❌ Pas d\'URL Daily.co');
+        showToast('Erreur: Impossible de créer la salle de consultation', 'error');
         setTimeout(() => window.location.href = '/', 3000);
         return;
     }
-    
-    const DAILY_DOMAIN = 'nufotec.daily.co';
-    const roomUrl = `https://${DAILY_DOMAIN}/${roomId}`;
-    
-    console.log(`📌 Salon URL: ${roomUrl}`);
-    console.log(`👤 Utilisateur: ${userName}`);
     
     try {
         callFrame = DailyIframe.createFrame(dailyContainer, {
@@ -209,7 +209,7 @@ async function startCall() {
         });
         
         callFrame.on('joined-meeting', (e) => {
-            console.log('✅ Salon rejoint!', e);
+            console.log('✅ Salon rejoint avec succès!', e);
             isConnected = true;
             closeWaitingOverlay();
             updateStatus('En ligne', true);
@@ -240,7 +240,8 @@ async function startCall() {
             updateStatus('Erreur', false);
         });
         
-        callFrame.join({ url: roomUrl });
+        // Rejoindre le salon avec l'URL générée
+        callFrame.join({ url: dailyRoomUrl });
         
     } catch (error) {
         console.error('❌ Erreur:', error);
@@ -273,9 +274,10 @@ startCall();
 
 window.debugDaily = () => {
     console.log('=== DEBUG ===');
+    console.log('Room ID consultation:', roomId);
+    console.log('Daily URL:', dailyRoomUrl);
     console.log('Connecté:', isConnected);
     console.log('CallFrame:', !!callFrame);
-    console.log('Room:', roomId);
     console.log('User:', userName);
 };
 </script>
