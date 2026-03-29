@@ -570,17 +570,17 @@ if (!isset($job_id)) $job_id = null;
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         
-        /* Alerts */
-        .alert-floating {
-            position: absolute;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            padding: 12px 24px;
+        /* Debug info */
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 10px;
             border-radius: 8px;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 12px;
+            display: none;
         }
     </style>
 </head>
@@ -599,14 +599,17 @@ if (!isset($job_id)) $job_id = null;
     </div>
 </div>
 
+<!-- Debug info -->
+<div class="debug-info" id="debugInfo"></div>
+
 <div class="app-container">
     
-    <!-- Sidebar -->
+    <!-- Sidebar avec formulaire intégré -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="user-avatar"><i class="bi bi-person"></i></div>
             <div class="header-icons">
-                <button class="icon-btn" onclick="selectAllGroupes()" title="Tout sélectionner">
+                <button type="button" class="icon-btn" onclick="selectAllGroupes()" title="Tout sélectionner">
                     <i class="bi bi-check-all"></i>
                 </button>
                 <a href="<?php echo site_url('whatsapp/synchroniser'); ?>" class="icon-btn" title="Synchroniser">
@@ -622,27 +625,39 @@ if (!isset($job_id)) $job_id = null;
             </div>
         </div>
         
-        <div class="conversations-list" id="conversationsList">
-            <?php foreach ($groupes as $groupe): ?>
-            <div class="conversation-item" onclick="toggleSelection(this, '<?php echo htmlspecialchars($groupe['groupe_id']); ?>')">
-                <input type="checkbox" class="checkbox-select" name="groupes_ids[]" 
-                       value="<?php echo htmlspecialchars($groupe['groupe_id']); ?>" 
-                       onchange="updateCounter()" onclick="event.stopPropagation()">
-                <div class="conversation-avatar">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-                <div class="conversation-info">
-                    <div class="conversation-header">
-                        <span class="conversation-name"><?php echo htmlspecialchars($groupe['nom']); ?></span>
-                        <span class="conversation-time"><?php echo date('H:i'); ?></span>
+        <!-- ✅ FORMULAIRE ENGLOBE TOUTE LA PAGE -->
+        <form id="envoiForm" style="display: flex; flex-direction: column; height: 100%;">
+            
+            <div class="conversations-list" id="conversationsList">
+                <?php foreach ($groupes as $groupe): ?>
+                <div class="conversation-item" onclick="toggleSelection(this, '<?php echo htmlspecialchars($groupe['groupe_id']); ?>')">
+                    <!-- ✅ CHECKBOX DANS LE FORM -->
+                    <input type="checkbox" class="checkbox-select" name="groupes_ids[]" 
+                           value="<?php echo htmlspecialchars($groupe['groupe_id']); ?>" 
+                           id="cb_<?php echo htmlspecialchars($groupe['groupe_id']); ?>"
+                           onchange="updateCounter()" onclick="event.stopPropagation()">
+                    <div class="conversation-avatar">
+                        <i class="bi bi-people-fill"></i>
                     </div>
-                    <div class="conversation-preview">
-                        <span class="conversation-message">Cliquez pour sélectionner</span>
+                    <div class="conversation-info">
+                        <div class="conversation-header">
+                            <span class="conversation-name"><?php echo htmlspecialchars($groupe['nom']); ?></span>
+                            <span class="conversation-time"><?php echo date('H:i'); ?></span>
+                        </div>
+                        <div class="conversation-preview">
+                            <span class="conversation-message">Cliquez pour sélectionner</span>
+                        </div>
                     </div>
                 </div>
+                <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
-        </div>
+            
+            <!-- Champs cachés du formulaire -->
+            <input type="hidden" name="type_envoi" id="typeEnvoi" value="texte">
+            <input type="hidden" name="delai" value="1000">
+            <textarea name="message" id="hiddenMessage" style="display: none;"></textarea>
+            <input type="file" name="fichier" id="hiddenFile" style="display: none;">
+        </form>
     </div>
     
     <!-- Chat Area -->
@@ -695,136 +710,99 @@ if (!isset($job_id)) $job_id = null;
                             <small>Échecs</small>
                         </div>
                     </div>
-                    
-                    <?php if (!empty($stats['details'])): ?>
-                    <h6 style="margin-bottom: 12px;">Détails par groupe</h6>
-                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #e9edef; border-radius: 8px;">
-                        <?php foreach ($stats['details'] as $detail): 
-                            $isSuccess = (isset($detail['statut']) && $detail['statut'] === 'succès');
-                        ?>
-                        <div style="padding: 12px; border-bottom: 1px solid #f0f2f5; display: flex; align-items: center; gap: 12px;">
-                            <i class="bi bi-<?php echo $isSuccess ? 'check-circle-fill' : 'x-circle-fill'; ?>" 
-                               style="color: <?php echo $isSuccess ? '#00a884' : '#ea0038'; ?>;"></i>
-                            <div style="flex: 1;">
-                                <div style="font-size: 14px; font-weight: 500;">
-                                    <?php 
-                                    $groupe_nom = 'Inconnu';
-                                    foreach ($groupes_info as $g) {
-                                        if ($g['groupe_id'] === $detail['destinataire_id']) {
-                                            $groupe_nom = $g['nom'];
-                                            break;
-                                        }
-                                    }
-                                    echo htmlspecialchars($groupe_nom);
-                                    ?>
-                                </div>
-                                <small style="color: #667781;"><?php echo substr($detail['destinataire_id'], 0, 30); ?>...</small>
-                            </div>
-                            <?php if (!$isSuccess && !empty($detail['erreur'])): ?>
-                            <small style="color: #ea0038;"><?php echo htmlspecialchars($detail['erreur']); ?></small>
-                            <?php endif; ?>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
             
         <?php else: ?>
-            <!-- FORMULAIRE D'ENVOI -->
-            <form id="envoiForm" style="display: flex; flex-direction: column; height: 100%;">
-                
-                <div class="chat-header">
-                    <div class="chat-header-info">
-                        <div class="chat-avatar"><i class="bi bi-people-fill"></i></div>
-                        <div class="chat-title">
-                            <span class="chat-name">Nouvelle diffusion</span>
-                            <span class="chat-status" id="selectionStatus">0 groupe sélectionné</span>
-                        </div>
-                    </div>
-                    <div class="header-icons">
-                        <a href="<?php echo site_url('whatsapp'); ?>" class="icon-btn">
-                            <i class="bi bi-arrow-left"></i>
-                        </a>
+            <!-- INTERFACE D'ENVOI -->
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar"><i class="bi bi-people-fill"></i></div>
+                    <div class="chat-title">
+                        <span class="chat-name">Nouvelle diffusion</span>
+                        <span class="chat-status" id="selectionStatus">0 groupe sélectionné</span>
                     </div>
                 </div>
-                
-                <!-- Type Selector -->
-                <div class="type-selector">
-                    <button type="button" class="type-btn active" onclick="setType('texte', this)" id="btnTexte">
-                        <i class="bi bi-chat-text"></i> <span>Message</span>
+                <div class="header-icons">
+                    <a href="<?php echo site_url('whatsapp'); ?>" class="icon-btn">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Type Selector -->
+            <div class="type-selector">
+                <button type="button" class="type-btn active" onclick="setType('texte', this)" id="btnTexte">
+                    <i class="bi bi-chat-text"></i> <span>Message</span>
+                </button>
+                <button type="button" class="type-btn" onclick="setType('fichier', this)" id="btnFichier">
+                    <i class="bi bi-paperclip"></i> <span>Fichier</span>
+                </button>
+                <button type="button" class="type-btn" onclick="setType('audio', this)" id="btnAudio">
+                    <i class="bi bi-mic"></i> <span>Audio</span>
+                </button>
+            </div>
+            
+            <!-- File Preview -->
+            <div class="file-preview-area" id="filePreview">
+                <div class="file-box">
+                    <div class="file-icon"><i class="bi bi-file-earmark" id="fileIcon"></i></div>
+                    <div class="file-info">
+                        <div class="file-name" id="fileName">-</div>
+                        <div class="file-size" id="fileSize">-</div>
+                    </div>
+                    <button type="button" class="file-remove" onclick="clearFile()">
+                        <i class="bi bi-x-lg"></i>
                     </button>
-                    <button type="button" class="type-btn" onclick="setType('fichier', this)" id="btnFichier">
-                        <i class="bi bi-paperclip"></i> <span>Fichier</span>
+                </div>
+            </div>
+            
+            <!-- Messages -->
+            <div class="messages-container" id="messagesContainer">
+                <div class="message-bubble sent" id="previewBubble" style="display: none;">
+                    <div class="message-text" id="previewText"></div>
+                    <div class="message-time"><?php echo date('H:i'); ?></div>
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="input-area">
+                <!-- Normal Input -->
+                <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <button type="button" class="input-icon-btn" onclick="document.getElementById('filePicker').click()">
+                        <i class="bi bi-plus-lg"></i>
                     </button>
-                    <button type="button" class="type-btn" onclick="setType('audio', this)" id="btnAudio">
-                        <i class="bi bi-mic"></i> <span>Audio</span>
-                    </button>
-                    <input type="hidden" name="type_envoi" id="typeEnvoi" value="texte">
-                </div>
-                
-                <!-- File Preview -->
-                <div class="file-preview-area" id="filePreview">
-                    <div class="file-box">
-                        <div class="file-icon"><i class="bi bi-file-earmark" id="fileIcon"></i></div>
-                        <div class="file-info">
-                            <div class="file-name" id="fileName">-</div>
-                            <div class="file-size" id="fileSize">-</div>
-                        </div>
-                        <button type="button" class="file-remove" onclick="clearFile()">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Messages -->
-                <div class="messages-container" id="messagesContainer">
-                    <div class="message-bubble sent" id="previewBubble" style="display: none;">
-                        <div class="message-text" id="previewText"></div>
-                        <div class="message-time"><?php echo date('H:i'); ?></div>
-                    </div>
-                </div>
-                
-                <!-- Input Area -->
-                <div class="input-area">
-                    <!-- Normal Input -->
-                    <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                        <button type="button" class="input-icon-btn" onclick="document.getElementById('fileInput').click()">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
-                        <input type="file" id="fileInput" name="fichier" style="display: none;" 
-                               onchange="handleFileSelect(this)" 
-                               accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
-                        
-                        <div class="message-input-wrapper">
-                            <textarea class="message-input" id="messageInput" name="message" 
-                                      placeholder="Tapez un message" rows="1" 
-                                      oninput="updatePreview()"></textarea>
-                        </div>
-                        
-                        <button type="button" class="input-icon-btn" id="micBtn" onclick="startRecording()">
-                            <i class="bi bi-mic-fill"></i>
-                        </button>
+                    <input type="file" id="filePicker" style="display: none;" 
+                           onchange="handleFileSelect(this)" 
+                           accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
+                    
+                    <div class="message-input-wrapper">
+                        <textarea class="message-input" id="messageInput" 
+                                  placeholder="Tapez un message" rows="1" 
+                                  oninput="updatePreview()"></textarea>
                     </div>
                     
-                    <!-- Recording Interface -->
-                    <div class="audio-recording" id="recordingInterface">
-                        <button type="button" class="input-icon-btn" onclick="cancelRecording()" style="color: #ea0038;">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                        <div class="recording-wave" id="waveContainer"></div>
-                        <div class="recording-time" id="recordingTime">00:00</div>
-                        <button type="button" class="input-icon-btn" onclick="stopRecording()" style="color: #00a884;">
-                            <i class="bi bi-check-lg"></i>
-                        </button>
-                    </div>
-                    
-                    <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()">
-                        <i class="bi bi-send-fill"></i>
+                    <button type="button" class="input-icon-btn" id="micBtn" onclick="startRecording()">
+                        <i class="bi bi-mic-fill"></i>
                     </button>
                 </div>
                 
-            </form>
+                <!-- Recording Interface -->
+                <div class="audio-recording" id="recordingInterface">
+                    <button type="button" class="input-icon-btn" onclick="cancelRecording()" style="color: #ea0038;">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <div class="recording-wave" id="waveContainer"></div>
+                    <div class="recording-time" id="recordingTime">00:00</div>
+                    <button type="button" class="input-icon-btn" onclick="stopRecording()" style="color: #00a884;">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                </div>
+                
+                <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
         <?php endif; ?>
     </div>
 </div>
@@ -840,7 +818,12 @@ let recordingTimer = null;
 let currentJobId = null;
 let pollInterval = null;
 
-// Initialiser
+function log(msg) {
+    console.log(msg);
+    document.getElementById('debugInfo').style.display = 'block';
+    document.getElementById('debugInfo').innerHTML += msg + '<br>';
+}
+
 function initWaveBars() {
     const container = document.getElementById('waveContainer');
     container.innerHTML = '';
@@ -854,7 +837,12 @@ function initWaveBars() {
 }
 
 function toggleSelection(element, groupeId) {
-    const checkbox = element.querySelector('.checkbox-select');
+    const checkbox = document.getElementById('cb_' + groupeId);
+    if (!checkbox) {
+        log('Checkbox non trouvé: ' + groupeId);
+        return;
+    }
+    
     checkbox.checked = !checkbox.checked;
     
     if (checkbox.checked) {
@@ -864,6 +852,8 @@ function toggleSelection(element, groupeId) {
         element.classList.remove('selected');
         selectedGroupes = selectedGroupes.filter(id => id !== groupeId);
     }
+    
+    log('Sélection: ' + selectedGroupes.length + ' groupes');
     updateCounter();
 }
 
@@ -875,6 +865,8 @@ function updateCounter() {
     if (statusEl) {
         statusEl.textContent = count + ' groupe' + (count > 1 ? 's' : '') + ' sélectionné' + (count > 1 ? 's' : '');
     }
+    
+    log('Counter: ' + count);
 }
 
 function selectAllGroupes() {
@@ -884,9 +876,15 @@ function selectAllGroupes() {
     checkboxes.forEach(cb => {
         cb.checked = !allChecked;
         const item = cb.closest('.conversation-item');
-        if (!allChecked) item.classList.add('selected');
-        else item.classList.remove('selected');
+        if (!allChecked) {
+            item.classList.add('selected');
+            if (!selectedGroupes.includes(cb.value)) selectedGroupes.push(cb.value);
+        } else {
+            item.classList.remove('selected');
+        }
     });
+    
+    if (allChecked) selectedGroupes = [];
     updateCounter();
 }
 
@@ -904,7 +902,6 @@ function setType(type, btn) {
     btn.classList.add('active');
     
     const input = document.getElementById('messageInput');
-    const micBtn = document.getElementById('micBtn');
     
     if (type === 'audio') {
         document.getElementById('normalInput').style.display = 'none';
@@ -915,7 +912,7 @@ function setType(type, btn) {
         
         if (type === 'fichier') {
             input.placeholder = "Légende (optionnel)...";
-            document.getElementById('fileInput').click();
+            document.getElementById('filePicker').click();
         } else {
             input.placeholder = "Tapez un message";
         }
@@ -938,11 +935,17 @@ function handleFileSelect(input) {
     else if (selectedFile.type.startsWith('image/')) icon.className = 'bi bi-image-fill';
     else icon.className = 'bi bi-file-earmark';
     
+    // Copier dans le hidden file input
+    const dt = new DataTransfer();
+    dt.items.add(selectedFile);
+    document.getElementById('hiddenFile').files = dt.files;
+    
     setType('fichier', document.getElementById('btnFichier'));
 }
 
 function clearFile() {
-    document.getElementById('fileInput').value = '';
+    document.getElementById('filePicker').value = '';
+    document.getElementById('hiddenFile').value = '';
     document.getElementById('filePreview').classList.remove('active');
     selectedFile = null;
     setType('texte', document.getElementById('btnTexte'));
@@ -953,6 +956,9 @@ function updatePreview() {
     const bubble = document.getElementById('previewBubble');
     const previewText = document.getElementById('previewText');
     
+    // Copier dans hidden input
+    document.getElementById('hiddenMessage').value = text;
+    
     if (text) {
         previewText.textContent = text;
         bubble.style.display = 'block';
@@ -961,7 +967,7 @@ function updatePreview() {
     }
 }
 
-// ==================== AUDIO RECORDING ====================
+// ==================== AUDIO ====================
 
 async function startRecording() {
     try {
@@ -979,7 +985,7 @@ async function startRecording() {
             
             const dt = new DataTransfer();
             dt.items.add(audioFile);
-            document.getElementById('fileInput').files = dt.files;
+            document.getElementById('hiddenFile').files = dt.files;
             selectedFile = audioFile;
             
             document.getElementById('filePreview').classList.add('active');
@@ -1035,44 +1041,49 @@ function cancelRecording() {
     setType('texte', document.getElementById('btnTexte'));
 }
 
-// ==================== ENVOI ASYNCHRONE ====================
+// ==================== ENVOI ====================
 
 function submitForm() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
+    log('Checkboxes trouvés: ' + checkboxes.length);
+    
     if (checkboxes.length === 0) {
-        alert('Sélectionnez au moins un groupe');
+        alert('Veuillez sélectionner au moins un groupe');
         return;
     }
     
     const type = document.getElementById('typeEnvoi').value;
     const message = document.getElementById('messageInput').value.trim();
-    const file = document.getElementById('fileInput').files[0];
+    const hiddenFile = document.getElementById('hiddenFile').files[0];
+    
+    log('Type: ' + type);
+    log('Message: ' + message);
+    log('File: ' + (hiddenFile ? hiddenFile.name : 'aucun'));
     
     if (type === 'texte' && !message) {
         alert('Tapez un message');
         return;
     }
     
-    if ((type === 'fichier' || type === 'audio') && !file) {
+    if ((type === 'fichier' || type === 'audio') && !hiddenFile) {
         alert('Aucun fichier sélectionné');
         return;
     }
     
-    // Préparer FormData
-    const formData = new FormData();
-    formData.append('type_envoi', type);
-    formData.append('message', message);
-    formData.append('delai', '1000');
+    // Sync hidden message
+    document.getElementById('hiddenMessage').value = message;
     
-    checkboxes.forEach(cb => {
-        formData.append('groupes_ids[]', cb.value);
-    });
+    // Créer FormData depuis le formulaire
+    const form = document.getElementById('envoiForm');
+    const formData = new FormData(form);
     
-    if (file) {
-        formData.append('fichier', file);
+    // Vérifier le contenu
+    log('FormData groupes_ids[]:');
+    for (let pair of formData.entries()) {
+        log(pair[0] + ': ' + pair[1]);
     }
     
-    // Envoi avec XMLHttpRequest pour progress
+    // Envoi
     const xhr = new XMLHttpRequest();
     
     xhr.upload.addEventListener('progress', (e) => {
@@ -1083,6 +1094,9 @@ function submitForm() {
     });
     
     xhr.addEventListener('load', () => {
+        log('Réponse: ' + xhr.status);
+        log('Text: ' + xhr.responseText);
+        
         if (xhr.status === 200) {
             try {
                 const response = JSON.parse(xhr.responseText);
@@ -1097,8 +1111,14 @@ function submitForm() {
                 }
             } catch (e) {
                 hideUploadProgress();
-                console.error('Réponse:', xhr.responseText);
-                alert('Erreur serveur');
+                // Si c'est du HTML (erreur PHP), l'afficher
+                if (xhr.responseText.includes('<')) {
+                    document.open();
+                    document.write(xhr.responseText);
+                    document.close();
+                } else {
+                    alert('Erreur: ' + e.message);
+                }
             }
         } else {
             hideUploadProgress();
@@ -1118,7 +1138,6 @@ function submitForm() {
 
 function startPolling(jobId) {
     let attempts = 0;
-    const maxAttempts = 300; // 10 minutes max (2s * 300)
     
     pollInterval = setInterval(() => {
         attempts++;
@@ -1135,24 +1154,17 @@ function startPolling(jobId) {
                 
                 if (data.status === 'completed') {
                     clearInterval(pollInterval);
-                    // Rediriger vers la page de résultat
                     window.location.href = '<?php echo site_url('whatsapp/resultat/'); ?>' + jobId;
                 } else {
-                    // En cours
                     const progress = data.progress || Math.min(50 + attempts, 95);
                     const text = data.current_group 
-                        ? 'Envoi à ' + data.current_group.substring(0, 20) + '...'
-                        : 'Traitement en cours...';
+                        ? 'Envoi en cours...' 
+                        : 'Traitement...';
                     showUploadProgress(progress, text);
                 }
             })
             .catch(err => {
-                console.error('Polling error:', err);
-                if (attempts >= maxAttempts) {
-                    clearInterval(pollInterval);
-                    hideUploadProgress();
-                    alert('Timeout - vérifiez le statut plus tard');
-                }
+                log('Polling error: ' + err);
             });
     }, 2000);
 }
@@ -1168,10 +1180,11 @@ function hideUploadProgress() {
     document.getElementById('uploadOverlay').classList.remove('active');
 }
 
-// Auto-resize textarea
+// Auto-resize
 document.getElementById('messageInput')?.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    updatePreview();
 });
 </script>
 
