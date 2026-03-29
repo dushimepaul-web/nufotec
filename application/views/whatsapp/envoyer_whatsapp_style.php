@@ -912,6 +912,7 @@ let audioChunks = [];
 let recordingStartTime = null;
 let recordingTimer = null;
 let isRecording = false;
+let audioStream = null; // Stocker le stream pour nettoyage
 
 function log(msg) {
     console.log('[WhatsApp]', msg);
@@ -1096,7 +1097,7 @@ function clearFile() {
     }
 }
 
-// ==================== ENREGISTREMENT AUDIO OGG OPUS ====================
+// ==================== ENREGISTREMENT AUDIO OGG OPUS - CORRIGÉ ====================
 
 function initWaveBars() {
     const container = document.getElementById('waveContainer');
@@ -1126,32 +1127,56 @@ async function startRecording() {
 
         audioChunks = [];
         
-        // Configuration OGG Opus pour WhatsApp [^32^]
+        // ✅ CORRECTION: Récupérer le stream audio d'abord
+        audioStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                channelCount: 1,
+                sampleRate: 48000 // Important pour Opus
+            } 
+        });
+
+        // ✅ CORRECTION: Configuration SANS fonctions (cause de l'erreur "Function object could not be cloned")
+        // Le Web Worker ne peut pas recevoir de fonctions dans sa config
         opusRecorder = new Recorder({
             encoderPath: 'https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/encoderWorker.min.js',
-            encoderSampleRate: 48000,        // WhatsApp utilise 48kHz [^17^]
+            encoderSampleRate: 48000,        // WhatsApp utilise 48kHz
             encoderApplication: 2048,        // 2048 = Voice (optimisé pour la voix)
-            encoderBitRate: 16000,           // 16 kbps comme WhatsApp Android [^24^]
+            encoderBitRate: 16000,           // 16 kbps comme WhatsApp Android
             encoderFrameSize: 20,            // 20ms frames
             numberOfChannels: 1,             // Mono
             streamPages: true,               // Streaming pour gros fichiers
-            maxFramesPerPage: 40,
-            mediaTrackConstraints: {
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    channelCount: 1
-                }
-            },
-            ondataavailable: function(arrayBuffer) {
-                // Accumuler les chunks OGG
-                audioChunks.push(arrayBuffer);
-            }
+            maxFramesPerPage: 40
+            // ❌ PAS DE ondataavailable ICI - cause l'erreur "Function object could not be cloned"
+            // ❌ PAS DE mediaTrackConstraints ICI - on passe le stream directement
         });
 
-        // Démarrer le stream
-        await opusRecorder.start();
+        // ✅ CORRECTION: Utiliser l'événement 'dataAvailable' (pas 'dataavailable')
+        // et l'attacher APRÈS création, pas dans la config
+        opusRecorder.ondataavailable = function(chunk) {
+            // chunk est un ArrayBuffer OGG
+            audioChunks.push(chunk);
+            log('Chunk OGG reçu: ' + chunk.byteLength + ' bytes');
+        };
+
+        // Événements de debug
+        opusRecorder.onstart = function() {
+            log('Enregistrement OGG Opus démarré (Worker initialisé)');
+        };
+
+        opusRecorder.onstop = function() {
+            log('Enregistrement arrêté, total chunks: ' + audioChunks.length);
+        };
+
+        opusRecorder.onerror = function(err) {
+            log('Erreur recorder: ' + err.message);
+            console.error('Recorder error:', err);
+        };
+
+        // ✅ CORRECTION: Démarrer avec le stream audio, pas avec mediaTrackConstraints
+        await opusRecorder.start(audioStream);
         
         recordingStartTime = Date.now();
         isRecording = true;
@@ -1169,11 +1194,19 @@ async function startRecording() {
         const btnAudio = document.getElementById('btnAudio');
         if (btnAudio) btnAudio.classList.add('active');
 
-        log('Enregistrement OGG Opus démarré (48kHz, 16kbps, Voice)');
+        log('Enregistrement OGG Opus actif (48kHz, 16kbps, Voice)');
 
     } catch (err) {
         console.error('Erreur:', err);
+        log('Erreur microphone: ' + err.message);
         alert('Erreur microphone: ' + err.message);
+        
+        // Nettoyer le stream en cas d'erreur
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+        
         resetAudioState();
     }
 }
@@ -1197,12 +1230,22 @@ async function stopRecordingAndSend() {
         // Arrêter l'enregistrement
         await opusRecorder.stop();
         
+        // Nettoyer le stream
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+        
         const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
         const mins = Math.floor(duration / 60).toString().padStart(2, '0');
         const secs = (duration % 60).toString().padStart(2, '0');
         
-        // Concaténer tous les chunks OGG
-        const totalLength = audioChunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+        // ✅ CORRECTION: Vérifier qu'on a des chunks
+        if (audioChunks.length === 0) {
+            throw new Error('Aucune donnée audio enregistrée');
+        }
+        
+        // Concaténer tous les chunks OGG en un seul Blob
         const oggBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
         
         // Créer le fichier OGG Opus (format natif WhatsApp)
@@ -1214,11 +1257,12 @@ async function stopRecordingAndSend() {
         currentType = 'audio';
         
         showFilePreview('Note vocale (OGG Opus)', `Durée: ${mins}:${secs} • ${(oggFile.size/1024).toFixed(1)} KB`, 'audio');
-        log(`OGG Opus créé: ${oggFile.size} bytes, ${duration}s`);
+        log(`OGG Opus créé: ${oggFile.size} bytes, ${duration}s, ${audioChunks.length} chunks`);
 
     } catch (err) {
         console.error('Erreur OGG Opus:', err);
-        alert('Erreur conversion audio. Essayez avec un fichier audio plus court.');
+        log('Erreur conversion audio: ' + err.message);
+        alert('Erreur conversion audio: ' + err.message);
     }
 
     resetAudioUI();
@@ -1231,11 +1275,18 @@ function cancelRecording() {
     isRecording = false;
     clearInterval(recordingTimer);
     
+    // Arrêter le recorder proprement
     if (opusRecorder) {
         try {
             opusRecorder.stop();
         } catch(e) {}
         opusRecorder = null;
+    }
+    
+    // Nettoyer le stream
+    if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+        audioStream = null;
     }
     
     resetAudioState();
@@ -1247,6 +1298,7 @@ function resetAudioState() {
     recordingStartTime = null;
     isRecording = false;
     opusRecorder = null;
+    audioStream = null;
     resetAudioUI();
     
     const btnAudio = document.getElementById('btnAudio');
@@ -1383,7 +1435,7 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
             groupes_ids: groupesIds,
             message: message,
             type_envoi: type,           // 'audio'
-            voice: isVoiceMessage       // true pour OGG Opus natif WhatsApp [^18^]
+            voice: isVoiceMessage       // true pour OGG Opus natif WhatsApp
         }),
         signal: abortController.signal
     });
