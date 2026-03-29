@@ -1,6 +1,30 @@
 RewriteEngine On
-RewriteRule ^socket/(.*)$ http://127.0.0.1:3002/socket/$1 [P,L]
 
+# ============================================
+# WEBSOCKET PROXY - DOIT ÊTRE EN PREMIER
+# ============================================
+# Détecter la mise à niveau WebSocket
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteCond %{HTTP:Connection} upgrade [NC]
+RewriteRule ^socket/(.*) ws://127.0.0.1:3002/socket/$1 [P,L]
+
+# ============================================
+# PROXY HTTP NORMAL
+# ============================================
+RewriteRule ^socket/(.*) http://127.0.0.1:3002/socket/$1 [P,L]
+
+# ============================================
+# CODEIGNITER
+# ============================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [L]
+
+# ============================================
+# EN-TÊTES POUR WEBSOCKET
+# ============================================
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Upgrade, Connection"
+</IfModule>

@@ -11,6 +11,9 @@ class Groupe_model extends CI_Model {
         $this->creer_table();
     }
     
+    /**
+     * Crée la table si elle n'existe pas
+     */
     private function creer_table() {
         $this->db->query("CREATE TABLE IF NOT EXISTS {$this->table} (
             id INT(11) NOT NULL AUTO_INCREMENT,
@@ -25,10 +28,8 @@ class Groupe_model extends CI_Model {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     }
     
-    
-    
     /**
-     * Récupère tous les groupes actifs avec ID et nom
+     * Récupère tous les groupes actifs
      */
     public function get_all_groupes() {
         $this->db->where('actif', 1);
@@ -38,7 +39,7 @@ class Groupe_model extends CI_Model {
     }
     
     /**
-     * Récupère les N premiers groupes (ex: 10)
+     * Récupère les N premiers groupes
      */
     public function get_groupes_limit($limit = 10) {
         $this->db->where('actif', 1);
@@ -59,7 +60,7 @@ class Groupe_model extends CI_Model {
     }
     
     /**
-     * Récupère un groupe par son nom (recherche)
+     * Recherche un groupe par nom
      */
     public function get_groupe_par_nom($nom) {
         $this->db->like('nom', $nom);
@@ -82,7 +83,7 @@ class Groupe_model extends CI_Model {
      */
     public function update_nom($groupe_id, $nouveau_nom) {
         $this->db->where('groupe_id', $groupe_id);
-        $this->db->update($this->table, array('nom' => $nouveau_nom));
+        return $this->db->update($this->table, array('nom' => $nouveau_nom));
     }
     
     /**
@@ -90,15 +91,14 @@ class Groupe_model extends CI_Model {
      */
     public function set_actif($groupe_id, $actif = true) {
         $this->db->where('groupe_id', $groupe_id);
-        $this->db->update($this->table, array('actif' => $actif ? 1 : 0));
+        return $this->db->update($this->table, array('actif' => $actif ? 1 : 0));
     }
     
     /**
      * Supprime un groupe (désactive seulement)
      */
     public function supprimer($groupe_id) {
-        $this->db->where('groupe_id', $groupe_id);
-        $this->db->update($this->table, array('actif' => 0));
+        return $this->set_actif($groupe_id, false);
     }
     
     /**
@@ -120,15 +120,18 @@ class Groupe_model extends CI_Model {
         return $query->result_array();
     }
 
+    /**
+     * Sauvegarde ou met à jour un groupe
+     */
     public function sauvegarder($groupe_id, $nom, $description = '') {
-    $data = array(
-        'groupe_id' => $groupe_id,
-        'nom' => $nom,
-        'description' => $description,
-        'actif' => 1
-    );
-    
-    $this->db->replace($this->table, $data);
-    return $this->db->insert_id();
-}
+        $data = array(
+            'groupe_id' => $groupe_id,
+            'nom' => $nom,
+            'description' => $description,
+            'actif' => 1
+        );
+        
+        $this->db->replace($this->table, $data);
+        return $this->db->insert_id();
+    }
 }
