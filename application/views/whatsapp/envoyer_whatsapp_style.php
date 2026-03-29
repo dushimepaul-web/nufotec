@@ -1,24 +1,12 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); 
 
-// Définir les variables par défaut si elles n'existent pas
-if (!isset($resultat)) {
-    $resultat = null;
-}
-if (!isset($message)) {
-    $message = '';
-}
-if (!isset($type_envoi)) {
-    $type_envoi = 'texte';
-}
-if (!isset($groupes_info)) {
-    $groupes_info = array();
-}
-if (!isset($total_groupes)) {
-    $total_groupes = 0;
-}
-if (!isset($groupes)) {
-    $groupes = array();
-}
+// Définir les variables par défaut
+if (!isset($resultat)) $resultat = null;
+if (!isset($message)) $message = '';
+if (!isset($type_envoi)) $type_envoi = 'texte';
+if (!isset($groupes_info)) $groupes_info = array();
+if (!isset($total_groupes)) $total_groupes = 0;
+if (!isset($groupes)) $groupes = array();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -29,21 +17,15 @@ if (!isset($groupes)) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #dddbd1;
-            background-image: linear-gradient(180deg, #dddbd1, #d2dbdc);
             height: 100vh;
             overflow: hidden;
         }
         
-        /* Container principal comme WhatsApp Web */
         .app-container {
             display: flex;
             height: 100vh;
@@ -53,7 +35,7 @@ if (!isset($groupes)) {
             box-shadow: 0 1px 1px 0 rgba(0,0,0,0.06), 0 2px 5px 0 rgba(0,0,0,0.2);
         }
         
-        /* Sidebar gauche (liste des conversations) */
+        /* Sidebar */
         .sidebar {
             width: 30%;
             min-width: 300px;
@@ -64,7 +46,6 @@ if (!isset($groupes)) {
             flex-direction: column;
         }
         
-        /* Header de la sidebar */
         .sidebar-header {
             background: #f0f2f5;
             padding: 10px 16px;
@@ -107,11 +88,8 @@ if (!isset($groupes)) {
             font-size: 20px;
         }
         
-        .icon-btn:hover {
-            background: #d1d7db;
-        }
+        .icon-btn:hover { background: #d1d7db; }
         
-        /* Barre de recherche */
         .search-container {
             background: #f0f2f5;
             padding: 8px 16px;
@@ -125,13 +103,9 @@ if (!isset($groupes)) {
             display: flex;
             align-items: center;
             gap: 10px;
-            border: none;
         }
         
-        .search-box i {
-            color: #54656f;
-            font-size: 16px;
-        }
+        .search-box i { color: #54656f; font-size: 16px; }
         
         .search-box input {
             border: none;
@@ -141,7 +115,6 @@ if (!isset($groupes)) {
             color: #3b4a54;
         }
         
-        /* Liste des conversations */
         .conversations-list {
             flex: 1;
             overflow-y: auto;
@@ -157,19 +130,14 @@ if (!isset($groupes)) {
             transition: background 0.2s;
         }
         
-        .conversation-item:hover {
-            background: #f5f6f6;
-        }
-        
-        .conversation-item.selected {
-            background: #f0f2f5;
-        }
+        .conversation-item:hover { background: #f5f6f6; }
+        .conversation-item.selected { background: #f0f2f5; }
         
         .conversation-avatar {
             width: 49px;
             height: 49px;
             border-radius: 50%;
-            background: #dfe5e7;
+            background: linear-gradient(135deg, #00bfa5, #00897b);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -179,14 +147,7 @@ if (!isset($groupes)) {
             flex-shrink: 0;
         }
         
-        .conversation-avatar.group {
-            background: linear-gradient(135deg, #00bfa5, #00897b);
-        }
-        
-        .conversation-info {
-            flex: 1;
-            min-width: 0;
-        }
+        .conversation-info { flex: 1; min-width: 0; }
         
         .conversation-header {
             display: flex;
@@ -204,10 +165,7 @@ if (!isset($groupes)) {
             text-overflow: ellipsis;
         }
         
-        .conversation-time {
-            font-size: 12px;
-            color: #667781;
-        }
+        .conversation-time { font-size: 12px; color: #667781; }
         
         .conversation-preview {
             display: flex;
@@ -230,7 +188,7 @@ if (!isset($groupes)) {
             accent-color: #00a884;
         }
         
-        /* Zone de chat (droite) */
+        /* Chat Area */
         .chat-area {
             flex: 1;
             display: flex;
@@ -238,9 +196,9 @@ if (!isset($groupes)) {
             background: #efeae2;
             background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QUbCTk4U3d0fQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAJklEQVQ4y2NgYGD4z0ABYBw1gGE0DqNhNIyG0TAaRsNoGA2jYQgAASYgCw+4S6UAAAAASUVORK5CYII=');
             background-repeat: repeat;
+            position: relative;
         }
         
-        /* Header du chat */
         .chat-header {
             background: #f0f2f5;
             padding: 10px 16px;
@@ -249,6 +207,7 @@ if (!isset($groupes)) {
             align-items: center;
             justify-content: space-between;
             border-left: 1px solid #e9edef;
+            z-index: 10;
         }
         
         .chat-header-info {
@@ -269,23 +228,11 @@ if (!isset($groupes)) {
             font-size: 20px;
         }
         
-        .chat-title {
-            display: flex;
-            flex-direction: column;
-        }
+        .chat-title { display: flex; flex-direction: column; }
+        .chat-name { font-size: 16px; font-weight: 500; color: #111b21; }
+        .chat-status { font-size: 13px; color: #667781; }
         
-        .chat-name {
-            font-size: 16px;
-            font-weight: 500;
-            color: #111b21;
-        }
-        
-        .chat-status {
-            font-size: 13px;
-            color: #667781;
-        }
-        
-        /* Messages area */
+        /* Messages */
         .messages-container {
             flex: 1;
             overflow-y: auto;
@@ -316,32 +263,101 @@ if (!isset($groupes)) {
             box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
         }
         
-        .message-text {
-            font-size: 14.2px;
-            line-height: 19px;
+        .message-text { font-size: 14.2px; line-height: 19px; color: #111b21; }
+        .message-time { font-size: 11px; color: #667781; text-align: right; margin-top: 4px; }
+        
+        /* Upload Progress - Style WhatsApp */
+        .upload-progress-container {
+            display: none;
+            background: rgba(0,0,0,0.6);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .upload-progress-container.active { display: flex; }
+        
+        .upload-box {
+            background: #fff;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            min-width: 300px;
+        }
+        
+        .upload-spinner {
+            width: 64px;
+            height: 64px;
+            border: 4px solid #f0f2f5;
+            border-top: 4px solid #00a884;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .upload-title {
+            font-size: 20px;
+            font-weight: 500;
             color: #111b21;
+            margin-bottom: 8px;
         }
         
-        .message-time {
-            font-size: 11px;
+        .upload-text {
+            font-size: 14px;
             color: #667781;
-            text-align: right;
-            margin-top: 4px;
+            margin-bottom: 16px;
         }
         
-        /* Input area */
-        .input-container {
+        .upload-bar {
+            height: 6px;
+            background: #e9edef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .upload-fill {
+            height: 100%;
+            background: #00a884;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .upload-percent {
+            font-size: 14px;
+            color: #00a884;
+            font-weight: 500;
+        }
+        
+        .upload-cancel {
+            margin-top: 16px;
+            padding: 8px 24px;
+            border: none;
+            background: transparent;
+            color: #ea0038;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* Input Area */
+        .input-area {
             background: #f0f2f5;
             padding: 10px 16px;
             display: flex;
             align-items: center;
             gap: 10px;
             border-left: 1px solid #e9edef;
-        }
-        
-        .input-icons {
-            display: flex;
-            gap: 8px;
         }
         
         .input-icon-btn {
@@ -356,10 +372,19 @@ if (!isset($groupes)) {
             align-items: center;
             justify-content: center;
             font-size: 24px;
+            transition: all 0.2s;
         }
         
-        .input-icon-btn:hover {
-            color: #00a884;
+        .input-icon-btn:hover { color: #00a884; }
+        .input-icon-btn.recording { 
+            background: #ea0038; 
+            color: #fff;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
         .message-input-wrapper {
@@ -396,35 +421,66 @@ if (!isset($groupes)) {
             font-size: 20px;
         }
         
-        .send-btn:hover {
-            background: #008f72;
+        .send-btn:hover { background: #008f72; }
+        .send-btn:disabled { background: #8696a0; cursor: not-allowed; }
+        
+        /* Audio Recording */
+        .audio-recording {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 16px;
         }
         
-        .send-btn:disabled {
-            background: #8696a0;
-            cursor: not-allowed;
+        .audio-recording.active { display: flex; }
+        
+        .recording-wave {
+            flex: 1;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
         }
         
-        /* File preview */
-        .file-preview-container {
+        .wave-bar {
+            width: 3px;
+            background: #ea0038;
+            border-radius: 2px;
+            animation: wave 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { height: 10%; }
+            50% { height: 100%; }
+        }
+        
+        .recording-time {
+            font-size: 14px;
+            color: #ea0038;
+            font-weight: 500;
+            min-width: 50px;
+        }
+        
+        /* File Preview */
+        .file-preview-area {
             background: #f0f2f5;
-            padding: 10px 16px;
+            padding: 8px 16px;
             border-left: 1px solid #e9edef;
             display: none;
         }
         
-        .file-preview-container.active {
-            display: block;
-        }
+        .file-preview-area.active { display: block; }
         
-        .file-preview-box {
+        .file-box {
             background: #fff;
             border-radius: 8px;
             padding: 12px;
             display: flex;
             align-items: center;
             gap: 12px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         .file-icon {
@@ -439,20 +495,9 @@ if (!isset($groupes)) {
             font-size: 24px;
         }
         
-        .file-info {
-            flex: 1;
-        }
-        
-        .file-name {
-            font-size: 14px;
-            color: #111b21;
-            font-weight: 500;
-        }
-        
-        .file-size {
-            font-size: 12px;
-            color: #667781;
-        }
+        .file-info { flex: 1; }
+        .file-name { font-size: 14px; color: #111b21; font-weight: 500; }
+        .file-size { font-size: 12px; color: #667781; }
         
         .file-remove {
             width: 32px;
@@ -462,166 +507,11 @@ if (!isset($groupes)) {
             background: transparent;
             color: #8696a0;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
-        .file-remove:hover {
-            background: #f0f2f5;
-            color: #ea0038;
-        }
+        .file-remove:hover { background: #f0f2f5; color: #ea0038; }
         
-        /* Overlay compression */
-        .compression-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        
-        .compression-box {
-            background: #fff;
-            padding: 32px;
-            border-radius: 16px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-        
-        .compression-spinner {
-            width: 64px;
-            height: 64px;
-            border: 4px solid #f0f2f5;
-            border-top: 4px solid #00a884;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .compression-title {
-            font-size: 20px;
-            font-weight: 500;
-            color: #111b21;
-            margin-bottom: 8px;
-        }
-        
-        .compression-text {
-            font-size: 14px;
-            color: #667781;
-            margin-bottom: 20px;
-        }
-        
-        .compression-progress {
-            height: 6px;
-            background: #e9edef;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-        
-        .compression-progress-bar {
-            height: 100%;
-            background: #00a884;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        
-        .compression-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        
-        .btn-compress {
-            background: #00a884;
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        
-        .btn-compress:hover {
-            background: #008f72;
-        }
-        
-        .btn-cancel {
-            background: transparent;
-            color: #00a884;
-            border: 1px solid #00a884;
-            padding: 12px 24px;
-            border-radius: 24px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        
-        /* Empty state */
-        .empty-chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #f0f2f5;
-            border-left: 1px solid #e9edef;
-        }
-        
-        .empty-icon {
-            width: 320px;
-            height: 200px;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%23f0f2f5" width="200" height="200"/><circle cx="100" cy="80" r="40" fill="%23e9edef"/><path d="M70 120 Q100 150 130 120" stroke="%23d1d7db" stroke-width="3" fill="none"/></svg>');
-            margin-bottom: 40px;
-        }
-        
-        .empty-title {
-            font-size: 32px;
-            font-weight: 300;
-            color: #41525d;
-            margin-bottom: 16px;
-        }
-        
-        .empty-text {
-            font-size: 14px;
-            color: #667781;
-            text-align: center;
-            max-width: 450px;
-            line-height: 20px;
-        }
-        
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-        
-        /* Type selector */
+        /* Type Selector */
         .type-selector {
             display: flex;
             gap: 8px;
@@ -648,95 +538,104 @@ if (!isset($groupes)) {
             color: #008f72;
         }
         
-        .type-btn:hover:not(.active) {
-            background: #f5f6f6;
+        /* Empty State */
+        .empty-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-left: 1px solid #e9edef;
         }
         
-        /* Selection counter badge */
-        .selection-badge {
-            background: #00a884;
-            color: #fff;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
+        .empty-icon {
+            width: 300px;
+            height: 200px;
+            opacity: 0.5;
+            margin-bottom: 32px;
         }
         
-        /* Alertes */
-        .alert-compact {
+        .empty-title {
+            font-size: 28px;
+            font-weight: 300;
+            color: #41525d;
+            margin-bottom: 16px;
+        }
+        
+        .empty-text {
+            font-size: 14px;
+            color: #667781;
+            text-align: center;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        /* Alerts */
+        .alert-floating {
             position: absolute;
-            top: 10px;
+            top: 70px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            padding: 10px 16px;
+            padding: 12px 24px;
             border-radius: 8px;
             font-size: 14px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 400px;
         }
     </style>
 </head>
 <body>
 
-<!-- Overlay de compression -->
-<div class="compression-overlay" id="compressionOverlay">
-    <div class="compression-box">
-        <div class="compression-spinner"></div>
-        <div class="compression-title" id="compressionTitle">Fichier trop volumineux</div>
-        <div class="compression-text" id="compressionText">Ce fichier dépasse 16 MB</div>
-        <div class="compression-progress">
-            <div class="compression-progress-bar" id="compressionProgress"></div>
+<!-- Upload Progress Overlay -->
+<div class="upload-progress-container" id="uploadOverlay">
+    <div class="upload-box">
+        <div class="upload-spinner"></div>
+        <div class="upload-title" id="uploadTitle">Envoi en cours...</div>
+        <div class="upload-text" id="uploadText">Ne fermez pas cette page</div>
+        <div class="upload-bar">
+            <div class="upload-fill" id="uploadProgress"></div>
         </div>
-        <div class="compression-actions" id="compressionActions">
-            <button class="btn-compress" onclick="compressAndSend()">
-                <i class="bi bi-magic me-2"></i>Compresser
-            </button>
-            <button class="btn-cancel" onclick="sendWithoutCompression()">
-                Envoyer quand même
-            </button>
-        </div>
+        <div class="upload-percent" id="uploadPercent">0%</div>
+        <button class="upload-cancel" onclick="cancelUpload()">Annuler</button>
     </div>
 </div>
 
-<!-- Container principal -->
 <div class="app-container">
     
-    <!-- Sidebar (Liste des groupes) -->
+    <!-- Sidebar -->
     <div class="sidebar">
-        <!-- Header -->
         <div class="sidebar-header">
-            <div class="user-avatar">
-                <i class="bi bi-person"></i>
-            </div>
+            <div class="user-avatar"><i class="bi bi-person"></i></div>
             <div class="header-icons">
-                <button class="icon-btn" title="Nouveau groupe">
-                    <i class="bi bi-people"></i>
+                <button class="icon-btn" onclick="selectAllGroupes()" title="Tout sélectionner">
+                    <i class="bi bi-check-all"></i>
                 </button>
-                <button class="icon-btn" title="Menu">
-                    <i class="bi bi-three-dots-vertical"></i>
-                </button>
+                <a href="<?php echo site_url('whatsapp/synchroniser'); ?>" class="icon-btn" title="Synchroniser">
+                    <i class="bi bi-arrow-repeat"></i>
+                </a>
             </div>
         </div>
         
-        <!-- Search -->
         <div class="search-container">
             <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input type="text" id="searchGroupes" placeholder="Rechercher ou démarrer une nouvelle discussion" onkeyup="filterGroupes()">
+                <input type="text" id="searchGroupes" placeholder="Rechercher..." onkeyup="filterGroupes()">
             </div>
         </div>
         
-        <!-- Liste des conversations -->
         <div class="conversations-list" id="conversationsList">
-            <?php 
-            $selectedCount = 0;
-            foreach ($groupes as $index => $groupe): 
-                $isSelected = isset($selected_groupes) && in_array($groupe['groupe_id'], $selected_groupes);
-                if ($isSelected) $selectedCount++;
-            ?>
-            <div class="conversation-item <?php echo $isSelected ? 'selected' : ''; ?>" onclick="toggleSelection(this, '<?php echo htmlspecialchars($groupe['groupe_id']); ?>')">
-                <input type="checkbox" class="checkbox-select" name="groupes_ids[]" value="<?php echo htmlspecialchars($groupe['groupe_id']); ?>" <?php echo $isSelected ? 'checked' : ''; ?> onchange="updateCounter()" onclick="event.stopPropagation()">
-                <div class="conversation-avatar group">
+            <?php foreach ($groupes as $groupe): ?>
+            <div class="conversation-item" onclick="toggleSelection(this, '<?php echo htmlspecialchars($groupe['groupe_id']); ?>')">
+                <input type="checkbox" class="checkbox-select" name="groupes_ids[]" 
+                       value="<?php echo htmlspecialchars($groupe['groupe_id']); ?>" 
+                       onchange="updateCounter()" onclick="event.stopPropagation()">
+                <div class="conversation-avatar">
                     <i class="bi bi-people-fill"></i>
                 </div>
                 <div class="conversation-info">
@@ -745,141 +644,93 @@ if (!isset($groupes)) {
                         <span class="conversation-time"><?php echo date('H:i'); ?></span>
                     </div>
                     <div class="conversation-preview">
-                        <i class="bi bi-check2-all" style="color: #53bdeb; font-size: 12px;"></i>
-                        <span class="conversation-message">Cliquez pour sélectionner ce groupe</span>
+                        <span class="conversation-message">Cliquez pour sélectionner</span>
                     </div>
                 </div>
             </div>
             <?php endforeach; ?>
-            
-            <?php if (empty($groupes)): ?>
-            <div style="padding: 40px; text-align: center; color: #667781;">
-                <i class="bi bi-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
-                <p>Aucun groupe disponible</p>
-                <a href="<?php echo site_url('whatsapp/synchroniser'); ?>" style="color: #00a884; text-decoration: none;">
-                    Synchroniser les groupes
-                </a>
-            </div>
-            <?php endif; ?>
         </div>
     </div>
     
-    <!-- Zone de chat -->
+    <!-- Chat Area -->
     <div class="chat-area">
+        
         <?php if ($resultat !== null): ?>
-            <!-- Affichage des résultats -->
+            <!-- Résultat -->
             <div class="chat-header">
                 <div class="chat-header-info">
-                    <div class="chat-avatar">
-                        <i class="bi bi-check-all"></i>
-                    </div>
+                    <div class="chat-avatar"><i class="bi bi-check-all"></i></div>
                     <div class="chat-title">
-                        <span class="chat-name">Résultat de l'envoi</span>
-                        <span class="chat-status"><?php echo $reussis; ?>/<?php echo $total; ?> messages envoyés</span>
+                        <span class="chat-name">Résultat</span>
+                        <span class="chat-status"><?php echo $reussis ?? 0; ?>/<?php echo $total ?? 0; ?> envoyés</span>
                     </div>
                 </div>
-                <div class="header-icons">
-                    <a href="<?php echo site_url('whatsapp/envoyer'); ?>" class="icon-btn" title="Nouvel envoi">
-                        <i class="bi bi-plus-lg"></i>
-                    </a>
-                </div>
+                <a href="<?php echo site_url('whatsapp/envoyer'); ?>" class="icon-btn">
+                    <i class="bi bi-plus-lg"></i>
+                </a>
             </div>
             
             <div class="messages-container">
-                <?php 
-                $stats = isset($resultat['response']) ? $resultat['response'] : $resultat;
-                $total = isset($stats['total']) ? $stats['total'] : 0;
-                $reussis = isset($stats['reussis']) ? $stats['reussis'] : 0;
-                $echoues = isset($stats['echoues']) ? $stats['echoues'] : 0;
-                $details = isset($stats['details']) ? $stats['details'] : array();
-                ?>
-                
                 <div class="message-bubble sent" style="align-self: center; background: #fff; max-width: 80%;">
                     <div style="text-align: center; padding: 20px;">
                         <div style="font-size: 48px; margin-bottom: 16px;">
-                            <?php echo ($reussis > 0) ? '✅' : '❌'; ?>
+                            <?php echo (($reussis ?? 0) > 0) ? '✅' : '❌'; ?>
                         </div>
-                        <div style="font-size: 24px; font-weight: 500; color: #111b21; margin-bottom: 8px;">
-                            <?php echo ($reussis > 0) ? 'Envoi terminé' : 'Échec de l\'envoi'; ?>
+                        <div style="font-size: 20px; font-weight: 500; margin-bottom: 8px;">
+                            <?php echo (($reussis ?? 0) > 0) ? 'Envoi terminé' : 'Échec'; ?>
                         </div>
-                        <div style="color: #667781; margin-bottom: 20px;">
-                            <?php echo $reussis; ?> succès, <?php echo $echoues; ?> échecs sur <?php echo $total; ?> groupes
+                        <div style="color: #667781;">
+                            <?php echo $reussis ?? 0; ?> succès, <?php echo $echoues ?? 0; ?> échecs
                         </div>
-                        
-                        <?php if (!empty($details)): ?>
-                        <div style="text-align: left; max-height: 300px; overflow-y: auto;">
-                            <?php foreach ($details as $detail): 
-                                $isSuccess = (isset($detail['statut']) && $detail['statut'] === 'succès');
-                            ?>
-                            <div style="padding: 8px; border-bottom: 1px solid #f0f2f5; display: flex; align-items: center; gap: 8px;">
-                                <i class="bi bi-<?php echo $isSuccess ? 'check-circle-fill text-success' : 'x-circle-fill text-danger'; ?>"></i>
-                                <span style="flex: 1; font-size: 14px;"><?php echo substr($detail['destinataire_id'], 0, 30); ?>...</span>
-                                <?php if (!$isSuccess): ?>
-                                <small class="text-danger"><?php echo htmlspecialchars($detail['erreur'] ?? 'Erreur'); ?></small>
-                                <?php endif; ?>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
             
         <?php else: ?>
-            <!-- Formulaire d'envoi -->
-            <form action="<?php echo site_url('whatsapp/traiter_envoi'); ?>" method="post" enctype="multipart/form-data" id="envoiForm" style="display: flex; flex-direction: column; height: 100%;">
+            <!-- Formulaire -->
+            <form id="envoiForm" style="display: flex; flex-direction: column; height: 100%;">
                 
-                <!-- Header -->
                 <div class="chat-header">
                     <div class="chat-header-info">
-                        <div class="chat-avatar">
-                            <i class="bi bi-people-fill"></i>
-                        </div>
+                        <div class="chat-avatar"><i class="bi bi-people-fill"></i></div>
                         <div class="chat-title">
                             <span class="chat-name">Nouvelle diffusion</span>
-                            <span class="chat-status" id="selectionStatus">Sélectionnez des groupes</span>
+                            <span class="chat-status" id="selectionStatus">0 groupe sélectionné</span>
                         </div>
                     </div>
                     <div class="header-icons">
-                        <button type="button" class="icon-btn" onclick="selectAllGroupes()" title="Tout sélectionner">
-                            <i class="bi bi-check-all"></i>
-                        </button>
-                        <a href="<?php echo site_url('whatsapp'); ?>" class="icon-btn" title="Retour">
+                        <a href="<?php echo site_url('whatsapp'); ?>" class="icon-btn">
                             <i class="bi bi-arrow-left"></i>
                         </a>
                     </div>
                 </div>
                 
-                <!-- Type selector -->
+                <!-- Alerts -->
+                <?php if ($this->session->flashdata('error')): ?>
+                <div class="alert alert-danger alert-floating">
+                    <?php echo $this->session->flashdata('error'); ?>
+                </div>
+                <?php endif; ?>
+                
                 <div class="type-selector">
                     <button type="button" class="type-btn active" onclick="setType('texte', this)" id="btnTexte">
-                        <i class="bi bi-chat-text"></i>
-                        <span>Message</span>
+                        <i class="bi bi-chat-text"></i> <span>Message</span>
                     </button>
                     <button type="button" class="type-btn" onclick="setType('fichier', this)" id="btnFichier">
-                        <i class="bi bi-paperclip"></i>
-                        <span>Fichier</span>
+                        <i class="bi bi-paperclip"></i> <span>Fichier</span>
+                    </button>
+                    <button type="button" class="type-btn" onclick="setType('audio', this)" id="btnAudio">
+                        <i class="bi bi-mic"></i> <span>Audio</span>
                     </button>
                     <input type="hidden" name="type_envoi" id="typeEnvoi" value="texte">
                 </div>
                 
-                <!-- Messages area -->
-                <div class="messages-container" id="messagesContainer">
-                    <!-- Preview du message -->
-                    <div class="message-bubble sent" id="messagePreview">
-                        <div class="message-text">Votre message apparaîtra ici...</div>
-                        <div class="message-time"><?php echo date('H:i'); ?></div>
-                    </div>
-                </div>
-                
-                <!-- File preview -->
-                <div class="file-preview-container" id="filePreviewContainer">
-                    <div class="file-preview-box">
-                        <div class="file-icon">
-                            <i class="bi bi-file-earmark" id="fileIcon"></i>
-                        </div>
+                <!-- File Preview -->
+                <div class="file-preview-area" id="filePreview">
+                    <div class="file-box">
+                        <div class="file-icon"><i class="bi bi-file-earmark" id="fileIcon"></i></div>
                         <div class="file-info">
-                            <div class="file-name" id="fileName">Aucun fichier</div>
+                            <div class="file-name" id="fileName">-</div>
                             <div class="file-size" id="fileSize">-</div>
                         </div>
                         <button type="button" class="file-remove" onclick="clearFile()">
@@ -888,20 +739,51 @@ if (!isset($groupes)) {
                     </div>
                 </div>
                 
-                <!-- Input area -->
-                <div class="input-container">
-                    <div class="input-icons">
+                <!-- Messages -->
+                <div class="messages-container" id="messagesContainer">
+                    <div class="message-bubble sent" id="previewBubble" style="display: none;">
+                        <div class="message-text" id="previewText"></div>
+                        <div class="message-time"><?php echo date('H:i'); ?></div>
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="input-area">
+                    <!-- Normal Input -->
+                    <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
                         <button type="button" class="input-icon-btn" onclick="document.getElementById('fileInput').click()">
                             <i class="bi bi-plus-lg"></i>
                         </button>
-                        <input type="file" id="fileInput" name="fichier" style="display: none;" onchange="handleFileSelect(this)" accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
+                        <input type="file" id="fileInput" name="fichier" style="display: none;" 
+                               onchange="handleFileSelect(this)" 
+                               accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
+                        
+                        <div class="message-input-wrapper">
+                            <textarea class="message-input" id="messageInput" name="message" 
+                                      placeholder="Tapez un message" rows="1" 
+                                      oninput="updatePreview()"></textarea>
+                        </div>
+                        
+                        <button type="button" class="input-icon-btn" id="micBtn" onclick="startRecording()">
+                            <i class="bi bi-mic-fill"></i>
+                        </button>
                     </div>
                     
-                    <div class="message-input-wrapper">
-                        <textarea class="message-input" id="messageInput" name="message" placeholder="Tapez un message" rows="1" oninput="updatePreview()"></textarea>
+                    <!-- Recording Interface -->
+                    <div class="audio-recording" id="recordingInterface">
+                        <button type="button" class="input-icon-btn" onclick="cancelRecording()" style="color: #ea0038;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        <div class="recording-wave" id="waveContainer">
+                            <!-- Wave bars generated by JS -->
+                        </div>
+                        <div class="recording-time" id="recordingTime">00:00</div>
+                        <button type="button" class="input-icon-btn" onclick="stopRecording()" style="color: #00a884;">
+                            <i class="bi bi-check-lg"></i>
+                        </button>
                     </div>
                     
-                    <button type="submit" class="send-btn" id="sendBtn" disabled>
+                    <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()">
                         <i class="bi bi-send-fill"></i>
                     </button>
                 </div>
@@ -909,13 +791,30 @@ if (!isset($groupes)) {
             </form>
         <?php endif; ?>
     </div>
-    
 </div>
 
 <script>
-let selectedFile = null;
-let compressedFile = null;
+// Variables globales
 let selectedGroupes = [];
+let selectedFile = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStartTime = null;
+let recordingTimer = null;
+let uploadXHR = null;
+
+// Initialiser les ondes audio
+function initWaveBars() {
+    const container = document.getElementById('waveContainer');
+    container.innerHTML = '';
+    for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'wave-bar';
+        bar.style.height = Math.random() * 100 + '%';
+        bar.style.animationDelay = (i * 0.05) + 's';
+        container.appendChild(bar);
+    }
+}
 
 function toggleSelection(element, groupeId) {
     const checkbox = element.querySelector('.checkbox-select');
@@ -923,36 +822,21 @@ function toggleSelection(element, groupeId) {
     
     if (checkbox.checked) {
         element.classList.add('selected');
-        if (!selectedGroupes.includes(groupeId)) {
-            selectedGroupes.push(groupeId);
-        }
+        if (!selectedGroupes.includes(groupeId)) selectedGroupes.push(groupeId);
     } else {
         element.classList.remove('selected');
         selectedGroupes = selectedGroupes.filter(id => id !== groupeId);
     }
-    
     updateCounter();
 }
 
 function updateCounter() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
     const count = checkboxes.length;
-    
     const statusEl = document.getElementById('selectionStatus');
-    const sendBtn = document.getElementById('sendBtn');
     
     if (statusEl) {
-        if (count === 0) {
-            statusEl.textContent = 'Sélectionnez des groupes';
-        } else if (count === 1) {
-            statusEl.textContent = '1 groupe sélectionné';
-        } else {
-            statusEl.textContent = count + ' groupes sélectionnés';
-        }
-    }
-    
-    if (sendBtn) {
-        sendBtn.disabled = count === 0;
+        statusEl.textContent = count + ' groupe' + (count > 1 ? 's' : '') + ' sélectionné' + (count > 1 ? 's' : '');
     }
 }
 
@@ -963,21 +847,15 @@ function selectAllGroupes() {
     checkboxes.forEach(cb => {
         cb.checked = !allChecked;
         const item = cb.closest('.conversation-item');
-        if (!allChecked) {
-            item.classList.add('selected');
-        } else {
-            item.classList.remove('selected');
-        }
+        if (!allChecked) item.classList.add('selected');
+        else item.classList.remove('selected');
     });
-    
     updateCounter();
 }
 
 function filterGroupes() {
     const term = document.getElementById('searchGroupes').value.toLowerCase();
-    const items = document.querySelectorAll('.conversation-item');
-    
-    items.forEach(item => {
+    document.querySelectorAll('.conversation-item').forEach(item => {
         const name = item.querySelector('.conversation-name').textContent.toLowerCase();
         item.style.display = name.includes(term) ? '' : 'none';
     });
@@ -985,16 +863,25 @@ function filterGroupes() {
 
 function setType(type, btn) {
     document.getElementById('typeEnvoi').value = type;
-    
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
     const input = document.getElementById('messageInput');
-    if (type === 'fichier') {
-        input.placeholder = "Ajoutez une légende (optionnel)...";
-        document.getElementById('fileInput').click();
+    const micBtn = document.getElementById('micBtn');
+    
+    if (type === 'audio') {
+        document.getElementById('normalInput').style.display = 'none';
+        startRecording();
     } else {
-        input.placeholder = "Tapez un message";
+        document.getElementById('normalInput').style.display = 'flex';
+        document.getElementById('recordingInterface').classList.remove('active');
+        
+        if (type === 'fichier') {
+            input.placeholder = "Légende (optionnel)...";
+            document.getElementById('fileInput').click();
+        } else {
+            input.placeholder = "Tapez un message";
+        }
     }
 }
 
@@ -1004,8 +891,7 @@ function handleFileSelect(input) {
     selectedFile = input.files[0];
     const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
     
-    // Afficher preview
-    document.getElementById('filePreviewContainer').classList.add('active');
+    document.getElementById('filePreview').classList.add('active');
     document.getElementById('fileName').textContent = selectedFile.name;
     document.getElementById('fileSize').textContent = sizeMB + ' MB';
     
@@ -1016,153 +902,214 @@ function handleFileSelect(input) {
     else if (selectedFile.type.startsWith('image/')) icon.className = 'bi bi-image-fill';
     else icon.className = 'bi bi-file-earmark';
     
-    // Si > 16MB, proposer compression
-    if (selectedFile.size > 16 * 1024 * 1024) {
-        showCompressionDialog();
-    } else {
-        compressedFile = selectedFile;
-    }
-    
-    // Changer le type en fichier
     setType('fichier', document.getElementById('btnFichier'));
-}
-
-function showCompressionDialog() {
-    document.getElementById('compressionOverlay').style.display = 'flex';
-    document.getElementById('compressionTitle').textContent = 'Fichier volumineux';
-    document.getElementById('compressionText').textContent = 'Ce fichier fait ' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB. Compresser avant envoi ?';
-    document.getElementById('compressionActions').style.display = 'flex';
-}
-
-async function compressAndSend() {
-    document.getElementById('compressionActions').style.display = 'none';
-    document.getElementById('compressionTitle').textContent = 'Compression...';
-    document.getElementById('compressionText').textContent = 'Veuillez patienter';
-    
-    const progress = document.getElementById('compressionProgress');
-    progress.style.width = '30%';
-    
-    try {
-        // Compression image simple via canvas
-        if (selectedFile.type.startsWith('image/')) {
-            compressedFile = await compressImage(selectedFile);
-        } else {
-            // Pour vidéo/audio, on ne peut pas compresser sans FFmpeg
-            // On propose de réduire la qualité ou d'envoyer tel quel
-            progress.style.width = '100%';
-            compressedFile = selectedFile;
-        }
-        
-        const originalSize = (selectedFile.size / 1024 / 1024).toFixed(2);
-        const newSize = (compressedFile.size / 1024 / 1024).toFixed(2);
-        
-        document.getElementById('fileSize').innerHTML = 
-            '<span style="text-decoration: line-through; color: #8696a0;">' + originalSize + ' MB</span> ' +
-            '<span style="color: #00a884; font-weight: 500;">' + newSize + ' MB</span>';
-        
-        document.getElementById('compressionOverlay').style.display = 'none';
-        
-    } catch (e) {
-        console.error(e);
-        compressedFile = selectedFile;
-        document.getElementById('compressionOverlay').style.display = 'none';
-    }
-}
-
-function compressImage(file) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            
-            let width = img.width;
-            let height = img.height;
-            const maxDim = 1280;
-            
-            if (width > maxDim || height > maxDim) {
-                if (width > height) {
-                    height = (height / width) * maxDim;
-                    width = maxDim;
-                } else {
-                    width = (width / height) * maxDim;
-                    height = maxDim;
-                }
-            }
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            canvas.toBlob((blob) => {
-                const compressed = new File([blob], 'compressed_' + file.name, {
-                    type: 'image/jpeg',
-                    lastModified: Date.now()
-                });
-                resolve(compressed);
-            }, 'image/jpeg', 0.7);
-        };
-        
-        img.onerror = reject;
-        img.src = url;
-    });
-}
-
-function sendWithoutCompression() {
-    compressedFile = selectedFile;
-    document.getElementById('compressionOverlay').style.display = 'none';
 }
 
 function clearFile() {
     document.getElementById('fileInput').value = '';
-    document.getElementById('filePreviewContainer').classList.remove('active');
+    document.getElementById('filePreview').classList.remove('active');
     selectedFile = null;
-    compressedFile = null;
     setType('texte', document.getElementById('btnTexte'));
 }
 
 function updatePreview() {
-    const input = document.getElementById('messageInput');
-    const preview = document.getElementById('messagePreview');
-    const text = input.value.trim();
+    const text = document.getElementById('messageInput').value.trim();
+    const bubble = document.getElementById('previewBubble');
+    const previewText = document.getElementById('previewText');
     
     if (text) {
-        preview.querySelector('.message-text').textContent = text;
-        preview.style.display = 'block';
+        previewText.textContent = text;
+        bubble.style.display = 'block';
     } else {
-        preview.querySelector('.message-text').textContent = 'Votre message apparaîtra ici...';
+        bubble.style.display = 'none';
     }
 }
 
-// Validation formulaire
-document.getElementById('envoiForm')?.addEventListener('submit', function(e) {
+// ==================== ENREGISTREMENT AUDIO ====================
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
+        
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioFile = new File([audioBlob], 'audio_' + Date.now() + '.webm', { type: 'audio/webm' });
+            
+            // Simuler un fichier sélectionné
+            const dt = new DataTransfer();
+            dt.items.add(audioFile);
+            document.getElementById('fileInput').files = dt.files;
+            selectedFile = audioFile;
+            
+            document.getElementById('filePreview').classList.add('active');
+            document.getElementById('fileName').textContent = 'Note vocale';
+            document.getElementById('fileSize').textContent = (audioFile.size / 1024).toFixed(1) + ' KB';
+            document.getElementById('fileIcon').className = 'bi bi-mic-fill';
+            
+            document.getElementById('normalInput').style.display = 'flex';
+            document.getElementById('recordingInterface').classList.remove('active');
+            
+            // Arrêter tous les tracks
+            stream.getTracks().forEach(track => track.stop());
+        };
+        
+        mediaRecorder.start();
+        recordingStartTime = Date.now();
+        
+        // UI
+        document.getElementById('normalInput').style.display = 'none';
+        document.getElementById('recordingInterface').classList.add('active');
+        initWaveBars();
+        
+        // Timer
+        recordingTimer = setInterval(updateRecordingTime, 1000);
+        
+    } catch (err) {
+        alert('Erreur microphone: ' + err.message);
+        setType('texte', document.getElementById('btnTexte'));
+    }
+}
+
+function updateRecordingTime() {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const secs = (elapsed % 60).toString().padStart(2, '0');
+    document.getElementById('recordingTime').textContent = `${mins}:${secs}`;
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        clearInterval(recordingTimer);
+    }
+}
+
+function cancelRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder = null;
+    }
+    clearInterval(recordingTimer);
+    audioChunks = [];
+    
+    document.getElementById('normalInput').style.display = 'flex';
+    document.getElementById('recordingInterface').classList.remove('active');
+    setType('texte', document.getElementById('btnTexte'));
+}
+
+// ==================== ENVOI AVEC PROGRESS ====================
+
+function submitForm() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
     if (checkboxes.length === 0) {
-        e.preventDefault();
-        alert('Veuillez sélectionner au moins un groupe');
-        return false;
+        alert('Sélectionnez au moins un groupe');
+        return;
     }
     
     const type = document.getElementById('typeEnvoi').value;
     const message = document.getElementById('messageInput').value.trim();
-    const hasFile = document.getElementById('fileInput').files.length > 0;
+    const file = document.getElementById('fileInput').files[0];
     
     if (type === 'texte' && !message) {
-        e.preventDefault();
-        alert('Veuillez saisir un message');
-        return false;
+        alert('Tapez un message');
+        return;
     }
     
-    if (type === 'fichier' && !hasFile) {
-        e.preventDefault();
-        alert('Veuillez sélectionner un fichier');
-        return false;
+    if ((type === 'fichier' || type === 'audio') && !file) {
+        alert('Aucun fichier sélectionné');
+        return;
     }
     
-    document.getElementById('sendBtn').innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    // Préparer FormData
+    const formData = new FormData();
+    formData.append('type_envoi', type);
+    formData.append('message', message);
+    formData.append('delai', '1000');
+    
+    checkboxes.forEach(cb => {
+        formData.append('groupes_ids[]', cb.value);
+    });
+    
+    if (file) {
+        formData.append('fichier', file);
+    }
+    
+    // Envoi avec XMLHttpRequest pour avoir la progression
+    uploadXHR = new XMLHttpRequest();
+    
+    uploadXHR.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            showUploadProgress(percent);
+        }
+    });
+    
+    uploadXHR.addEventListener('load', () => {
+        if (uploadXHR.status === 200) {
+            // Succès - remplacer le contenu par la réponse
+            document.open();
+            document.write(uploadXHR.responseText);
+            document.close();
+        } else {
+            hideUploadProgress();
+            alert('Erreur serveur: ' + uploadXHR.status);
+        }
+    });
+    
+    uploadXHR.addEventListener('error', () => {
+        hideUploadProgress();
+        alert('Erreur réseau pendant l\'envoi');
+    });
+    
+    uploadXHR.addEventListener('abort', () => {
+        hideUploadProgress();
+    });
+    
+    // Démarrer l'upload
+    showUploadProgress(0);
+    uploadXHR.open('POST', '<?php echo site_url('whatsapp/traiter_envoi'); ?>');
+    uploadXHR.send(formData);
+}
+
+function showUploadProgress(percent) {
+    const overlay = document.getElementById('uploadOverlay');
+    const fill = document.getElementById('uploadProgress');
+    const percentText = document.getElementById('uploadPercent');
+    const title = document.getElementById('uploadTitle');
+    
+    overlay.classList.add('active');
+    fill.style.width = percent + '%';
+    percentText.textContent = percent + '%';
+    
+    if (percent < 100) {
+        title.textContent = 'Envoi en cours...';
+        document.getElementById('uploadText').textContent = 'Ne fermez pas cette page';
+    } else {
+        title.textContent = 'Traitement...';
+        document.getElementById('uploadText').textContent = 'Envoi aux groupes WhatsApp';
+    }
+}
+
+function hideUploadProgress() {
+    document.getElementById('uploadOverlay').classList.remove('active');
+}
+
+function cancelUpload() {
+    if (uploadXHR) {
+        uploadXHR.abort();
+    }
+}
+
+// Auto-resize textarea
+document.getElementById('messageInput')?.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
 });
 </script>
 
