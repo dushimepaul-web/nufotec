@@ -6,6 +6,12 @@ const app = express();
 const server = http.createServer(app);
 const PORT = 3002;
 
+// Logging pour debug
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST');
@@ -13,13 +19,18 @@ app.use((req, res, next) => {
     next();
 });
 
-// Route ICE servers avec TURN gratuit OpenRelay
+// Route de test
+app.get('/socket/health', (req, res) => {
+    res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Route ICE servers
 app.get('/socket/api/ice-servers', (req, res) => {
+    console.log('📡 ICE servers requested');
     res.json({
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
             {
                 urls: [
                     'turn:openrelay.metered.ca:80',
@@ -33,6 +44,7 @@ app.get('/socket/api/ice-servers', (req, res) => {
     });
 });
 
+// Socket.IO
 const io = socketIo(server, {
     path: '/socket/socket.io',
     transports: ['polling', 'websocket'],
@@ -45,7 +57,7 @@ const io = socketIo(server, {
 const rooms = new Map();
 
 io.on('connection', (socket) => {
-    console.log(`✅ Connecté: ${socket.id}`);
+    console.log(`✅ Client connecté: ${socket.id}`);
     
     socket.on('ping', (data) => {
         socket.emit('pong', { time: data.time });
@@ -68,21 +80,29 @@ io.on('connection', (socket) => {
     
     socket.on('offer', (data) => {
         const target = io.sockets.sockets.get(data.target);
-        if (target) target.emit('offer', { sdp: data.sdp, sender: socket.id });
+        if (target) {
+            target.emit('offer', { sdp: data.sdp, sender: socket.id });
+            console.log(`📤 Offer: ${socket.id} → ${data.target}`);
+        }
     });
     
     socket.on('answer', (data) => {
         const target = io.sockets.sockets.get(data.target);
-        if (target) target.emit('answer', { sdp: data.sdp, sender: socket.id });
+        if (target) {
+            target.emit('answer', { sdp: data.sdp, sender: socket.id });
+            console.log(`📤 Answer: ${socket.id} → ${data.target}`);
+        }
     });
     
     socket.on('ice-candidate', (data) => {
         const target = io.sockets.sockets.get(data.target);
-        if (target) target.emit('ice-candidate', { candidate: data.candidate, sender: socket.id });
+        if (target) {
+            target.emit('ice-candidate', { candidate: data.candidate, sender: socket.id });
+        }
     });
     
     socket.on('disconnect', () => {
-        console.log(`❌ Déconnecté: ${socket.id}`);
+        console.log(`❌ Client déconnecté: ${socket.id}`);
         if (socket.currentRoom && rooms.has(socket.currentRoom)) {
             const count = rooms.get(socket.currentRoom) - 1;
             if (count <= 0) {
@@ -96,5 +116,17 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ Serveur démarré sur port ${PORT}`);
+    console.log(`✅ Serveur Socket.IO démarré`);
+    console.log(`📡 Port: ${PORT}`);
+    console.log(`🌐 Path: /socket/socket.io`);
+    console.log(`🧊 ICE: /socket/api/ice-servers`);
+});
+
+// Gestion propre de l'arrêt
+process.on('SIGINT', () => {
+    console.log('🛑 Arrêt du serveur...');
+    server.close(() => {
+        console.log('✅ Serveur arrêté');
+        process.exit(0);
+    });
 });
