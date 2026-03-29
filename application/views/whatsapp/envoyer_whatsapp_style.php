@@ -7,6 +7,7 @@ if (!isset($type_envoi)) $type_envoi = 'texte';
 if (!isset($groupes_info)) $groupes_info = array();
 if (!isset($total_groupes)) $total_groupes = 0;
 if (!isset($groupes)) $groupes = array();
+if (!isset($job_id)) $job_id = null;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -69,10 +70,7 @@ if (!isset($groupes)) $groupes = array();
             cursor: pointer;
         }
         
-        .header-icons {
-            display: flex;
-            gap: 8px;
-        }
+        .header-icons { display: flex; gap: 8px; }
         
         .icon-btn {
             width: 40px;
@@ -232,63 +230,28 @@ if (!isset($groupes)) $groupes = array();
         .chat-name { font-size: 16px; font-weight: 500; color: #111b21; }
         .chat-status { font-size: 13px; color: #667781; }
         
-        /* Messages */
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .message-bubble {
-            max-width: 65%;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            position: relative;
-            word-wrap: break-word;
-        }
-        
-        .message-bubble.sent {
-            background: #d9fdd3;
-            align-self: flex-end;
-            border-top-right-radius: 0;
-        }
-        
-        .message-bubble.received {
-            background: #fff;
-            align-self: flex-start;
-            border-top-left-radius: 0;
-            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
-        }
-        
-        .message-text { font-size: 14.2px; line-height: 19px; color: #111b21; }
-        .message-time { font-size: 11px; color: #667781; text-align: right; margin-top: 4px; }
-        
-        /* Upload Progress - Style WhatsApp */
-        .upload-progress-container {
+        /* Upload Progress Overlay */
+        .upload-overlay {
             display: none;
-            background: rgba(0,0,0,0.6);
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
         
-        .upload-progress-container.active { display: flex; }
+        .upload-overlay.active { display: flex; }
         
         .upload-box {
             background: #fff;
             padding: 32px;
             border-radius: 16px;
             text-align: center;
-            min-width: 300px;
+            min-width: 320px;
         }
         
         .upload-spinner {
@@ -340,15 +303,39 @@ if (!isset($groupes)) $groupes = array();
             font-weight: 500;
         }
         
-        .upload-cancel {
-            margin-top: 16px;
-            padding: 8px 24px;
-            border: none;
-            background: transparent;
-            color: #ea0038;
-            cursor: pointer;
-            font-size: 14px;
+        /* Messages */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
+        
+        .message-bubble {
+            max-width: 65%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .message-bubble.sent {
+            background: #d9fdd3;
+            align-self: flex-end;
+            border-top-right-radius: 0;
+        }
+        
+        .message-bubble.received {
+            background: #fff;
+            align-self: flex-start;
+            border-top-left-radius: 0;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+        }
+        
+        .message-text { font-size: 14.2px; line-height: 19px; color: #111b21; }
+        .message-time { font-size: 11px; color: #667781; text-align: right; margin-top: 4px; }
         
         /* Input Area */
         .input-area {
@@ -372,12 +359,12 @@ if (!isset($groupes)) $groupes = array();
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            transition: all 0.2s;
         }
         
         .input-icon-btn:hover { color: #00a884; }
-        .input-icon-btn.recording { 
-            background: #ea0038; 
+        
+        .input-icon-btn.recording {
+            background: #ea0038;
             color: #fff;
             animation: pulse 1s infinite;
         }
@@ -538,35 +525,43 @@ if (!isset($groupes)) $groupes = array();
             color: #008f72;
         }
         
-        /* Empty State */
-        .empty-chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #f8f9fa;
-            border-left: 1px solid #e9edef;
+        /* Result View */
+        .result-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        .empty-icon {
-            width: 300px;
-            height: 200px;
-            opacity: 0.5;
-            margin-bottom: 32px;
-        }
-        
-        .empty-title {
-            font-size: 28px;
-            font-weight: 300;
-            color: #41525d;
-            margin-bottom: 16px;
-        }
-        
-        .empty-text {
-            font-size: 14px;
-            color: #667781;
+        .result-header {
             text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .result-header.success { background: #d9fdd3; color: #008f72; }
+        .result-header.error { background: #ffe4e6; color: #ea0038; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f0f2f5;
+            border-radius: 8px;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00a884;
         }
         
         /* Scrollbar */
@@ -581,19 +576,18 @@ if (!isset($groupes)) $groupes = array();
             top: 70px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
+            z-index: 100;
             padding: 12px 24px;
             border-radius: 8px;
             font-size: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-width: 400px;
         }
     </style>
 </head>
 <body>
 
 <!-- Upload Progress Overlay -->
-<div class="upload-progress-container" id="uploadOverlay">
+<div class="upload-overlay" id="uploadOverlay">
     <div class="upload-box">
         <div class="upload-spinner"></div>
         <div class="upload-title" id="uploadTitle">Envoi en cours...</div>
@@ -602,7 +596,6 @@ if (!isset($groupes)) $groupes = array();
             <div class="upload-fill" id="uploadProgress"></div>
         </div>
         <div class="upload-percent" id="uploadPercent">0%</div>
-        <button class="upload-cancel" onclick="cancelUpload()">Annuler</button>
     </div>
 </div>
 
@@ -656,13 +649,18 @@ if (!isset($groupes)) $groupes = array();
     <div class="chat-area">
         
         <?php if ($resultat !== null): ?>
-            <!-- Résultat -->
+            <!-- AFFICHAGE RÉSULTAT -->
             <div class="chat-header">
                 <div class="chat-header-info">
                     <div class="chat-avatar"><i class="bi bi-check-all"></i></div>
                     <div class="chat-title">
-                        <span class="chat-name">Résultat</span>
-                        <span class="chat-status"><?php echo $reussis ?? 0; ?>/<?php echo $total ?? 0; ?> envoyés</span>
+                        <span class="chat-name">Résultat de l'envoi</span>
+                        <span class="chat-status">
+                            <?php 
+                            $stats = isset($resultat['response']) ? $resultat['response'] : $resultat;
+                            echo ($stats['reussis'] ?? 0) . '/' . ($stats['total'] ?? 0) . ' envoyés';
+                            ?>
+                        </span>
                     </div>
                 </div>
                 <a href="<?php echo site_url('whatsapp/envoyer'); ?>" class="icon-btn">
@@ -670,24 +668,70 @@ if (!isset($groupes)) $groupes = array();
                 </a>
             </div>
             
-            <div class="messages-container">
-                <div class="message-bubble sent" style="align-self: center; background: #fff; max-width: 80%;">
-                    <div style="text-align: center; padding: 20px;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">
-                            <?php echo (($reussis ?? 0) > 0) ? '✅' : '❌'; ?>
+            <div class="messages-container" style="justify-content: center;">
+                <div class="result-container" style="max-width: 600px; align-self: center;">
+                    <?php 
+                    $stats = isset($resultat['response']) ? $resultat['response'] : $resultat;
+                    $success = ($stats['reussis'] ?? 0) > 0;
+                    ?>
+                    <div class="result-header <?php echo $success ? 'success' : 'error'; ?>">
+                        <i class="bi bi-<?php echo $success ? 'check-circle-fill' : 'x-circle-fill'; ?>" style="font-size: 48px;"></i>
+                        <h4 style="margin-top: 16px;">
+                            <?php echo $success ? 'Envoi terminé avec succès' : 'Échec de l\'envoi'; ?>
+                        </h4>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number"><?php echo $stats['total'] ?? 0; ?></div>
+                            <small>Total</small>
                         </div>
-                        <div style="font-size: 20px; font-weight: 500; margin-bottom: 8px;">
-                            <?php echo (($reussis ?? 0) > 0) ? 'Envoi terminé' : 'Échec'; ?>
+                        <div class="stat-item">
+                            <div class="stat-number" style="color: #00a884;"><?php echo $stats['reussis'] ?? 0; ?></div>
+                            <small>Succès</small>
                         </div>
-                        <div style="color: #667781;">
-                            <?php echo $reussis ?? 0; ?> succès, <?php echo $echoues ?? 0; ?> échecs
+                        <div class="stat-item">
+                            <div class="stat-number" style="color: #ea0038;"><?php echo $stats['echoues'] ?? 0; ?></div>
+                            <small>Échecs</small>
                         </div>
                     </div>
+                    
+                    <?php if (!empty($stats['details'])): ?>
+                    <h6 style="margin-bottom: 12px;">Détails par groupe</h6>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #e9edef; border-radius: 8px;">
+                        <?php foreach ($stats['details'] as $detail): 
+                            $isSuccess = (isset($detail['statut']) && $detail['statut'] === 'succès');
+                        ?>
+                        <div style="padding: 12px; border-bottom: 1px solid #f0f2f5; display: flex; align-items: center; gap: 12px;">
+                            <i class="bi bi-<?php echo $isSuccess ? 'check-circle-fill' : 'x-circle-fill'; ?>" 
+                               style="color: <?php echo $isSuccess ? '#00a884' : '#ea0038'; ?>;"></i>
+                            <div style="flex: 1;">
+                                <div style="font-size: 14px; font-weight: 500;">
+                                    <?php 
+                                    $groupe_nom = 'Inconnu';
+                                    foreach ($groupes_info as $g) {
+                                        if ($g['groupe_id'] === $detail['destinataire_id']) {
+                                            $groupe_nom = $g['nom'];
+                                            break;
+                                        }
+                                    }
+                                    echo htmlspecialchars($groupe_nom);
+                                    ?>
+                                </div>
+                                <small style="color: #667781;"><?php echo substr($detail['destinataire_id'], 0, 30); ?>...</small>
+                            </div>
+                            <?php if (!$isSuccess && !empty($detail['erreur'])): ?>
+                            <small style="color: #ea0038;"><?php echo htmlspecialchars($detail['erreur']); ?></small>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             
         <?php else: ?>
-            <!-- Formulaire -->
+            <!-- FORMULAIRE D'ENVOI -->
             <form id="envoiForm" style="display: flex; flex-direction: column; height: 100%;">
                 
                 <div class="chat-header">
@@ -705,13 +749,7 @@ if (!isset($groupes)) $groupes = array();
                     </div>
                 </div>
                 
-                <!-- Alerts -->
-                <?php if ($this->session->flashdata('error')): ?>
-                <div class="alert alert-danger alert-floating">
-                    <?php echo $this->session->flashdata('error'); ?>
-                </div>
-                <?php endif; ?>
-                
+                <!-- Type Selector -->
                 <div class="type-selector">
                     <button type="button" class="type-btn active" onclick="setType('texte', this)" id="btnTexte">
                         <i class="bi bi-chat-text"></i> <span>Message</span>
@@ -774,9 +812,7 @@ if (!isset($groupes)) $groupes = array();
                         <button type="button" class="input-icon-btn" onclick="cancelRecording()" style="color: #ea0038;">
                             <i class="bi bi-trash"></i>
                         </button>
-                        <div class="recording-wave" id="waveContainer">
-                            <!-- Wave bars generated by JS -->
-                        </div>
+                        <div class="recording-wave" id="waveContainer"></div>
                         <div class="recording-time" id="recordingTime">00:00</div>
                         <button type="button" class="input-icon-btn" onclick="stopRecording()" style="color: #00a884;">
                             <i class="bi bi-check-lg"></i>
@@ -801,9 +837,10 @@ let mediaRecorder = null;
 let audioChunks = [];
 let recordingStartTime = null;
 let recordingTimer = null;
-let uploadXHR = null;
+let currentJobId = null;
+let pollInterval = null;
 
-// Initialiser les ondes audio
+// Initialiser
 function initWaveBars() {
     const container = document.getElementById('waveContainer');
     container.innerHTML = '';
@@ -895,7 +932,6 @@ function handleFileSelect(input) {
     document.getElementById('fileName').textContent = selectedFile.name;
     document.getElementById('fileSize').textContent = sizeMB + ' MB';
     
-    // Icône selon type
     const icon = document.getElementById('fileIcon');
     if (selectedFile.type.startsWith('video/')) icon.className = 'bi bi-camera-video-fill';
     else if (selectedFile.type.startsWith('audio/')) icon.className = 'bi bi-mic-fill';
@@ -925,7 +961,7 @@ function updatePreview() {
     }
 }
 
-// ==================== ENREGISTREMENT AUDIO ====================
+// ==================== AUDIO RECORDING ====================
 
 async function startRecording() {
     try {
@@ -941,7 +977,6 @@ async function startRecording() {
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
             const audioFile = new File([audioBlob], 'audio_' + Date.now() + '.webm', { type: 'audio/webm' });
             
-            // Simuler un fichier sélectionné
             const dt = new DataTransfer();
             dt.items.add(audioFile);
             document.getElementById('fileInput').files = dt.files;
@@ -955,19 +990,16 @@ async function startRecording() {
             document.getElementById('normalInput').style.display = 'flex';
             document.getElementById('recordingInterface').classList.remove('active');
             
-            // Arrêter tous les tracks
             stream.getTracks().forEach(track => track.stop());
         };
         
         mediaRecorder.start();
         recordingStartTime = Date.now();
         
-        // UI
         document.getElementById('normalInput').style.display = 'none';
         document.getElementById('recordingInterface').classList.add('active');
         initWaveBars();
         
-        // Timer
         recordingTimer = setInterval(updateRecordingTime, 1000);
         
     } catch (err) {
@@ -1003,7 +1035,7 @@ function cancelRecording() {
     setType('texte', document.getElementById('btnTexte'));
 }
 
-// ==================== ENVOI AVEC PROGRESS ====================
+// ==================== ENVOI ASYNCHRONE ====================
 
 function submitForm() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
@@ -1040,70 +1072,100 @@ function submitForm() {
         formData.append('fichier', file);
     }
     
-    // Envoi avec XMLHttpRequest pour avoir la progression
-    uploadXHR = new XMLHttpRequest();
+    // Envoi avec XMLHttpRequest pour progress
+    const xhr = new XMLHttpRequest();
     
-    uploadXHR.upload.addEventListener('progress', (e) => {
+    xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
-            showUploadProgress(percent);
+            showUploadProgress(percent, 'Upload en cours...');
         }
     });
     
-    uploadXHR.addEventListener('load', () => {
-        if (uploadXHR.status === 200) {
-            // Succès - remplacer le contenu par la réponse
-            document.open();
-            document.write(uploadXHR.responseText);
-            document.close();
+    xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                
+                if (response.success && response.job_id) {
+                    currentJobId = response.job_id;
+                    showUploadProgress(100, 'Traitement en cours...');
+                    startPolling(response.job_id);
+                } else {
+                    hideUploadProgress();
+                    alert('Erreur: ' + (response.error || 'Inconnue'));
+                }
+            } catch (e) {
+                hideUploadProgress();
+                console.error('Réponse:', xhr.responseText);
+                alert('Erreur serveur');
+            }
         } else {
             hideUploadProgress();
-            alert('Erreur serveur: ' + uploadXHR.status);
+            alert('Erreur HTTP: ' + xhr.status);
         }
     });
     
-    uploadXHR.addEventListener('error', () => {
+    xhr.addEventListener('error', () => {
         hideUploadProgress();
-        alert('Erreur réseau pendant l\'envoi');
+        alert('Erreur réseau');
     });
     
-    uploadXHR.addEventListener('abort', () => {
-        hideUploadProgress();
-    });
-    
-    // Démarrer l'upload
-    showUploadProgress(0);
-    uploadXHR.open('POST', '<?php echo site_url('whatsapp/traiter_envoi'); ?>');
-    uploadXHR.send(formData);
+    showUploadProgress(0, 'Démarrage...');
+    xhr.open('POST', '<?php echo site_url('whatsapp/traiter_envoi'); ?>');
+    xhr.send(formData);
 }
 
-function showUploadProgress(percent) {
-    const overlay = document.getElementById('uploadOverlay');
-    const fill = document.getElementById('uploadProgress');
-    const percentText = document.getElementById('uploadPercent');
-    const title = document.getElementById('uploadTitle');
+function startPolling(jobId) {
+    let attempts = 0;
+    const maxAttempts = 300; // 10 minutes max (2s * 300)
     
-    overlay.classList.add('active');
-    fill.style.width = percent + '%';
-    percentText.textContent = percent + '%';
-    
-    if (percent < 100) {
-        title.textContent = 'Envoi en cours...';
-        document.getElementById('uploadText').textContent = 'Ne fermez pas cette page';
-    } else {
-        title.textContent = 'Traitement...';
-        document.getElementById('uploadText').textContent = 'Envoi aux groupes WhatsApp';
-    }
+    pollInterval = setInterval(() => {
+        attempts++;
+        
+        fetch('<?php echo site_url('whatsapp/check_status/'); ?>' + jobId)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    clearInterval(pollInterval);
+                    hideUploadProgress();
+                    alert('Erreur: ' + data.error);
+                    return;
+                }
+                
+                if (data.status === 'completed') {
+                    clearInterval(pollInterval);
+                    // Rediriger vers la page de résultat
+                    window.location.href = '<?php echo site_url('whatsapp/resultat/'); ?>' + jobId;
+                } else {
+                    // En cours
+                    const progress = data.progress || Math.min(50 + attempts, 95);
+                    const text = data.current_group 
+                        ? 'Envoi à ' + data.current_group.substring(0, 20) + '...'
+                        : 'Traitement en cours...';
+                    showUploadProgress(progress, text);
+                }
+            })
+            .catch(err => {
+                console.error('Polling error:', err);
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    hideUploadProgress();
+                    alert('Timeout - vérifiez le statut plus tard');
+                }
+            });
+    }, 2000);
+}
+
+function showUploadProgress(percent, text) {
+    document.getElementById('uploadOverlay').classList.add('active');
+    document.getElementById('uploadProgress').style.width = percent + '%';
+    document.getElementById('uploadPercent').textContent = percent + '%';
+    document.getElementById('uploadTitle').textContent = text;
 }
 
 function hideUploadProgress() {
     document.getElementById('uploadOverlay').classList.remove('active');
-}
-
-function cancelUpload() {
-    if (uploadXHR) {
-        uploadXHR.abort();
-    }
 }
 
 // Auto-resize textarea
