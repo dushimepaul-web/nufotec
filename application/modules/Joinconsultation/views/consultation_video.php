@@ -121,7 +121,7 @@
 <div id="waiting-overlay">
     <div class="waiting-content">
         <div class="spinner"></div>
-        <h3><?= htmlspecialchars($waitingMessage ?? 'En attente du participant...') ?></h3>
+        <h3><?= htmlspecialchars($waitingMessage) ?></h3>
         <p>Préparation de la consultation...</p>
     </div>
 </div>
@@ -133,10 +133,9 @@
 
 <script>
 // Configuration
-const roomId = <?= json_encode($room_id ?? null) ?>;
-const consultationId = <?= json_encode($consultation->id ?? $consultation['id'] ?? null) ?>;
+const roomId = <?= json_encode($room_id) ?>;
+const consultationId = <?= json_encode(is_object($consultation) ? $consultation->id : $consultation['id']) ?>;
 const userName = <?= json_encode(($current_role === 'patient' ? 'Patient' : 'Dr. ') . ($current_user['prenom'] ?? 'Utilisateur')) ?>;
-const waitingMessageText = <?= json_encode($waitingMessage ?? 'En attente du participant...') ?>;
 
 // Éléments DOM
 const leaveBtn = document.getElementById('leave-call');
@@ -172,7 +171,6 @@ async function startCall() {
     console.log('🚀 Démarrage Daily.co...');
     updateStatus('Connexion...', true);
     
-    // Vérifier que roomId existe
     if (!roomId) {
         console.error('❌ Pas de roomId');
         showToast('Erreur: Identifiant de consultation manquant', 'error');
@@ -180,7 +178,6 @@ async function startCall() {
         return;
     }
     
-    // VOTRE DOMAINE Daily.co (vous avez créé nufotec.daily.co)
     const DAILY_DOMAIN = 'nufotec.daily.co';
     const roomUrl = `https://${DAILY_DOMAIN}/${roomId}`;
     
@@ -188,7 +185,6 @@ async function startCall() {
     console.log(`👤 Utilisateur: ${userName}`);
     
     try {
-        // Créer l'iframe Daily.co
         callFrame = DailyIframe.createFrame(dailyContainer, {
             iframeStyle: {
                 position: 'absolute',
@@ -207,14 +203,13 @@ async function startCall() {
             lang: 'fr'
         });
         
-        // Événements
         callFrame.on('joining-meeting', () => {
             console.log('🔄 Connexion au salon...');
             updateStatus('Connexion...', true);
         });
         
         callFrame.on('joined-meeting', (e) => {
-            console.log('✅ Salon rejoint avec succès!', e);
+            console.log('✅ Salon rejoint!', e);
             isConnected = true;
             closeWaitingOverlay();
             updateStatus('En ligne', true);
@@ -230,7 +225,7 @@ async function startCall() {
         callFrame.on('participant-left', (e) => {
             console.log('👤 Participant quitté');
             updateStatus('Hors ligne', false);
-            showToast(`Le participant a quitté`, 'warning');
+            showToast('Le participant a quitté', 'warning');
         });
         
         callFrame.on('left-meeting', () => {
@@ -241,11 +236,10 @@ async function startCall() {
         
         callFrame.on('error', (e) => {
             console.error('❌ Erreur Daily:', e);
-            showToast('Erreur de connexion: ' + (e.errorMsg || 'Vérifiez votre connexion internet'), 'error');
+            showToast('Erreur de connexion: ' + (e.errorMsg || 'Vérifiez votre connexion'), 'error');
             updateStatus('Erreur', false);
         });
         
-        // Rejoindre le salon
         callFrame.join({ url: roomUrl });
         
     } catch (error) {
@@ -255,10 +249,9 @@ async function startCall() {
     }
 }
 
-// Bouton quitter
 if (leaveBtn) {
     leaveBtn.onclick = async () => {
-        if (confirm('Voulez-vous vraiment quitter la consultation ?')) {
+        if (confirm('Quitter la consultation ?')) {
             if (consultationId) {
                 try {
                     await fetch(`/Joinconsultation/endConsultationApi/${consultationId}`, { 
@@ -276,17 +269,14 @@ if (leaveBtn) {
     };
 }
 
-// Démarrer
 startCall();
 
-// Helper debug
 window.debugDaily = () => {
-    console.log('=== DEBUG DAILY ===');
+    console.log('=== DEBUG ===');
     console.log('Connecté:', isConnected);
     console.log('CallFrame:', !!callFrame);
     console.log('Room:', roomId);
     console.log('User:', userName);
-    console.log('Domain:', 'nufotec.daily.co');
 };
 </script>
 </body>
