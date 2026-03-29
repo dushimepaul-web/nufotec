@@ -67,84 +67,95 @@ class Whatsapp extends MY_Controller {
      * Synchronisation des groupes depuis Whapi
      * Récupère les IDs et les noms automatiquement
      */
-   public function synchroniser() {
-    // ACTIVER LES LOGS POUR DEBUG
-    error_log("=== SYNC START ===");
-    
-    // Vérifier que la library est chargée
-    if (!isset($this->whapi_lib)) {
-        $this->load->library('whapi_lib');
-        error_log("Whapi_lib chargé");
-    }
-    
-    // Vérifier la configuration
-    $config = $this->config->item('whapi');
-    error_log("API Key: " . substr($config['api_key'], 0, 10) . "...");
-    error_log("Base URL: " . $config['base_url']);
-    
-    // Tester d'abord la connexion
-    $test = $this->whapi_lib->test_connexion();
-    error_log("Test connexion: " . print_r($test, true));
-    
-    if (!$test['success']) {
-        $error_msg = "Erreur de connexion à Whapi: ";
-        if (isset($test['status_code'])) {
-            $error_msg .= "HTTP " . $test['status_code'];
-        }
-        if (isset($test['error'])) {
-            $error_msg .= " - " . $test['error'];
+    public function synchroniser() {
+        // ACTIVER LES LOGS POUR DEBUG
+        error_log("=== SYNC START ===");
+        
+        // Vérifier que la library est chargée
+        if (!isset($this->whapi_lib)) {
+            $this->load->library('whapi_lib');
+            error_log("Whapi_lib chargé");
         }
         
-        $this->session->set_flashdata('error', $error_msg);
-        error_log($error_msg);
-        redirect('whatsapp/liste_groupes');
-        return;
-    }
-    
-    // Récupérer les groupes
-    $resultat = $this->whapi_lib->get_groupes();
-    error_log("Résultat get_groupes: " . print_r($resultat, true));
-    
-    if (!$resultat['success']) {
-        $error_msg = "Erreur lors de la récupération des groupes: ";
-        if (isset($resultat['status_code'])) {
-            $error_msg .= "HTTP " . $resultat['status_code'] . " - ";
+        // Vérifier la configuration
+        $config = $this->config->item('whapi');
+        if (!$config || empty($config['api_key'])) {
+            $this->session->set_flashdata('error', 'Configuration Whapi manquante');
+            redirect('whatsapp/liste_groupes');
+            return;
         }
-        if (isset($resultat['error'])) {
-            $error_msg .= $resultat['error'];
-        } elseif (isset($resultat['response']['error'])) {
-            $error_msg .= $resultat['response']['error'];
+        
+        error_log("API Key: " . substr($config['api_key'], 0, 10) . "...");
+        error_log("Base URL: " . $config['base_url']);
+        
+        // Tester d'abord la connexion
+        $test = $this->whapi_lib->test_connexion();
+        error_log("Test connexion: " . print_r($test, true));
+        
+        if (!$test['success']) {
+            $error_msg = "Erreur de connexion à Whapi: ";
+            if (isset($test['status_code'])) {
+                $error_msg .= "HTTP " . $test['status_code'];
+            }
+            if (isset($test['error'])) {
+                $error_msg .= " - " . $test['error'];
+            }
+            
+            $this->session->set_flashdata('error', $error_msg);
+            error_log($error_msg);
+            redirect('whatsapp/liste_groupes');
+            return;
+        }
+        
+        // Récupérer les groupes
+        $resultat = $this->whapi_lib->get_groupes();
+        error_log("Résultat get_groupes: " . print_r($resultat, true));
+        
+        if (!$resultat['success']) {
+            $error_msg = "Erreur lors de la récupération des groupes: ";
+            if (isset($resultat['status_code'])) {
+                $error_msg .= "HTTP " . $resultat['status_code'] . " - ";
+            }
+            if (isset($resultat['error'])) {
+                $error_msg .= $resultat['error'];
+            } elseif (isset($resultat['response']['error'])) {
+                $error_msg .= $resultat['response']['error'];
+            } else {
+                $error_msg .= "Erreur inconnue";
+            }
+            
+            $this->session->set_flashdata('error', $error_msg);
+            error_log($error_msg);
+            redirect('whatsapp/liste_groupes');
+            return;
+        }
+        
+        // Traitement du succès - CORRECTION ICI
+        if (isset($resultat['response']['groups']) && is_array($resultat['response']['groups'])) {
+            $compteur = 0;
+            foreach ($resultat['response']['groups'] as $groupe) {
+                // CORRECTION: L'API peut retourner 'name' ou 'subject'
+                $nom_groupe = isset($groupe['name']) ? $groupe['name'] : (isset($groupe['subject']) ? $groupe['subject'] : 'Groupe sans nom');
+                $description = isset($groupe['description']) ? $groupe['description'] : (isset($groupe['desc']) ? $groupe['desc'] : '');
+                
+                $this->Groupe_model->sauvegarder(
+                    $groupe['id'],
+                    $nom_groupe,
+                    $description
+                );
+                $compteur++;
+            }
+            
+            $this->session->set_flashdata('success', $compteur . ' groupes synchronisés avec succès');
+            error_log("$compteur groupes synchronisés");
         } else {
-            $error_msg .= "Erreur inconnue";
+            $this->session->set_flashdata('warning', 'Aucun groupe trouvé sur votre compte WhatsApp');
+            error_log("Aucun groupe trouvé");
         }
         
-        $this->session->set_flashdata('error', $error_msg);
-        error_log($error_msg);
         redirect('whatsapp/liste_groupes');
-        return;
     }
     
-    // Traitement du succès
-    if (isset($resultat['response']['groups'])) {
-        $compteur = 0;
-        foreach ($resultat['response']['groups'] as $groupe) {
-            $this->Groupe_model->sauvegarder(
-                $groupe['id'],
-                $groupe['nom'],
-                $groupe['description'] ?? ''
-            );
-            $compteur++;
-        }
-        
-        $this->session->set_flashdata('success', $compteur . ' groupes synchronisés avec succès');
-        error_log("$compteur groupes synchronisés");
-    } else {
-        $this->session->set_flashdata('warning', 'Aucun groupe trouvé sur votre compte WhatsApp');
-        error_log("Aucun groupe trouvé");
-    }
-    
-    redirect('whatsapp/liste_groupes');
-}
     /**
      * API: Récupère la liste des groupes (JSON)
      */
@@ -156,82 +167,115 @@ class Whatsapp extends MY_Controller {
             ->set_output(json_encode($groupes, JSON_PRETTY_PRINT));
     }
 
-   public function test_direct() {
-    echo "<h1>Test direct Whapi</h1>";
-    
-    // Afficher la configuration
-    $config = $this->config->item('whapi');
-    echo "<h3>Configuration:</h3>";
-    echo "<pre>";
-    echo "API Key: " . substr($config['api_key'], 0, 10) . "..." . substr($config['api_key'], -5) . "\n";
-    echo "Base URL: " . $config['base_url'] . "\n";
-    echo "</pre>";
-    
-    // Test avec cURL simple
-    echo "<h3>Test cURL simple vers health:</h3>";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://gate.whapi.cloud/health');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Accept: application/json',
-        'Authorization: Bearer ' . $config['api_key']
-    ]);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
-    
-    echo "HTTP Code: " . $http_code . "<br>";
-    if ($error) {
-        echo "Erreur cURL: " . $error . "<br>";
-    } else {
-        echo "Réponse: " . $response . "<br>";
-        $data = json_decode($response, true);
-        if ($data) {
-            echo "<pre>";
-            print_r($data);
-            echo "</pre>";
-        }
-    }
-    
-    // Test de récupération des groupes
-    echo "<h3>Test récupération groupes:</h3>";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://gate.whapi.cloud/groups');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Accept: application/json',
-        'Authorization: Bearer ' . $config['api_key']
-    ]);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
-    
-    echo "HTTP Code: " . $http_code . "<br>";
-    if ($error) {
-        echo "Erreur cURL: " . $error . "<br>";
-    } else {
-        echo "Réponse reçue (" . strlen($response) . " bytes)<br>";
-        $data = json_decode($response, true);
-        if ($data && isset($data['groups'])) {
-            echo "<h4>Groupes trouvés: " . count($data['groups']) . "</h4>";
-            echo "<pre>";
-            foreach ($data['groups'] as $g) {
-                echo "- " . $g['nom'] . " (" . $g['id'] . ")\n";
-            }
-            echo "</pre>";
+    public function test_direct() {
+        // Nettoyer le buffer de sortie
+        ob_clean();
+        
+        echo "<h1>Test direct Whapi</h1>";
+        
+        // Afficher la configuration
+        $config = $this->config->item('whapi');
+        echo "<h3>Configuration:</h3>";
+        echo "<pre>";
+        echo "API Key: " . substr($config['api_key'], 0, 10) . "..." . substr($config['api_key'], -5) . "\n";
+        echo "Base URL: " . $config['base_url'] . "\n";
+        echo "</pre>";
+        
+        // Test avec cURL simple
+        echo "<h3>Test cURL simple vers health:</h3>";
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://gate.whapi.cloud/health');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $config['api_key']
+        ]);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        echo "HTTP Code: " . $http_code . "<br>";
+        if ($error) {
+            echo "Erreur cURL: " . $error . "<br>";
         } else {
-            echo "<pre>";
-            print_r($data);
-            echo "</pre>";
+            echo "Réponse: " . $response . "<br>";
+            $data = json_decode($response, true);
+            if ($data) {
+                echo "<pre>";
+                print_r($data);
+                echo "</pre>";
+            }
         }
+        
+        // Test de récupération des groupes
+        echo "<h3>Test récupération groupes:</h3>";
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://gate.whapi.cloud/groups');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $config['api_key']
+        ]);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        echo "HTTP Code: " . $http_code . "<br>";
+        if ($error) {
+            echo "Erreur cURL: " . $error . "<br>";
+        } else {
+            echo "Réponse reçue (" . strlen($response) . " bytes)<br>";
+            $data = json_decode($response, true);
+            if ($data && isset($data['groups'])) {
+                echo "<h4>Groupes trouvés: " . count($data['groups']) . "</h4>";
+                echo "<pre>";
+                foreach ($data['groups'] as $g) {
+                    // CORRECTION: Utiliser 'name' ou 'subject'
+                    $nom = isset($g['name']) ? $g['name'] : (isset($g['subject']) ? $g['subject'] : 'Sans nom');
+                    echo "- " . $nom . " (" . $g['id'] . ")\n";
+                }
+                echo "</pre>";
+            } else {
+                echo "<pre>";
+                print_r($data);
+                echo "</pre>";
+            }
+        }
+        
+        exit; // Arrêter l'exécution pour éviter les headers already sent
     }
-}
+    
+    /**
+     * Ajouter une méthode pour voir le contenu de la table
+     */
+    public function voir_groupes() {
+        $groupes = $this->Groupe_model->get_all_groupes();
+        
+        echo "<h1>Groupes en base de données</h1>";
+        echo "<table border='1' cellpadding='10'>";
+        echo "<tr><th>ID</th><th>Groupe ID (WhatsApp)</th><th>Nom</th><th>Description</th><th>Actif</th></tr>";
+        
+        foreach ($groupes as $g) {
+            echo "<tr>";
+            echo "<td>" . $g['id'] . "</td>";
+            echo "<td>" . htmlspecialchars($g['groupe_id']) . "</td>";
+            echo "<td>" . htmlspecialchars($g['nom']) . "</td>";
+            echo "<td>" . htmlspecialchars($g['description']) . "</td>";
+            echo "<td>" . ($g['actif'] ? 'Oui' : 'Non') . "</td>";
+            echo "</tr>";
+        }
+        
+        echo "</table>";
+        echo "<p>Total: " . count($groupes) . " groupes</p>";
+        echo "<br><a href='" . site_url('whatsapp/liste_groupes') . "'>Retour à la liste</a>";
+        exit;
+    }
 }

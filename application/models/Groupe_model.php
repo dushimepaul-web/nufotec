@@ -132,4 +132,16 @@ class Groupe_model extends CI_Model {
         $query = $this->db->get($this->table);
         return $query->result_array();
     }
+
+    public function sauvegarder($groupe_id, $nom, $description = '') {
+    $data = array(
+        'groupe_id' => $groupe_id,
+        'nom' => $nom,
+        'description' => $description,
+        'actif' => 1
+    );
+    
+    $this->db->replace($this->table, $data);
+    return $this->db->insert_id();
+}
 }
