@@ -4,37 +4,107 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Whatsapp extends MY_Controller {
     
     private $jobs_dir;
-    private $uploads_dir;
+    private $chunks_dir;
     private $chunk_size = 1572864; // 1.5 MB exactement
     
     public function __construct() {
         parent::__construct();
         $this->load->library('whapi_lib');
         $this->load->model('Groupe_model');
-        $this->load->helper(array('form', 'url', 'file'));
-        $this->load->library('upload');
+        $this->load->helper(['form', 'url', 'file']);
         
         // Dossiers
         $this->jobs_dir = FCPATH . 'uploads/jobs/';
-        $this->uploads_dir = FCPATH . 'uploads/chunks/';
+        $this->chunks_dir = FCPATH . 'uploads/chunks/';
         
-        foreach ([$this->jobs_dir, $this->uploads_dir] as $dir) {
+        foreach ([$this->jobs_dir, $this->chunks_dir] as $dir) {
             if (!is_dir($dir)) mkdir($dir, 0777, true);
         }
         
-        // Limites serveur - illimité pour les chunks
-        ini_set('max_execution_time', 0); // 0 = illimité
-        ini_set('memory_limit', '512M');
-        ini_set('post_max_size', '2M'); // Seulement 2M nécessaire pour un chunk
-        ini_set('upload_max_filesize', '2M'); // 2M pour un chunk
+        // Configuration serveur pour chunks
+        ini_set('max_execution_time', 0); // Illimité
+        ini_set('memory_limit', '256M');
+        ini_set('post_max_size', '2M'); // 2M suffit pour un chunk
+        ini_set('upload_max_filesize', '2M');
     }
     
-    // ... méthodes existantes (index, groupes, synchroniser, envoyer) ...
+    /**
+     * Dashboard
+     */
+    public function index() {
+        $data['stats'] = [
+            'total_groupes' => $this->Groupe_model->compter_groupes(),
+            'groupes_actifs' => count($this->Groupe_model->get_all_groupes()),
+            'jobs_en_cours' => count(glob($this->jobs_dir . 'job_*.json'))
+        ];
+        $this->load->view('whatsapp/dashboard', $data);
+    }
     
     /**
-     * Initialiser un upload chunked
+     * Liste des groupes
      */
-    public function init_upload() {
+    public function groupes() {
+        $data['groupes'] = $this->Groupe_model->get_all_groupes();
+        $data['total'] = count($data['groupes']);
+        $data['api_status'] = $this->whapi_lib->test_connexion();
+        $this->load->view('whatsapp/groupes_liste', $data);
+    }
+    
+    /**
+     * Synchroniser avec Whapi
+     */
+    public function synchroniser() {
+        $config = $this->config->item('whapi');
+        if (empty($config['api_key'])) {
+            $this->session->set_flashdata('error', 'Configuration Whapi manquante');
+            redirect('whatsapp/groupes');
+            return;
+        }
+        
+        $test = $this->whapi_lib->test_connexion();
+        if (!$test['success']) {
+            $this->session->set_flashdata('error', 'Erreur connexion Whapi: ' . ($test['error'] ?? 'Inconnu'));
+            redirect('whatsapp/groupes');
+            return;
+        }
+        
+        $resultat = $this->whapi_lib->get_groupes();
+        
+        if (!$resultat['success']) {
+            $this->session->set_flashdata('error', 'Erreur récupération groupes');
+            redirect('whatsapp/groupes');
+            return;
+        }
+        
+        $groupes = $resultat['response']['groups'] ?? [];
+        $compteur = 0;
+        
+        foreach ($groupes as $groupe) {
+            $nom = $groupe['name'] ?? $groupe['subject'] ?? 'Groupe sans nom';
+            $this->Groupe_model->sauvegarder($groupe['id'], $nom, $groupe['description'] ?? '');
+            $compteur++;
+        }
+        
+        $this->session->set_flashdata('success', "$compteur groupes synchronisés avec Whapi");
+        redirect('whatsapp/groupes');
+    }
+    
+    /**
+     * Interface d'envoi
+     */
+    public function envoyer() {
+        $data['groupes'] = $this->Groupe_model->get_all_groupes();
+        $data['total_groupes'] = count($data['groupes']);
+        $data['resultat'] = null;
+        $this->load->view('whatsapp/envoyer_whatsapp_style', $data);
+    }
+    
+    // ==================== UPLOAD PAR CHUNKS ====================
+    
+    /**
+     * Étape 1: Initialiser l'upload
+     */
+    public function init_chunk_upload() {
         header('Content-Type: application/json');
         
         $input = json_decode(file_get_contents('php://input'), true);
@@ -45,10 +115,10 @@ class Whatsapp extends MY_Controller {
         }
         
         $upload_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $input['upload_id']);
-        $upload_dir = $this->uploads_dir . $upload_id . '/';
+        $upload_dir = $this->chunks_dir . $upload_id . '/';
         
         if (!mkdir($upload_dir, 0777, true)) {
-            echo json_encode(['success' => false, 'error' => 'Impossible de créer le dossier']);
+            echo json_encode(['success' => false, 'error' => 'Impossible de créer le dossier temporaire']);
             return;
         }
         
@@ -68,24 +138,23 @@ class Whatsapp extends MY_Controller {
         
         file_put_contents($upload_dir . 'meta.json', json_encode($meta));
         
-        log_message('debug', 'Upload initié: ' . $upload_id . ' - ' . $input['total_chunks'] . ' chunks attendus');
+        log_message('info', "Whapi Upload initié: $upload_id - {$input['total_chunks']} chunks, " . 
+                   round($input['filesize']/1024/1024, 2) . " MB");
         
         echo json_encode(['success' => true, 'upload_id' => $upload_id]);
     }
     
     /**
-     * Recevoir un chunk
+     * Étape 2: Recevoir un chunk
      */
     public function upload_chunk() {
         header('Content-Type: application/json');
         
-        $upload_id = $this->input->post('upload_id');
+        $upload_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $this->input->post('upload_id'));
         $chunk_index = (int)$this->input->post('chunk_index');
         $total_chunks = (int)$this->input->post('total_chunks');
         
-        // Nettoyer l'ID
-        $upload_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $upload_id);
-        $upload_dir = $this->uploads_dir . $upload_id . '/';
+        $upload_dir = $this->chunks_dir . $upload_id . '/';
         
         if (!is_dir($upload_dir)) {
             echo json_encode(['success' => false, 'error' => 'Upload non trouvé']);
@@ -93,8 +162,9 @@ class Whatsapp extends MY_Controller {
         }
         
         // Vérifier le chunk
-        if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-            $error = isset($_FILES['chunk']) ? $_FILES['chunk']['error'] : 'Aucun fichier';
+        if (empty($_FILES['chunk_data']) || $_FILES['chunk_data']['error'] !== UPLOAD_ERR_OK) {
+            $error = isset($_FILES['chunk_data']) ? $this->get_upload_error($_FILES['chunk_data']['error']) : 'Aucun fichier';
+            log_message('error', "Chunk error: $error");
             echo json_encode(['success' => false, 'error' => 'Chunk invalide: ' . $error]);
             return;
         }
@@ -102,34 +172,41 @@ class Whatsapp extends MY_Controller {
         // Sauvegarder le chunk
         $chunk_path = $upload_dir . 'chunk_' . $chunk_index . '.part';
         
-        if (!move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
+        if (!move_uploaded_file($_FILES['chunk_data']['tmp_name'], $chunk_path)) {
             echo json_encode(['success' => false, 'error' => 'Erreur sauvegarde chunk']);
             return;
         }
+        
+        // Vérifier la taille
+        $chunk_size = filesize($chunk_path);
         
         // Mettre à jour les métadonnées
         $meta_path = $upload_dir . 'meta.json';
         $meta = json_decode(file_get_contents($meta_path), true);
         $meta['received_chunks'][] = $chunk_index;
+        $meta['received_chunks'] = array_unique($meta['received_chunks']);
+        sort($meta['received_chunks']);
         file_put_contents($meta_path, json_encode($meta));
         
-        log_message('debug', 'Chunk reçu: ' . $upload_id . ' - chunk ' . ($chunk_index + 1) . '/' . $total_chunks);
+        log_message('debug', "Chunk reçu: $upload_id - chunk " . ($chunk_index + 1) . "/$total_chunks (" . 
+                   round($chunk_size/1024, 2) . " KB)");
         
         echo json_encode([
             'success' => true, 
             'chunk' => $chunk_index + 1,
-            'total' => $total_chunks
+            'total' => $total_chunks,
+            'received' => count($meta['received_chunks'])
         ]);
     }
     
     /**
-     * Finaliser l'upload et créer le job
+     * Étape 3: Finaliser et envoyer via Whapi
      */
-    public function finalize_upload() {
+    public function finalize_and_send() {
         header('Content-Type: application/json');
         
         $upload_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $this->input->post('upload_id'));
-        $upload_dir = $this->uploads_dir . $upload_id . '/';
+        $upload_dir = $this->chunks_dir . $upload_id . '/';
         
         if (!is_dir($upload_dir)) {
             echo json_encode(['success' => false, 'error' => 'Upload non trouvé']);
@@ -137,13 +214,13 @@ class Whatsapp extends MY_Controller {
         }
         
         // Lire les métadonnées
-        $meta_path = $upload_dir . 'meta.json';
-        $meta = json_decode(file_get_contents($meta_path), true);
+        $meta = json_decode(file_get_contents($upload_dir . 'meta.json'), true);
         
         // Assembler les chunks
-        $final_path = $this->jobs_dir . $upload_id . '_' . $meta['filename'];
-        $out = fopen($final_path, 'wb');
+        $final_filename = $upload_id . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $meta['filename']);
+        $final_path = $this->jobs_dir . $final_filename;
         
+        $out = fopen($final_path, 'wb');
         if (!$out) {
             echo json_encode(['success' => false, 'error' => 'Impossible de créer le fichier final']);
             return;
@@ -155,7 +232,7 @@ class Whatsapp extends MY_Controller {
             if (!file_exists($chunk_path)) {
                 fclose($out);
                 unlink($final_path);
-                echo json_encode(['success' => false, 'error' => 'Chunk manquant: ' . $i]);
+                echo json_encode(['success' => false, 'error' => 'Chunk manquant: ' . ($i + 1)]);
                 return;
             }
             
@@ -164,17 +241,14 @@ class Whatsapp extends MY_Controller {
         
         fclose($out);
         
-        // Vérifier la taille
         $final_size = filesize($final_path);
-        if ($final_size != $meta['filesize']) {
-            log_message('warning', 'Taille finale différente: attendu ' . $meta['filesize'] . ', reçu ' . $final_size);
-        }
+        log_message('info', "Fichier assemblé: $final_path (" . round($final_size/1024/1024, 2) . " MB)");
         
         // Nettoyer les chunks
         array_map('unlink', glob($upload_dir . '*'));
         rmdir($upload_dir);
         
-        // Créer le job
+        // Créer le job et lancer l'envoi Whapi
         $job_id = 'job_' . $upload_id;
         
         $job = [
@@ -189,7 +263,7 @@ class Whatsapp extends MY_Controller {
                 'size' => $final_size,
                 'type' => $meta['filetype']
             ],
-            'status' => 'pending',
+            'status' => 'processing',
             'progress' => 0,
             'current_group' => null,
             'result' => [
@@ -204,10 +278,8 @@ class Whatsapp extends MY_Controller {
         
         $this->save_job($job_id, $job);
         
-        // Lancer le traitement en arrière-plan
+        // Lancer le traitement asynchrone
         $this->process_job_async($job_id);
-        
-        log_message('debug', 'Upload finalisé: ' . $job_id . ' - Taille: ' . ($final_size/1024/1024) . ' MB');
         
         echo json_encode([
             'success' => true,
@@ -217,27 +289,92 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * Traiter l'envoi (modifié pour supporter chunked)
+     * Traitement asynchrone de l'envoi Whapi
+     */
+    private function process_job_async($job_id) {
+        $job = $this->get_job($job_id);
+        if (!$job) return;
+        
+        $groupes_ids = $job['groupes_ids'];
+        $message = $job['message'];
+        $type_envoi = $job['type_envoi'];
+        $file_info = $job['file_info'];
+        
+        $filepath = $file_info ? $file_info['path'] : null;
+        
+        foreach ($groupes_ids as $index => $groupe_id) {
+            // Mettre à jour la progression
+            $job['current_group'] = $groupe_id;
+            $job['progress'] = round((($index + 1) / count($groupes_ids)) * 100);
+            $job['updated_at'] = date('Y-m-d H:i:s');
+            $this->save_job($job_id, $job);
+            
+            $success = false;
+            $error = null;
+            
+            try {
+                if ($type_envoi === 'texte') {
+                    $result = $this->whapi_lib->envoyer_message($groupe_id, $message);
+                } else {
+                    // Envoi fichier via Whapi
+                    $result = $this->whapi_lib->envoyer_fichier($groupe_id, $filepath, $message);
+                }
+                
+                $success = $result['success'] ?? false;
+                if (!$success) {
+                    $error = $result['error'] ?? 'Erreur inconnue';
+                    log_message('error', "Whapi erreur pour $groupe_id: " . $error);
+                } else {
+                    log_message('info', "Message envoyé à $groupe_id via Whapi");
+                }
+                
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                log_message('error', "Exception pour $groupe_id: " . $error);
+            }
+            
+            // Mettre à jour le résultat
+            if ($success) {
+                $job['result']['reussis']++;
+            } else {
+                $job['result']['echoues']++;
+            }
+            
+            $job['result']['details'][] = [
+                'destinataire_id' => $groupe_id,
+                'statut' => $success ? 'succès' : 'échec',
+                'erreur' => $error,
+                'index' => $index + 1
+            ];
+            
+            $this->save_job($job_id, $job);
+            
+            // Délai entre les envois (respecter les limites Whapi)
+            if ($index < count($groupes_ids) - 1) {
+                usleep(1000000); // 1 seconde entre chaque groupe
+            }
+        }
+        
+        // Finaliser
+        $job['status'] = 'completed';
+        $job['progress'] = 100;
+        $job['current_group'] = null;
+        $job['updated_at'] = date('Y-m-d H:i:s');
+        $this->save_job($job_id, $job);
+        
+        // Nettoyer le fichier après envoi
+        if ($filepath && file_exists($filepath)) {
+            @unlink($filepath);
+            log_message('info', "Fichier nettoyé: $filepath");
+        }
+    }
+    
+    /**
+     * Envoi texte simple (sans chunks)
      */
     public function traiter_envoi() {
         header('Content-Type: application/json');
         
-        $is_chunked = $this->input->post('is_chunked');
-        
-        // Si c'est un envoi chunked, il est déjà géré par finalize_upload
-        if ($is_chunked === 'false' || $is_chunked === false) {
-            $this->traiter_envoi_simple();
-            return;
-        }
-        
-        // Ancienne méthode pour compatibilité
-        $this->traiter_envoi_ancien();
-    }
-    
-    /**
-     * Traiter envoi simple (texte uniquement)
-     */
-    private function traiter_envoi_simple() {
         $groupes_ids = $this->input->post('groupes_ids');
         $message = trim($this->input->post('message') ?? '');
         $type_envoi = $this->input->post('type_envoi') ?: 'texte';
@@ -261,7 +398,7 @@ class Whatsapp extends MY_Controller {
             'type_envoi' => $type_envoi,
             'delai' => 1000,
             'file_info' => null,
-            'status' => 'pending',
+            'status' => 'processing',
             'progress' => 0,
             'result' => [
                 'total' => count($groupes_ids),
@@ -284,39 +421,106 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * Ancienne méthode (conservée pour compatibilité)
+     * Vérifier le statut d'un job
      */
-    private function traiter_envoi_ancien() {
-        // ... votre ancien code traiter_envoi ici ...
-        // Mais il ne devrait plus être utilisé
+    public function check_status($job_id = null) {
+        header('Content-Type: application/json');
+        
+        $job_id = $job_id ?? $this->input->get('job_id');
+        
+        if (!$job_id) {
+            echo json_encode(['success' => false, 'error' => 'Job ID manquant']);
+            return;
+        }
+        
+        $job = $this->get_job($job_id);
+        
+        if (!$job) {
+            echo json_encode(['success' => false, 'error' => 'Job non trouvé']);
+            return;
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'job_id' => $job_id,
+            'status' => $job['status'],
+            'progress' => $job['progress'],
+            'current_group' => $job['current_group'],
+            'result' => $job['status'] === 'completed' ? $job['result'] : null
+        ]);
     }
     
-    // ... reste des méthodes (process_job_async, check_status, resultat, etc.) ...
+    /**
+     * Afficher le résultat
+     */
+    public function resultat($job_id = null) {
+        $job_id = $job_id ?? $this->input->get('job_id');
+        
+        $data['groupes'] = $this->Groupe_model->get_all_groupes();
+        $data['resultat'] = null;
+        $data['job_id'] = $job_id;
+        
+        if ($job_id) {
+            $job = $this->get_job($job_id);
+            if ($job && $job['status'] === 'completed') {
+                $data['resultat'] = [
+                    'success' => ($job['result']['reussis'] ?? 0) > 0,
+                    'status_code' => 200,
+                    'response' => $job['result']
+                ];
+                $data['message'] = $job['message'];
+                $data['type_envoi'] = $job['type_envoi'];
+            }
+        }
+        
+        $this->load->view('whatsapp/envoyer_whatsapp_style', $data);
+    }
+    
+    // ==================== HELPERS ====================
+    
+    private function save_job($job_id, $job) {
+        file_put_contents($this->jobs_dir . $job_id . '.json', json_encode($job, JSON_PRETTY_PRINT));
+    }
+    
+    private function get_job($job_id) {
+        $file = $this->jobs_dir . $job_id . '.json';
+        return file_exists($file) ? json_decode(file_get_contents($file), true) : null;
+    }
+    
+    private function get_upload_error($code) {
+        $errors = [
+            UPLOAD_ERR_INI_SIZE => 'Fichier trop gros (php.ini)',
+            UPLOAD_ERR_FORM_SIZE => 'Fichier trop gros (formulaire)',
+            UPLOAD_ERR_PARTIAL => 'Upload partiel',
+            UPLOAD_ERR_NO_FILE => 'Aucun fichier',
+            UPLOAD_ERR_NO_TMP_DIR => 'Pas de dossier temporaire',
+            UPLOAD_ERR_CANT_WRITE => 'Erreur écriture',
+            UPLOAD_ERR_EXTENSION => 'Extension bloquée'
+        ];
+        return $errors[$code] ?? "Erreur $code";
+    }
     
     /**
-     * Cleanup amélioré
+     * Nettoyage automatique
      */
-    public function cleanup_jobs() {
-        // Nettoyer les vieux jobs
-        $files = glob($this->jobs_dir . '*');
+    public function cleanup() {
         $now = time();
         $deleted = 0;
         
-        foreach ($files as $file) {
-            if (is_file($file) && $now - filemtime($file) > 86400) {
+        // Jobs vieux de +24h
+        foreach (glob($this->jobs_dir . '*.json') as $file) {
+            if ($now - filemtime($file) > 86400) {
                 unlink($file);
                 $deleted++;
             }
         }
         
-        // Nettoyer les uploads incomplèts
-        $upload_dirs = glob($this->uploads_dir . '*', GLOB_ONLYDIR);
-        foreach ($upload_dirs as $dir) {
-            $meta_file = $dir . '/meta.json';
-            if (file_exists($meta_file)) {
-                $meta = json_decode(file_get_contents($meta_file), true);
-                // Supprimer si plus vieux que 2 heures
-                if ($now - $meta['created_at'] > 7200) {
+        // Uploads incomplèts vieux de +2h
+        foreach (glob($this->chunks_dir . '*', GLOB_ONLYDIR) as $dir) {
+            $meta = $dir . '/meta.json';
+            if (file_exists($meta)) {
+                $data = json_decode(file_get_contents($meta), true);
+                if ($now - $data['created_at'] > 7200) {
                     array_map('unlink', glob($dir . '/*'));
                     rmdir($dir);
                     $deleted++;
@@ -324,6 +528,6 @@ class Whatsapp extends MY_Controller {
             }
         }
         
-        echo "Nettoyé: $deleted fichiers/dossiers";
+        echo "Nettoyé: $deleted éléments";
     }
 }

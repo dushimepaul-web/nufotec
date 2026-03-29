@@ -1,6 +1,5 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); 
 
-// Définir les variables par défaut
 if (!isset($resultat)) $resultat = null;
 if (!isset($message)) $message = '';
 if (!isset($type_envoi)) $type_envoi = 'texte';
@@ -14,7 +13,7 @@ if (!isset($job_id)) $job_id = null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp</title>
+    <title>WhatsApp - Diffusion Groupes</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -36,7 +35,6 @@ if (!isset($job_id)) $job_id = null;
             box-shadow: 0 1px 1px 0 rgba(0,0,0,0.06), 0 2px 5px 0 rgba(0,0,0,0.2);
         }
         
-        /* Sidebar */
         .sidebar {
             width: 30%;
             min-width: 300px;
@@ -61,13 +59,12 @@ if (!isset($job_id)) $job_id = null;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #dfe5e7;
+            background: #00a884;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #54656f;
+            color: #fff;
             font-size: 20px;
-            cursor: pointer;
         }
         
         .header-icons { display: flex; gap: 8px; }
@@ -135,7 +132,7 @@ if (!isset($job_id)) $job_id = null;
             width: 49px;
             height: 49px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #00bfa5, #00897b);
+            background: linear-gradient(135deg, #00a884, #008f72);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -156,7 +153,7 @@ if (!isset($job_id)) $job_id = null;
         
         .conversation-name {
             font-size: 16px;
-            font-weight: 400;
+            font-weight: 500;
             color: #111b21;
             white-space: nowrap;
             overflow: hidden;
@@ -165,28 +162,14 @@ if (!isset($job_id)) $job_id = null;
         
         .conversation-time { font-size: 12px; color: #667781; }
         
-        .conversation-preview {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .conversation-message {
-            font-size: 14px;
-            color: #667781;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
         .checkbox-select {
             width: 18px;
             height: 18px;
             margin-right: 12px;
             accent-color: #00a884;
+            cursor: pointer;
         }
         
-        /* Chat Area */
         .chat-area {
             flex: 1;
             display: flex;
@@ -218,7 +201,7 @@ if (!isset($job_id)) $job_id = null;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #00bfa5, #00897b);
+            background: linear-gradient(135deg, #00a884, #008f72);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -227,10 +210,10 @@ if (!isset($job_id)) $job_id = null;
         }
         
         .chat-title { display: flex; flex-direction: column; }
-        .chat-name { font-size: 16px; font-weight: 500; color: #111b21; }
+        .chat-name { font-size: 16px; font-weight: 600; color: #111b21; }
         .chat-status { font-size: 13px; color: #667781; }
         
-        /* Upload Progress Overlay */
+        /* Upload Overlay Style WhatsApp */
         .upload-overlay {
             display: none;
             position: absolute;
@@ -238,40 +221,40 @@ if (!isset($job_id)) $job_id = null;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.85);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
         }
         
         .upload-overlay.active { display: flex; }
         
         .upload-box {
             background: #fff;
-            padding: 32px;
-            border-radius: 16px;
+            padding: 40px;
+            border-radius: 20px;
             text-align: center;
-            min-width: 320px;
+            min-width: 350px;
+            max-width: 90%;
         }
         
-        .upload-spinner {
-            width: 64px;
-            height: 64px;
-            border: 4px solid #f0f2f5;
-            border-top: 4px solid #00a884;
+        .upload-icon {
+            width: 80px;
+            height: 80px;
+            background: #e7fce3;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            color: #00a884;
+            font-size: 40px;
         }
         
         .upload-title {
-            font-size: 20px;
-            font-weight: 500;
+            font-size: 22px;
+            font-weight: 600;
             color: #111b21;
             margin-bottom: 8px;
         }
@@ -279,7 +262,15 @@ if (!isset($job_id)) $job_id = null;
         .upload-text {
             font-size: 14px;
             color: #667781;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .upload-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #667781;
+            margin-bottom: 8px;
         }
         
         .upload-bar {
@@ -294,14 +285,27 @@ if (!isset($job_id)) $job_id = null;
             height: 100%;
             background: #00a884;
             width: 0%;
-            transition: width 0.3s;
+            transition: width 0.3s ease;
         }
         
         .upload-percent {
-            font-size: 14px;
+            font-size: 16px;
             color: #00a884;
-            font-weight: 500;
+            font-weight: 600;
         }
+        
+        .upload-cancel {
+            margin-top: 20px;
+            padding: 10px 24px;
+            border: none;
+            background: #f0f2f5;
+            color: #54656f;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .upload-cancel:hover { background: #e9edef; }
         
         /* Messages */
         .messages-container {
@@ -325,13 +329,6 @@ if (!isset($job_id)) $job_id = null;
             background: #d9fdd3;
             align-self: flex-end;
             border-top-right-radius: 0;
-        }
-        
-        .message-bubble.received {
-            background: #fff;
-            align-self: flex-start;
-            border-top-left-radius: 0;
-            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
         }
         
         .message-text { font-size: 14.2px; line-height: 19px; color: #111b21; }
@@ -362,17 +359,6 @@ if (!isset($job_id)) $job_id = null;
         }
         
         .input-icon-btn:hover { color: #00a884; }
-        
-        .input-icon-btn.recording {
-            background: #ea0038;
-            color: #fff;
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
         
         .message-input-wrapper {
             flex: 1;
@@ -410,46 +396,6 @@ if (!isset($job_id)) $job_id = null;
         
         .send-btn:hover { background: #008f72; }
         .send-btn:disabled { background: #8696a0; cursor: not-allowed; }
-        
-        /* Audio Recording */
-        .audio-recording {
-            display: none;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-            background: #fff;
-            border-radius: 8px;
-            padding: 8px 16px;
-        }
-        
-        .audio-recording.active { display: flex; }
-        
-        .recording-wave {
-            flex: 1;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-        
-        .wave-bar {
-            width: 3px;
-            background: #ea0038;
-            border-radius: 2px;
-            animation: wave 0.5s ease-in-out infinite;
-        }
-        
-        @keyframes wave {
-            0%, 100% { height: 10%; }
-            50% { height: 100%; }
-        }
-        
-        .recording-time {
-            font-size: 14px;
-            color: #ea0038;
-            font-weight: 500;
-            min-width: 50px;
-        }
         
         /* File Preview */
         .file-preview-area {
@@ -570,17 +516,14 @@ if (!isset($job_id)) $job_id = null;
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         
-        /* Debug info */
-        .debug-info {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.8);
+        /* Group Counter Badge */
+        .group-counter {
+            background: #00a884;
             color: #fff;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 2px 8px;
+            border-radius: 12px;
             font-size: 12px;
-            display: none;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -589,30 +532,34 @@ if (!isset($job_id)) $job_id = null;
 <!-- Upload Progress Overlay -->
 <div class="upload-overlay" id="uploadOverlay">
     <div class="upload-box">
-        <div class="upload-spinner"></div>
+        <div class="upload-icon" id="uploadIcon">
+            <i class="bi bi-cloud-arrow-up"></i>
+        </div>
         <div class="upload-title" id="uploadTitle">Envoi en cours...</div>
-        <div class="upload-text" id="uploadText">Ne fermez pas cette page</div>
+        <div class="upload-text" id="uploadText">Préparation du fichier</div>
+        <div class="upload-stats">
+            <span id="uploadChunkInfo">0 / 0 MB</span>
+            <span id="uploadSpeed">0 MB/s</span>
+        </div>
         <div class="upload-bar">
             <div class="upload-fill" id="uploadProgress"></div>
         </div>
         <div class="upload-percent" id="uploadPercent">0%</div>
+        <button class="upload-cancel" onclick="cancelUpload()" id="cancelBtn">Annuler</button>
     </div>
 </div>
 
-<!-- Debug info -->
-<div class="debug-info" id="debugInfo"></div>
-
 <div class="app-container">
     
-    <!-- Sidebar avec formulaire intégré -->
+    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <div class="user-avatar"><i class="bi bi-person"></i></div>
+            <div class="user-avatar"><i class="bi bi-whatsapp"></i></div>
             <div class="header-icons">
                 <button type="button" class="icon-btn" onclick="selectAllGroupes()" title="Tout sélectionner">
                     <i class="bi bi-check-all"></i>
                 </button>
-                <a href="<?php echo site_url('whatsapp/synchroniser'); ?>" class="icon-btn" title="Synchroniser">
+                <a href="<?php echo site_url('whatsapp/synchroniser'); ?>" class="icon-btn" title="Synchroniser groupes">
                     <i class="bi bi-arrow-repeat"></i>
                 </a>
             </div>
@@ -621,17 +568,14 @@ if (!isset($job_id)) $job_id = null;
         <div class="search-container">
             <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input type="text" id="searchGroupes" placeholder="Rechercher..." onkeyup="filterGroupes()">
+                <input type="text" id="searchGroupes" placeholder="Rechercher un groupe..." onkeyup="filterGroupes()">
             </div>
         </div>
         
-        <!-- ✅ FORMULAIRE ENGLOBE TOUTE LA PAGE -->
         <form id="envoiForm" style="display: flex; flex-direction: column; height: 100%;">
-            
             <div class="conversations-list" id="conversationsList">
                 <?php foreach ($groupes as $groupe): ?>
                 <div class="conversation-item" onclick="toggleSelection(this, '<?php echo htmlspecialchars($groupe['groupe_id']); ?>')">
-                    <!-- ✅ CHECKBOX DANS LE FORM -->
                     <input type="checkbox" class="checkbox-select" name="groupes_ids[]" 
                            value="<?php echo htmlspecialchars($groupe['groupe_id']); ?>" 
                            id="cb_<?php echo htmlspecialchars($groupe['groupe_id']); ?>"
@@ -642,21 +586,15 @@ if (!isset($job_id)) $job_id = null;
                     <div class="conversation-info">
                         <div class="conversation-header">
                             <span class="conversation-name"><?php echo htmlspecialchars($groupe['nom']); ?></span>
-                            <span class="conversation-time"><?php echo date('H:i'); ?></span>
+                            <span class="conversation-time"><?php echo date('H:i', strtotime($groupe['date_modification'] ?? 'now')); ?></span>
                         </div>
                         <div class="conversation-preview">
-                            <span class="conversation-message">Cliquez pour sélectionner</span>
+                            <span class="conversation-message">Cliquez pour sélectionner ce groupe</span>
                         </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
-            
-            <!-- Champs cachés du formulaire -->
-            <input type="hidden" name="type_envoi" id="typeEnvoi" value="texte">
-            <input type="hidden" name="delai" value="1000">
-            <textarea name="message" id="hiddenMessage" style="display: none;"></textarea>
-            <input type="file" name="fichier" id="hiddenFile" style="display: none;">
         </form>
     </div>
     
@@ -669,16 +607,16 @@ if (!isset($job_id)) $job_id = null;
                 <div class="chat-header-info">
                     <div class="chat-avatar"><i class="bi bi-check-all"></i></div>
                     <div class="chat-title">
-                        <span class="chat-name">Résultat de l'envoi</span>
+                        <span class="chat-name">Résultat de la diffusion</span>
                         <span class="chat-status">
                             <?php 
                             $stats = isset($resultat['response']) ? $resultat['response'] : $resultat;
-                            echo ($stats['reussis'] ?? 0) . '/' . ($stats['total'] ?? 0) . ' envoyés';
+                            echo ($stats['reussis'] ?? 0) . '/' . ($stats['total'] ?? 0) . ' groupes envoyés';
                             ?>
                         </span>
                     </div>
                 </div>
-                <a href="<?php echo site_url('whatsapp/envoyer'); ?>" class="icon-btn">
+                <a href="<?php echo site_url('whatsapp/envoyer'); ?>" class="icon-btn" title="Nouvelle diffusion">
                     <i class="bi bi-plus-lg"></i>
                 </a>
             </div>
@@ -692,24 +630,41 @@ if (!isset($job_id)) $job_id = null;
                     <div class="result-header <?php echo $success ? 'success' : 'error'; ?>">
                         <i class="bi bi-<?php echo $success ? 'check-circle-fill' : 'x-circle-fill'; ?>" style="font-size: 48px;"></i>
                         <h4 style="margin-top: 16px;">
-                            <?php echo $success ? 'Envoi terminé avec succès' : 'Échec de l\'envoi'; ?>
+                            <?php echo $success ? 'Diffusion terminée !' : 'Échec de la diffusion'; ?>
                         </h4>
                     </div>
                     
                     <div class="stats-grid">
                         <div class="stat-item">
                             <div class="stat-number"><?php echo $stats['total'] ?? 0; ?></div>
-                            <small>Total</small>
+                            <small>Groupes total</small>
                         </div>
                         <div class="stat-item">
                             <div class="stat-number" style="color: #00a884;"><?php echo $stats['reussis'] ?? 0; ?></div>
-                            <small>Succès</small>
+                            <small>Envoyés avec succès</small>
                         </div>
                         <div class="stat-item">
                             <div class="stat-number" style="color: #ea0038;"><?php echo $stats['echoues'] ?? 0; ?></div>
                             <small>Échecs</small>
                         </div>
                     </div>
+                    
+                    <?php if (!empty($stats['details'])): ?>
+                    <div style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
+                        <h6 style="margin-bottom: 10px; color: #667781;">Détails par groupe:</h6>
+                        <?php foreach ($stats['details'] as $detail): ?>
+                        <div style="padding: 8px; border-bottom: 1px solid #f0f2f5; font-size: 13px;">
+                            <span style="color: <?php echo $detail['statut'] === 'succès' ? '#00a884' : '#ea0038'; ?>">
+                                <i class="bi bi-<?php echo $detail['statut'] === 'succès' ? 'check-circle' : 'x-circle'; ?>"></i>
+                            </span>
+                            <?php echo htmlspecialchars(substr($detail['destinataire_id'], 0, 20)) . '...'; ?>
+                            <?php if (!empty($detail['erreur'])): ?>
+                                <div style="color: #ea0038; font-size: 11px; margin-left: 20px;"><?php echo htmlspecialchars($detail['erreur']); ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             
@@ -719,12 +674,12 @@ if (!isset($job_id)) $job_id = null;
                 <div class="chat-header-info">
                     <div class="chat-avatar"><i class="bi bi-people-fill"></i></div>
                     <div class="chat-title">
-                        <span class="chat-name">Nouvelle diffusion</span>
-                        <span class="chat-status" id="selectionStatus">0 groupe sélectionné</span>
+                        <span class="chat-name">Nouvelle diffusion WhatsApp</span>
+                        <span class="chat-status" id="selectionStatus">Aucun groupe sélectionné</span>
                     </div>
                 </div>
                 <div class="header-icons">
-                    <a href="<?php echo site_url('whatsapp'); ?>" class="icon-btn">
+                    <a href="<?php echo site_url('whatsapp'); ?>" class="icon-btn" title="Retour">
                         <i class="bi bi-arrow-left"></i>
                     </a>
                 </div>
@@ -733,113 +688,90 @@ if (!isset($job_id)) $job_id = null;
             <!-- Type Selector -->
             <div class="type-selector">
                 <button type="button" class="type-btn active" onclick="setType('texte', this)" id="btnTexte">
-                    <i class="bi bi-chat-text"></i> <span>Message</span>
+                    <i class="bi bi-chat-text"></i> <span>Message texte</span>
                 </button>
-                <button type="button" class="type-btn" onclick="setType('fichier', this)" id="btnFichier">
-                    <i class="bi bi-paperclip"></i> <span>Fichier</span>
+                <button type="button" class="type-btn" onclick="setType('video', this)" id="btnVideo">
+                    <i class="bi bi-camera-video"></i> <span>Vidéo</span>
                 </button>
-                <button type="button" class="type-btn" onclick="setType('audio', this)" id="btnAudio">
-                    <i class="bi bi-mic"></i> <span>Audio</span>
+                <button type="button" class="type-btn" onclick="setType('image', this)" id="btnImage">
+                    <i class="bi bi-image"></i> <span>Image</span>
+                </button>
+                <button type="button" class="type-btn" onclick="setType('document', this)" id="btnDocument">
+                    <i class="bi bi-file-earmark"></i> <span>Document</span>
                 </button>
             </div>
             
             <!-- File Preview -->
             <div class="file-preview-area" id="filePreview">
                 <div class="file-box">
-                    <div class="file-icon"><i class="bi bi-file-earmark" id="fileIcon"></i></div>
+                    <div class="file-icon" id="fileIconBox">
+                        <i class="bi bi-file-earmark" id="fileIcon"></i>
+                    </div>
                     <div class="file-info">
                         <div class="file-name" id="fileName">-</div>
                         <div class="file-size" id="fileSize">-</div>
                     </div>
-                    <button type="button" class="file-remove" onclick="clearFile()">
+                    <button type="button" class="file-remove" onclick="clearFile()" title="Supprimer">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
             </div>
             
-            <!-- Messages -->
+            <!-- Messages Preview -->
             <div class="messages-container" id="messagesContainer">
                 <div class="message-bubble sent" id="previewBubble" style="display: none;">
                     <div class="message-text" id="previewText"></div>
                     <div class="message-time"><?php echo date('H:i'); ?></div>
                 </div>
+                <div style="align-self: center; color: #667781; margin-top: 40px; text-align: center;" id="emptyState">
+                    <i class="bi bi-whatsapp" style="font-size: 64px; opacity: 0.3;"></i>
+                    <p style="margin-top: 16px;">Sélectionnez des groupes et choisissez un fichier<br> pour commencer la diffusion</p>
+                </div>
             </div>
             
             <!-- Input Area -->
-            <!-- Input Area -->
-<div class="input-area">
-    <!-- Normal Input -->
-    <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
-        <button type="button" class="input-icon-btn" onclick="document.getElementById('filePicker').click()">
-            <i class="bi bi-plus-lg"></i>
-        </button>
-        <input type="file" id="filePicker" style="display: none;" 
-               onchange="handleFileSelect(this)" 
-               accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
-        
-        <div class="message-input-wrapper">
-            <textarea class="message-input" id="messageInput" 
-                      placeholder="Tapez un message" rows="1" 
-                      oninput="updatePreview()"></textarea>
-        </div>
-        
-        <button type="button" class="input-icon-btn" id="micBtn" onclick="startRecording()">
-            <i class="bi bi-mic-fill"></i>
-        </button>
-    </div>
-    
-    <!-- Recording Interface -->
-    <div class="audio-recording" id="recordingInterface">
-        <button type="button" class="input-icon-btn" onclick="cancelRecording()" style="color: #ea0038;">
-            <i class="bi bi-trash"></i>
-        </button>
-        <div class="recording-wave" id="waveContainer"></div>
-        <div class="recording-time" id="recordingTime">00:00</div>
-        <button type="button" class="input-icon-btn" onclick="stopRecording()" style="color: #00a884;">
-            <i class="bi bi-check-lg"></i>
-        </button>
-    </div>
-    
-    <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()">
-        <i class="bi bi-send-fill"></i>
-    </button>
-</div>
+            <div class="input-area">
+                <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <button type="button" class="input-icon-btn" onclick="document.getElementById('filePicker').click()" title="Joindre un fichier">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <input type="file" id="filePicker" style="display: none;" 
+                           onchange="handleFileSelect(this)" 
+                           accept="video/*,image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+                    
+                    <div class="message-input-wrapper">
+                        <textarea class="message-input" id="messageInput" 
+                                  placeholder="Ajouter une légende (optionnel)..." rows="1" 
+                                  oninput="updatePreview()"></textarea>
+                    </div>
+                </div>
+                
+                <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()" title="Envoyer à tous les groupes sélectionnés">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
         <?php endif; ?>
     </div>
 </div>
 
 <script>
-// Variables globales
-let selectedGroupes = [];
+// Configuration - Chunk size 1.5 MB pour Whapi
+const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5 MB
 let selectedFile = null;
-let mediaRecorder = null;
-let audioChunks = [];
-let recordingStartTime = null;
-let recordingTimer = null;
+let currentUploadId = null;
+let isUploading = false;
+let abortController = null;
+
+// État
+let selectedGroupes = [];
 let currentJobId = null;
 let pollInterval = null;
 
-// Configuration chunks - 1.5 MB comme demandé
-const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5 MB en bytes
-
 function log(msg) {
-    console.log(msg);
-    document.getElementById('debugInfo').style.display = 'block';
-    document.getElementById('debugInfo').innerHTML += msg + '<br>';
+    console.log('[WhatsApp]', msg);
 }
 
-function initWaveBars() {
-    const container = document.getElementById('waveContainer');
-    container.innerHTML = '';
-    for (let i = 0; i < 20; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'wave-bar';
-        bar.style.height = Math.random() * 100 + '%';
-        bar.style.animationDelay = (i * 0.05) + 's';
-        container.appendChild(bar);
-    }
-}
-
+// Gestion des groupes
 function toggleSelection(element, groupeId) {
     const checkbox = document.getElementById('cb_' + groupeId);
     if (!checkbox) return;
@@ -860,8 +792,28 @@ function updateCounter() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
     const count = checkboxes.length;
     const statusEl = document.getElementById('selectionStatus');
+    
     if (statusEl) {
-        statusEl.textContent = count + ' groupe' + (count > 1 ? 's' : '') + ' sélectionné' + (count > 1 ? 's' : '');
+        if (count === 0) {
+            statusEl.innerHTML = 'Aucun groupe sélectionné';
+        } else {
+            statusEl.innerHTML = `<span class="group-counter">${count}</span> groupe${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+        }
+    }
+    
+    // Afficher/masquer l'état vide
+    const emptyState = document.getElementById('emptyState');
+    const previewBubble = document.getElementById('previewBubble');
+    if (emptyState) {
+        if (count > 0 || selectedFile) {
+            emptyState.style.display = 'none';
+            if (document.getElementById('previewText')?.textContent) {
+                previewBubble.style.display = 'block';
+            }
+        } else {
+            emptyState.style.display = 'block';
+            previewBubble.style.display = 'none';
+        }
     }
 }
 
@@ -892,52 +844,70 @@ function filterGroupes() {
     });
 }
 
+// Gestion des types de fichier
+let currentType = 'texte';
+
 function setType(type, btn) {
-    document.getElementById('typeEnvoi').value = type;
+    currentType = type;
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
     const input = document.getElementById('messageInput');
     
-    if (type === 'audio') {
-        document.getElementById('normalInput').style.display = 'none';
-        startRecording();
+    if (type === 'texte') {
+        input.placeholder = "Tapez votre message...";
+        clearFile();
     } else {
-        document.getElementById('normalInput').style.display = 'flex';
-        document.getElementById('recordingInterface').classList.remove('active');
+        const placeholders = {
+            'video': "Légende de la vidéo (optionnel)...",
+            'image': "Légende de l'image (optionnel)...",
+            'document': "Commentaire (optionnel)..."
+        };
+        input.placeholder = placeholders[type] || "Ajouter une légende...";
         
-        if (type === 'fichier') {
-            input.placeholder = "Légende (optionnel)...";
+        if (!selectedFile) {
+            document.getElementById('filePicker').accept = type === 'video' ? 'video/*' : 
+                                                          type === 'image' ? 'image/*' : 
+                                                          '*/*';
             document.getElementById('filePicker').click();
-        } else {
-            input.placeholder = "Tapez un message";
         }
     }
 }
 
+// Gestion des fichiers
 function handleFileSelect(input) {
     if (!input.files || !input.files[0]) return;
     
     selectedFile = input.files[0];
     const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
     
-    log('Fichier sélectionné: ' + selectedFile.name);
-    log('Taille totale: ' + sizeMB + ' MB');
-    log('Chunks nécessaires: ' + Math.ceil(selectedFile.size / CHUNK_SIZE));
+    log('Fichier sélectionné: ' + selectedFile.name + ' (' + sizeMB + ' MB)');
+    
+    // Détecter le type automatiquement
+    if (selectedFile.type.startsWith('video/')) currentType = 'video';
+    else if (selectedFile.type.startsWith('image/')) currentType = 'image';
+    else currentType = 'document';
+    
+    // Mettre à jour l'UI des boutons
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    const btnId = currentType === 'video' ? 'btnVideo' : 
+                  currentType === 'image' ? 'btnImage' : 'btnDocument';
+    document.getElementById(btnId)?.classList.add('active');
     
     // UI updates
     document.getElementById('filePreview').classList.add('active');
     document.getElementById('fileName').textContent = selectedFile.name;
-    document.getElementById('fileSize').textContent = sizeMB + ' MB';
+    document.getElementById('fileSize').textContent = sizeMB + ' MB • ' + Math.ceil(selectedFile.size / CHUNK_SIZE) + ' chunks';
     
     // Icône selon type
-    const icon = document.getElementById('fileIcon');
-    if (selectedFile.type.startsWith('video/')) icon.className = 'bi bi-camera-video-fill';
-    else if (selectedFile.type.startsWith('audio/')) icon.className = 'bi bi-mic-fill';
-    else if (selectedFile.type.startsWith('image/')) icon.className = 'bi bi-image-fill';
-    else icon.className = 'bi bi-file-earmark';
+    const icons = {
+        'video': 'bi-camera-video-fill',
+        'image': 'bi-image-fill',
+        'document': 'bi-file-earmark-text-fill'
+    };
+    document.getElementById('fileIcon').className = 'bi ' + (icons[currentType] || 'bi-file-earmark');
     
-    setType('fichier', document.getElementById('btnFichier'));
+    updateCounter();
 }
 
 function clearFile() {
@@ -952,150 +922,66 @@ function updatePreview() {
     const bubble = document.getElementById('previewBubble');
     const previewText = document.getElementById('previewText');
     
-    document.getElementById('hiddenMessage').value = text;
-    
     if (text) {
         previewText.textContent = text;
         bubble.style.display = 'block';
     } else {
-        bubble.style.display = 'none';
+        previewText.textContent = '(Aucune légende)';
     }
-}
-
-// ==================== AUDIO ====================
-
-async function startRecording() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) audioChunks.push(e.data);
-        };
-        
-        mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            selectedFile = new File([audioBlob], 'audio_' + Date.now() + '.webm', { type: 'audio/webm' });
-            
-            document.getElementById('filePreview').classList.add('active');
-            document.getElementById('fileName').textContent = 'Note vocale';
-            document.getElementById('fileSize').textContent = (selectedFile.size / 1024).toFixed(1) + ' KB';
-            document.getElementById('fileIcon').className = 'bi bi-mic-fill';
-            
-            document.getElementById('normalInput').style.display = 'flex';
-            document.getElementById('recordingInterface').classList.remove('active');
-            
-            stream.getTracks().forEach(track => track.stop());
-        };
-        
-        mediaRecorder.start();
-        recordingStartTime = Date.now();
-        
-        document.getElementById('normalInput').style.display = 'none';
-        document.getElementById('recordingInterface').classList.add('active');
-        initWaveBars();
-        
-        recordingTimer = setInterval(updateRecordingTime, 1000);
-        
-    } catch (err) {
-        alert('Erreur microphone: ' + err.message);
-        setType('texte', document.getElementById('btnTexte'));
-    }
-}
-
-function updateRecordingTime() {
-    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
-    const secs = (elapsed % 60).toString().padStart(2, '0');
-    document.getElementById('recordingTime').textContent = `${mins}:${secs}`;
-}
-
-function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        clearInterval(recordingTimer);
-    }
-}
-
-function cancelRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        mediaRecorder = null;
-    }
-    clearInterval(recordingTimer);
-    audioChunks = [];
     
-    document.getElementById('normalInput').style.display = 'flex';
-    document.getElementById('recordingInterface').classList.remove('active');
-    setType('texte', document.getElementById('btnTexte'));
+    updateCounter();
 }
 
-// ==================== ENVOI PAR CHUNKS ====================
+// ==================== ENVOI PAR CHUNKS 1.5MB ====================
 
 async function submitForm() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
     
     if (checkboxes.length === 0) {
-        alert('Veuillez sélectionner au moins un groupe');
+        alert('Veuillez sélectionner au moins un groupe WhatsApp');
         return;
     }
     
-    const type = document.getElementById('typeEnvoi').value;
+    if (currentType !== 'texte' && !selectedFile) {
+        alert('Veuillez sélectionner un fichier');
+        return;
+    }
+    
     const message = document.getElementById('messageInput').value.trim();
-    
-    // Validation
-    if (type === 'texte' && !message) {
-        alert('Tapez un message');
-        return;
-    }
-    
-    if ((type === 'fichier' || type === 'audio') && !selectedFile) {
-        alert('Aucun fichier sélectionné');
-        return;
-    }
-    
-    // Désactiver le bouton pendant l'envoi
-    const sendBtn = document.getElementById('sendBtn');
-    sendBtn.disabled = true;
-    
-    // Préparer les données communes
     const groupesIds = Array.from(checkboxes).map(cb => cb.value);
     
+    // Désactiver le bouton
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+    isUploading = true;
+    
     try {
-        let jobId = null;
-        let uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        
-        if (type === 'texte' || !selectedFile) {
-            // Envoi simple sans fichier
-            jobId = await envoyerSimple(groupesIds, message, type);
+        if (currentType === 'texte') {
+            // Envoi texte simple
+            await envoyerTexte(groupesIds, message);
         } else {
-            // Envoi par chunks
-            jobId = await envoyerParChunks(groupesIds, message, type, selectedFile, uploadId);
+            // Envoi fichier par chunks
+            await envoyerFichierChunks(groupesIds, message, currentType, selectedFile);
         }
-        
-        if (jobId) {
-            currentJobId = jobId;
-            startPolling(jobId);
-        }
-        
     } catch (error) {
         log('Erreur: ' + error.message);
         alert('Erreur: ' + error.message);
         hideUploadProgress();
     } finally {
         sendBtn.disabled = false;
+        isUploading = false;
     }
 }
 
-// Envoi simple (texte uniquement)
-async function envoyerSimple(groupesIds, message, type) {
+// Envoi texte simple
+async function envoyerTexte(groupesIds, message) {
+    showUploadProgress(0, 'Envoi des messages...', 'bi-chat-text-fill');
+    
     const formData = new FormData();
     groupesIds.forEach(id => formData.append('groupes_ids[]', id));
-    formData.append('type_envoi', type);
-    formData.append('delai', '1000');
+    formData.append('type_envoi', 'texte');
     formData.append('message', message);
-    formData.append('is_chunked', 'false');
+    formData.append('delai', '1000');
     
     const response = await fetch('<?php echo site_url('whatsapp/traiter_envoi'); ?>', {
         method: 'POST',
@@ -1104,18 +990,25 @@ async function envoyerSimple(groupesIds, message, type) {
     
     const result = await response.json();
     if (!result.success) throw new Error(result.error);
-    return result.job_id;
+    
+    currentJobId = result.job_id;
+    startPolling(result.job_id);
 }
 
-// Envoi par chunks - comme WhatsApp !
-async function envoyerParChunks(groupesIds, message, type, file, uploadId) {
+// Envoi fichier par chunks - Style WhatsApp
+async function envoyerFichierChunks(groupesIds, message, type, file) {
     const totalSize = file.size;
     const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+    const uploadId = 'whapi_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    currentUploadId = uploadId;
     
-    log('Démarrage upload par chunks: ' + totalChunks + ' morceaux');
+    abortController = new AbortController();
     
-    // Étape 1: Initialiser l'upload
-    const initResponse = await fetch('<?php echo site_url('whatsapp/init_upload'); ?>', {
+    log(`Upload démarré: ${totalChunks} chunks de 1.5 MB`);
+    showUploadProgress(0, 'Préparation de l\'upload...', 'bi-cloud-arrow-up');
+    
+    // Étape 1: Initialiser
+    const initResponse = await fetch('<?php echo site_url('whatsapp/init_chunk_upload'); ?>', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -1127,65 +1020,129 @@ async function envoyerParChunks(groupesIds, message, type, file, uploadId) {
             groupes_ids: groupesIds,
             message: message,
             type_envoi: type
-        })
+        }),
+        signal: abortController.signal
     });
     
     const initResult = await initResponse.json();
     if (!initResult.success) throw new Error(initResult.error);
     
-    // Étape 2: Envoyer chaque chunk
+    // Étape 2: Envoyer les chunks un par un
+    let uploadedSize = 0;
+    let lastTime = Date.now();
+    
     for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        if (!isUploading) throw new Error('Upload annulé');
+        
         const start = chunkIndex * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, totalSize);
         const chunk = file.slice(start, end);
         
         const chunkFormData = new FormData();
         chunkFormData.append('upload_id', uploadId);
-        chunkFormData.append('chunk_index', chunkIndex.toString());
-        chunkFormData.append('total_chunks', totalChunks.toString());
-        chunkFormData.append('chunk', chunk, file.name + '.part' + chunkIndex);
+        chunkFormData.append('chunk_index', chunkIndex);
+        chunkFormData.append('total_chunks', totalChunks);
+        chunkFormData.append('chunk_data', chunk, `${file.name}.part${chunkIndex}`);
         
-        // Progression
-        const percent = Math.round((chunkIndex / totalChunks) * 100);
-        showUploadProgress(percent, `Upload... ${chunkIndex + 1}/${totalChunks} chunks (${(end/1024/1024).toFixed(1)} MB / ${(totalSize/1024/1024).toFixed(1)} MB)`);
+        // Calculer la vitesse
+        const now = Date.now();
+        const elapsed = (now - lastTime) / 1000;
+        const chunkSizeMB = (end - start) / 1024 / 1024;
+        const speed = elapsed > 0 ? (chunkSizeMB / elapsed).toFixed(1) : 0;
+        lastTime = now;
         
-        log('Envoi chunk ' + (chunkIndex + 1) + '/' + totalChunks);
+        // Mettre à jour la progression
+        uploadedSize = end;
+        const percent = Math.round((uploadedSize / totalSize) * 100);
         
-        const chunkResponse = await fetch('<?php echo site_url('whatsapp/upload_chunk'); ?>', {
-            method: 'POST',
-            body: chunkFormData
-        });
+        updateUploadProgress(
+            percent,
+            `Upload chunk ${chunkIndex + 1}/${totalChunks}`,
+            `${(uploadedSize/1024/1024).toFixed(1)} / ${(totalSize/1024/1024).toFixed(1)} MB`,
+            `${speed} MB/s`
+        );
         
-        const chunkResult = await chunkResponse.json();
-        if (!chunkResult.success) throw new Error('Chunk ' + chunkIndex + ' échoué: ' + chunkResult.error);
+        // Envoi avec retry
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const chunkResponse = await fetch('<?php echo site_url('whatsapp/upload_chunk'); ?>', {
+                    method: 'POST',
+                    body: chunkFormData,
+                    signal: abortController.signal
+                });
+                
+                if (!chunkResponse.ok) throw new Error('HTTP ' + chunkResponse.status);
+                
+                const chunkResult = await chunkResponse.json();
+                if (!chunkResult.success) throw new Error(chunkResult.error);
+                
+                break; // Succès
+                
+            } catch (err) {
+                retries--;
+                log(`Retry chunk ${chunkIndex + 1}, tentatives restantes: ${retries}`);
+                if (retries === 0) throw err;
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
         
-        // Petite pause entre les chunks pour ne pas saturer
+        // Petite pause pour ne pas saturer
         if (chunkIndex < totalChunks - 1) {
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 50));
         }
     }
     
-    // Étape 3: Finaliser et créer le job
-    showUploadProgress(100, 'Assemblage du fichier...');
+    // Étape 3: Finaliser et lancer l'envoi Whapi
+    updateUploadProgress(100, 'Assemblage du fichier...', 'Finalisation', '');
     
     const finalizeFormData = new FormData();
     finalizeFormData.append('upload_id', uploadId);
-    groupesIds.forEach(id => finalizeFormData.append('groupes_ids[]', id));
-    finalizeFormData.append('message', message);
-    finalizeFormData.append('type_envoi', type);
-    finalizeFormData.append('delai', '1000');
     
-    const finalizeResponse = await fetch('<?php echo site_url('whatsapp/finalize_upload'); ?>', {
+    const finalizeResponse = await fetch('<?php echo site_url('whatsapp/finalize_and_send'); ?>', {
         method: 'POST',
-        body: finalizeFormData
+        body: finalizeFormData,
+        signal: abortController.signal
     });
     
     const finalizeResult = await finalizeResponse.json();
     if (!finalizeResult.success) throw new Error(finalizeResult.error);
     
-    return finalizeResult.job_id;
+    currentJobId = finalizeResult.job_id;
+    startPolling(finalizeResult.job_id);
 }
 
+function cancelUpload() {
+    if (abortController) {
+        abortController.abort();
+    }
+    isUploading = false;
+    hideUploadProgress();
+    log('Upload annulé par l\'utilisateur');
+}
+
+// UI Progress
+function showUploadProgress(percent, title, iconClass) {
+    document.getElementById('uploadOverlay').classList.add('active');
+    document.getElementById('uploadIcon').innerHTML = `<i class="bi ${iconClass}"></i>`;
+    document.getElementById('uploadTitle').textContent = title;
+    document.getElementById('uploadProgress').style.width = percent + '%';
+    document.getElementById('uploadPercent').textContent = percent + '%';
+}
+
+function updateUploadProgress(percent, title, chunkInfo, speed) {
+    document.getElementById('uploadTitle').textContent = title;
+    document.getElementById('uploadProgress').style.width = percent + '%';
+    document.getElementById('uploadPercent').textContent = percent + '%';
+    document.getElementById('uploadChunkInfo').textContent = chunkInfo;
+    document.getElementById('uploadSpeed').textContent = speed;
+}
+
+function hideUploadProgress() {
+    document.getElementById('uploadOverlay').classList.remove('active');
+}
+
+// Polling statut
 function startPolling(jobId) {
     let attempts = 0;
     
@@ -1204,30 +1161,27 @@ function startPolling(jobId) {
                 
                 if (data.status === 'completed') {
                     clearInterval(pollInterval);
+                    // Redirection vers résultat
                     window.location.href = '<?php echo site_url('whatsapp/resultat/'); ?>' + jobId;
                 } else {
-                    const progress = data.progress || Math.min(50 + attempts, 95);
+                    // Progression de l'envoi aux groupes
+                    const progress = data.progress || Math.min(10 + attempts * 2, 95);
                     const text = data.current_group 
-                        ? `Envoi en cours... ${data.progress || 0}%` 
-                        : 'Traitement...';
-                    showUploadProgress(progress, text);
+                        ? `Envoi à ${data.current_group}...` 
+                        : 'Envoi en cours via Whapi...';
+                    
+                    updateUploadProgress(
+                        progress,
+                        text,
+                        `${data.result?.reussis || 0} / ${data.result?.total || '?'} groupes`,
+                        ''
+                    );
                 }
             })
             .catch(err => {
                 log('Polling error: ' + err);
             });
     }, 2000);
-}
-
-function showUploadProgress(percent, text) {
-    document.getElementById('uploadOverlay').classList.add('active');
-    document.getElementById('uploadProgress').style.width = percent + '%';
-    document.getElementById('uploadPercent').textContent = percent + '%';
-    document.getElementById('uploadTitle').textContent = text;
-}
-
-function hideUploadProgress() {
-    document.getElementById('uploadOverlay').classList.remove('active');
 }
 
 // Auto-resize textarea
