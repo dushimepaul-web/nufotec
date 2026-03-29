@@ -766,43 +766,44 @@ if (!isset($job_id)) $job_id = null;
             </div>
             
             <!-- Input Area -->
-            <div class="input-area">
-                <!-- Normal Input -->
-                <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                    <button type="button" class="input-icon-btn" onclick="document.getElementById('filePicker').click()">
-                        <i class="bi bi-plus-lg"></i>
-                    </button>
-                    <input type="file" id="filePicker" style="display: none;" 
-                           onchange="handleFileSelect(this)" 
-                           accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
-                    
-                    <div class="message-input-wrapper">
-                        <textarea class="message-input" id="messageInput" 
-                                  placeholder="Tapez un message" rows="1" 
-                                  oninput="updatePreview()"></textarea>
-                    </div>
-                    
-                    <button type="button" class="input-icon-btn" id="micBtn" onclick="startRecording()">
-                        <i class="bi bi-mic-fill"></i>
-                    </button>
-                </div>
-                
-                <!-- Recording Interface -->
-                <div class="audio-recording" id="recordingInterface">
-                    <button type="button" class="input-icon-btn" onclick="cancelRecording()" style="color: #ea0038;">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                    <div class="recording-wave" id="waveContainer"></div>
-                    <div class="recording-time" id="recordingTime">00:00</div>
-                    <button type="button" class="input-icon-btn" onclick="stopRecording()" style="color: #00a884;">
-                        <i class="bi bi-check-lg"></i>
-                    </button>
-                </div>
-                
-                <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()">
-                    <i class="bi bi-send-fill"></i>
-                </button>
-            </div>
+            <!-- Input Area -->
+<div class="input-area">
+    <!-- Normal Input -->
+    <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
+        <button type="button" class="input-icon-btn" onclick="document.getElementById('filePicker').click()">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+        <input type="file" id="filePicker" style="display: none;" 
+               onchange="handleFileSelect(this)" 
+               accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
+        
+        <div class="message-input-wrapper">
+            <textarea class="message-input" id="messageInput" 
+                      placeholder="Tapez un message" rows="1" 
+                      oninput="updatePreview()"></textarea>
+        </div>
+        
+        <button type="button" class="input-icon-btn" id="micBtn" onclick="startRecording()">
+            <i class="bi bi-mic-fill"></i>
+        </button>
+    </div>
+    
+    <!-- Recording Interface -->
+    <div class="audio-recording" id="recordingInterface">
+        <button type="button" class="input-icon-btn" onclick="cancelRecording()" style="color: #ea0038;">
+            <i class="bi bi-trash"></i>
+        </button>
+        <div class="recording-wave" id="waveContainer"></div>
+        <div class="recording-time" id="recordingTime">00:00</div>
+        <button type="button" class="input-icon-btn" onclick="stopRecording()" style="color: #00a884;">
+            <i class="bi bi-check-lg"></i>
+        </button>
+    </div>
+    
+    <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()">
+        <i class="bi bi-send-fill"></i>
+    </button>
+</div>
         <?php endif; ?>
     </div>
 </div>
@@ -817,6 +818,9 @@ let recordingStartTime = null;
 let recordingTimer = null;
 let currentJobId = null;
 let pollInterval = null;
+
+// Configuration chunks - 1.5 MB comme demandé
+const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5 MB en bytes
 
 function log(msg) {
     console.log(msg);
@@ -838,10 +842,7 @@ function initWaveBars() {
 
 function toggleSelection(element, groupeId) {
     const checkbox = document.getElementById('cb_' + groupeId);
-    if (!checkbox) {
-        log('Checkbox non trouvé: ' + groupeId);
-        return;
-    }
+    if (!checkbox) return;
     
     checkbox.checked = !checkbox.checked;
     
@@ -852,8 +853,6 @@ function toggleSelection(element, groupeId) {
         element.classList.remove('selected');
         selectedGroupes = selectedGroupes.filter(id => id !== groupeId);
     }
-    
-    log('Sélection: ' + selectedGroupes.length + ' groupes');
     updateCounter();
 }
 
@@ -861,12 +860,9 @@ function updateCounter() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
     const count = checkboxes.length;
     const statusEl = document.getElementById('selectionStatus');
-    
     if (statusEl) {
         statusEl.textContent = count + ' groupe' + (count > 1 ? 's' : '') + ' sélectionné' + (count > 1 ? 's' : '');
     }
-    
-    log('Counter: ' + count);
 }
 
 function selectAllGroupes() {
@@ -925,29 +921,29 @@ function handleFileSelect(input) {
     selectedFile = input.files[0];
     const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
     
+    log('Fichier sélectionné: ' + selectedFile.name);
+    log('Taille totale: ' + sizeMB + ' MB');
+    log('Chunks nécessaires: ' + Math.ceil(selectedFile.size / CHUNK_SIZE));
+    
+    // UI updates
     document.getElementById('filePreview').classList.add('active');
     document.getElementById('fileName').textContent = selectedFile.name;
     document.getElementById('fileSize').textContent = sizeMB + ' MB';
     
+    // Icône selon type
     const icon = document.getElementById('fileIcon');
     if (selectedFile.type.startsWith('video/')) icon.className = 'bi bi-camera-video-fill';
     else if (selectedFile.type.startsWith('audio/')) icon.className = 'bi bi-mic-fill';
     else if (selectedFile.type.startsWith('image/')) icon.className = 'bi bi-image-fill';
     else icon.className = 'bi bi-file-earmark';
     
-    // Copier dans le hidden file input
-    const dt = new DataTransfer();
-    dt.items.add(selectedFile);
-    document.getElementById('hiddenFile').files = dt.files;
-    
     setType('fichier', document.getElementById('btnFichier'));
 }
 
 function clearFile() {
     document.getElementById('filePicker').value = '';
-    document.getElementById('hiddenFile').value = '';
-    document.getElementById('filePreview').classList.remove('active');
     selectedFile = null;
+    document.getElementById('filePreview').classList.remove('active');
     setType('texte', document.getElementById('btnTexte'));
 }
 
@@ -956,7 +952,6 @@ function updatePreview() {
     const bubble = document.getElementById('previewBubble');
     const previewText = document.getElementById('previewText');
     
-    // Copier dans hidden input
     document.getElementById('hiddenMessage').value = text;
     
     if (text) {
@@ -981,16 +976,11 @@ async function startRecording() {
         
         mediaRecorder.onstop = () => {
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const audioFile = new File([audioBlob], 'audio_' + Date.now() + '.webm', { type: 'audio/webm' });
-            
-            const dt = new DataTransfer();
-            dt.items.add(audioFile);
-            document.getElementById('hiddenFile').files = dt.files;
-            selectedFile = audioFile;
+            selectedFile = new File([audioBlob], 'audio_' + Date.now() + '.webm', { type: 'audio/webm' });
             
             document.getElementById('filePreview').classList.add('active');
             document.getElementById('fileName').textContent = 'Note vocale';
-            document.getElementById('fileSize').textContent = (audioFile.size / 1024).toFixed(1) + ' KB';
+            document.getElementById('fileSize').textContent = (selectedFile.size / 1024).toFixed(1) + ' KB';
             document.getElementById('fileIcon').className = 'bi bi-mic-fill';
             
             document.getElementById('normalInput').style.display = 'flex';
@@ -1041,11 +1031,10 @@ function cancelRecording() {
     setType('texte', document.getElementById('btnTexte'));
 }
 
-// ==================== ENVOI ====================
+// ==================== ENVOI PAR CHUNKS ====================
 
-function submitForm() {
+async function submitForm() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
-    log('Checkboxes trouvés: ' + checkboxes.length);
     
     if (checkboxes.length === 0) {
         alert('Veuillez sélectionner au moins un groupe');
@@ -1054,86 +1043,147 @@ function submitForm() {
     
     const type = document.getElementById('typeEnvoi').value;
     const message = document.getElementById('messageInput').value.trim();
-    const hiddenFile = document.getElementById('hiddenFile').files[0];
     
-    log('Type: ' + type);
-    log('Message: ' + message);
-    log('File: ' + (hiddenFile ? hiddenFile.name : 'aucun'));
-    
+    // Validation
     if (type === 'texte' && !message) {
         alert('Tapez un message');
         return;
     }
     
-    if ((type === 'fichier' || type === 'audio') && !hiddenFile) {
+    if ((type === 'fichier' || type === 'audio') && !selectedFile) {
         alert('Aucun fichier sélectionné');
         return;
     }
     
-    // Sync hidden message
-    document.getElementById('hiddenMessage').value = message;
+    // Désactiver le bouton pendant l'envoi
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
     
-    // Créer FormData depuis le formulaire
-    const form = document.getElementById('envoiForm');
-    const formData = new FormData(form);
+    // Préparer les données communes
+    const groupesIds = Array.from(checkboxes).map(cb => cb.value);
     
-    // Vérifier le contenu
-    log('FormData groupes_ids[]:');
-    for (let pair of formData.entries()) {
-        log(pair[0] + ': ' + pair[1]);
+    try {
+        let jobId = null;
+        let uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        if (type === 'texte' || !selectedFile) {
+            // Envoi simple sans fichier
+            jobId = await envoyerSimple(groupesIds, message, type);
+        } else {
+            // Envoi par chunks
+            jobId = await envoyerParChunks(groupesIds, message, type, selectedFile, uploadId);
+        }
+        
+        if (jobId) {
+            currentJobId = jobId;
+            startPolling(jobId);
+        }
+        
+    } catch (error) {
+        log('Erreur: ' + error.message);
+        alert('Erreur: ' + error.message);
+        hideUploadProgress();
+    } finally {
+        sendBtn.disabled = false;
+    }
+}
+
+// Envoi simple (texte uniquement)
+async function envoyerSimple(groupesIds, message, type) {
+    const formData = new FormData();
+    groupesIds.forEach(id => formData.append('groupes_ids[]', id));
+    formData.append('type_envoi', type);
+    formData.append('delai', '1000');
+    formData.append('message', message);
+    formData.append('is_chunked', 'false');
+    
+    const response = await fetch('<?php echo site_url('whatsapp/traiter_envoi'); ?>', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return result.job_id;
+}
+
+// Envoi par chunks - comme WhatsApp !
+async function envoyerParChunks(groupesIds, message, type, file, uploadId) {
+    const totalSize = file.size;
+    const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+    
+    log('Démarrage upload par chunks: ' + totalChunks + ' morceaux');
+    
+    // Étape 1: Initialiser l'upload
+    const initResponse = await fetch('<?php echo site_url('whatsapp/init_upload'); ?>', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            upload_id: uploadId,
+            filename: file.name,
+            filesize: totalSize,
+            filetype: file.type,
+            total_chunks: totalChunks,
+            groupes_ids: groupesIds,
+            message: message,
+            type_envoi: type
+        })
+    });
+    
+    const initResult = await initResponse.json();
+    if (!initResult.success) throw new Error(initResult.error);
+    
+    // Étape 2: Envoyer chaque chunk
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, totalSize);
+        const chunk = file.slice(start, end);
+        
+        const chunkFormData = new FormData();
+        chunkFormData.append('upload_id', uploadId);
+        chunkFormData.append('chunk_index', chunkIndex.toString());
+        chunkFormData.append('total_chunks', totalChunks.toString());
+        chunkFormData.append('chunk', chunk, file.name + '.part' + chunkIndex);
+        
+        // Progression
+        const percent = Math.round((chunkIndex / totalChunks) * 100);
+        showUploadProgress(percent, `Upload... ${chunkIndex + 1}/${totalChunks} chunks (${(end/1024/1024).toFixed(1)} MB / ${(totalSize/1024/1024).toFixed(1)} MB)`);
+        
+        log('Envoi chunk ' + (chunkIndex + 1) + '/' + totalChunks);
+        
+        const chunkResponse = await fetch('<?php echo site_url('whatsapp/upload_chunk'); ?>', {
+            method: 'POST',
+            body: chunkFormData
+        });
+        
+        const chunkResult = await chunkResponse.json();
+        if (!chunkResult.success) throw new Error('Chunk ' + chunkIndex + ' échoué: ' + chunkResult.error);
+        
+        // Petite pause entre les chunks pour ne pas saturer
+        if (chunkIndex < totalChunks - 1) {
+            await new Promise(r => setTimeout(r, 100));
+        }
     }
     
-    // Envoi
-    const xhr = new XMLHttpRequest();
+    // Étape 3: Finaliser et créer le job
+    showUploadProgress(100, 'Assemblage du fichier...');
     
-    xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            showUploadProgress(percent, 'Upload en cours...');
-        }
+    const finalizeFormData = new FormData();
+    finalizeFormData.append('upload_id', uploadId);
+    groupesIds.forEach(id => finalizeFormData.append('groupes_ids[]', id));
+    finalizeFormData.append('message', message);
+    finalizeFormData.append('type_envoi', type);
+    finalizeFormData.append('delai', '1000');
+    
+    const finalizeResponse = await fetch('<?php echo site_url('whatsapp/finalize_upload'); ?>', {
+        method: 'POST',
+        body: finalizeFormData
     });
     
-    xhr.addEventListener('load', () => {
-        log('Réponse: ' + xhr.status);
-        log('Text: ' + xhr.responseText);
-        
-        if (xhr.status === 200) {
-            try {
-                const response = JSON.parse(xhr.responseText);
-                
-                if (response.success && response.job_id) {
-                    currentJobId = response.job_id;
-                    showUploadProgress(100, 'Traitement en cours...');
-                    startPolling(response.job_id);
-                } else {
-                    hideUploadProgress();
-                    alert('Erreur: ' + (response.error || 'Inconnue'));
-                }
-            } catch (e) {
-                hideUploadProgress();
-                // Si c'est du HTML (erreur PHP), l'afficher
-                if (xhr.responseText.includes('<')) {
-                    document.open();
-                    document.write(xhr.responseText);
-                    document.close();
-                } else {
-                    alert('Erreur: ' + e.message);
-                }
-            }
-        } else {
-            hideUploadProgress();
-            alert('Erreur HTTP: ' + xhr.status);
-        }
-    });
+    const finalizeResult = await finalizeResponse.json();
+    if (!finalizeResult.success) throw new Error(finalizeResult.error);
     
-    xhr.addEventListener('error', () => {
-        hideUploadProgress();
-        alert('Erreur réseau');
-    });
-    
-    showUploadProgress(0, 'Démarrage...');
-    xhr.open('POST', '<?php echo site_url('whatsapp/traiter_envoi'); ?>');
-    xhr.send(formData);
+    return finalizeResult.job_id;
 }
 
 function startPolling(jobId) {
@@ -1158,7 +1208,7 @@ function startPolling(jobId) {
                 } else {
                     const progress = data.progress || Math.min(50 + attempts, 95);
                     const text = data.current_group 
-                        ? 'Envoi en cours...' 
+                        ? `Envoi en cours... ${data.progress || 0}%` 
                         : 'Traitement...';
                     showUploadProgress(progress, text);
                 }
@@ -1180,7 +1230,7 @@ function hideUploadProgress() {
     document.getElementById('uploadOverlay').classList.remove('active');
 }
 
-// Auto-resize
+// Auto-resize textarea
 document.getElementById('messageInput')?.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 100) + 'px';
