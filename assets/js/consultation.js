@@ -1,5 +1,5 @@
 // ============================================
-// CONSULTATION.JS - VERSION FINALE AVEC FORCE TURN
+// CONSULTATION.JS - VERSION FINALE PRODUCTION
 // ============================================
 
 (function() {
@@ -84,16 +84,14 @@
                 
                 utils.log(`📡 ${config.iceServers.length} serveurs ICE configurés`);
                 
-                // Configuration FORCANT l'utilisation de TURN
                 state.peerConnection = new RTCPeerConnection({
                     iceServers: config.iceServers,
-                    iceTransportPolicy: 'relay',  // ← FORCE TURN (relay seulement)
+                    iceTransportPolicy: 'relay',
                     iceCandidatePoolSize: 10,
                     bundlePolicy: 'max-bundle',
                     rtcpMuxPolicy: 'require'
                 });
                 
-                // Timeout ICE (30 secondes pour les connexions internationales)
                 let iceTimeout = setTimeout(() => {
                     if (state.peerConnection && !state.isConnected) {
                         const iceState = state.peerConnection.iceConnectionState;
@@ -122,6 +120,7 @@
                     }
                 };
                 
+                // Gestion des tracks - Version corrigée sans erreur play
                 state.peerConnection.ontrack = (event) => {
                     utils.log(`📹 Track reçu: ${event.track.kind}`);
                     
@@ -130,9 +129,10 @@
                     }
                     state.remoteStream.addTrack(event.track);
                     
-                    if (elements.remoteVideo) {
+                    if (elements.remoteVideo && elements.remoteVideo.srcObject !== state.remoteStream) {
                         elements.remoteVideo.srcObject = state.remoteStream;
-                        elements.remoteVideo.play().catch(e => utils.log(`Play: ${e.message}`));
+                        // Lecture silencieuse - ignorer toutes les erreurs de play
+                        elements.remoteVideo.play().catch(() => {});
                     }
                 };
                 
@@ -169,7 +169,6 @@
                     }
                 };
                 
-                // Ajouter les tracks locaux
                 if (state.localStream) {
                     state.localStream.getTracks().forEach(track => {
                         try {
@@ -181,7 +180,6 @@
                     });
                 }
                 
-                // Traiter les candidats en attente
                 if (state.pendingIceCandidates.length > 0) {
                     utils.log(`📦 ${state.pendingIceCandidates.length} candidats en attente`);
                     for (const candidate of state.pendingIceCandidates) {
@@ -204,29 +202,25 @@
             
             utils.log('🔄 Passage en mode hybride (TURN+STUN)...');
             try {
-                // Recréer avec configuration hybride
                 const response = await fetch('/socket/api/ice-servers');
                 const config = await response.json();
                 
                 const newPC = new RTCPeerConnection({
                     iceServers: config.iceServers,
-                    iceTransportPolicy: 'all',  // ← Hybride
+                    iceTransportPolicy: 'all',
                     iceCandidatePoolSize: 10
                 });
                 
-                // Migrer les tracks
                 if (state.localStream) {
                     state.localStream.getTracks().forEach(track => {
                         newPC.addTrack(track, state.localStream);
                     });
                 }
                 
-                // Remplacer l'ancienne connexion
                 const oldPC = state.peerConnection;
                 state.peerConnection = newPC;
                 oldPC.close();
                 
-                // Renégocier
                 if (state.isInitiator) {
                     await this.createOffer();
                 }
@@ -293,7 +287,6 @@
                 
                 await state.peerConnection.setLocalDescription(offer);
                 
-                // Attendre ICE gathering (max 10 sec)
                 await new Promise((resolve) => {
                     if (state.peerConnection.iceGatheringState === 'complete') {
                         resolve();
@@ -386,7 +379,6 @@
         }
     };
 
-    // Socket (identique)
     function initSocket() {
         utils.log('📮 Connexion socket...');
         
@@ -452,7 +444,6 @@
         });
     }
 
-    // Permissions
     async function getMediaStream() {
         utils.log('📹 Demande caméra/micro...');
         
@@ -476,7 +467,6 @@
         }
     }
 
-    // Contrôles UI
     function setupControls() {
         if (elements.muteAudioBtn) {
             elements.muteAudioBtn.onclick = () => {
@@ -514,7 +504,6 @@
         }
     }
 
-    // Initialisation
     async function init() {
         utils.log('🚀 Démarrage consultation v6.3 (TURN forcé)...');
         
