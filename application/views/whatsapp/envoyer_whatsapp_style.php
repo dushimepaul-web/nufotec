@@ -892,28 +892,29 @@ if (!isset($job_id)) $job_id = null;
     </div>
 </div>
 
+<!-- Dans le <head> de envoyer_whatsapp_style.php -->
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/audiobuffer-to-wav@1.0.0/index.js"></script>
 <script>
-// Configuration - Chunk size 1.5 MB pour Whapi
-const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5 MB
+/// ==================== CONFIGURATION GLOBALE ====================
+const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5 MB pour Whapi
 let selectedFile = null;
 let currentUploadId = null;
 let isUploading = false;
 let abortController = null;
-
-// Variables pour l'enregistrement audio
-let mediaRecorder = null;
-let audioChunks = [];
-let recordingStartTime = null;
-let recordingTimer = null;
-let audioBlob = null;
-let isRecording = false;
-let audioStream = null; // Stocker le stream pour le nettoyer
-
-// État
 let selectedGroupes = [];
 let currentJobId = null;
 let pollInterval = null;
 let currentType = 'texte';
+
+// ==================== VARIABLES AUDIO (UNIQUES) ====================
+let audioContext = null;
+let audioRecorder = null;
+let audioRecordedChunks = [];
+let audioStream = null;
+let recordingStartTime = null;
+let recordingTimer = null;
+let isRecording = false;
 
 function log(msg) {
     console.log('[WhatsApp]', msg);
@@ -950,18 +951,13 @@ function updateCounter() {
         }
     }
     
-    // Afficher/masquer l'état vide
     const emptyState = document.getElementById('emptyState');
     const previewBubble = document.getElementById('previewBubble');
     if (emptyState) {
-        if (count > 0 || selectedFile || audioBlob) {
-            emptyState.style.display = 'none';
-            if (document.getElementById('previewText')?.textContent) {
-                previewBubble.style.display = 'block';
-            }
-        } else {
-            emptyState.style.display = 'block';
-            previewBubble.style.display = 'none';
+        const hasContent = count > 0 || selectedFile || (currentType === 'audio' && audioRecordedChunks.length > 0);
+        emptyState.style.display = hasContent ? 'none' : 'block';
+        if (previewBubble && document.getElementById('previewText')?.textContent) {
+            previewBubble.style.display = hasContent ? 'block' : 'none';
         }
     }
 }
@@ -973,11 +969,13 @@ function selectAllGroupes() {
     checkboxes.forEach(cb => {
         cb.checked = !allChecked;
         const item = cb.closest('.conversation-item');
-        if (!allChecked) {
-            item.classList.add('selected');
-            if (!selectedGroupes.includes(cb.value)) selectedGroupes.push(cb.value);
-        } else {
-            item.classList.remove('selected');
+        if (item) {
+            if (!allChecked) {
+                item.classList.add('selected');
+                if (!selectedGroupes.includes(cb.value)) selectedGroupes.push(cb.value);
+            } else {
+                item.classList.remove('selected');
+            }
         }
     });
     
@@ -986,10 +984,15 @@ function selectAllGroupes() {
 }
 
 function filterGroupes() {
-    const term = document.getElementById('searchGroupes').value.toLowerCase();
+    const searchInput = document.getElementById('searchGroupes');
+    if (!searchInput) return;
+    const term = searchInput.value.toLowerCase();
     document.querySelectorAll('.conversation-item').forEach(item => {
-        const name = item.querySelector('.conversation-name').textContent.toLowerCase();
-        item.style.display = name.includes(term) ? '' : 'none';
+        const nameEl = item.querySelector('.conversation-name');
+        if (nameEl) {
+            const name = nameEl.textContent.toLowerCase();
+            item.style.display = name.includes(term) ? '' : 'none';
+        }
     });
 }
 
@@ -998,31 +1001,32 @@ function filterGroupes() {
 function setType(type, btn) {
     currentType = type;
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn) btn.classList.add('active');
     
     const input = document.getElementById('messageInput');
+    if (!input) return;
+    
+    const placeholders = {
+        'texte': "Tapez votre message...",
+        'video': "Légende de la vidéo (optionnel)...",
+        'image': "Légende de l'image (optionnel)...",
+        'document': "Commentaire (optionnel)...",
+        'audio': "Enregistrement audio..."
+    };
+    
+    input.placeholder = placeholders[type] || "Ajouter une légende...";
     
     if (type === 'texte') {
-        input.placeholder = "Tapez votre message...";
         clearFile();
         clearAudio();
     } else if (type === 'audio') {
-        // Démarrer l'enregistrement directement
         startRecording();
-    } else {
-        const placeholders = {
-            'video': "Légende de la vidéo (optionnel)...",
-            'image': "Légende de l'image (optionnel)...",
-            'document': "Commentaire (optionnel)..."
-        };
-        input.placeholder = placeholders[type] || "Ajouter une légende...";
-        
-        if (!selectedFile && !audioBlob) {
-            document.getElementById('filePicker').accept = type === 'video' ? 'video/*' : 
-                                                          type === 'image' ? 'image/*' : 
-                                                          type === 'audio' ? 'audio/*' :
-                                                          '*/*';
-            document.getElementById('filePicker').click();
+    } else if (!selectedFile) {
+        const filePicker = document.getElementById('filePicker');
+        if (filePicker) {
+            filePicker.accept = type === 'video' ? 'video/*' : 
+                               type === 'image' ? 'image/*' : '*/*';
+            filePicker.click();
         }
     }
 }
@@ -1032,7 +1036,6 @@ function setType(type, btn) {
 function handleFileSelect(input) {
     if (!input.files || !input.files[0]) return;
     
-    // Si on avait un audio, le supprimer
     clearAudio();
     
     selectedFile = input.files[0];
@@ -1040,53 +1043,67 @@ function handleFileSelect(input) {
     
     log('Fichier sélectionné: ' + selectedFile.name + ' (' + sizeMB + ' MB) - Type: ' + selectedFile.type);
     
-    // Détecter le type automatiquement
+    // Détection auto du type
     if (selectedFile.type.startsWith('video/')) currentType = 'video';
     else if (selectedFile.type.startsWith('image/')) currentType = 'image';
     else if (selectedFile.type.startsWith('audio/')) currentType = 'audio';
     else currentType = 'document';
     
-    // Mettre à jour l'UI des boutons
+    // Mise à jour UI boutons
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-    const btnId = currentType === 'video' ? 'btnVideo' : 
-                  currentType === 'image' ? 'btnImage' : 
-                  currentType === 'audio' ? 'btnAudio' : 'btnDocument';
-    document.getElementById(btnId)?.classList.add('active');
+    const btnMap = {
+        'video': 'btnVideo',
+        'image': 'btnImage', 
+        'audio': 'btnAudio',
+        'document': 'btnDocument'
+    };
+    const btnId = btnMap[currentType];
+    if (btnId) {
+        const btn = document.getElementById(btnId);
+        if (btn) btn.classList.add('active');
+    }
     
-    // UI updates
-    showFilePreview(selectedFile.name, sizeMB + ' MB • ' + Math.ceil(selectedFile.size / CHUNK_SIZE) + ' chunks', currentType);
-    
+    const chunksCount = Math.ceil(selectedFile.size / CHUNK_SIZE);
+    showFilePreview(selectedFile.name, `${sizeMB} MB • ${chunksCount} chunks`, currentType);
     updateCounter();
 }
 
 function showFilePreview(name, sizeInfo, type) {
-    document.getElementById('filePreview').classList.add('active');
-    document.getElementById('fileName').textContent = name;
-    document.getElementById('fileSize').textContent = sizeInfo;
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileIcon = document.getElementById('fileIcon');
     
-    // Icône selon type
+    if (filePreview) filePreview.classList.add('active');
+    if (fileName) fileName.textContent = name;
+    if (fileSize) fileSize.textContent = sizeInfo;
+    
     const icons = {
         'video': 'bi-camera-video-fill',
         'image': 'bi-image-fill',
         'audio': 'bi-mic-fill',
         'document': 'bi-file-earmark-text-fill'
     };
-    document.getElementById('fileIcon').className = 'bi ' + (icons[type] || 'bi-file-earmark');
+    if (fileIcon) fileIcon.className = 'bi ' + (icons[type] || 'bi-file-earmark');
 }
 
 function clearFile() {
-    document.getElementById('filePicker').value = '';
+    const filePicker = document.getElementById('filePicker');
+    if (filePicker) filePicker.value = '';
     selectedFile = null;
-    document.getElementById('filePreview').classList.remove('active');
-    if (currentType !== 'texte' && !audioBlob) {
+    const filePreview = document.getElementById('filePreview');
+    if (filePreview) filePreview.classList.remove('active');
+    
+    if (currentType !== 'texte' && currentType !== 'audio') {
         setType('texte', document.getElementById('btnTexte'));
     }
 }
 
-// ==================== ENREGISTREMENT AUDIO - CORRIGÉ ====================
+// ==================== ENREGISTREMENT AUDIO ====================
 
 function initWaveBars() {
     const container = document.getElementById('waveContainer');
+    if (!container) return;
     container.innerHTML = '';
     for (let i = 0; i < 30; i++) {
         const bar = document.createElement('div');
@@ -1100,232 +1117,248 @@ function initWaveBars() {
 
 async function startRecording() {
     try {
-        // Vérifier que l'API est disponible
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (!navigator.mediaDevices?.getUserMedia) {
             alert('Votre navigateur ne supporte pas l\'enregistrement audio');
-            setType('texte', document.getElementById('btnTexte'));
             return;
         }
-        
-        // Configuration audio optimale pour WhatsApp
-        const audioConstraints = {
+
+        // Nettoyage si ancien recording actif
+        if (isRecording) {
+            await cancelRecording();
+        }
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({
+            sampleRate: 44100
+        });
+
+        const stream = await navigator.mediaDevices.getUserMedia({ 
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
-                sampleRate: 44100,
-                channelCount: 1 // Mono pour réduire la taille
-            }
+                channelCount: 1
+            } 
+        });
+
+        const source = audioContext.createMediaStreamSource(stream);
+        audioRecorder = audioContext.createScriptProcessor(4096, 1, 1);
+        audioRecordedChunks = [];
+        
+        audioRecorder.onaudioprocess = function(e) {
+            if (!isRecording) return;
+            const channelData = e.inputBuffer.getChannelData(0);
+            audioRecordedChunks.push(new Float32Array(channelData));
         };
-        
-        // Demander permission microphone
-        audioStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
-        
-        // Détecter le meilleur format supporté
-        // Priorité: audio/ogg (Opus) > audio/webm > audio/mp4
-        const mimeTypes = [
-            'audio/ogg;codecs=opus',
-            'audio/webm;codecs=opus',
-            'audio/webm',
-            'audio/mp4'
-        ];
-        
-        let selectedMime = '';
-        for (let type of mimeTypes) {
-            if (MediaRecorder.isTypeSupported(type)) {
-                selectedMime = type;
-                log('Format audio sélectionné: ' + type);
-                break;
-            }
-        }
-        
-        if (!selectedMime) {
-            alert('Aucun format audio supporté par ce navigateur');
-            setType('texte', document.getElementById('btnTexte'));
-            return;
-        }
-        
-        // Configurer le recorder avec le format optimal
-        const options = {
-            mimeType: selectedMime,
-            audioBitsPerSecond: 128000 // 128 kbps qualité voix
-        };
-        
-        mediaRecorder = new MediaRecorder(audioStream, options);
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = (e) => {
-            if (e.data && e.data.size > 0) {
-                audioChunks.push(e.data);
-                log('Chunk audio reçu: ' + e.data.size + ' bytes');
-            }
-        };
-        
-        mediaRecorder.onstop = () => {
-            // Créer le blob avec le type exact utilisé
-            const actualMimeType = mediaRecorder.mimeType || selectedMime;
-            audioBlob = new Blob(audioChunks, { type: actualMimeType });
-            
-            // Déterminer l'extension selon le MIME type
-            let extension = 'webm';
-            if (actualMimeType.includes('ogg')) extension = 'ogg';
-            if (actualMimeType.includes('mp4') || actualMimeType.includes('m4a')) extension = 'm4a';
-            
-            // Créer le fichier avec le bon type MIME
-            const audioFile = new File([audioBlob], 'note_vocale_' + Date.now() + '.' + extension, { 
-                type: actualMimeType 
-            });
-            
-            // Stocker comme fichier sélectionné
-            selectedFile = audioFile;
-            currentType = 'audio';
-            
-            // Afficher dans le preview
-            const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
-            const mins = Math.floor(duration / 60).toString().padStart(2, '0');
-            const secs = (duration % 60).toString().padStart(2, '0');
-            
-            showFilePreview(
-                'Note vocale (' + extension.toUpperCase() + ')', 
-                `Durée: ${mins}:${secs} • ${(audioFile.size/1024).toFixed(1)} KB • ${actualMimeType}`, 
-                'audio'
-            );
-            
-            log('Audio enregistré: ' + audioFile.size + ' bytes, type: ' + actualMimeType + ', ext: ' + extension);
-            
-            // Nettoyer le stream
-            if (audioStream) {
-                audioStream.getTracks().forEach(track => track.stop());
-                audioStream = null;
-            }
-        };
-        
-        mediaRecorder.onerror = (e) => {
-            console.error('Erreur MediaRecorder:', e);
-            alert('Erreur lors de l\'enregistrement audio');
-            cancelRecording();
-        };
-        
-        // Démarrer l'enregistrement
-        mediaRecorder.start(100); // Collecte toutes les 100ms
+
+        source.connect(audioRecorder);
+        audioRecorder.connect(audioContext.destination);
+
+        audioStream = stream;
         recordingStartTime = Date.now();
         isRecording = true;
+
+        // UI Recording
+        const normalArea = document.getElementById('normalInputArea');
+        const recordingArea = document.getElementById('recordingInputArea');
+        if (normalArea) normalArea.style.display = 'none';
+        if (recordingArea) recordingArea.style.display = 'flex';
         
-        // Basculer l'interface
-        document.getElementById('normalInputArea').style.display = 'none';
-        document.getElementById('recordingInputArea').style.display = 'flex';
-        
-        // Initialiser les vagues
         initWaveBars();
-        
-        // Démarrer le timer
         updateRecordingTime();
         recordingTimer = setInterval(updateRecordingTime, 1000);
         
-        // Mettre à jour le bouton audio
-        document.getElementById('btnAudio').classList.add('active');
-        
-        log('Enregistrement audio démarré avec format: ' + selectedMime);
-        
+        const btnAudio = document.getElementById('btnAudio');
+        if (btnAudio) btnAudio.classList.add('active');
+
+        log('Enregistrement audio démarré');
+
     } catch (err) {
-        console.error('Erreur microphone:', err);
-        alert('Erreur d\'accès au microphone: ' + err.message);
-        setType('texte', document.getElementById('btnTexte'));
-        
-        // Nettoyer en cas d'erreur
-        if (audioStream) {
-            audioStream.getTracks().forEach(track => track.stop());
-            audioStream = null;
-        }
+        console.error('Erreur:', err);
+        alert('Erreur microphone: ' + err.message);
+        resetAudioState();
     }
 }
 
 function updateRecordingTime() {
+    if (!recordingStartTime) return;
     const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
     const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
     const secs = (elapsed % 60).toString().padStart(2, '0');
-    document.getElementById('recordingTime').textContent = `${mins}:${secs}`;
+    const timeEl = document.getElementById('recordingTime');
+    if (timeEl) timeEl.textContent = `${mins}:${secs}`;
 }
 
-function cancelRecording() {
-    // Arrêter le recorder si actif
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        try {
-            mediaRecorder.stop();
-        } catch (e) {
-            console.error('Erreur arrêt recorder:', e);
-        }
+async function stopRecordingAndSend() {
+    if (!isRecording) return;
+    
+    isRecording = false;
+    clearInterval(recordingTimer);
+    
+    // Arrêt propre du recorder
+    if (audioRecorder) {
+        try { audioRecorder.disconnect(); } catch(e) {}
+        audioRecorder = null;
     }
     
-    // Nettoyer le stream
     if (audioStream) {
         audioStream.getTracks().forEach(track => track.stop());
         audioStream = null;
     }
     
-    clearInterval(recordingTimer);
-    audioChunks = [];
-    audioBlob = null;
+    if (audioContext) {
+        try { await audioContext.close(); } catch(e) {}
+        audioContext = null;
+    }
+
+    log('Conversion en MP3...');
+
+    try {
+        const mp3Blob = await convertToMp3(audioRecordedChunks);
+        const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+        const mins = Math.floor(duration / 60).toString().padStart(2, '0');
+        const secs = (duration % 60).toString().padStart(2, '0');
+        
+        const mp3File = new File([mp3Blob], `note_vocale_${Date.now()}.mp3`, { 
+            type: 'audio/mpeg' 
+        });
+        
+        selectedFile = mp3File;
+        currentType = 'audio';
+        
+        showFilePreview('Note vocale (MP3)', `Durée: ${mins}:${secs} • ${(mp3File.size/1024).toFixed(1)} KB`, 'audio');
+        log('MP3 créé: ' + mp3File.size + ' bytes');
+
+    } catch (err) {
+        console.error('Erreur conversion MP3:', err);
+        alert('Erreur conversion audio. Essayez avec un fichier audio plus court.');
+    }
+
+    resetAudioUI();
+    audioRecordedChunks = [];
+    recordingStartTime = null;
+}
+
+function cancelRecording() {
     isRecording = false;
-    mediaRecorder = null;
+    clearInterval(recordingTimer);
     
-    // Réinitialiser l'interface
-    document.getElementById('normalInputArea').style.display = 'flex';
-    document.getElementById('recordingInputArea').style.display = 'none';
+    if (audioRecorder) {
+        try { audioRecorder.disconnect(); } catch(e) {}
+        audioRecorder = null;
+    }
     
-    // Réinitialiser le type
-    setType('texte', document.getElementById('btnTexte'));
+    if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+        audioStream = null;
+    }
     
+    if (audioContext) {
+        try { audioContext.close(); } catch(e) {}
+        audioContext = null;
+    }
+    
+    resetAudioState();
     log('Enregistrement annulé');
 }
 
-function stopRecordingAndSend() {
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-        log('Recorder déjà inactif');
-        return;
-    }
-    
-    log('Arrêt de l\'enregistrement...');
-    
-    // Arrêter l'enregistrement - le onstop handler va créer le fichier
-    mediaRecorder.stop();
-    
-    clearInterval(recordingTimer);
+function resetAudioState() {
+    audioRecordedChunks = [];
+    recordingStartTime = null;
     isRecording = false;
+    resetAudioUI();
     
-    // Réinitialiser l'interface
-    document.getElementById('normalInputArea').style.display = 'flex';
-    document.getElementById('recordingInputArea').style.display = 'none';
+    const btnAudio = document.getElementById('btnAudio');
+    if (btnAudio) btnAudio.classList.remove('active');
     
-    log('Enregistrement terminé, fichier prêt à envoyer');
+    setType('texte', document.getElementById('btnTexte'));
+}
+
+function resetAudioUI() {
+    const normalArea = document.getElementById('normalInputArea');
+    const recordingArea = document.getElementById('recordingInputArea');
+    if (normalArea) normalArea.style.display = 'flex';
+    if (recordingArea) recordingArea.style.display = 'none';
 }
 
 function clearAudio() {
     if (isRecording) {
         cancelRecording();
+        return;
     }
-    audioBlob = null;
-    if (currentType === 'audio' && !selectedFile) {
-        document.getElementById('filePreview').classList.remove('active');
+    selectedFile = null;
+    if (currentType === 'audio') {
+        document.getElementById('filePreview')?.classList.remove('active');
+        setType('texte', document.getElementById('btnTexte'));
     }
 }
 
+function convertToMp3(chunks) {
+    return new Promise((resolve, reject) => {
+        try {
+            if (!chunks || chunks.length === 0) {
+                reject(new Error('Aucune donnée audio'));
+                return;
+            }
+
+            const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const audioData = new Float32Array(totalLength);
+            
+            let offset = 0;
+            chunks.forEach(chunk => {
+                audioData.set(chunk, offset);
+                offset += chunk.length;
+            });
+
+            // Conversion PCM 16-bit
+            const samples = new Int16Array(audioData.length);
+            for (let i = 0; i < audioData.length; i++) {
+                const s = Math.max(-1, Math.min(1, audioData[i]));
+                samples[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+
+            // Encodage MP3 avec lamejs [^9^]
+            const mp3Encoder = new lamejs.Mp3Encoder(1, 44100, 128);
+            const mp3Data = [];
+            const sampleBlockSize = 1152;
+            
+            for (let i = 0; i < samples.length; i += sampleBlockSize) {
+                const sampleChunk = samples.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3Encoder.encodeBuffer(sampleChunk);
+                if (mp3buf.length > 0) mp3Data.push(mp3buf);
+            }
+            
+            const mp3buf = mp3Encoder.flush();
+            if (mp3buf.length > 0) mp3Data.push(mp3buf);
+
+            resolve(new Blob(mp3Data, { type: 'audio/mpeg' }));
+            
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+// ==================== PRÉVISUALISATION ====================
+
 function updatePreview() {
-    const text = document.getElementById('messageInput').value.trim();
+    const input = document.getElementById('messageInput');
+    if (!input) return;
+    
+    const text = input.value.trim();
     const bubble = document.getElementById('previewBubble');
     const previewText = document.getElementById('previewText');
     
-    if (text) {
-        previewText.textContent = text;
-        bubble.style.display = 'block';
-    } else {
-        previewText.textContent = '(Aucune légende)';
+    if (previewText) {
+        previewText.textContent = text || '(Aucune légende)';
+    }
+    if (bubble) {
+        bubble.style.display = text ? 'block' : 'none';
     }
     
     updateCounter();
 }
 
-// ==================== ENVOI PAR CHUNKS 1.5MB ====================
+// ==================== ENVOI PAR CHUNKS ====================
 
 async function submitForm() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
@@ -1340,23 +1373,20 @@ async function submitForm() {
         return;
     }
     
-    const message = document.getElementById('messageInput').value.trim();
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput ? messageInput.value.trim() : '';
     const groupesIds = Array.from(checkboxes).map(cb => cb.value);
     
-    // Désactiver le bouton
     const sendBtn = document.getElementById('sendBtn');
-    sendBtn.disabled = true;
+    if (sendBtn) sendBtn.disabled = true;
     isUploading = true;
     
     try {
         if (currentType === 'texte') {
-            // Envoi texte simple
             await envoyerTexte(groupesIds, message);
         } else {
-            // Envoi fichier par chunks (y compris audio)
-            // FORCER le type audio si c'est un fichier audio
-            const typeToSend = selectedFile.type.startsWith('audio/') ? 'audio' : currentType;
-            log('Envoi fichier type: ' + typeToSend + ', MIME: ' + selectedFile.type);
+            const typeToSend = selectedFile?.type?.startsWith('audio/') ? 'audio' : currentType;
+            log('Envoi fichier type: ' + typeToSend + ', MIME: ' + selectedFile?.type);
             await envoyerFichierChunks(groupesIds, message, typeToSend, selectedFile);
         }
     } catch (error) {
@@ -1364,12 +1394,11 @@ async function submitForm() {
         alert('Erreur: ' + error.message);
         hideUploadProgress();
     } finally {
-        sendBtn.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
         isUploading = false;
     }
 }
 
-// Envoi texte simple
 async function envoyerTexte(groupesIds, message) {
     showUploadProgress(0, 'Envoi des messages...', 'bi-chat-text-fill');
     
@@ -1391,7 +1420,6 @@ async function envoyerTexte(groupesIds, message) {
     startPolling(result.job_id);
 }
 
-// Envoi fichier par chunks - Style WhatsApp
 async function envoyerFichierChunks(groupesIds, message, type, file) {
     const totalSize = file.size;
     const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
@@ -1400,10 +1428,10 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
     
     abortController = new AbortController();
     
-    log(`Upload démarré: ${totalChunks} chunks de 1.5 MB, type: ${type}, mime: ${file.type}`);
-    showUploadProgress(0, 'Préparation de l\'upload...', 'bi-cloud-arrow-up');
+    log(`Upload démarré: ${totalChunks} chunks, type: ${type}, mime: ${file.type}`);
+    showUploadProgress(0, 'Préparation...', 'bi-cloud-arrow-up');
     
-    // Étape 1: Initialiser
+    // Initialisation
     const initResponse = await fetch('<?php echo site_url('whatsapp/init_chunk_upload'); ?>', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1411,11 +1439,11 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
             upload_id: uploadId,
             filename: file.name,
             filesize: totalSize,
-            filetype: file.type, // Envoyer le vrai MIME type
+            filetype: file.type,
             total_chunks: totalChunks,
             groupes_ids: groupesIds,
             message: message,
-            type_envoi: type // 'audio', 'video', 'image', 'document'
+            type_envoi: type
         }),
         signal: abortController.signal
     });
@@ -1423,7 +1451,7 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
     const initResult = await initResponse.json();
     if (!initResult.success) throw new Error(initResult.error);
     
-    // Étape 2: Envoyer les chunks un par un
+    // Envoi des chunks
     let uploadedSize = 0;
     let lastTime = Date.now();
     
@@ -1440,14 +1468,13 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
         chunkFormData.append('total_chunks', totalChunks);
         chunkFormData.append('chunk_data', chunk, `${file.name}.part${chunkIndex}`);
         
-        // Calculer la vitesse
+        // Stats
         const now = Date.now();
         const elapsed = (now - lastTime) / 1000;
         const chunkSizeMB = (end - start) / 1024 / 1024;
         const speed = elapsed > 0 ? (chunkSizeMB / elapsed).toFixed(1) : 0;
         lastTime = now;
         
-        // Mettre à jour la progression
         uploadedSize = end;
         const percent = Math.round((uploadedSize / totalSize) * 100);
         
@@ -1458,7 +1485,7 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
             `${speed} MB/s`
         );
         
-        // Envoi avec retry
+        // Retry logic
         let retries = 3;
         while (retries > 0) {
             try {
@@ -1473,24 +1500,23 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
                 const chunkResult = await chunkResponse.json();
                 if (!chunkResult.success) throw new Error(chunkResult.error);
                 
-                break; // Succès
+                break;
                 
             } catch (err) {
                 retries--;
-                log(`Retry chunk ${chunkIndex + 1}, tentatives restantes: ${retries}`);
+                log(`Retry chunk ${chunkIndex + 1}, reste: ${retries}`);
                 if (retries === 0) throw err;
                 await new Promise(r => setTimeout(r, 1000));
             }
         }
         
-        // Petite pause pour ne pas saturer
         if (chunkIndex < totalChunks - 1) {
             await new Promise(r => setTimeout(r, 50));
         }
     }
     
-    // Étape 3: Finaliser et lancer l'envoi Whapi
-    updateUploadProgress(100, 'Assemblage du fichier...', 'Finalisation', '');
+    // Finalisation
+    updateUploadProgress(100, 'Assemblage...', 'Finalisation', '');
     
     const finalizeFormData = new FormData();
     finalizeFormData.append('upload_id', uploadId);
@@ -1509,36 +1535,49 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
 }
 
 function cancelUpload() {
-    if (abortController) {
-        abortController.abort();
-    }
+    if (abortController) abortController.abort();
     isUploading = false;
     hideUploadProgress();
-    log('Upload annulé par l\'utilisateur');
+    log('Upload annulé');
 }
 
-// UI Progress
+// ==================== UI PROGRESS ====================
+
 function showUploadProgress(percent, title, iconClass) {
-    document.getElementById('uploadOverlay').classList.add('active');
-    document.getElementById('uploadIcon').innerHTML = `<i class="bi ${iconClass}"></i>`;
-    document.getElementById('uploadTitle').textContent = title;
-    document.getElementById('uploadProgress').style.width = percent + '%';
-    document.getElementById('uploadPercent').textContent = percent + '%';
+    const overlay = document.getElementById('uploadOverlay');
+    const icon = document.getElementById('uploadIcon');
+    const titleEl = document.getElementById('uploadTitle');
+    const progress = document.getElementById('uploadProgress');
+    const percentEl = document.getElementById('uploadPercent');
+    
+    if (overlay) overlay.classList.add('active');
+    if (icon) icon.innerHTML = `<i class="bi ${iconClass}"></i>`;
+    if (titleEl) titleEl.textContent = title;
+    if (progress) progress.style.width = percent + '%';
+    if (percentEl) percentEl.textContent = percent + '%';
 }
 
 function updateUploadProgress(percent, title, chunkInfo, speed) {
-    document.getElementById('uploadTitle').textContent = title;
-    document.getElementById('uploadProgress').style.width = percent + '%';
-    document.getElementById('uploadPercent').textContent = percent + '%';
-    document.getElementById('uploadChunkInfo').textContent = chunkInfo;
-    document.getElementById('uploadSpeed').textContent = speed;
+    const titleEl = document.getElementById('uploadTitle');
+    const progress = document.getElementById('uploadProgress');
+    const percentEl = document.getElementById('uploadPercent');
+    const chunkEl = document.getElementById('uploadChunkInfo');
+    const speedEl = document.getElementById('uploadSpeed');
+    
+    if (titleEl) titleEl.textContent = title;
+    if (progress) progress.style.width = percent + '%';
+    if (percentEl) percentEl.textContent = percent + '%';
+    if (chunkEl) chunkEl.textContent = chunkInfo;
+    if (speedEl) speedEl.textContent = speed;
 }
 
 function hideUploadProgress() {
-    document.getElementById('uploadOverlay').classList.remove('active');
+    const overlay = document.getElementById('uploadOverlay');
+    if (overlay) overlay.classList.remove('active');
 }
 
-// Polling statut
+// ==================== POLLING ====================
+
 function startPolling(jobId) {
     let attempts = 0;
     
@@ -1557,10 +1596,8 @@ function startPolling(jobId) {
                 
                 if (data.status === 'completed') {
                     clearInterval(pollInterval);
-                    // Redirection vers résultat
                     window.location.href = '<?php echo site_url('whatsapp/resultat/'); ?>' + jobId;
                 } else {
-                    // Progression de l'envoi aux groupes
                     const progress = data.progress || Math.min(10 + attempts * 2, 95);
                     const text = data.current_group 
                         ? `Envoi à ${data.current_group}...` 
@@ -1574,17 +1611,21 @@ function startPolling(jobId) {
                     );
                 }
             })
-            .catch(err => {
-                log('Polling error: ' + err);
-            });
+            .catch(err => log('Polling error: ' + err));
     }, 2000);
 }
 
-// Auto-resize textarea
-document.getElementById('messageInput')?.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-    updatePreview();
+// ==================== EVENT LISTENERS ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            updatePreview();
+        });
+    }
 });
 </script>
 

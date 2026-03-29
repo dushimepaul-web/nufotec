@@ -257,37 +257,40 @@ class Whapi_lib {
         $file_size = filesize($file_path);
         
         // ✅ CORRECTION: Pour l'audio, TOUJOURS convertir en MP3
-        // Même si < 16MB, car WebM/Opus n'est pas bien supporté par WhatsApp iOS
-        if ($type === 'audio') {
-            $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
-            $mime = mime_content_type($file_path);
-            
-            log_message('info', "Préparation audio: $extension | MIME: $mime | Taille: " . $this->format_bytes($file_size));
-            
-            // Si c'est déjà du MP3, pas besoin de conversion
-            if ($extension === 'mp3' && strpos($mime, 'audio/mpeg') !== false) {
-                log_message('info', 'Audio déjà en MP3, pas de conversion nécessaire');
-                return array(
-                    'path' => $file_path,
-                    'temp' => false,
-                    'original_size' => $file_size,
-                    'final_size' => $file_size
-                );
-            }
-            
-            // Conversion obligatoire en MP3
-            $conversion = $this->convertir_audio_mp3($file_path);
-            
-            if (!$conversion['success']) {
-                return array(
-                    'error' => 'Impossible de convertir l\'audio en MP3. FFmpeg est-il installé?',
-                    'path' => null
-                );
-            }
-            
+        // Dans preparer_fichier(), remplacez la partie audio :
+
+if ($type === 'audio') {
+    $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+    $mime = mime_content_type($file_path);
+    
+    log_message('info', "Préparation audio: $extension | MIME: $mime | Taille: " . $this->format_bytes($file_size));
+    
+    // ✅ Si c'est déjà du MP3 (converti par le navigateur), envoyer tel quel
+    if ($extension === 'mp3' || strpos($mime, 'audio/mpeg') !== false) {
+        log_message('info', 'Audio déjà en MP3 (converti par navigateur), envoi direct');
+        return array(
+            'path' => $file_path,
+            'temp' => false,
+            'original_size' => $file_size,
+            'final_size' => $file_size
+        );
+    }
+    
+    // Si FFmpeg disponible (optionnel), sinon erreur
+    if ($this->ffmpeg_available) {
+        $conversion = $this->convertir_audio_mp3($file_path);
+        if ($conversion['success']) {
             return $conversion;
         }
-        
+    }
+    
+    // ❌ SANS FFMPEG : Refuser les formats non-MP3
+    log_message('error', "Format audio non supporté sans FFmpeg: $extension");
+    return array(
+        'error' => 'Format audio non supporté. Le navigateur doit convertir en MP3 avant envoi.',
+        'path' => null
+    );
+}
         // Pour les autres types: compression seulement si > 16MB
         if ($file_size < $this->compression_threshold) {
             return array(
