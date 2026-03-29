@@ -200,17 +200,19 @@ function startJitsiCall() {
                 enableClosePage: false,
                 disableProfile: true,
                 defaultLanguage: 'fr',
-                lang: 'fr'
+                lang: 'fr',
+                // Ignorer les erreurs audio non bloquantes
+                disableAudioLevels: false,
+                channelLastN: 4,
+                adaptiveLastN: true
             },
             interfaceConfigOverwrite: {
                 SHOW_JITSI_WATERMARK: false,
                 SHOW_WATERMARK_FOR_GUESTS: false,
                 DEFAULT_BACKGROUND: '#111b21',
                 TOOLBAR_BUTTONS: [
-                    'microphone', 'camera', 'closedcaptions', 'desktop', 
-                    'fullscreen', 'fodeviceselection', 'hangup', 
-                    'profile', 'chat', 'recording', 'settings', 
-                    'shareaudio', 'sharedvideo', 'tileview'
+                    'microphone', 'camera', 'desktop', 
+                    'fullscreen', 'hangup', 'chat', 'settings'
                 ]
             }
         };
@@ -233,7 +235,12 @@ function startJitsiCall() {
         
         jitsiApi.addListener('participantLeft', (participant) => {
             console.log('👤 Participant quitté:', participant.displayName);
-            updateStatus('Hors ligne', false);
+            const remaining = Object.keys(jitsiApi.getParticipantsInfo()).length;
+            if (remaining <= 1) {
+                updateStatus('Seul dans la salle', false);
+            } else {
+                updateStatus('En ligne', true);
+            }
             showToast('Le participant a quitté', 'warning');
         });
         
@@ -279,6 +286,9 @@ window.debugJitsi = () => {
     console.log('Connecté:', isConnected);
     console.log('Jitsi API:', !!jitsiApi);
     console.log('User:', userName);
+    if (jitsiApi) {
+        console.log('Participants:', jitsiApi.getParticipantsInfo());
+    }
 };
 </script>
 </body>

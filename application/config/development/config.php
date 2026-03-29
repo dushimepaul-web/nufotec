@@ -589,6 +589,3 @@ $config['taux_devise'] = [
     'USD_TO_BIF' => 7000
 ];
 
-
-// Clé API Daily.co (obtenue sur https://dashboard.daily.co)
-$config['daily_api_key'] = 'bd0f9359e68f19f40f212eddec492ac5678770e5cf8f12b167994b467f20e058';
