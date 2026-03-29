@@ -1,6 +1,6 @@
 // ============================================
-// NUFOTEC CONSULTATION - VERSION SANS CHAT v6.0.0
-// Optimisée pour serveur mutualisé
+// NUFOTEC CONSULTATION - VERSION CORRIGÉE v6.1.0
+// Correction: Échec ICE, reconnexion améliorée
 // ============================================
 
 (function() {
@@ -21,15 +21,15 @@
             : { id: 'other', name: 'Autre', avatar: '/assets/img/default-avatar.png' },
         currentRole: window.currentRole || 'participant',
         consultationId: window.consultationId || null,
-        maxReconnectionAttempts: 10,
+        maxReconnectionAttempts: 5,
         iceServers: null,
         debug: true,
-        forcePolling: true,
-        connectionTimeout: 20000,
-        iceGatheringTimeout: 15000,
-        offerRetryDelay: 5000,
-        offerMaxRetries: 2,
-        heartbeatInterval: 30000
+        connectionTimeout: 30000,
+        iceGatheringTimeout: 8000,
+        offerRetryDelay: 3000,
+        offerMaxRetries: 3,
+        heartbeatInterval: 25000,
+        iceConnectionTimeout: 15000
     };
 
     // ============================================
@@ -55,7 +55,7 @@
         isProcessingOffer: false,
         isProcessingAnswer: false,
         connectionStable: false,
-        degradedMode: false
+        iceConnectionTimer: null
     };
 
     // ============================================
@@ -67,8 +67,6 @@
         muteAudioBtn: document.getElementById('mute-audio'),
         muteVideoBtn: document.getElementById('mute-video'),
         leaveBtn: document.getElementById('leave-call'),
-        toggleChatBtn: document.getElementById('toggle-chat'),
-        chatArea: document.getElementById('chat-area'),
         otherStatus: document.getElementById('other-status'),
         waitingOverlay: document.getElementById('waiting-overlay'),
         offlineIndicator: document.getElementById('offline-indicator'),
@@ -85,7 +83,7 @@
             const emoji = { 
                 error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', 
                 debug: '🔍', polling: '📮', offer: '📤', answer: '📩', 
-                track: '🎥', reconnect: '🔄'
+                track: '🎥', reconnect: '🔄', ice: '🧊'
             }[level] || '';
             const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
             logFn(prefix, emoji, ...args);
@@ -120,8 +118,6 @@
             return div.innerHTML;
         },
 
-        getCurrentUserId: function() { return CONFIG.currentUser?.id || 'me'; },
-
         updateOtherStatus: function(online) {
             if (!elements.otherStatus) return;
             elements.otherStatus.textContent = online ? 'En ligne' : 'Hors ligne';
@@ -141,15 +137,6 @@
         
         resetRemoteVideo: function() { 
             if (elements.remoteVideo) { 
-                if (elements.remoteVideo.srcObject) {
-                    const oldStream = elements.remoteVideo.srcObject;
-                    if (oldStream && oldStream.getTracks) {
-                        oldStream.getTracks().forEach(track => {
-                            track.onunmute = null;
-                            track.onmute = null;
-                        });
-                    }
-                }
                 elements.remoteVideo.srcObject = null; 
                 elements.remoteVideo.load(); 
             }
@@ -179,6 +166,10 @@
                 clearTimeout(state.reconnectTimer);
                 state.reconnectTimer = null;
             }
+            if (state.iceConnectionTimer) {
+                clearTimeout(state.iceConnectionTimer);
+                state.iceConnectionTimer = null;
+            }
             if (state.socket) { 
                 state.socket.removeAllListeners(); 
                 state.socket.disconnect(); 
@@ -189,133 +180,21 @@
     };
 
     // ============================================
-    // GESTIONNAIRE PERMISSIONS
+    // GESTIONNAIRE PERMISSIONS (simplifié)
     // ============================================
     const PermissionManager = {
-        devices: { cameras: [], micros: [] },
-        selectedCamera: null,
-        selectedMicro: null,
-        previewStream: null,
-
-        showModal: function() {
-            const modal = document.getElementById('permissionModal');
-            if (modal) modal.style.display = 'flex';
-        },
-
-        hideModal: function() {
-            const modal = document.getElementById('permissionModal');
-            if (modal) modal.style.display = 'none';
-            this.stopPreview();
-        },
-
-        loadDevices: async function() {
-            try {
-                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                tempStream.getTracks().forEach(track => track.stop());
-                
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                this.devices.cameras = devices.filter(d => d.kind === 'videoinput');
-                this.devices.micros = devices.filter(d => d.kind === 'audioinput');
-                
-                this.populateSelectors();
-            } catch (error) {
-                console.error('Erreur chargement périphériques:', error);
-            }
-        },
-
-        populateSelectors: function() {
-            const cameraSelect = document.getElementById('cameraSelect');
-            const microSelect = document.getElementById('microSelect');
-            
-            if (cameraSelect) {
-                cameraSelect.innerHTML = '<option value="">Sélectionner une caméra...</option>';
-                this.devices.cameras.forEach((cam, i) => {
-                    const opt = document.createElement('option');
-                    opt.value = cam.deviceId;
-                    opt.textContent = cam.label || `Caméra ${i + 1}`;
-                    cameraSelect.appendChild(opt);
-                });
-                cameraSelect.onchange = () => { 
-                    this.selectedCamera = cameraSelect.value; 
-                    this.startPreview(); 
-                };
-            }
-            
-            if (microSelect) {
-                microSelect.innerHTML = '<option value="">Sélectionner un micro...</option>';
-                this.devices.micros.forEach((mic, i) => {
-                    const opt = document.createElement('option');
-                    opt.value = mic.deviceId;
-                    opt.textContent = mic.label || `Micro ${i + 1}`;
-                    microSelect.appendChild(opt);
-                });
-                microSelect.onchange = () => { 
-                    this.selectedMicro = microSelect.value; 
-                };
-            }
-            
-            if (this.devices.cameras.length) {
-                cameraSelect.value = this.devices.cameras[0].deviceId;
-                this.selectedCamera = this.devices.cameras[0].deviceId;
-                this.startPreview();
-            }
-            if (this.devices.micros.length) {
-                microSelect.value = this.devices.micros[0].deviceId;
-                this.selectedMicro = this.devices.micros[0].deviceId;
-            }
-        },
-
-        startPreview: async function() {
-            this.stopPreview();
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: this.selectedCamera ? { deviceId: { exact: this.selectedCamera } } : true,
-                    audio: false
-                });
-                this.previewStream = stream;
-                const previewVideo = document.getElementById('previewVideo');
-                const previewPlaceholder = document.querySelector('.preview-placeholder');
-                if (previewVideo && previewPlaceholder) {
-                    previewVideo.srcObject = stream;
-                    previewVideo.style.display = 'block';
-                    previewPlaceholder.style.display = 'none';
-                    previewVideo.play().catch(e => console.log('Preview error:', e));
-                }
-            } catch (error) { 
-                console.error('Erreur preview:', error); 
-            }
-        },
-
-        stopPreview: function() {
-            if (this.previewStream) { 
-                this.previewStream.getTracks().forEach(t => t.stop()); 
-                this.previewStream = null; 
-            }
-            const previewVideo = document.getElementById('previewVideo');
-            const previewPlaceholder = document.querySelector('.preview-placeholder');
-            if (previewVideo) { 
-                previewVideo.srcObject = null; 
-                previewVideo.style.display = 'none'; 
-            }
-            if (previewPlaceholder) previewPlaceholder.style.display = 'block';
-        },
-
         getStream: async function() {
             const constraints = {
                 video: {
-                    width: { ideal: 640, max: 1280 },
-                    height: { ideal: 480, max: 720 },
-                    frameRate: { ideal: 30, max: 30 }
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
                 },
                 audio: {
                     echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
+                    noiseSuppression: true
                 }
             };
-            
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            return stream;
+            return await navigator.mediaDevices.getUserMedia(constraints);
         },
 
         checkExistingPermission: async function() {
@@ -330,7 +209,7 @@
     };
 
     // ============================================
-    // WEBRTC - VERSION SANS CHAT
+    // WEBRTC - VERSION CORRIGÉE
     // ============================================
     const webrtc = {
         async loadIceServers() {
@@ -342,11 +221,13 @@
                 utils.log('success', '✅ Serveurs ICE chargés');
                 return CONFIG.iceServers;
             } catch (error) {
-                utils.log('polling', '📮 Mode polling - Utilisation STUN publics');
+                utils.log('polling', '📮 Utilisation STUN publics');
                 CONFIG.iceServers = { 
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' }
                     ]
                 };
                 return CONFIG.iceServers;
@@ -357,14 +238,14 @@
             if (state.isConnecting) {
                 utils.log('debug', '⏳ Connexion déjà en cours...');
                 return new Promise(resolve => {
-                    const checkInterval = setInterval(() => {
+                    const interval = setInterval(() => {
                         if (!state.isConnecting && state.peerConnection) {
-                            clearInterval(checkInterval);
+                            clearInterval(interval);
                             resolve(state.peerConnection);
                         }
                     }, 100);
                     setTimeout(() => {
-                        clearInterval(checkInterval);
+                        clearInterval(interval);
                         resolve(state.peerConnection);
                     }, 5000);
                 });
@@ -379,8 +260,9 @@
 
                 if (!CONFIG.iceServers) await this.loadIceServers();
 
+                // Configuration ICE plus permissive
                 const config = { 
-                    ...CONFIG.iceServers, 
+                    iceServers: CONFIG.iceServers.iceServers,
                     iceTransportPolicy: 'all',
                     bundlePolicy: 'max-bundle', 
                     rtcpMuxPolicy: 'require',
@@ -399,7 +281,6 @@
                 return state.peerConnection;
             } catch (error) {
                 utils.log('error', '❌ Erreur création PeerConnection:', error);
-                utils.showToast('Erreur de connexion WebRTC', 'error');
                 throw error;
             } finally {
                 state.isConnecting = false;
@@ -409,14 +290,28 @@
         setupPeerConnectionListeners() {
             if (!state.peerConnection) return;
 
+            // Timeout pour la connexion ICE
+            state.iceConnectionTimer = setTimeout(() => {
+                if (state.peerConnection && !state.isConnected) {
+                    const iceState = state.peerConnection.iceConnectionState;
+                    if (iceState === 'checking' || iceState === 'new') {
+                        utils.log('warn', '⚠️ Délai ICE dépassé, tentative de restart...');
+                        this.restartIce();
+                    }
+                }
+            }, CONFIG.iceConnectionTimeout);
+
             state.peerConnection.onconnectionstatechange = () => {
                 const connState = state.peerConnection.connectionState;
                 utils.log('info', `📊 Connection state: ${connState}`);
                 
                 switch(connState) {
                     case 'connected':
+                        if (state.iceConnectionTimer) {
+                            clearTimeout(state.iceConnectionTimer);
+                            state.iceConnectionTimer = null;
+                        }
                         state.isConnected = true;
-                        state.connectionStable = true;
                         state.reconnectAttempts = 0;
                         state.offerRetryCount = 0;
                         utils.closeWaitingOverlay();
@@ -424,21 +319,8 @@
                         utils.showToast('Consultation vidéo établie', 'success');
                         break;
                         
-                    case 'disconnected':
-                        state.isConnected = false;
-                        state.connectionStable = false;
-                        utils.updateOtherStatus(false);
-                        utils.showToast('Connexion interrompue', 'warning');
-                        setTimeout(() => {
-                            if (!state.isConnected && state.otherSocketId) {
-                                this.handleConnectionFailure();
-                            }
-                        }, 3000);
-                        break;
-                        
                     case 'failed':
                         state.isConnected = false;
-                        state.connectionStable = false;
                         utils.log('error', '❌ Connection failed');
                         this.handleConnectionFailure();
                         break;
@@ -449,35 +331,38 @@
                 const iceState = state.peerConnection.iceConnectionState;
                 utils.log('info', `📊 ICE state: ${iceState}`);
                 
-                if (iceState === 'failed' && !state.degradedMode && !state.isConnected) {
-                    this.handleIceFailure();
-                }
-            };
-
-            let lastCandidateTime = 0;
-            state.peerConnection.onicecandidate = (event) => {
-                if (event.candidate && state.otherSocketId && state.socket && state.socket.connected) {
-                    const now = Date.now();
-                    if (now - lastCandidateTime > 50) {
-                        lastCandidateTime = now;
-                        state.socket.emit('ice-candidate', { 
-                            target: state.otherSocketId, 
-                            candidate: event.candidate 
-                        });
+                if (iceState === 'connected' || iceState === 'completed') {
+                    if (state.iceConnectionTimer) {
+                        clearTimeout(state.iceConnectionTimer);
+                        state.iceConnectionTimer = null;
                     }
                 }
+                
+                if (iceState === 'failed') {
+                    utils.log('error', '❌ ICE failed');
+                    this.restartIce();
+                }
             };
 
+            // Envoi des candidats ICE
+            state.peerConnection.onicecandidate = (event) => {
+                if (event.candidate && state.otherSocketId && state.socket && state.socket.connected) {
+                    utils.log('debug', `🧊 Envoi candidat ICE: ${event.candidate.candidate.substring(0, 50)}...`);
+                    state.socket.emit('ice-candidate', { 
+                        target: state.otherSocketId, 
+                        candidate: event.candidate 
+                    });
+                }
+            };
+
+            // Réception des tracks
             state.peerConnection.ontrack = (event) => {
                 utils.log('track', `📹 Track reçu: ${event.track.kind}`);
                 
-                const remoteStream = event.streams[0] || new MediaStream([event.track]);
-                
                 if (!state.remoteStream) {
-                    state.remoteStream = remoteStream;
-                } else if (!state.remoteStream.getTracks().includes(event.track)) {
-                    state.remoteStream.addTrack(event.track);
+                    state.remoteStream = new MediaStream();
                 }
+                state.remoteStream.addTrack(event.track);
                 
                 if (elements.remoteVideo && elements.remoteVideo.srcObject !== state.remoteStream) {
                     elements.remoteVideo.srcObject = state.remoteStream;
@@ -485,73 +370,55 @@
                 }
                 
                 if (event.track.kind === 'video') {
-                    state.isConnected = true;
                     utils.closeWaitingOverlay();
                     utils.updateOtherStatus(true);
-                    
-                    event.track.onunmute = () => {
-                        utils.log('track', '🎥 Track vidéo actif');
-                        this.safePlayRemoteVideo();
-                    };
                 }
             };
 
-            let negotiationPending = false;
+            // Négociation
             state.peerConnection.onnegotiationneeded = async () => {
-                if (negotiationPending || state.isProcessingOffer || state.isProcessingAnswer) {
-                    utils.log('debug', 'ℹ️ Négociation déjà en cours');
-                    return;
-                }
-                
-                negotiationPending = true;
-                try {
-                    if (state.isInitiator && !state.answerReceived) {
-                        await this.createOffer();
-                    }
-                } catch (err) {
-                    utils.log('error', '❌ Erreur négociation:', err);
-                } finally {
-                    negotiationPending = false;
+                if (state.isInitiator && !state.answerReceived) {
+                    utils.log('info', '🔄 Négociation nécessaire');
+                    await this.createOffer();
                 }
             };
+        },
+
+        restartIce() {
+            if (!state.peerConnection || state.isConnected) return;
+            
+            utils.log('info', '🔄 Redémarrage ICE...');
+            this.createOffer(true).catch(e => utils.log('error', 'Erreur restart ICE:', e));
         },
 
         safePlayRemoteVideo() {
             if (!elements.remoteVideo || !elements.remoteVideo.srcObject) return;
             
             const video = elements.remoteVideo;
-            const playVideo = () => {
+            if (video.paused) {
                 video.play().catch(e => {
                     if (e.name === 'NotAllowedError') {
                         video.muted = true;
                         video.play().catch(() => {});
                     }
                 });
-            };
-            
-            if (video.paused) {
-                playVideo();
             }
         },
 
         async addLocalTracks() {
             if (!state.localStream || !state.peerConnection) return;
 
-            const senders = state.peerConnection.getSenders();
-            
             state.localStream.getTracks().forEach(track => {
-                if (!senders.some(sender => sender.track === track)) {
-                    try {
-                        state.peerConnection.addTrack(track, state.localStream);
-                        utils.log('debug', `➕ Track ajouté: ${track.kind}`);
-                    } catch (error) { 
-                        utils.log('error', `❌ Erreur ajout track:`, error); 
-                    }
+                try {
+                    state.peerConnection.addTrack(track, state.localStream);
+                    utils.log('debug', `➕ Track ajouté: ${track.kind}`);
+                } catch (error) { 
+                    utils.log('error', `❌ Erreur ajout track ${track.kind}:`, error); 
                 }
             });
         },
 
-        async createOffer() {
+        async createOffer(iceRestart = false) {
             if (!state.peerConnection || !state.otherSocketId || !state.socket) return;
             
             if (state.offerRetryCount >= CONFIG.offerMaxRetries) {
@@ -559,18 +426,20 @@
                 return;
             }
             
-            if (state.answerReceived) return;
-            
             try {
                 state.offerRetryCount++;
-                utils.log('offer', `🎯 Création offre (tentative ${state.offerRetryCount})...`);
+                utils.log('offer', `🎯 Création offre (tentative ${state.offerRetryCount})${iceRestart ? ' [ICE restart]' : ''}`);
 
-                const offer = await state.peerConnection.createOffer({
+                const offerOptions = {
                     offerToReceiveAudio: true,
                     offerToReceiveVideo: true
-                });
+                };
+                if (iceRestart) offerOptions.iceRestart = true;
 
+                const offer = await state.peerConnection.createOffer(offerOptions);
                 await state.peerConnection.setLocalDescription(offer);
+                
+                // Attendre la collecte ICE
                 await this.waitForIceGathering();
 
                 const finalOffer = state.peerConnection.localDescription;
@@ -581,9 +450,10 @@
                     sdp: finalOffer 
                 });
 
+                // Timeout pour la réponse
                 setTimeout(() => {
-                    if (!state.answerReceived && state.offerRetryCount < CONFIG.offerMaxRetries) {
-                        utils.log('offer', `⏰ Pas de réponse, tentative ${state.offerRetryCount + 1}`);
+                    if (!state.answerReceived && state.offerRetryCount < CONFIG.offerMaxRetries && !state.isConnected) {
+                        utils.log('offer', `⏰ Pas de réponse, nouvelle tentative`);
                         this.createOffer();
                     }
                 }, CONFIG.offerRetryDelay);
@@ -621,7 +491,7 @@
             if (!data?.sdp || !data?.sender) return;
             
             if (state.isProcessingOffer) {
-                setTimeout(() => this.handleOffer(data), 1000);
+                setTimeout(() => this.handleOffer(data), 500);
                 return;
             }
 
@@ -629,19 +499,22 @@
                 state.isProcessingOffer = true;
                 utils.log('offer', `📩 Offre reçue`);
 
-                if (!state.peerConnection || state.peerConnection.signalingState === 'closed') {
+                if (!state.peerConnection) {
                     await this.createPeerConnection();
                 }
 
                 const pc = state.peerConnection;
                 
+                // Attendre état stable
                 let waitCount = 0;
-                while (pc.signalingState !== 'stable' && waitCount < 20) {
+                while (pc.signalingState !== 'stable' && waitCount < 30) {
                     await new Promise(r => setTimeout(r, 100));
                     waitCount++;
                 }
 
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                
+                // Traiter les candidats en attente
                 await this.processPendingCandidates();
 
                 const answer = await pc.createAnswer();
@@ -656,6 +529,7 @@
                         target: data.sender, 
                         sdp: finalAnswer 
                     });
+                    state.answerReceived = true;
                 }
 
             } catch (error) { 
@@ -703,8 +577,10 @@
                 
                 if (pc && pc.remoteDescription && pc.remoteDescription.type) {
                     await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                } else if (state.pendingIceCandidates.length < 50) {
+                    utils.log('debug', '✅ Candidat ICE ajouté');
+                } else {
                     state.pendingIceCandidates.push(data.candidate);
+                    utils.log('debug', `⏳ Candidat en attente (${state.pendingIceCandidates.length})`);
                 }
             } catch (error) { 
                 utils.log('error', '❌ Erreur ajout ICE:', error); 
@@ -720,8 +596,9 @@
             for (const candidate of candidates) {
                 try { 
                     await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate)); 
+                    utils.log('debug', '✅ Candidat en attente ajouté');
                 } catch (error) { 
-                    utils.log('error', '❌ Erreur ajout candidat:', error); 
+                    utils.log('error', '❌ Erreur ajout candidat en attente:', error); 
                 }
             }
         },
@@ -734,7 +611,7 @@
             }
             
             state.reconnectAttempts++;
-            const delay = Math.min(5000 * Math.pow(1.5, state.reconnectAttempts - 1), 30000);
+            const delay = Math.min(3000 * Math.pow(1.5, state.reconnectAttempts - 1), 20000);
             
             utils.log('reconnect', `🔄 Reconnexion dans ${delay/1000}s (tentative ${state.reconnectAttempts})`);
             
@@ -743,19 +620,13 @@
                 this.cleanup();
                 utils.showWaitingOverlay();
                 
-                if (state.otherSocketId && state.isInitiator) {
+                if (state.otherSocketId) {
                     await this.createPeerConnection();
-                    this.createOffer();
+                    if (state.isInitiator) {
+                        this.createOffer();
+                    }
                 }
             }, delay);
-        },
-
-        async handleIceFailure() {
-            if (state.degradedMode) return;
-            
-            state.degradedMode = true;
-            utils.log('warn', '⚠️ Mode dégradé activé');
-            utils.showToast('Connexion en mode dégradé', 'warning', 3000);
         },
 
         toggleAudio: function() {
@@ -797,11 +668,6 @@
         cleanup: function() {
             if (state.peerConnection) { 
                 try {
-                    state.peerConnection.onconnectionstatechange = null;
-                    state.peerConnection.oniceconnectionstatechange = null;
-                    state.peerConnection.onicecandidate = null;
-                    state.peerConnection.ontrack = null;
-                    state.peerConnection.onnegotiationneeded = null;
                     state.peerConnection.close();
                 } catch(e) {}
                 state.peerConnection = null; 
@@ -811,8 +677,8 @@
             utils.resetRemoteVideo();
             state.pendingIceCandidates = [];
             state.isConnected = false;
-            state.connectionStable = false;
             state.answerReceived = false;
+            state.offerRetryCount = 0;
         },
 
         disconnect: function() {
@@ -838,18 +704,16 @@
         try {
             const socketOptions = {
                 path: CONFIG.socketPath,
-                transports: ['polling'],
+                transports: ['polling', 'websocket'],
                 withCredentials: true,
                 reconnection: true,
                 reconnectionAttempts: CONFIG.maxReconnectionAttempts,
-                reconnectionDelay: 3000,
-                reconnectionDelayMax: 15000,
-                timeout: CONFIG.connectionTimeout,
-                autoConnect: true
+                reconnectionDelay: 2000,
+                reconnectionDelayMax: 10000,
+                timeout: CONFIG.connectionTimeout
             };
 
             state.socket = io(CONFIG.socketUrl, socketOptions);
-
             setupSocketListeners();
             startHeartbeat();
             
@@ -863,27 +727,19 @@
         
         state.heartbeatInterval = setInterval(() => {
             if (state.socket && state.socket.connected) {
-                state.socket.emit('ping', { time: Date.now(), role: CONFIG.currentRole });
+                state.socket.emit('ping', { time: Date.now() });
             }
         }, CONFIG.heartbeatInterval);
-
-        window.addEventListener('beforeunload', () => { 
-            if (state.heartbeatInterval) clearInterval(state.heartbeatInterval); 
-        });
     }
 
     function setupSocketListeners() {
         if (!state.socket) return;
         
-        state.socket.removeAllListeners();
-
         state.socket.on('connect', () => {
             utils.log('success', `✅ Socket connecté: ${state.socket.id}`);
-            
             if (CONFIG.roomId) { 
                 state.socket.emit('join-room', CONFIG.roomId); 
             }
-            
             state.reconnectAttempts = 0;
         });
 
@@ -896,57 +752,39 @@
             utils.updateOtherStatus(false);
         });
 
-        state.socket.on('reconnect', (attemptNumber) => { 
-            utils.log('success', `🔄 Reconnecté après ${attemptNumber} tentatives`);
-            if (CONFIG.roomId && state.socket) {
-                state.socket.emit('join-room', CONFIG.roomId);
-            }
-        });
-
         state.socket.on('user-connected', async (data) => {
             const socketId = data?.id || data;
-            
             if (!socketId || socketId === state.socket?.id) return;
 
-            if (state.otherSocketId && state.otherSocketId !== socketId) {
-                webrtc.cleanup();
-            }
-
-            utils.log('info', `👤 Utilisateur connecté`);
+            utils.log('info', `👤 Utilisateur connecté: ${socketId.substring(0, 8)}...`);
             state.otherSocketId = socketId;
             utils.updateOtherStatus(true);
             
             const myId = state.socket.id;
-            const otherId = socketId;
-            
-            state.isInitiator = myId < otherId;
-            
+            state.isInitiator = myId < socketId;
             utils.log('info', `🎯 Rôle: ${state.isInitiator ? 'Initiateur' : 'Récepteur'}`);
 
-            if (state.isInitiator) {
-                setTimeout(async () => {
-                    if (!state.peerConnection) {
-                        await webrtc.createPeerConnection();
-                        await webrtc.createOffer();
-                    }
-                }, 3000);
+            // Attendre un peu pour la stabilité
+            await new Promise(r => setTimeout(r, 1000));
+            
+            if (!state.peerConnection) {
+                await webrtc.createPeerConnection();
+                if (state.isInitiator) {
+                    await webrtc.createOffer();
+                }
             }
         });
 
         state.socket.on('user-disconnected', (data) => {
             const socketId = data?.id || data;
-            
             if (!socketId || socketId !== state.otherSocketId) return;
             
             utils.log('info', `👤 Utilisateur déconnecté`);
             state.otherSocketId = null;
             state.isInitiator = false;
-            state.answerReceived = false;
-            state.offerRetryCount = 0;
-            
-            utils.updateOtherStatus(false);
             webrtc.cleanup();
             utils.showWaitingOverlay();
+            utils.updateOtherStatus(false);
         });
 
         state.socket.on('offer', (data) => {
@@ -976,45 +814,22 @@
     }
 
     // ============================================
-    // INITIALISATION UI
+    // INITIALISATION
     // ============================================
     function initEventListeners() {
         if (elements.muteAudioBtn) { 
-            elements.muteAudioBtn.addEventListener('click', (e) => { 
-                e.preventDefault(); 
-                webrtc.toggleAudio(); 
-            }); 
+            elements.muteAudioBtn.addEventListener('click', () => webrtc.toggleAudio()); 
         }
-        
         if (elements.muteVideoBtn) { 
-            elements.muteVideoBtn.addEventListener('click', (e) => { 
-                e.preventDefault(); 
-                webrtc.toggleVideo(); 
-            }); 
+            elements.muteVideoBtn.addEventListener('click', () => webrtc.toggleVideo()); 
         }
-
         if (elements.leaveBtn) {
-            elements.leaveBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (confirm('Voulez-vous vraiment quitter la consultation ?')) {
+            elements.leaveBtn.addEventListener('click', () => {
+                if (confirm('Quitter la consultation ?')) {
                     endConsultation();
                 }
             });
         }
-
-        // Masquer le bouton de chat s'il existe
-        if (elements.toggleChatBtn) {
-            elements.toggleChatBtn.style.display = 'none';
-        }
-        
-        // Masquer la zone de chat si elle existe
-        if (elements.chatArea) {
-            elements.chatArea.style.display = 'none';
-        }
-
-        window.addEventListener('beforeunload', () => {
-            utils.cleanup();
-        });
     }
 
     async function endConsultation() {
@@ -1026,65 +841,40 @@
                 });
             } catch (err) {}
         }
-        
         utils.cleanup();
         setTimeout(() => window.location.href = '/', 500);
     }
 
     async function init() {
         try {
-            utils.log('info', '🚀 Initialisation consultation v6.0.0 (Sans Chat)...');
+            utils.log('info', '🚀 Initialisation consultation v6.1.0...');
             
-            if (!utils.checkBrowserCompatibility()) {
-                throw new Error('Navigateur non compatible');
-            }
-            
-            if (!CONFIG.roomId) {
-                throw new Error('roomId manquant');
-            }
+            if (!utils.checkBrowserCompatibility()) throw new Error('Navigateur non compatible');
+            if (!CONFIG.roomId) throw new Error('roomId manquant');
 
             utils.showWaitingOverlay();
 
+            // Obtenir le stream
             let stream;
             try {
                 const hasPermission = await PermissionManager.checkExistingPermission();
                 if (!hasPermission) {
-                    PermissionManager.showModal();
-                    await PermissionManager.loadDevices();
-                    
-                    stream = await new Promise((resolve, reject) => {
-                        const grantBtn = document.getElementById('grantPermissionBtn');
-                        const handleGrant = async () => {
-                            try {
-                                const s = await PermissionManager.getStream();
-                                PermissionManager.hideModal();
-                                resolve(s);
-                            } catch(e) { reject(e); }
-                        };
-                        const handleCancel = () => {
-                            reject(new Error('Permission refusée'));
-                        };
-                        grantBtn?.addEventListener('click', handleGrant);
-                        document.getElementById('cancelPermissionBtn')?.addEventListener('click', handleCancel);
-                        setTimeout(() => reject(new Error('Timeout')), 30000);
-                    });
+                    // Demander permission de façon simple
+                    stream = await PermissionManager.getStream();
                 } else {
                     stream = await PermissionManager.getStream();
                 }
                 
                 state.localStream = stream;
-                
                 if (elements.localVideo) { 
                     elements.localVideo.srcObject = stream; 
                     elements.localVideo.muted = true; 
                     elements.localVideo.play().catch(() => {});
                 }
-                
                 utils.log('success', '✅ Autorisation média obtenue');
-                utils.showToast('Caméra et micro activés', 'success');
             } catch (error) {
-                utils.log('error', '❌ Permission refusée:', error.message);
-                utils.showToast('Accès caméra/microphone requis', 'error');
+                utils.log('error', '❌ Permission refusée');
+                utils.showToast('Accès caméra/micro requis', 'error');
                 setTimeout(() => window.location.href = '/', 3000);
                 return;
             }
@@ -1093,11 +883,10 @@
             await webrtc.loadIceServers();
             initEventListeners();
             
-            utils.log('success', '✅ Consultation prête - en attente de l\'autre participant');
+            utils.log('success', '✅ Consultation prête');
             
         } catch (error) {
             utils.log('error', '❌ Échec initialisation:', error.message);
-            utils.showToast('Erreur de démarrage', 'error');
             setTimeout(() => window.location.reload(), 5000);
         }
     }
@@ -1110,16 +899,7 @@
     }
 
     window.consultation = { 
-        state, 
-        webrtc, 
-        version: '6.0.0-nochat',
-        debug: function() {
-            console.log('=== DEBUG CONSULTATION ===');
-            console.log('État connexion:', state.isConnected);
-            console.log('PeerConnection:', !!state.peerConnection);
-            console.log('Mode dégradé:', state.degradedMode);
-            console.log('Tentatives:', state.reconnectAttempts);
-            console.log('========================');
-        }
+        state, webrtc, version: '6.1.0',
+        debug: () => console.log('Connected:', state.isConnected, 'PC:', !!state.peerConnection)
     };
 })();
