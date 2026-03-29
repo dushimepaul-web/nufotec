@@ -213,7 +213,7 @@ if (!isset($job_id)) $job_id = null;
         .chat-name { font-size: 16px; font-weight: 600; color: #111b21; }
         .chat-status { font-size: 13px; color: #667781; }
         
-        /* Upload Overlay Style WhatsApp */
+        /* Upload Overlay */
         .upload-overlay {
             display: none;
             position: absolute;
@@ -360,6 +360,17 @@ if (!isset($job_id)) $job_id = null;
         
         .input-icon-btn:hover { color: #00a884; }
         
+        .input-icon-btn.recording {
+            background: #ea0038;
+            color: #fff;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
         .message-input-wrapper {
             flex: 1;
             background: #fff;
@@ -396,6 +407,66 @@ if (!isset($job_id)) $job_id = null;
         
         .send-btn:hover { background: #008f72; }
         .send-btn:disabled { background: #8696a0; cursor: not-allowed; }
+        
+        /* Audio Recording Interface - Style WhatsApp */
+        .audio-recording {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 16px;
+        }
+        
+        .audio-recording.active { display: flex; }
+        
+        .recording-wave {
+            flex: 1;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+        
+        .wave-bar {
+            width: 4px;
+            background: #ea0038;
+            border-radius: 2px;
+            animation: wave 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { height: 20%; }
+            50% { height: 100%; }
+        }
+        
+        .recording-time {
+            font-size: 16px;
+            color: #ea0038;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .recording-status {
+            font-size: 13px;
+            color: #667781;
+            margin-left: 8px;
+        }
+        
+        .recording-cancel {
+            color: #ea0038;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .recording-send {
+            color: #00a884;
+            font-size: 24px;
+            cursor: pointer;
+        }
         
         /* File Preview */
         .file-preview-area {
@@ -524,6 +595,45 @@ if (!isset($job_id)) $job_id = null;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 600;
+        }
+        
+        /* Audio Preview in File Box */
+        .audio-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .audio-play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #00a884;
+            color: #fff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .audio-waveform {
+            flex: 1;
+            height: 30px;
+            background: #e9edef;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .audio-waveform-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: #00a884;
+            width: 0%;
+            transition: width 0.1s;
         }
     </style>
 </head>
@@ -696,14 +806,17 @@ if (!isset($job_id)) $job_id = null;
                 <button type="button" class="type-btn" onclick="setType('image', this)" id="btnImage">
                     <i class="bi bi-image"></i> <span>Image</span>
                 </button>
+                <button type="button" class="type-btn" onclick="setType('audio', this)" id="btnAudio">
+                    <i class="bi bi-mic"></i> <span>Audio</span>
+                </button>
                 <button type="button" class="type-btn" onclick="setType('document', this)" id="btnDocument">
                     <i class="bi bi-file-earmark"></i> <span>Document</span>
                 </button>
             </div>
             
-            <!-- File Preview -->
+            <!-- File Preview (pour fichiers sélectionnés) -->
             <div class="file-preview-area" id="filePreview">
-                <div class="file-box">
+                <div class="file-box" id="fileBox">
                     <div class="file-icon" id="fileIconBox">
                         <i class="bi bi-file-earmark" id="fileIcon"></i>
                     </div>
@@ -725,30 +838,55 @@ if (!isset($job_id)) $job_id = null;
                 </div>
                 <div style="align-self: center; color: #667781; margin-top: 40px; text-align: center;" id="emptyState">
                     <i class="bi bi-whatsapp" style="font-size: 64px; opacity: 0.3;"></i>
-                    <p style="margin-top: 16px;">Sélectionnez des groupes et choisissez un fichier<br> pour commencer la diffusion</p>
+                    <p style="margin-top: 16px;">Sélectionnez des groupes et choisissez un contenu<br> pour commencer la diffusion</p>
                 </div>
             </div>
             
-            <!-- Input Area -->
-            <div class="input-area">
+            <!-- Input Area - Mode Normal -->
+            <div class="input-area" id="normalInputArea">
                 <div id="normalInput" style="display: flex; align-items: center; gap: 10px; flex: 1;">
                     <button type="button" class="input-icon-btn" onclick="document.getElementById('filePicker').click()" title="Joindre un fichier">
                         <i class="bi bi-plus-lg"></i>
                     </button>
                     <input type="file" id="filePicker" style="display: none;" 
                            onchange="handleFileSelect(this)" 
-                           accept="video/*,image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+                           accept="video/*,image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
                     
                     <div class="message-input-wrapper">
                         <textarea class="message-input" id="messageInput" 
                                   placeholder="Ajouter une légende (optionnel)..." rows="1" 
                                   oninput="updatePreview()"></textarea>
                     </div>
+                    
+                    <!-- MICRO POUR AUDIO - Style WhatsApp -->
+                    <button type="button" class="input-icon-btn" id="micBtn" onclick="startRecording()" title="Enregistrer un message vocal">
+                        <i class="bi bi-mic-fill"></i>
+                    </button>
                 </div>
                 
                 <button type="button" class="send-btn" id="sendBtn" onclick="submitForm()" title="Envoyer à tous les groupes sélectionnés">
                     <i class="bi bi-send-fill"></i>
                 </button>
+            </div>
+            
+            <!-- Input Area - Mode Enregistrement Audio (caché par défaut) -->
+            <div class="input-area" id="recordingInputArea" style="display: none;">
+                <div class="audio-recording active" style="display: flex; flex: 1;">
+                    <button type="button" class="input-icon-btn recording-cancel" onclick="cancelRecording()" title="Annuler">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                    
+                    <div class="recording-wave" id="waveContainer">
+                        <!-- Les barres d'onde seront générées par JS -->
+                    </div>
+                    
+                    <div class="recording-time" id="recordingTime">00:00</div>
+                    <span class="recording-status">Enregistrement...</span>
+                    
+                    <button type="button" class="input-icon-btn recording-send" onclick="stopRecordingAndSend()" title="Envoyer">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                </div>
             </div>
         <?php endif; ?>
     </div>
@@ -762,16 +900,26 @@ let currentUploadId = null;
 let isUploading = false;
 let abortController = null;
 
+// Variables pour l'enregistrement audio
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStartTime = null;
+let recordingTimer = null;
+let audioBlob = null;
+let isRecording = false;
+
 // État
 let selectedGroupes = [];
 let currentJobId = null;
 let pollInterval = null;
+let currentType = 'texte';
 
 function log(msg) {
     console.log('[WhatsApp]', msg);
 }
 
-// Gestion des groupes
+// ==================== GESTION DES GROUPES ====================
+
 function toggleSelection(element, groupeId) {
     const checkbox = document.getElementById('cb_' + groupeId);
     if (!checkbox) return;
@@ -805,7 +953,7 @@ function updateCounter() {
     const emptyState = document.getElementById('emptyState');
     const previewBubble = document.getElementById('previewBubble');
     if (emptyState) {
-        if (count > 0 || selectedFile) {
+        if (count > 0 || selectedFile || audioBlob) {
             emptyState.style.display = 'none';
             if (document.getElementById('previewText')?.textContent) {
                 previewBubble.style.display = 'block';
@@ -844,8 +992,7 @@ function filterGroupes() {
     });
 }
 
-// Gestion des types de fichier
-let currentType = 'texte';
+// ==================== GESTION DES TYPES ====================
 
 function setType(type, btn) {
     currentType = type;
@@ -857,6 +1004,10 @@ function setType(type, btn) {
     if (type === 'texte') {
         input.placeholder = "Tapez votre message...";
         clearFile();
+        clearAudio();
+    } else if (type === 'audio') {
+        // Démarrer l'enregistrement directement
+        startRecording();
     } else {
         const placeholders = {
             'video': "Légende de la vidéo (optionnel)...",
@@ -865,18 +1016,23 @@ function setType(type, btn) {
         };
         input.placeholder = placeholders[type] || "Ajouter une légende...";
         
-        if (!selectedFile) {
+        if (!selectedFile && !audioBlob) {
             document.getElementById('filePicker').accept = type === 'video' ? 'video/*' : 
                                                           type === 'image' ? 'image/*' : 
+                                                          type === 'audio' ? 'audio/*' :
                                                           '*/*';
             document.getElementById('filePicker').click();
         }
     }
 }
 
-// Gestion des fichiers
+// ==================== GESTION DES FICHIERS ====================
+
 function handleFileSelect(input) {
     if (!input.files || !input.files[0]) return;
+    
+    // Si on avait un audio, le supprimer
+    clearAudio();
     
     selectedFile = input.files[0];
     const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
@@ -886,35 +1042,188 @@ function handleFileSelect(input) {
     // Détecter le type automatiquement
     if (selectedFile.type.startsWith('video/')) currentType = 'video';
     else if (selectedFile.type.startsWith('image/')) currentType = 'image';
+    else if (selectedFile.type.startsWith('audio/')) currentType = 'audio';
     else currentType = 'document';
     
     // Mettre à jour l'UI des boutons
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
     const btnId = currentType === 'video' ? 'btnVideo' : 
-                  currentType === 'image' ? 'btnImage' : 'btnDocument';
+                  currentType === 'image' ? 'btnImage' : 
+                  currentType === 'audio' ? 'btnAudio' : 'btnDocument';
     document.getElementById(btnId)?.classList.add('active');
     
     // UI updates
+    showFilePreview(selectedFile.name, sizeMB + ' MB • ' + Math.ceil(selectedFile.size / CHUNK_SIZE) + ' chunks', currentType);
+    
+    updateCounter();
+}
+
+function showFilePreview(name, sizeInfo, type) {
     document.getElementById('filePreview').classList.add('active');
-    document.getElementById('fileName').textContent = selectedFile.name;
-    document.getElementById('fileSize').textContent = sizeMB + ' MB • ' + Math.ceil(selectedFile.size / CHUNK_SIZE) + ' chunks';
+    document.getElementById('fileName').textContent = name;
+    document.getElementById('fileSize').textContent = sizeInfo;
     
     // Icône selon type
     const icons = {
         'video': 'bi-camera-video-fill',
         'image': 'bi-image-fill',
+        'audio': 'bi-mic-fill',
         'document': 'bi-file-earmark-text-fill'
     };
-    document.getElementById('fileIcon').className = 'bi ' + (icons[currentType] || 'bi-file-earmark');
-    
-    updateCounter();
+    document.getElementById('fileIcon').className = 'bi ' + (icons[type] || 'bi-file-earmark');
 }
 
 function clearFile() {
     document.getElementById('filePicker').value = '';
     selectedFile = null;
     document.getElementById('filePreview').classList.remove('active');
+    if (currentType !== 'texte' && !audioBlob) {
+        setType('texte', document.getElementById('btnTexte'));
+    }
+}
+
+// ==================== ENREGISTREMENT AUDIO - Style WhatsApp ====================
+
+function initWaveBars() {
+    const container = document.getElementById('waveContainer');
+    container.innerHTML = '';
+    for (let i = 0; i < 30; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'wave-bar';
+        bar.style.height = Math.random() * 30 + 20 + '%';
+        bar.style.animationDelay = (i * 0.05) + 's';
+        bar.style.animationDuration = (0.5 + Math.random() * 0.5) + 's';
+        container.appendChild(bar);
+    }
+}
+
+async function startRecording() {
+    try {
+        // Vérifier que l'API est disponible
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Votre navigateur ne supporte pas l\'enregistrement audio');
+            setType('texte', document.getElementById('btnTexte'));
+            return;
+        }
+        
+        // Demander permission microphone
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Configurer le recorder
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+        });
+        
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                audioChunks.push(e.data);
+            }
+        };
+        
+        mediaRecorder.onstop = () => {
+            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioFile = new File([audioBlob], 'note_vocale_' + Date.now() + '.webm', { type: 'audio/webm' });
+            
+            // Stocker comme fichier sélectionné
+            selectedFile = audioFile;
+            currentType = 'audio';
+            
+            // Afficher dans le preview
+            const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const mins = Math.floor(duration / 60).toString().padStart(2, '0');
+            const secs = (duration % 60).toString().padStart(2, '0');
+            
+            showFilePreview('Note vocale', `Durée: ${mins}:${secs} • ${(audioFile.size/1024).toFixed(1)} KB`, 'audio');
+            
+            // Arrêter le stream
+            stream.getTracks().forEach(track => track.stop());
+            
+            log('Audio enregistré: ' + audioFile.size + ' bytes');
+        };
+        
+        // Démarrer l'enregistrement
+        mediaRecorder.start(100); // Collecter données toutes les 100ms
+        recordingStartTime = Date.now();
+        isRecording = true;
+        
+        // Basculer l'interface
+        document.getElementById('normalInputArea').style.display = 'none';
+        document.getElementById('recordingInputArea').style.display = 'flex';
+        
+        // Initialiser les vagues
+        initWaveBars();
+        
+        // Démarrer le timer
+        updateRecordingTime();
+        recordingTimer = setInterval(updateRecordingTime, 1000);
+        
+        // Mettre à jour le bouton audio
+        document.getElementById('btnAudio').classList.add('active');
+        
+        log('Enregistrement audio démarré');
+        
+    } catch (err) {
+        console.error('Erreur microphone:', err);
+        alert('Erreur d\'accès au microphone: ' + err.message);
+        setType('texte', document.getElementById('btnTexte'));
+    }
+}
+
+function updateRecordingTime() {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const secs = (elapsed % 60).toString().padStart(2, '0');
+    document.getElementById('recordingTime').textContent = `${mins}:${secs}`;
+}
+
+function cancelRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder = null;
+    }
+    
+    clearInterval(recordingTimer);
+    audioChunks = [];
+    audioBlob = null;
+    isRecording = false;
+    
+    // Réinitialiser l'interface
+    document.getElementById('normalInputArea').style.display = 'flex';
+    document.getElementById('recordingInputArea').style.display = 'none';
+    
+    // Réinitialiser le type
     setType('texte', document.getElementById('btnTexte'));
+    
+    log('Enregistrement annulé');
+}
+
+function stopRecordingAndSend() {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+    
+    // Arrêter l'enregistrement
+    mediaRecorder.stop();
+    clearInterval(recordingTimer);
+    isRecording = false;
+    
+    // Réinitialiser l'interface
+    document.getElementById('normalInputArea').style.display = 'flex';
+    document.getElementById('recordingInputArea').style.display = 'none';
+    
+    // Le fichier audio est maintenant dans selectedFile via l'event onstop
+    // On peut envoyer directement ou laisser l'utilisateur cliquer sur envoyer
+    log('Enregistrement terminé, prêt à envoyer');
+}
+
+function clearAudio() {
+    if (isRecording) {
+        cancelRecording();
+    }
+    audioBlob = null;
+    if (currentType === 'audio' && !selectedFile) {
+        document.getElementById('filePreview').classList.remove('active');
+    }
 }
 
 function updatePreview() {
@@ -943,7 +1252,7 @@ async function submitForm() {
     }
     
     if (currentType !== 'texte' && !selectedFile) {
-        alert('Veuillez sélectionner un fichier');
+        alert('Veuillez sélectionner un fichier ou enregistrer un audio');
         return;
     }
     
@@ -960,7 +1269,7 @@ async function submitForm() {
             // Envoi texte simple
             await envoyerTexte(groupesIds, message);
         } else {
-            // Envoi fichier par chunks
+            // Envoi fichier par chunks (y compris audio)
             await envoyerFichierChunks(groupesIds, message, currentType, selectedFile);
         }
     } catch (error) {
