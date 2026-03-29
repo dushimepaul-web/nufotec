@@ -25,296 +25,454 @@ if (!isset($groupes)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp - Envoyer Message</title>
+    <title>WhatsApp</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --whatsapp-teal: #128C7E;
-            --whatsapp-light-teal: #25D366;
-            --whatsapp-bg: #E5DDD5;
-            --whatsapp-chat-bg: #DCF8C6;
-            --whatsapp-header: #075E54;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
-            background: #f0f2f5;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #dddbd1;
+            background-image: linear-gradient(180deg, #dddbd1, #d2dbdc);
             height: 100vh;
             overflow: hidden;
         }
         
-        .whatsapp-container {
-            max-width: 1400px;
-            height: 95vh;
-            margin: 2vh auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        /* Container principal comme WhatsApp Web */
+        .app-container {
             display: flex;
-            overflow: hidden;
+            height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #f0f2f5;
+            box-shadow: 0 1px 1px 0 rgba(0,0,0,0.06), 0 2px 5px 0 rgba(0,0,0,0.2);
         }
         
-        .sidebar-groupes {
-            width: 350px;
-            background: #f8f9fa;
-            border-right: 1px solid #ddd;
+        /* Sidebar gauche (liste des conversations) */
+        .sidebar {
+            width: 30%;
+            min-width: 300px;
+            max-width: 420px;
+            background: #fff;
+            border-right: 1px solid #e9edef;
             display: flex;
             flex-direction: column;
         }
         
+        /* Header de la sidebar */
         .sidebar-header {
-            background: var(--whatsapp-header);
-            color: white;
-            padding: 15px;
+            background: #f0f2f5;
+            padding: 10px 16px;
+            height: 60px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
+            border-bottom: 1px solid #e9edef;
         }
         
-        .search-box {
-            padding: 10px 15px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .search-box input {
-            border-radius: 20px;
-            border: none;
-            background: white;
-            padding: 8px 15px;
-            width: 100%;
-        }
-        
-        .groupes-list {
-            flex: 1;
-            overflow-y: auto;
-        }
-        
-        .groupe-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .groupe-item:hover {
-            background: #f0f0f0;
-        }
-        
-        .groupe-item.selected {
-            background: #e3f2fd;
-        }
-        
-        .groupe-avatar {
-            width: 50px;
-            height: 50px;
+        .user-avatar {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: var(--whatsapp-teal);
+            background: #dfe5e7;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.2rem;
+            color: #54656f;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .header-icons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #54656f;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .icon-btn:hover {
+            background: #d1d7db;
+        }
+        
+        /* Barre de recherche */
+        .search-container {
+            background: #f0f2f5;
+            padding: 8px 16px;
+            border-bottom: 1px solid #e9edef;
+        }
+        
+        .search-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: none;
+        }
+        
+        .search-box i {
+            color: #54656f;
+            font-size: 16px;
+        }
+        
+        .search-box input {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 14px;
+            color: #3b4a54;
+        }
+        
+        /* Liste des conversations */
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #fff;
+        }
+        
+        .conversation-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f2f5;
+            transition: background 0.2s;
+        }
+        
+        .conversation-item:hover {
+            background: #f5f6f6;
+        }
+        
+        .conversation-item.selected {
+            background: #f0f2f5;
+        }
+        
+        .conversation-avatar {
+            width: 49px;
+            height: 49px;
+            border-radius: 50%;
+            background: #dfe5e7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 24px;
+            margin-right: 15px;
             flex-shrink: 0;
         }
         
-        .groupe-info {
+        .conversation-avatar.group {
+            background: linear-gradient(135deg, #00bfa5, #00897b);
+        }
+        
+        .conversation-info {
             flex: 1;
             min-width: 0;
         }
         
-        .groupe-nom {
-            font-weight: 500;
-            color: #333;
+        .conversation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .conversation-name {
+            font-size: 16px;
+            font-weight: 400;
+            color: #111b21;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         
-        .groupe-id {
-            font-size: 0.8rem;
-            color: #666;
+        .conversation-time {
+            font-size: 12px;
+            color: #667781;
+        }
+        
+        .conversation-preview {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .conversation-message {
+            font-size: 14px;
+            color: #667781;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         
-        .groupe-checkbox {
-            width: 20px;
-            height: 20px;
-            accent-color: var(--whatsapp-teal);
+        .checkbox-select {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            accent-color: #00a884;
         }
         
+        /* Zone de chat (droite) */
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: var(--whatsapp-bg);
+            background: #efeae2;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QUbCTk4U3d0fQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAJklEQVQ4y2NgYGD4z0ABYBw1gGE0DqNhNIyG0TAaRsNoGA2jYQgAASYgCw+4S6UAAAAASUVORK5CYII=');
+            background-repeat: repeat;
         }
         
+        /* Header du chat */
         .chat-header {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-bottom: 1px solid #ddd;
+            background: #f0f2f5;
+            padding: 10px 16px;
+            height: 60px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
+            border-left: 1px solid #e9edef;
         }
         
-        .selection-info {
+        .chat-header-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
         
-        .selection-count {
-            background: var(--whatsapp-teal);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00bfa5, #00897b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 20px;
         }
         
-        .chat-messages {
+        .chat-title {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #111b21;
+        }
+        
+        .chat-status {
+            font-size: 13px;
+            color: #667781;
+        }
+        
+        /* Messages area */
+        .messages-container {
             flex: 1;
-            padding: 20px;
             overflow-y: auto;
-        }
-        
-        .preview-message {
-            background: var(--whatsapp-chat-bg);
-            padding: 15px;
-            border-radius: 8px;
-            max-width: 70%;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        
-        .file-preview {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid var(--whatsapp-teal);
-            margin-bottom: 15px;
-            display: none;
-        }
-        
-        .file-preview.active {
-            display: block;
-        }
-        
-        .chat-input-area {
-            background: #f0f0f0;
-            padding: 15px 20px;
-        }
-        
-        .input-container {
-            background: white;
-            border-radius: 25px;
-            padding: 10px 20px;
+            padding: 20px;
             display: flex;
-            align-items: flex-end;
+            flex-direction: column;
+        }
+        
+        .message-bubble {
+            max-width: 65%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .message-bubble.sent {
+            background: #d9fdd3;
+            align-self: flex-end;
+            border-top-right-radius: 0;
+        }
+        
+        .message-bubble.received {
+            background: #fff;
+            align-self: flex-start;
+            border-top-left-radius: 0;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+        }
+        
+        .message-text {
+            font-size: 14.2px;
+            line-height: 19px;
+            color: #111b21;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #667781;
+            text-align: right;
+            margin-top: 4px;
+        }
+        
+        /* Input area */
+        .input-container {
+            background: #f0f2f5;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
             gap: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 1px solid #e9edef;
+        }
+        
+        .input-icons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .input-icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #54656f;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .input-icon-btn:hover {
+            color: #00a884;
+        }
+        
+        .message-input-wrapper {
+            flex: 1;
+            background: #fff;
+            border-radius: 8px;
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
         }
         
         .message-input {
             flex: 1;
             border: none;
             outline: none;
+            font-size: 15px;
+            color: #111b21;
             resize: none;
-            max-height: 120px;
-            font-size: 1rem;
-            padding: 5px;
+            max-height: 100px;
+            min-height: 20px;
         }
         
-        .btn-icon {
+        .send-btn {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             border: none;
-            background: transparent;
-            color: #666;
+            background: #00a884;
+            color: #fff;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
+            font-size: 20px;
         }
         
-        .btn-icon:hover {
-            background: #f0f0f0;
-            color: var(--whatsapp-teal);
+        .send-btn:hover {
+            background: #008f72;
         }
         
-        .btn-send {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            background: var(--whatsapp-teal);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        
-        .btn-send:hover {
-            background: var(--whatsapp-header);
-        }
-        
-        .btn-send:disabled {
-            background: #ccc;
+        .send-btn:disabled {
+            background: #8696a0;
             cursor: not-allowed;
         }
         
-        .btn-select-all {
-            background: transparent;
-            border: 1px solid white;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9rem;
+        /* File preview */
+        .file-preview-container {
+            background: #f0f2f5;
+            padding: 10px 16px;
+            border-left: 1px solid #e9edef;
+            display: none;
         }
         
-        .type-selector {
+        .file-preview-container.active {
+            display: block;
+        }
+        
+        .file-preview-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px;
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
-        .type-btn {
-            padding: 8px 20px;
-            border-radius: 20px;
-            border: 2px solid #ddd;
-            background: white;
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: #e7fce3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00a884;
+            font-size: 24px;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-size: 14px;
+            color: #111b21;
+            font-weight: 500;
+        }
+        
+        .file-size {
+            font-size: 12px;
+            color: #667781;
+        }
+        
+        .file-remove {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #8696a0;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .type-btn.active {
-            border-color: var(--whatsapp-teal);
-            background: #e3f2fd;
-            color: var(--whatsapp-teal);
+        .file-remove:hover {
+            background: #f0f2f5;
+            color: #ea0038;
         }
         
-        .empty-state {
-            text-align: center;
-            color: #666;
-            padding: 40px;
-        }
-        
-        .empty-state i {
-            font-size: 4rem;
-            color: #ddd;
-            margin-bottom: 15px;
-        }
-        
-        /* Compression overlay */
+        /* Overlay compression */
         .compression-overlay {
             position: fixed;
             top: 0;
@@ -329,19 +487,19 @@ if (!isset($groupes)) {
         }
         
         .compression-box {
-            background: white;
-            padding: 40px;
+            background: #fff;
+            padding: 32px;
             border-radius: 16px;
             text-align: center;
-            max-width: 450px;
+            max-width: 400px;
             width: 90%;
         }
         
         .compression-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--whatsapp-teal);
+            width: 64px;
+            height: 64px;
+            border: 4px solid #f0f2f5;
+            border-top: 4px solid #00a884;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
@@ -352,143 +510,169 @@ if (!isset($groupes)) {
             100% { transform: rotate(360deg); }
         }
         
-        .compression-info {
-            margin-top: 15px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            text-align: left;
+        .compression-title {
+            font-size: 20px;
+            font-weight: 500;
+            color: #111b21;
+            margin-bottom: 8px;
         }
         
-        .progress-bar-custom {
-            height: 10px;
-            background: #e9ecef;
-            border-radius: 5px;
+        .compression-text {
+            font-size: 14px;
+            color: #667781;
+            margin-bottom: 20px;
+        }
+        
+        .compression-progress {
+            height: 6px;
+            background: #e9edef;
+            border-radius: 3px;
             overflow: hidden;
-            margin: 15px 0;
+            margin-bottom: 16px;
         }
         
-        .progress-fill {
+        .compression-progress-bar {
             height: 100%;
-            background: var(--whatsapp-teal);
+            background: #00a884;
             width: 0%;
             transition: width 0.3s;
         }
         
-        .compression-options {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fff3cd;
-            border-radius: 8px;
-            border: 1px solid #ffc107;
-        }
-        
-        /* Résultat styles */
-        .result-container {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .result-header {
-            text-align: center;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .result-header.success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .result-header.error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--whatsapp-teal);
-        }
-        
-        .details-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-        
-        .groupe-result {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
+        .compression-actions {
             display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .groupe-result.success {
-            border-left: 4px solid var(--whatsapp-light-teal);
-        }
-        
-        .groupe-result.error {
-            border-left: 4px solid #dc3545;
-        }
-        
-        .badge-compression {
-            background: #ffc107;
-            color: #000;
-            font-size: 0.75rem;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-        }
-        
-        .alert-compact {
-            padding: 8px 12px;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
         }
         
         .btn-compress {
-            background: var(--whatsapp-teal);
-            color: white;
+            background: #00a884;
+            color: #fff;
             border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            margin: 5px;
         }
         
         .btn-compress:hover {
-            background: var(--whatsapp-header);
+            background: #008f72;
         }
         
-        .btn-skip {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+        .btn-cancel {
+            background: transparent;
+            color: #00a884;
+            border: 1px solid #00a884;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
             cursor: pointer;
-            margin: 5px;
+        }
+        
+        /* Empty state */
+        .empty-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f0f2f5;
+            border-left: 1px solid #e9edef;
+        }
+        
+        .empty-icon {
+            width: 320px;
+            height: 200px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%23f0f2f5" width="200" height="200"/><circle cx="100" cy="80" r="40" fill="%23e9edef"/><path d="M70 120 Q100 150 130 120" stroke="%23d1d7db" stroke-width="3" fill="none"/></svg>');
+            margin-bottom: 40px;
+        }
+        
+        .empty-title {
+            font-size: 32px;
+            font-weight: 300;
+            color: #41525d;
+            margin-bottom: 16px;
+        }
+        
+        .empty-text {
+            font-size: 14px;
+            color: #667781;
+            text-align: center;
+            max-width: 450px;
+            line-height: 20px;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Type selector */
+        .type-selector {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f0f2f5;
+            border-left: 1px solid #e9edef;
+        }
+        
+        .type-btn {
+            padding: 8px 16px;
+            border-radius: 18px;
+            border: none;
+            background: #fff;
+            color: #54656f;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .type-btn.active {
+            background: #d9fdd3;
+            color: #008f72;
+        }
+        
+        .type-btn:hover:not(.active) {
+            background: #f5f6f6;
+        }
+        
+        /* Selection counter badge */
+        .selection-badge {
+            background: #00a884;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Alertes */
+        .alert-compact {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -497,314 +681,288 @@ if (!isset($groupes)) {
 <!-- Overlay de compression -->
 <div class="compression-overlay" id="compressionOverlay">
     <div class="compression-box">
-        <div class="compression-spinner" id="compressionSpinner"></div>
-        <h5 id="compressionTitle">Fichier trop lourd</h5>
-        <p class="text-muted" id="compressionText">Ce fichier dépasse 16MB et risque de causer un timeout</p>
-        
-        <div class="progress-bar-custom" id="progressContainer" style="display:none;">
-            <div class="progress-fill" id="compressionProgress"></div>
+        <div class="compression-spinner"></div>
+        <div class="compression-title" id="compressionTitle">Fichier trop volumineux</div>
+        <div class="compression-text" id="compressionText">Ce fichier dépasse 16 MB</div>
+        <div class="compression-progress">
+            <div class="compression-progress-bar" id="compressionProgress"></div>
         </div>
-        
-        <div class="compression-info" id="compressionInfo">
-            <div id="fileInfo"></div>
-        </div>
-        
-        <div class="compression-options" id="compressionOptions">
-            <p class="mb-2"><strong>Options :</strong></p>
-            <button type="button" class="btn-compress" onclick="startCompression()">
-                <i class="bi bi-magic me-1"></i>Compresser (recommandé)
+        <div class="compression-actions" id="compressionActions">
+            <button class="btn-compress" onclick="compressAndSend()">
+                <i class="bi bi-magic me-2"></i>Compresser
             </button>
-            <button type="button" class="btn-skip" onclick="skipCompression()">
-                <i class="bi bi-send me-1"></i>Envoyer tel quel
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" onclick="cancelUpload()">
-                <i class="bi bi-x-lg me-1"></i>Annuler
+            <button class="btn-cancel" onclick="sendWithoutCompression()">
+                Envoyer quand même
             </button>
         </div>
     </div>
 </div>
 
-<!-- ✅ FORMULAIRE ENGLOBE TOUTE LA PAGE -->
-<form action="<?php echo site_url('whatsapp/traiter_envoi'); ?>" method="post" enctype="multipart/form-data" id="envoiForm">
-
-<div class="whatsapp-container">
-	<?php if ($this->session->flashdata('error')): ?>
-    <div class="alert alert-danger alert-compact"><?php echo $this->session->flashdata('error'); ?></div>
-<?php endif; ?>
-<?php if ($this->session->flashdata('success')): ?>
-    <div class="alert alert-success alert-compact"><?php echo $this->session->flashdata('success'); ?></div>
-<?php endif; ?>
-    <!-- Sidebar Groupes -->
-    <div class="sidebar-groupes">
+<!-- Container principal -->
+<div class="app-container">
+    
+    <!-- Sidebar (Liste des groupes) -->
+    <div class="sidebar">
+        <!-- Header -->
         <div class="sidebar-header">
-            <div>
-                <h5 class="mb-0"><i class="bi bi-whatsapp me-2"></i>WhatsApp</h5>
-                <small><?php echo $total_groupes; ?> groupes disponibles</small>
+            <div class="user-avatar">
+                <i class="bi bi-person"></i>
             </div>
-            <button type="button" class="btn-select-all" onclick="toggleSelectAll()">
-                <i class="bi bi-check-all me-1"></i><span id="selectAllText">Tous</span>
-            </button>
+            <div class="header-icons">
+                <button class="icon-btn" title="Nouveau groupe">
+                    <i class="bi bi-people"></i>
+                </button>
+                <button class="icon-btn" title="Menu">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+            </div>
         </div>
         
-        <div class="search-box">
-            <input type="text" class="form-control" id="searchGroupes" placeholder="Rechercher un groupe..." onkeyup="searchGroupes()">
+        <!-- Search -->
+        <div class="search-container">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="searchGroupes" placeholder="Rechercher ou démarrer une nouvelle discussion" onkeyup="filterGroupes()">
+            </div>
         </div>
         
-        <div class="groupes-list" id="groupesList">
-            <?php foreach ($groupes as $groupe): ?>
-            <div class="groupe-item" onclick="toggleGroupe(this)">
-                <input type="checkbox" class="groupe-checkbox" name="groupes_ids[]" 
-                       value="<?php echo htmlspecialchars($groupe['groupe_id']); ?>" 
-                       onchange="updateSelection()">
-                <div class="groupe-avatar">
+        <!-- Liste des conversations -->
+        <div class="conversations-list" id="conversationsList">
+            <?php 
+            $selectedCount = 0;
+            foreach ($groupes as $index => $groupe): 
+                $isSelected = isset($selected_groupes) && in_array($groupe['groupe_id'], $selected_groupes);
+                if ($isSelected) $selectedCount++;
+            ?>
+            <div class="conversation-item <?php echo $isSelected ? 'selected' : ''; ?>" onclick="toggleSelection(this, '<?php echo htmlspecialchars($groupe['groupe_id']); ?>')">
+                <input type="checkbox" class="checkbox-select" name="groupes_ids[]" value="<?php echo htmlspecialchars($groupe['groupe_id']); ?>" <?php echo $isSelected ? 'checked' : ''; ?> onchange="updateCounter()" onclick="event.stopPropagation()">
+                <div class="conversation-avatar group">
                     <i class="bi bi-people-fill"></i>
                 </div>
-                <div class="groupe-info">
-                    <div class="groupe-nom"><?php echo htmlspecialchars($groupe['nom']); ?></div>
-                    <div class="groupe-id"><?php echo substr($groupe['groupe_id'], 0, 30); ?>...</div>
+                <div class="conversation-info">
+                    <div class="conversation-header">
+                        <span class="conversation-name"><?php echo htmlspecialchars($groupe['nom']); ?></span>
+                        <span class="conversation-time"><?php echo date('H:i'); ?></span>
+                    </div>
+                    <div class="conversation-preview">
+                        <i class="bi bi-check2-all" style="color: #53bdeb; font-size: 12px;"></i>
+                        <span class="conversation-message">Cliquez pour sélectionner ce groupe</span>
+                    </div>
                 </div>
             </div>
             <?php endforeach; ?>
+            
+            <?php if (empty($groupes)): ?>
+            <div style="padding: 40px; text-align: center; color: #667781;">
+                <i class="bi bi-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
+                <p>Aucun groupe disponible</p>
+                <a href="<?php echo site_url('whatsapp/synchroniser'); ?>" style="color: #00a884; text-decoration: none;">
+                    Synchroniser les groupes
+                </a>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
     
-    <!-- Zone principale -->
+    <!-- Zone de chat -->
     <div class="chat-area">
-        
         <?php if ($resultat !== null): ?>
-        <!-- AFFICHAGE DU RÉSULTAT -->
-        <div class="chat-header">
-            <div class="selection-info">
-                <i class="bi bi-check-circle-fill fs-4 text-success"></i>
-                <div>
-                    <h6 class="mb-0">Résultat de l'envoi</h6>
-                </div>
-            </div>
-            <a href="<?php echo site_url('whatsapp/envoyer'); ?>" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i>Nouvel envoi
-            </a>
-        </div>
-        
-        <div class="chat-messages">
-            <?php 
-            $stats = isset($resultat['response']) ? $resultat['response'] : $resultat;
-            $total = isset($stats['total']) ? $stats['total'] : 0;
-            $reussis = isset($stats['reussis']) ? $stats['reussis'] : 0;
-            $echoues = isset($stats['echoues']) ? $stats['echoues'] : 0;
-            $details = isset($stats['details']) ? $stats['details'] : array();
-            $success = ($reussis > 0);
-            ?>
-            
-            <div class="result-container">
-                <div class="result-header <?php echo $success ? 'success' : 'error'; ?>">
-                    <i class="bi bi-<?php echo $success ? 'check-circle-fill' : 'x-circle-fill'; ?> fs-1"></i>
-                    <h4 class="mt-2"><?php echo $success ? 'Envoi terminé' : 'Échec de l\'envoi'; ?></h4>
-                    <?php if (!$success && isset($resultat['error']) && $resultat['error']): ?>
-                        <p class="mb-0 mt-2"><?php echo htmlspecialchars($resultat['error']); ?></p>
-                    <?php endif; ?>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-number"><?php echo $total; ?></div>
-                        <small class="text-muted">Total</small>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number text-success"><?php echo $reussis; ?></div>
-                        <small class="text-muted">Succès</small>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number <?php echo ($echoues > 0) ? 'text-danger' : 'text-muted'; ?>"><?php echo $echoues; ?></div>
-                        <small class="text-muted">Échecs</small>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <h6><i class="bi bi-chat-left-text me-2"></i>Message envoyé</h6>
-                    <div class="p-3 bg-light rounded">
-                        <span class="badge <?php echo ($type_envoi === 'fichier') ? 'bg-info' : 'bg-success'; ?> mb-2">
-                            <?php echo ($type_envoi === 'fichier') ? 'Fichier' : 'Texte'; ?>
-                        </span>
-                        <p class="mb-0">
-    <?php 
-    $msg_str = is_array($message) ? implode(', ', $message) : (string)$message;
-    echo nl2br(htmlspecialchars($msg_str));
-    ?>
-</p>
-                    </div>
-                </div>
-                
-                <?php if (!empty($details) && is_array($details)): ?>
-                <h6><i class="bi bi-list-ul me-2"></i>Détails</h6>
-                <div class="details-list">
-                    <?php foreach ($details as $detail): 
-                        $groupe_nom = 'Inconnu';
-                        if (is_array($groupes_info) && !empty($groupes_info)) {
-                            foreach ($groupes_info as $g) {
-                                if (isset($g['groupe_id']) && $g['groupe_id'] === $detail['destinataire_id']) {
-                                    $groupe_nom = $g['nom'];
-                                    break;
-                                }
-                            }
-                        }
-                        $isSuccess = (isset($detail['statut']) && $detail['statut'] === 'succès');
-                    ?>
-                    <div class="groupe-result <?php echo $isSuccess ? 'success' : 'error'; ?>">
-                        <i class="bi bi-<?php echo $isSuccess ? 'check-circle-fill text-success' : 'x-circle-fill text-danger'; ?>"></i>
-                        <div class="flex-grow-1">
-                            <div class="fw-bold"><?php echo htmlspecialchars($groupe_nom); ?></div>
-                            <small class="text-muted"><?php echo isset($detail['destinataire_id']) ? substr($detail['destinataire_id'], 0, 30) : 'N/A'; ?>...</small>
-                        </div>
-                        <?php if (!$isSuccess && !empty($detail['erreur'])): ?>
-    <small class="text-danger"><?php echo htmlspecialchars(is_array($detail['erreur']) ? json_encode($detail['erreur']) : (string)$detail['erreur']); ?></small>
-<?php endif; ?>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-        
-        <?php else: ?>
-        <!-- FORMULAIRE D'ENVOI -->
-            
+            <!-- Affichage des résultats -->
             <div class="chat-header">
-                <div class="selection-info">
-                    <i class="bi bi-chat-dots fs-4 text-muted"></i>
-                    <div>
-                        <h6 class="mb-0">Nouveau message</h6>
-                        <small class="text-muted">
-                            <span id="selectionCount" class="selection-count">0</span> groupe(s) sélectionné(s)
-                        </small>
+                <div class="chat-header-info">
+                    <div class="chat-avatar">
+                        <i class="bi bi-check-all"></i>
+                    </div>
+                    <div class="chat-title">
+                        <span class="chat-name">Résultat de l'envoi</span>
+                        <span class="chat-status"><?php echo $reussis; ?>/<?php echo $total; ?> messages envoyés</span>
                     </div>
                 </div>
-                <a href="<?php echo site_url('whatsapp'); ?>" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1"></i>Retour
-                </a>
+                <div class="header-icons">
+                    <a href="<?php echo site_url('whatsapp/envoyer'); ?>" class="icon-btn" title="Nouvel envoi">
+                        <i class="bi bi-plus-lg"></i>
+                    </a>
+                </div>
             </div>
             
-            <div class="chat-messages">
+            <div class="messages-container">
+                <?php 
+                $stats = isset($resultat['response']) ? $resultat['response'] : $resultat;
+                $total = isset($stats['total']) ? $stats['total'] : 0;
+                $reussis = isset($stats['reussis']) ? $stats['reussis'] : 0;
+                $echoues = isset($stats['echoues']) ? $stats['echoues'] : 0;
+                $details = isset($stats['details']) ? $stats['details'] : array();
+                ?>
+                
+                <div class="message-bubble sent" style="align-self: center; background: #fff; max-width: 80%;">
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">
+                            <?php echo ($reussis > 0) ? '✅' : '❌'; ?>
+                        </div>
+                        <div style="font-size: 24px; font-weight: 500; color: #111b21; margin-bottom: 8px;">
+                            <?php echo ($reussis > 0) ? 'Envoi terminé' : 'Échec de l\'envoi'; ?>
+                        </div>
+                        <div style="color: #667781; margin-bottom: 20px;">
+                            <?php echo $reussis; ?> succès, <?php echo $echoues; ?> échecs sur <?php echo $total; ?> groupes
+                        </div>
+                        
+                        <?php if (!empty($details)): ?>
+                        <div style="text-align: left; max-height: 300px; overflow-y: auto;">
+                            <?php foreach ($details as $detail): 
+                                $isSuccess = (isset($detail['statut']) && $detail['statut'] === 'succès');
+                            ?>
+                            <div style="padding: 8px; border-bottom: 1px solid #f0f2f5; display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-<?php echo $isSuccess ? 'check-circle-fill text-success' : 'x-circle-fill text-danger'; ?>"></i>
+                                <span style="flex: 1; font-size: 14px;"><?php echo substr($detail['destinataire_id'], 0, 30); ?>...</span>
+                                <?php if (!$isSuccess): ?>
+                                <small class="text-danger"><?php echo htmlspecialchars($detail['erreur'] ?? 'Erreur'); ?></small>
+                                <?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            
+        <?php else: ?>
+            <!-- Formulaire d'envoi -->
+            <form action="<?php echo site_url('whatsapp/traiter_envoi'); ?>" method="post" enctype="multipart/form-data" id="envoiForm" style="display: flex; flex-direction: column; height: 100%;">
+                
+                <!-- Header -->
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <div class="chat-avatar">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="chat-title">
+                            <span class="chat-name">Nouvelle diffusion</span>
+                            <span class="chat-status" id="selectionStatus">Sélectionnez des groupes</span>
+                        </div>
+                    </div>
+                    <div class="header-icons">
+                        <button type="button" class="icon-btn" onclick="selectAllGroupes()" title="Tout sélectionner">
+                            <i class="bi bi-check-all"></i>
+                        </button>
+                        <a href="<?php echo site_url('whatsapp'); ?>" class="icon-btn" title="Retour">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Type selector -->
                 <div class="type-selector">
                     <button type="button" class="type-btn active" onclick="setType('texte', this)" id="btnTexte">
-                        <i class="bi bi-chat-text me-1"></i>Message
+                        <i class="bi bi-chat-text"></i>
+                        <span>Message</span>
                     </button>
                     <button type="button" class="type-btn" onclick="setType('fichier', this)" id="btnFichier">
-                        <i class="bi bi-paperclip me-1"></i>Fichier
+                        <i class="bi bi-paperclip"></i>
+                        <span>Fichier</span>
                     </button>
+                    <input type="hidden" name="type_envoi" id="typeEnvoi" value="texte">
                 </div>
                 
-                <input type="hidden" name="type_envoi" id="typeEnvoi" value="texte">
-                
-                <div class="preview-message">
-                    <div class="d-flex align-items-center gap-2 mb-2 text-muted">
-                        <i class="bi bi-eye"></i>
-                        <small>Aperçu du message</small>
+                <!-- Messages area -->
+                <div class="messages-container" id="messagesContainer">
+                    <!-- Preview du message -->
+                    <div class="message-bubble sent" id="messagePreview">
+                        <div class="message-text">Votre message apparaîtra ici...</div>
+                        <div class="message-time"><?php echo date('H:i'); ?></div>
                     </div>
-                    <div id="messagePreview">Votre message apparaîtra ici...</div>
                 </div>
                 
-                <div class="file-preview" id="filePreview">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="bi bi-file-earmark fs-2 text-primary" id="fileIcon"></i>
-                        <div class="flex-grow-1">
-                            <div class="fw-bold" id="fileName">Aucun fichier</div>
-                            <small class="text-muted" id="fileSize">-</small>
-                            <span class="badge-compression" id="compressionBadge" style="display:none;">Compressé</span>
+                <!-- File preview -->
+                <div class="file-preview-container" id="filePreviewContainer">
+                    <div class="file-preview-box">
+                        <div class="file-icon">
+                            <i class="bi bi-file-earmark" id="fileIcon"></i>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearFile()">
+                        <div class="file-info">
+                            <div class="file-name" id="fileName">Aucun fichier</div>
+                            <div class="file-size" id="fileSize">-</div>
+                        </div>
+                        <button type="button" class="file-remove" onclick="clearFile()">
                             <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
                 </div>
                 
-                <?php if (empty($groupes)): ?>
-                <div class="empty-state">
-                    <i class="bi bi-inbox"></i>
-                    <h5>Aucun groupe</h5>
-                    <p>Synchronisez vos groupes WhatsApp pour commencer</p>
-                    <a href="<?php echo site_url('whatsapp/synchroniser'); ?>" class="btn btn-success">
-                        <i class="bi bi-arrow-repeat me-1"></i>Synchroniser
-                    </a>
-                </div>
-                <?php endif; ?>
-            </div>
-            
-            <div class="chat-input-area">
+                <!-- Input area -->
                 <div class="input-container">
-                    <input type="file" name="fichier" id="fileInput" style="display: none;" onchange="handleFileSelect(this)" accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
+                    <div class="input-icons">
+                        <button type="button" class="input-icon-btn" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                        <input type="file" id="fileInput" name="fichier" style="display: none;" onchange="handleFileSelect(this)" accept="video/*,audio/*,image/*,.pdf,.doc,.docx">
+                    </div>
                     
-                    <textarea name="message" class="message-input" id="messageInput" 
-                              rows="1" placeholder="Votre message..." 
-                              onkeyup="updatePreview()"></textarea>
+                    <div class="message-input-wrapper">
+                        <textarea class="message-input" id="messageInput" name="message" placeholder="Tapez un message" rows="1" oninput="updatePreview()"></textarea>
+                    </div>
                     
-                    <button type="button" class="btn-icon" onclick="document.getElementById('fileInput').click()" title="Joindre fichier">
-                        <i class="bi bi-paperclip fs-5"></i>
-                    </button>
-                    
-                    <button type="submit" class="btn-send" id="btnSend" disabled>
-                        <i class="bi bi-send-fill fs-5"></i>
+                    <button type="submit" class="send-btn" id="sendBtn" disabled>
+                        <i class="bi bi-send-fill"></i>
                     </button>
                 </div>
                 
-                <div class="mt-2 d-flex justify-content-between align-items-center">
-                    <small class="text-muted" id="statusText">
-                        <i class="bi bi-shield-check me-1"></i>Envoi sécurisé via WhatsApp API
-                    </small>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="text-muted small me-2">Délai:</label>
-                        <select name="delai" class="form-select form-select-sm" style="width: 100px;">
-                            <option value="500">0.5s</option>
-                            <option value="1000" selected>1s</option>
-                            <option value="2000">2s</option>
-                            <option value="3000">3s</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
+            </form>
         <?php endif; ?>
-        
     </div>
+    
 </div>
 
-</form> <!-- ✅ FIN DU FORMULAIRE -->
-
 <script>
-// Variables globales
 let selectedFile = null;
 let compressedFile = null;
-let isCompressing = false;
+let selectedGroupes = [];
 
-const COMPRESSION_THRESHOLD = 16 * 1024 * 1024; // 16MB
-
-function toggleGroupe(element) {
-    const checkbox = element.querySelector('.groupe-checkbox');
+function toggleSelection(element, groupeId) {
+    const checkbox = element.querySelector('.checkbox-select');
     checkbox.checked = !checkbox.checked;
     
     if (checkbox.checked) {
         element.classList.add('selected');
+        if (!selectedGroupes.includes(groupeId)) {
+            selectedGroupes.push(groupeId);
+        }
     } else {
         element.classList.remove('selected');
+        selectedGroupes = selectedGroupes.filter(id => id !== groupeId);
     }
     
-    updateSelection();
+    updateCounter();
 }
 
-function updateSelection() {
+function updateCounter() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
     const count = checkboxes.length;
     
-    document.getElementById('selectionCount').textContent = count;
-    document.getElementById('btnSend').disabled = count === 0;
+    const statusEl = document.getElementById('selectionStatus');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    if (statusEl) {
+        if (count === 0) {
+            statusEl.textContent = 'Sélectionnez des groupes';
+        } else if (count === 1) {
+            statusEl.textContent = '1 groupe sélectionné';
+        } else {
+            statusEl.textContent = count + ' groupes sélectionnés';
+        }
+    }
+    
+    if (sendBtn) {
+        sendBtn.disabled = count === 0;
+    }
 }
 
-function toggleSelectAll() {
+function selectAllGroupes() {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]');
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     
     checkboxes.forEach(cb => {
         cb.checked = !allChecked;
-        const item = cb.closest('.groupe-item');
+        const item = cb.closest('.conversation-item');
         if (!allChecked) {
             item.classList.add('selected');
         } else {
@@ -812,8 +970,17 @@ function toggleSelectAll() {
         }
     });
     
-    document.getElementById('selectAllText').textContent = allChecked ? 'Tous' : 'Aucun';
-    updateSelection();
+    updateCounter();
+}
+
+function filterGroupes() {
+    const term = document.getElementById('searchGroupes').value.toLowerCase();
+    const items = document.querySelectorAll('.conversation-item');
+    
+    items.forEach(item => {
+        const name = item.querySelector('.conversation-name').textContent.toLowerCase();
+        item.style.display = name.includes(term) ? '' : 'none';
+    });
 }
 
 function setType(type, btn) {
@@ -822,134 +989,87 @@ function setType(type, btn) {
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
+    const input = document.getElementById('messageInput');
     if (type === 'fichier') {
-        document.getElementById('messageInput').placeholder = "Légende du fichier (optionnel)...";
+        input.placeholder = "Ajoutez une légende (optionnel)...";
         document.getElementById('fileInput').click();
     } else {
-        document.getElementById('messageInput').placeholder = "Votre message...";
+        input.placeholder = "Tapez un message";
     }
 }
 
-async function handleFileSelect(input) {
+function handleFileSelect(input) {
     if (!input.files || !input.files[0]) return;
     
     selectedFile = input.files[0];
-    const fileSizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+    const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
     
     // Afficher preview
+    document.getElementById('filePreviewContainer').classList.add('active');
     document.getElementById('fileName').textContent = selectedFile.name;
-    document.getElementById('fileSize').textContent = fileSizeMB + ' MB';
-    document.getElementById('filePreview').classList.add('active');
+    document.getElementById('fileSize').textContent = sizeMB + ' MB';
     
-    // Détecter type pour icône
-    const fileIcon = document.getElementById('fileIcon');
-    if (selectedFile.type.startsWith('video/')) {
-        fileIcon.className = 'bi bi-camera-video-fill fs-2 text-danger';
-    } else if (selectedFile.type.startsWith('audio/')) {
-        fileIcon.className = 'bi bi-mic-fill fs-2 text-warning';
-    } else if (selectedFile.type.startsWith('image/')) {
-        fileIcon.className = 'bi bi-image-fill fs-2 text-success';
-    } else {
-        fileIcon.className = 'bi bi-file-earmark fs-2 text-primary';
-    }
+    // Icône selon type
+    const icon = document.getElementById('fileIcon');
+    if (selectedFile.type.startsWith('video/')) icon.className = 'bi bi-camera-video-fill';
+    else if (selectedFile.type.startsWith('audio/')) icon.className = 'bi bi-mic-fill';
+    else if (selectedFile.type.startsWith('image/')) icon.className = 'bi bi-image-fill';
+    else icon.className = 'bi bi-file-earmark';
     
-    // Si fichier > 16MB, montrer options
-    if (selectedFile.size > COMPRESSION_THRESHOLD) {
+    // Si > 16MB, proposer compression
+    if (selectedFile.size > 16 * 1024 * 1024) {
         showCompressionDialog();
     } else {
         compressedFile = selectedFile;
-        document.getElementById('compressionBadge').style.display = 'none';
     }
+    
+    // Changer le type en fichier
+    setType('fichier', document.getElementById('btnFichier'));
 }
 
 function showCompressionDialog() {
-    const overlay = document.getElementById('compressionOverlay');
-    const fileInfo = document.getElementById('fileInfo');
-    const options = document.getElementById('compressionOptions');
-    const spinner = document.getElementById('compressionSpinner');
-    
-    const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
-    
-    fileInfo.innerHTML = `
-        <strong>Fichier :</strong> ${selectedFile.name}<br>
-        <strong>Taille :</strong> <span class="text-danger">${sizeMB} MB</span><br>
-        <strong>Type :</strong> ${selectedFile.type || 'Inconnu'}<br>
-        <small class="text-muted">Les fichiers >16MB peuvent causer des timeouts</small>
-    `;
-    
-    spinner.style.display = 'block';
-    options.style.display = 'block';
-    document.getElementById('progressContainer').style.display = 'none';
-    document.getElementById('compressionTitle').textContent = 'Fichier volumineux détecté';
-    document.getElementById('compressionText').textContent = 'Choisissez comment procéder';
-    
-    overlay.style.display = 'flex';
+    document.getElementById('compressionOverlay').style.display = 'flex';
+    document.getElementById('compressionTitle').textContent = 'Fichier volumineux';
+    document.getElementById('compressionText').textContent = 'Ce fichier fait ' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB. Compresser avant envoi ?';
+    document.getElementById('compressionActions').style.display = 'flex';
 }
 
-async function startCompression() {
-    const options = document.getElementById('compressionOptions');
-    const spinner = document.getElementById('compressionSpinner');
-    const title = document.getElementById('compressionTitle');
-    const text = document.getElementById('compressionText');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('compressionProgress');
+async function compressAndSend() {
+    document.getElementById('compressionActions').style.display = 'none';
+    document.getElementById('compressionTitle').textContent = 'Compression...';
+    document.getElementById('compressionText').textContent = 'Veuillez patienter';
     
-    options.style.display = 'none';
-    spinner.style.display = 'block';
-    progressContainer.style.display = 'block';
-    title.textContent = 'Compression en cours...';
-    text.textContent = 'Utilisation de Canvas API (compression image/vidéo)';
+    const progress = document.getElementById('compressionProgress');
+    progress.style.width = '30%';
     
     try {
-        // Compression différente selon le type
+        // Compression image simple via canvas
         if (selectedFile.type.startsWith('image/')) {
-            compressedFile = await compressImage(selectedFile, progressBar);
-        } else if (selectedFile.type.startsWith('video/')) {
-            compressedFile = await compressVideoBasic(selectedFile, progressBar);
+            compressedFile = await compressImage(selectedFile);
         } else {
-            // Pour audio/documents, utiliser slice si possible ou envoyer tel quel
-            compressedFile = await compressGeneric(selectedFile, progressBar);
+            // Pour vidéo/audio, on ne peut pas compresser sans FFmpeg
+            // On propose de réduire la qualité ou d'envoyer tel quel
+            progress.style.width = '100%';
+            compressedFile = selectedFile;
         }
         
-        // Mettre à jour l'interface
-        const originalSizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
-        const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
-        const reduction = ((1 - compressedFile.size / selectedFile.size) * 100).toFixed(0);
+        const originalSize = (selectedFile.size / 1024 / 1024).toFixed(2);
+        const newSize = (compressedFile.size / 1024 / 1024).toFixed(2);
         
         document.getElementById('fileSize').innerHTML = 
-            `<span class="text-decoration-line-through text-muted">${originalSizeMB} MB</span> 
-             <span class="text-success fw-bold">${compressedSizeMB} MB</span>
-             <span class="badge bg-success ms-1">-${reduction}%</span>`;
+            '<span style="text-decoration: line-through; color: #8696a0;">' + originalSize + ' MB</span> ' +
+            '<span style="color: #00a884; font-weight: 500;">' + newSize + ' MB</span>';
         
-        document.getElementById('compressionBadge').style.display = 'inline-block';
+        document.getElementById('compressionOverlay').style.display = 'none';
         
-        // Remplacer dans l'input
-        const dt = new DataTransfer();
-        dt.items.add(compressedFile);
-        document.getElementById('fileInput').files = dt.files;
-        
-        title.textContent = 'Compression réussie !';
-        text.textContent = `Réduction de ${reduction}%`;
-        
-        setTimeout(() => {
-            document.getElementById('compressionOverlay').style.display = 'none';
-        }, 1500);
-        
-    } catch (error) {
-        console.error('Erreur compression:', error);
-        title.textContent = 'Compression échouée';
-        text.textContent = 'Utilisation du fichier original';
-        
+    } catch (e) {
+        console.error(e);
         compressedFile = selectedFile;
-        
-        setTimeout(() => {
-            document.getElementById('compressionOverlay').style.display = 'none';
-        }, 2000);
+        document.getElementById('compressionOverlay').style.display = 'none';
     }
 }
 
-// Compression image via Canvas (très efficace)
-function compressImage(file, progressBar) {
+function compressImage(file) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -957,10 +1077,9 @@ function compressImage(file, progressBar) {
         img.onload = () => {
             URL.revokeObjectURL(url);
             
-            // Calculer nouvelles dimensions (max 1920px)
             let width = img.width;
             let height = img.height;
-            const maxDim = 1920;
+            const maxDim = 1280;
             
             if (width > maxDim || height > maxDim) {
                 if (width > height) {
@@ -972,28 +1091,19 @@ function compressImage(file, progressBar) {
                 }
             }
             
-            // Canvas
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
             
-            progressBar.style.width = '50%';
-            
-            // Export avec qualité réduite
-            const mimeType = file.type === 'image/png' ? 'image/jpeg' : file.type;
-            
             canvas.toBlob((blob) => {
-                progressBar.style.width = '100%';
-                
                 const compressed = new File([blob], 'compressed_' + file.name, {
-                    type: mimeType,
+                    type: 'image/jpeg',
                     lastModified: Date.now()
                 });
-                
                 resolve(compressed);
-            }, mimeType, 0.7); // Qualité 70%
+            }, 'image/jpeg', 0.7);
         };
         
         img.onerror = reject;
@@ -1001,62 +1111,14 @@ function compressImage(file, progressBar) {
     });
 }
 
-// Compression vidéo basique (extraction frame + réencapsulation)
-async function compressVideoBasic(file, progressBar) {
-    // Pour les vidéos sans FFmpeg, on utilise une approche par chunks
-    // ou on propose de réduire la qualité via capture
-    
-    progressBar.style.width = '30%';
-    
-    // Vérifier si MediaRecorder est disponible
-    if (!window.MediaRecorder) {
-        throw new Error('MediaRecorder non supporté');
-    }
-    
-    // Pour l'instant, on utilise la méthode par chunks côté serveur
-    // ou on réduit le bitrate en pré-traitement si possible
-    
-    progressBar.style.width = '60%';
-    
-    // Alternative: créer une version allégée via slice
-    // (simulation de compression par réduction métadonnées)
-    
-    // Pour une vraie compression sans FFmpeg, on peut utiliser:
-    // 1. Whammy.js pour WebM
-    // 2. MediaRecorder avec bitrate réduit
-    
-    progressBar.style.width = '100%';
-    
-    // Retourner fichier avec métadonnées optimisées
-    // En attendant, on retourne le fichier original avec warning
-    return file;
-}
-
-// Compression générique (pour documents/audio)
-function compressGeneric(file, progressBar) {
-    return new Promise((resolve) => {
-        progressBar.style.width = '100%';
-        // Pas de compression possible côté client pour ces types
-        resolve(file);
-    });
-}
-
-function skipCompression() {
+function sendWithoutCompression() {
     compressedFile = selectedFile;
-    document.getElementById('compressionOverlay').style.display = 'none';
-    document.getElementById('statusText').innerHTML = 
-        '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Fichier non compressé - risque de timeout';
-}
-
-function cancelUpload() {
-    clearFile();
     document.getElementById('compressionOverlay').style.display = 'none';
 }
 
 function clearFile() {
     document.getElementById('fileInput').value = '';
-    document.getElementById('filePreview').classList.remove('active');
-    document.getElementById('compressionBadge').style.display = 'none';
+    document.getElementById('filePreviewContainer').classList.remove('active');
     selectedFile = null;
     compressedFile = null;
     setType('texte', document.getElementById('btnTexte'));
@@ -1067,23 +1129,16 @@ function updatePreview() {
     const preview = document.getElementById('messagePreview');
     const text = input.value.trim();
     
-    preview.textContent = text || 'Votre message apparaîtra ici...';
-    preview.style.fontStyle = text ? 'normal' : 'italic';
-    preview.style.color = text ? '#333' : '#999';
+    if (text) {
+        preview.querySelector('.message-text').textContent = text;
+        preview.style.display = 'block';
+    } else {
+        preview.querySelector('.message-text').textContent = 'Votre message apparaîtra ici...';
+    }
 }
 
-function searchGroupes() {
-    const term = document.getElementById('searchGroupes').value.toLowerCase();
-    const items = document.querySelectorAll('.groupe-item');
-    
-    items.forEach(item => {
-        const nom = item.querySelector('.groupe-nom').textContent.toLowerCase();
-        item.style.display = nom.includes(term) ? '' : 'none';
-    });
-}
-
-// Validation avant envoi
-document.getElementById('envoiForm').addEventListener('submit', function(e) {
+// Validation formulaire
+document.getElementById('envoiForm')?.addEventListener('submit', function(e) {
     const checkboxes = document.querySelectorAll('input[name="groupes_ids[]"]:checked');
     if (checkboxes.length === 0) {
         e.preventDefault();
@@ -1093,7 +1148,7 @@ document.getElementById('envoiForm').addEventListener('submit', function(e) {
     
     const type = document.getElementById('typeEnvoi').value;
     const message = document.getElementById('messageInput').value.trim();
-    const file = document.getElementById('fileInput').files[0];
+    const hasFile = document.getElementById('fileInput').files.length > 0;
     
     if (type === 'texte' && !message) {
         e.preventDefault();
@@ -1101,30 +1156,13 @@ document.getElementById('envoiForm').addEventListener('submit', function(e) {
         return false;
     }
     
-    if (type === 'fichier' && !file) {
+    if (type === 'fichier' && !hasFile) {
         e.preventDefault();
         alert('Veuillez sélectionner un fichier');
         return false;
     }
     
-    // Vérifier taille finale
-    if (file && file.size > 100 * 1024 * 1024) {
-        e.preventDefault();
-        alert('Fichier trop gros même après compression (max 100MB)');
-        return false;
-    }
-    
-    // Warning si fichier >16MB non compressé
-    if (file && file.size > COMPRESSION_THRESHOLD && file === selectedFile) {
-        if (!confirm('Ce fichier est volumineux et peut causer un timeout. Continuer quand même ?')) {
-            e.preventDefault();
-            return false;
-        }
-    }
-    
-    document.getElementById('btnSend').disabled = true;
-    document.getElementById('btnSend').innerHTML = '<i class="bi bi-hourglass-split fs-5"></i>';
-    document.getElementById('statusText').textContent = 'Envoi en cours...';
+    document.getElementById('sendBtn').innerHTML = '<i class="bi bi-hourglass-split"></i>';
 });
 </script>
 
