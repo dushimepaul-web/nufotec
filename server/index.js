@@ -6,7 +6,6 @@ const app = express();
 const server = http.createServer(app);
 const PORT = 3002;
 
-// PAS DE CORS COMPLIQUÉ
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST');
@@ -14,27 +13,35 @@ app.use((req, res, next) => {
     next();
 });
 
-// Route ICE servers
+// Route ICE servers avec TURN gratuit OpenRelay
 app.get('/socket/api/ice-servers', (req, res) => {
     res.json({
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            {
+                urls: [
+                    'turn:openrelay.metered.ca:80',
+                    'turn:openrelay.metered.ca:443',
+                    'turn:openrelay.metered.ca:443?transport=tcp'
+                ],
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
         ]
     });
 });
 
-// Socket.IO - MODE POLLING UNIQUEMENT
 const io = socketIo(server, {
     path: '/socket/socket.io',
-    transports: ['polling'],        // ← FORCÉ polling
-    allowUpgrades: false,            // ← PAS d'upgrade WebSocket
+    transports: ['polling', 'websocket'],
+    allowUpgrades: true,
     pingTimeout: 60000,
     pingInterval: 25000,
     cors: { origin: "*" }
 });
 
-// Stockage simple
 const rooms = new Map();
 
 io.on('connection', (socket) => {
@@ -45,11 +52,18 @@ io.on('connection', (socket) => {
     });
     
     socket.on('join-room', (roomId) => {
-        socket.join(roomId);
-        rooms.set(roomId, (rooms.get(roomId) || 0) + 1);
+        if (socket.currentRoom) {
+            socket.leave(socket.currentRoom);
+        }
         
+        socket.join(roomId);
+        socket.currentRoom = roomId;
+        
+        const count = (rooms.get(roomId) || 0) + 1;
+        rooms.set(roomId, count);
+        
+        console.log(`📌 ${socket.id} → ${roomId} (${count} participants)`);
         socket.to(roomId).emit('user-connected', { id: socket.id });
-        console.log(`📌 ${socket.id} → ${roomId} (${rooms.get(roomId)} participants)`);
     });
     
     socket.on('offer', (data) => {
@@ -69,10 +83,18 @@ io.on('connection', (socket) => {
     
     socket.on('disconnect', () => {
         console.log(`❌ Déconnecté: ${socket.id}`);
+        if (socket.currentRoom && rooms.has(socket.currentRoom)) {
+            const count = rooms.get(socket.currentRoom) - 1;
+            if (count <= 0) {
+                rooms.delete(socket.currentRoom);
+            } else {
+                rooms.set(socket.currentRoom, count);
+            }
+            socket.to(socket.currentRoom).emit('user-disconnected', { id: socket.id });
+        }
     });
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Serveur démarré sur port ${PORT}`);
-    console.log(`📮 Mode: POLLING uniquement`);
 });

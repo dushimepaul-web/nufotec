@@ -1,5 +1,5 @@
 // ============================================
-// CONSULTATION.JS - VERSION AVEC FORCE CONNEXION
+// CONSULTATION.JS - VERSION FINALE WEBRTC
 // ============================================
 
 (function() {
@@ -24,8 +24,7 @@
         isConnected: false,
         pendingIceCandidates: [],
         reconnectAttempts: 0,
-        turnConnected: false,
-        connectionCheckInterval: null
+        turnConnected: false
     };
 
     const elements = {
@@ -72,7 +71,7 @@
 
     const webrtc = {
         async createPeerConnection() {
-            utils.log('🔧 Création PeerConnection avec TURN...');
+            utils.log('🔧 Création PeerConnection...');
             
             if (state.peerConnection) {
                 try { state.peerConnection.close(); } catch(e) {}
@@ -83,35 +82,16 @@
                 const response = await fetch('/socket/api/ice-servers');
                 const config = await response.json();
                 
-                utils.log(`📡 ${config.iceServers.length} serveurs ICE configurés`);
+                utils.log(`📡 ${config.iceServers.length} serveurs ICE`);
                 
                 state.peerConnection = new RTCPeerConnection({
                     iceServers: config.iceServers,
-                    iceTransportPolicy: 'relay',
-                    iceCandidatePoolSize: 10,
-                    bundlePolicy: 'max-bundle',
-                    rtcpMuxPolicy: 'require'
+                    iceCandidatePoolSize: 10
                 });
-                
-                // Timeout plus long pour connexions internationales
-                let iceTimeout = setTimeout(() => {
-                    if (state.peerConnection && !state.isConnected) {
-                        utils.log('⚠️ Timeout ICE, vérification manuelle...');
-                        this.forceCheckConnection();
-                    }
-                }, 45000);
                 
                 state.peerConnection.onicecandidate = (event) => {
                     if (event.candidate && state.otherSocketId && state.socket) {
-                        const candidateType = event.candidate.candidate.includes('relay') ? '🔄 TURN' : 
-                                             (event.candidate.candidate.includes('srflx') ? '📡 STUN' : '💻 HOST');
-                        utils.log(`${candidateType}: ${event.candidate.type || 'candidate'}`);
-                        
-                        if (candidateType === '🔄 TURN') {
-                            state.turnConnected = true;
-                            utils.log('✅ TURN relay actif!');
-                        }
-                        
+                        utils.log(`🧊 Envoi candidat ICE`);
                         state.socket.emit('ice-candidate', {
                             target: state.otherSocketId,
                             candidate: event.candidate
@@ -131,6 +111,13 @@
                         elements.remoteVideo.srcObject = state.remoteStream;
                         elements.remoteVideo.play().catch(() => {});
                     }
+                    
+                    if (event.track.kind === 'video') {
+                        state.isConnected = true;
+                        utils.closeWaitingOverlay();
+                        utils.updateOtherStatus(true);
+                        utils.showToast('Consultation démarrée!', 'success');
+                    }
                 };
                 
                 state.peerConnection.onconnectionstatechange = () => {
@@ -138,43 +125,13 @@
                     utils.log(`📊 Connection: ${connState}`);
                     
                     if (connState === 'connected') {
-                        clearTimeout(iceTimeout);
-                        if (state.connectionCheckInterval) {
-                            clearInterval(state.connectionCheckInterval);
-                            state.connectionCheckInterval = null;
-                        }
                         state.isConnected = true;
-                        state.reconnectAttempts = 0;
                         utils.closeWaitingOverlay();
                         utils.updateOtherStatus(true);
-                        const mode = state.turnConnected ? 'TURN (relais international)' : 'STUN (direct)';
-                        utils.showToast(`Connecté via ${mode}`, 'success');
+                        utils.showToast('Connecté!', 'success');
                     } else if (connState === 'failed') {
-                        clearTimeout(iceTimeout);
                         state.isConnected = false;
                         utils.log('❌ Connexion échouée');
-                        this.handleFailure();
-                    } else if (connState === 'disconnected') {
-                        utils.log('⚠️ Connexion interrompue, tentative de reprise...');
-                        this.restartIce();
-                    }
-                };
-                
-                state.peerConnection.oniceconnectionstatechange = () => {
-                    const iceState = state.peerConnection.iceConnectionState;
-                    utils.log(`🧊 ICE: ${iceState}`);
-                    
-                    if (iceState === 'connected' || iceState === 'completed') {
-                        clearTimeout(iceTimeout);
-                        utils.log('✅ ICE connecté');
-                        // Forcer la vérification de connexion
-                        setTimeout(() => this.forceCheckConnection(), 1000);
-                    } else if (iceState === 'failed') {
-                        utils.log('❌ ICE échoué');
-                        this.restartIce();
-                    } else if (iceState === 'disconnected') {
-                        utils.log('⚠️ ICE déconnecté, tentative de reprise...');
-                        this.restartIce();
                     }
                 };
                 
@@ -190,7 +147,6 @@
                 }
                 
                 if (state.pendingIceCandidates.length > 0) {
-                    utils.log(`📦 ${state.pendingIceCandidates.length} candidats en attente`);
                     for (const candidate of state.pendingIceCandidates) {
                         try {
                             await state.peerConnection.addIceCandidate(candidate);
@@ -206,120 +162,8 @@
             }
         },
         
-        // Vérification forcée de la connexion
-        forceCheckConnection() {
-            if (!state.peerConnection || state.isConnected) return;
-            
-            const iceState = state.peerConnection.iceConnectionState;
-            const connState = state.peerConnection.connectionState;
-            
-            utils.log(`🔍 Vérification forcée - ICE: ${iceState}, Connection: ${connState}`);
-            
-            // Si on a des tracks mais que la connexion n'est pas déclarée connected
-            if (state.remoteStream && state.remoteStream.getTracks().length > 0) {
-                if (iceState === 'connected' || iceState === 'completed') {
-                    utils.log('✅ Détection manuelle: connexion établie!');
-                    state.isConnected = true;
-                    utils.closeWaitingOverlay();
-                    utils.updateOtherStatus(true);
-                    utils.showToast('Consultation démarrée!', 'success');
-                    return;
-                }
-            }
-            
-            // Si toujours bloqué, tenter un restart
-            if (!state.isConnected && iceState !== 'connected') {
-                utils.log('⚠️ Connexion bloquée, tentative de restart...');
-                this.restartIce();
-            }
-        },
-        
-        async switchToHybridMode() {
-            if (!state.peerConnection || state.isConnected) return;
-            
-            utils.log('🔄 Passage en mode hybride (TURN+STUN)...');
-            try {
-                const response = await fetch('/socket/api/ice-servers');
-                const config = await response.json();
-                
-                const newPC = new RTCPeerConnection({
-                    iceServers: config.iceServers,
-                    iceTransportPolicy: 'all',
-                    iceCandidatePoolSize: 10
-                });
-                
-                // Copier les listeners
-                newPC.ontrack = state.peerConnection.ontrack;
-                newPC.onicecandidate = state.peerConnection.onicecandidate;
-                
-                if (state.localStream) {
-                    state.localStream.getTracks().forEach(track => {
-                        newPC.addTrack(track, state.localStream);
-                    });
-                }
-                
-                const oldPC = state.peerConnection;
-                state.peerConnection = newPC;
-                
-                // Renégocier
-                if (state.isInitiator) {
-                    await this.createOffer();
-                }
-                
-                setTimeout(() => oldPC.close(), 1000);
-            } catch (error) {
-                utils.log(`❌ Switch hybride échoué: ${error.message}`);
-            }
-        },
-        
-        async restartIce() {
-            if (!state.peerConnection || state.isConnected) return;
-            
-            utils.log('🔄 Restart ICE...');
-            try {
-                const offer = await state.peerConnection.createOffer({
-                    iceRestart: true,
-                    offerToReceiveAudio: true,
-                    offerToReceiveVideo: true
-                });
-                await state.peerConnection.setLocalDescription(offer);
-                
-                state.socket.emit('offer', {
-                    target: state.otherSocketId,
-                    sdp: state.peerConnection.localDescription
-                });
-                utils.log('📤 Offer ICE restart envoyée');
-            } catch (error) {
-                utils.log(`❌ Restart échoué: ${error.message}`);
-            }
-        },
-        
-        async handleFailure() {
-            if (state.reconnectAttempts >= 5) {
-                utils.log('❌ Abandon après 5 tentatives');
-                utils.showToast('Connexion impossible. Vérifiez votre connexion internet.', 'error');
-                return;
-            }
-            
-            state.reconnectAttempts++;
-            const delay = 5000 * Math.pow(2, state.reconnectAttempts - 1);
-            utils.log(`🔄 Nouvelle tentative dans ${delay/1000}s (${state.reconnectAttempts}/5)...`);
-            
-            setTimeout(() => {
-                this.cleanup();
-                this.createPeerConnection().then(() => {
-                    if (state.isInitiator && state.otherSocketId) {
-                        setTimeout(() => this.createOffer(), 1000);
-                    }
-                });
-            }, delay);
-        },
-        
         async createOffer() {
-            if (!state.peerConnection) {
-                utils.log('❌ Pas de PeerConnection');
-                return;
-            }
+            if (!state.peerConnection) return;
             
             try {
                 utils.log('📤 Création offre...');
@@ -329,23 +173,6 @@
                 });
                 
                 await state.peerConnection.setLocalDescription(offer);
-                
-                // Attendre ICE gathering avec timeout plus long
-                await new Promise((resolve) => {
-                    if (state.peerConnection.iceGatheringState === 'complete') {
-                        resolve();
-                    } else {
-                        const timeout = setTimeout(resolve, 15000);
-                        const checkState = () => {
-                            if (state.peerConnection.iceGatheringState === 'complete') {
-                                clearTimeout(timeout);
-                                state.peerConnection.removeEventListener('icegatheringstatechange', checkState);
-                                resolve();
-                            }
-                        };
-                        state.peerConnection.addEventListener('icegatheringstatechange', checkState);
-                    }
-                });
                 
                 state.socket.emit('offer', {
                     target: state.otherSocketId,
@@ -376,9 +203,6 @@
                     sdp: state.peerConnection.localDescription
                 });
                 utils.log('📤 Réponse envoyée');
-                
-                // Vérifier la connexion après quelques secondes
-                setTimeout(() => this.forceCheckConnection(), 5000);
             } catch (error) {
                 utils.log(`❌ Erreur: ${error.message}`);
             }
@@ -386,15 +210,11 @@
         
         async handleAnswer(data) {
             utils.log('📩 Réponse reçue');
-            
             if (!state.peerConnection) return;
             
             try {
                 await state.peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
                 utils.log('✅ Réponse appliquée');
-                
-                // Vérifier la connexion après quelques secondes
-                setTimeout(() => this.forceCheckConnection(), 5000);
             } catch (error) {
                 utils.log(`❌ Erreur: ${error.message}`);
             }
@@ -417,10 +237,6 @@
         },
         
         cleanup() {
-            if (state.connectionCheckInterval) {
-                clearInterval(state.connectionCheckInterval);
-                state.connectionCheckInterval = null;
-            }
             if (state.peerConnection) {
                 try { state.peerConnection.close(); } catch(e) {}
                 state.peerConnection = null;
@@ -428,7 +244,6 @@
             state.remoteStream = null;
             if (elements.remoteVideo) elements.remoteVideo.srcObject = null;
             state.pendingIceCandidates = [];
-            state.turnConnected = false;
             state.isConnected = false;
             utils.log('🧹 Nettoyé');
         }
@@ -439,8 +254,8 @@
         
         state.socket = io(CONFIG.socketUrl, {
             path: CONFIG.socketPath,
-            transports: ['polling', 'websocket'],
-            upgrade: true,
+            transports: ['polling'],
+            upgrade: false,
             reconnection: true,
             reconnectionAttempts: 10,
             reconnectionDelay: 2000,
@@ -452,10 +267,6 @@
             if (CONFIG.roomId) {
                 state.socket.emit('join-room', CONFIG.roomId);
             }
-        });
-        
-        state.socket.on('connect_error', (error) => {
-            utils.log(`❌ Socket: ${error.message}`);
         });
         
         state.socket.on('user-connected', async (data) => {
@@ -478,7 +289,6 @@
                 webrtc.cleanup();
                 utils.updateOtherStatus(false);
                 utils.showWaitingOverlay();
-                utils.showToast('Le participant a quitté', 'warning');
             }
         });
         
@@ -560,7 +370,7 @@
     }
 
     async function init() {
-        utils.log('🚀 Démarrage consultation v6.4 (Force connexion)...');
+        utils.log('🚀 Démarrage consultation...');
         
         if (!CONFIG.roomId) {
             utils.log('❌ roomId manquant');
@@ -592,12 +402,9 @@
         console.log('Socket:', state.socket?.connected);
         console.log('PeerConnection:', !!state.peerConnection);
         console.log('Connected:', state.isConnected);
-        console.log('TURN actif:', state.turnConnected);
         if (state.peerConnection) {
             console.log('ICE state:', state.peerConnection.iceConnectionState);
             console.log('Connection:', state.peerConnection.connectionState);
-            console.log('Signaling:', state.peerConnection.signalingState);
-            console.log('Remote tracks:', state.remoteStream?.getTracks().length || 0);
         }
     };
 })();

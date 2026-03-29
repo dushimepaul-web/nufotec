@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Consultation avec <?= htmlspecialchars(
-        (is_object($other_user) ? ($other_user->prenom ?? '') : ($other_user['prenom'] ?? '')) . ' ' .
-        (is_object($other_user) ? ($other_user->nom ?? '') : ($other_user['nom'] ?? ''))
-    ) ?></title>
+    <title>Consultation avec <?= htmlspecialchars($other_prenom . ' ' . $other_nom) ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -72,21 +69,7 @@
 </head>
 <body>
 <?php
-function getProp($data, $prop, $default = '') {
-    if (is_object($data)) return $data->$prop ?? $default;
-    if (is_array($data)) return $data[$prop] ?? $default;
-    return $default;
-}
-$other_prenom = getProp($other_user, 'prenom', '');
-$other_nom = getProp($other_user, 'nom', '');
-$other_photo = getProp($other_user, 'photo', '');
-$current_prenom = $current_user['prenom'] ?? '';
-$current_nom = $current_user['nom'] ?? '';
-$current_photo = $current_user['photo'] ?? '';
-$other_avatar_url = (!empty($other_photo) && $other_photo !== 'default-avatar.png') ? base_url('attachments/Users/' . $other_photo) : 'https://ui-avatars.com/api/?name=' . urlencode(strtoupper(substr($other_prenom,0,1).substr($other_nom,0,1) ?: 'U')) . '&size=128&background=random&color=fff';
-$current_avatar_url = (!empty($current_photo) && $current_photo !== 'default-avatar.png') ? base_url('attachments/Users/' . $current_photo) : 'https://ui-avatars.com/api/?name=' . urlencode(strtoupper(substr($current_prenom,0,1).substr($current_nom,0,1) ?: 'U')) . '&size=128&background=random&color=fff';
-$waitingMessage = ($current_role === 'patient') ? 'En attente du médecin...' : 'En attente du patient...';
-$otherRoleLabel = ($current_role === 'patient') ? 'Dr. ' : '';
+$waitingMessage = $waitingMessage ?? 'En attente du participant...';
 ?>
 <div id="app">
     <div class="header">
@@ -139,10 +122,10 @@ $otherRoleLabel = ($current_role === 'patient') ? 'Dr. ' : '';
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 window.roomId = <?= json_encode($room_id ?? null) ?>;
-window.currentUser = <?= json_encode($current_user ?? ['id' => 'me', 'name' => 'Moi', 'avatar' => $current_avatar_url]) ?>;
+window.currentUser = <?= json_encode($current_user ?? ['id' => 'me', 'name' => 'Moi', 'avatar' => '']) ?>;
 window.otherUser = <?= json_encode($other_user ?? ['id' => 'other', 'name' => 'Autre', 'avatar' => $other_avatar_url]) ?>;
 window.currentRole = <?= json_encode($current_role ?? 'participant') ?>;
-window.consultationId = <?= json_encode($consultation->id ?? $consultation['id'] ?? null) ?>;
+window.consultationId = <?= json_encode(is_object($consultation) ? $consultation->id : ($consultation['id'] ?? null)) ?>;
 </script>
 <script src="<?= base_url('assets/js/consultation.js?v=' . time()) ?>"></script>
 </body>
