@@ -137,21 +137,29 @@
                                 <strong class="text-success"><?= number_format($value['prix_ttc'] ?? 0, 2, ',', ' ') ?> $</strong>
                             </td>
                             
-
-                          <td class="text-center">
-    <?php if (!empty($value['room_id'])): ?>
+<td class="text-center">
+    <?php if (!empty($value['room_id']) && in_array($value['statut'], ['confirmee', 'en_cours'])): ?>
         <a href="<?= base_url('Joinconsultation/index?room=' . $value['room_id'] . '&user=' . $this->session->userdata('user_id')) ?>" 
            class="btn btn-success" 
            target="_blank">
             <i class="bx bx-video me-1"></i> REJOINDRE
         </a>
+    <?php elseif (!empty($value['room_id']) && $value['statut'] == 'terminee'): ?>
+        <button class="btn btn-secondary" disabled>
+            <i class="bx bx-check-double me-1"></i> TERMINÉE
+        </button>
+    <?php elseif (!empty($value['room_id']) && $value['statut'] == 'annulee'): ?>
+        <button class="btn btn-secondary" disabled>
+            <i class="bx bx-x me-1"></i> ANNULÉE
+        </button>
     <?php else: ?>
         <button class="btn btn-secondary" disabled>
-            <i class="bx bx-time me-1"></i> PAS DE ROOM
+            <i class="bx bx-time me-1"></i> EN ATTENTE
         </button>
     <?php endif; ?>
 </td>
-                        </tr>
+
+  </tr>
 
                         <!-- MODAL VIEW DETAILS -->
                         <div class="modal fade" id="view_<?= $value['id'] ?>" tabindex="-1">

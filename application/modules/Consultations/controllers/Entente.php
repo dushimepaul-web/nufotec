@@ -54,12 +54,10 @@ class Entente extends MY_Controller {
         $this->load->view('Entente_View', $data);
     }
 
-    /**
-     * Liste des consultations confirmées
-     */
-    public function confirme()
+     //Liste des consultations confirmées
+   public function confirme()
 {
-    // Récupérer les consultations confirmées ou en cours
+    // Récupérer les consultations confirmées OU en cours
     $this->db->select('
         c.*, 
         p.nom as patient_nom, 
@@ -76,19 +74,37 @@ class Entente extends MY_Controller {
     $this->db->join('medecins m', 'm.id = c.medecin_id', 'left');
     $this->db->join('users u', 'u.id = m.user_id', 'left');
     
-    // CORRECTION : Utiliser where_in au lieu de deux where()
+    // Afficher les consultations confirmées ou en cours
     $this->db->where_in('c.statut', ['confirmee', 'en_cours']);
+    $this->db->order_by('c.date_confirmee', 'DESC');
     
-    $this->db->order_by('c.created_at', 'DESC');
+    $consultations = $this->db->get()->result_array();
     
-    $data['consultations'] = $this->db->get()->result_array();
+    // Filtrer selon les permissions de l'utilisateur connecté
+    $user_id = $this->session->userdata('user_id');
+    $user_role = $this->session->userdata('role'); // à adapter selon votre système
     
-    // Récupérer les patients
+    $filtered_consultations = [];
+    foreach ($consultations as $consultation) {
+        // Si l'utilisateur est patient, il voit uniquement ses consultations
+        if ($user_role == 'patient' && $consultation['patient_id'] != $user_id) {
+            continue;
+        }
+        // Si l'utilisateur est médecin, il voit uniquement ses consultations
+        if ($user_role == 'medecin' && $consultation['medecin_id'] != $user_id) {
+            continue;
+        }
+        $filtered_consultations[] = $consultation;
+    }
+    
+    $data['consultations'] = $filtered_consultations;
+    
+    // Récupérer les patients pour le formulaire de création
     $this->db->where('type_utilisateur', 'patient');
     $this->db->where('is_active', 1);
     $data['patients'] = $this->db->get('users')->result_array();
     
-    // Récupérer les médecins
+    // Récupérer les médecins pour le formulaire de création
     $this->db->select('m.*, u.nom, u.prenom, u.email, u.photo');
     $this->db->from('medecins m');
     $this->db->join('users u', 'u.id = m.user_id');
@@ -97,7 +113,6 @@ class Entente extends MY_Controller {
     
     $this->load->view('allowed_View', $data);
 }
-
     /**
      * Changer le statut d'une consultation
      */
