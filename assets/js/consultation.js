@@ -1,8 +1,8 @@
 // ============================================
 // NUFOTEC CONSULTATION - CLIENT PRINCIPAL
-// Version : 5.4.0 - CodeIgniter 3
+// Version : 5.4.1 - CodeIgniter 3
 // Description : Consultation vidéo peer-to-peer - Mode Polling Robuste
-// Améliorations : Gestion optimisée des collisions d'offres, reconnexion améliorée
+// Améliorations : Correction vidéo, gestion optimisée des collisions, reconnexion améliorée
 // ============================================
 
 (function() {
@@ -31,7 +31,6 @@
         iceGatheringTimeout: 10000,
         offerRetryDelay: 3000,
         offerMaxRetries: 3,
-        // Nouveau: Configuration pour la gestion des collisions
         collisionRetryDelay: 1000,
         maxCollisionRetries: 2
     };
@@ -64,8 +63,9 @@
         offerRetryCount: 0,
         offerTimeout: null,
         answerReceived: false,
-        collisionRetryCount: 0, // Nouveau: compteur pour les collisions
-        lastOfferTime: 0 // Nouveau: timestamp du dernier envoi d'offre
+        collisionRetryCount: 0,
+        lastOfferTime: 0,
+        localVideoStarted: false
     };
 
     // ============================================
@@ -97,7 +97,7 @@
         log: function(level, ...args) {
             if (!CONFIG.debug && level !== 'error') return;
             const prefix = `[${new Date().toLocaleTimeString()}]`;
-            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍', polling: '📮', offer: '📤', answer: '📩', collision: '⚔️' }[level] || '';
+            const emoji = { error: '❌', warn: '⚠️', success: '✅', info: 'ℹ️', debug: '🔍', polling: '📮', offer: '📤', answer: '📩', collision: '⚔️', video: '📹' }[level] || '';
             const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
             logFn(prefix, emoji, ...args);
         },
@@ -359,7 +359,7 @@
     };
 
     // ============================================
-    // ⭐ WEBRTC - VERSION ROBUSTE AVEC GESTION AMÉLIORÉE DES COLLISIONS
+    // ⭐ WEBRTC - VERSION CORRIGÉE AVEC FIX VIDÉO
     // ============================================
     const webrtc = {
         async loadIceServers() {
@@ -389,6 +389,7 @@
                 if (state.peerConnection && 
                     ['new', 'checking', 'connected', 'completed'].includes(state.peerConnection.iceConnectionState)) {
                     utils.log('info', 'ℹ️ Réutilisation PeerConnection existante');
+                    this.addLocalTracks();
                     return state.peerConnection;
                 }
 
@@ -410,7 +411,13 @@
 
                 state.peerConnection = new RTCPeerConnection(config);
                 this.setupPeerConnectionListeners();
-                this.addLocalTracks();
+                
+                const tracksAdded = this.addLocalTracks();
+                
+                if (!tracksAdded && state.localStream) {
+                    utils.log('warn', '⚠️ Aucune track ajoutée, ré-ajout différé...');
+                    setTimeout(() => this.addLocalTracks(), 500);
+                }
 
                 utils.log('success', '✅ PeerConnection créée');
                 return state.peerConnection;
@@ -484,7 +491,7 @@
             };
 
             state.peerConnection.ontrack = (event) => {
-                utils.log('info', `📹 Track reçu: ${event.track.kind}`);
+                utils.log('video', `📹 Track reçu: ${event.track.kind}`);
                 
                 if (!state.remoteStream) {
                     state.remoteStream = new MediaStream();
@@ -539,7 +546,7 @@
                 try {
                     if (elements.remoteVideo.paused) {
                         await elements.remoteVideo.play();
-                        utils.log('success', '▶️ Lecture vidéo démarrée');
+                        utils.log('success', '▶️ Lecture vidéo distante démarrée');
                     }
                 } catch (error) {
                     utils.log('warn', `⚠️ Erreur lecture vidéo (tentative ${retryCount + 1}):`, error.name);
@@ -558,25 +565,47 @@
             attemptPlay();
         },
 
-        addLocalTracks() {
-            if (!state.localStream || !state.peerConnection) return;
+        addLocalTracks: function() {
+            if (!state.localStream) {
+                utils.log('warn', '⚠️ addLocalTracks: Pas de stream local');
+                return false;
+            }
+            
+            if (!state.peerConnection) {
+                utils.log('warn', '⚠️ addLocalTracks: Pas de PeerConnection');
+                return false;
+            }
 
             const senders = state.peerConnection.getSenders();
+            let addedCount = 0;
             
             state.localStream.getTracks().forEach(track => {
                 const alreadyAdded = senders.some(sender => sender.track === track);
                 if (alreadyAdded) {
-                    utils.log('debug', `ℹ️ Track ${track.kind} déjà présent`);
+                    utils.log('debug', `ℹ️ Track ${track.kind} déjà présente`);
                     return;
                 }
 
                 try {
                     state.peerConnection.addTrack(track, state.localStream);
-                    utils.log('debug', `➕ Track ajouté: ${track.kind}`);
+                    track.enabled = true;
+                    utils.log('success', `➕ Track ${track.kind} ajoutée avec succès`);
+                    addedCount++;
                 } catch (error) { 
                     utils.log('error', `❌ Erreur ajout track ${track.kind}:`, error); 
                 }
             });
+            
+            if (addedCount > 0) {
+                utils.log('success', `✅ ${addedCount} track(s) ajoutée(s) à la PeerConnection`);
+                
+                if (state.peerConnection.signalingState === 'stable' && state.otherSocketId && !state.isConnected) {
+                    utils.log('info', '🔄 Déclenchement négociation après ajout des tracks');
+                    state.peerConnection.onnegotiationneeded();
+                }
+            }
+            
+            return addedCount > 0;
         },
 
         async createOffer() {
@@ -595,7 +624,6 @@
                     return;
                 }
 
-                // Éviter les envois trop fréquents
                 const now = Date.now();
                 if (now - state.lastOfferTime < 1000 && state.offerRetryCount > 0) {
                     utils.log('debug', '⏳ Envoi d\'offre trop rapide, attente...');
@@ -614,6 +642,10 @@
                     });
                     chat.setDataChannel(dataChannel);
                 }
+
+                const hasVideo = state.localStream && state.localStream.getVideoTracks().length > 0;
+                const hasAudio = state.localStream && state.localStream.getAudioTracks().length > 0;
+                utils.log('video', `📹 Avant offre - Vidéo: ${hasVideo}, Audio: ${hasAudio}`);
 
                 const offer = await state.peerConnection.createOffer({
                     offerToReceiveAudio: true,
@@ -694,14 +726,8 @@
             });
         },
 
-        // ✅ Gestion optimisée des collisions d'offres
         async handleOffer(data) {
-            utils.log('offer', '📨 handleOffer appelé avec:', {
-                sender: data?.sender,
-                sdpType: data?.sdp?.type,
-                hasSdp: !!data?.sdp?.sdp,
-                sdpLength: data?.sdp?.sdp?.length || 0
-            });
+            utils.log('offer', '📨 handleOffer appelé');
             
             if (!data?.sdp || !data?.sender) { 
                 utils.log('error', '❌ Offre invalide - données manquantes'); 
@@ -719,7 +745,6 @@
                 const isMakingOffer = state.makingOffer;
                 const hasLocalOffer = signalingState === 'have-local-offer';
                 
-                // Détection de collision
                 if (isMakingOffer && !hasLocalOffer) {
                     if (!state.polite) {
                         utils.log('collision', '⚔️ Collision - impoli, j\'attends');
@@ -1286,7 +1311,7 @@
                 transportOptions: {
                     polling: {
                         extraHeaders: {
-                            'X-Client-Version': '5.4.0',
+                            'X-Client-Version': '5.4.1',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         xhr: {
@@ -1428,7 +1453,7 @@
             setTimeout(() => window.location.href = '/', 3000); 
         });
 
-        state.socket.on('user-connected', (data) => {
+        state.socket.on('user-connected', async (data) => {
             const socketId = data?.id || data;
             
             if (!socketId) {
@@ -1443,7 +1468,7 @@
 
             if (state.otherSocketId && state.otherSocketId !== socketId) {
                 utils.log('warn', `⚠️ Changement d'ID détecté: ${state.otherSocketId} → ${socketId}`);
-                webrtc.resetConnection();
+                await webrtc.resetConnection();
                 state.offerRetryCount = 0;
                 state.answerReceived = false;
                 state.collisionRetryCount = 0;
@@ -1468,6 +1493,12 @@
 
             utils.log('info', `🎯 Rôle: ${state.isInitiator ? 'Initiateur' : 'Récepteur'} (mon ID: ${myId}, autre: ${otherId})`);
 
+            if (!state.peerConnection) {
+                await webrtc.createPeerConnection();
+            } else {
+                webrtc.addLocalTracks();
+            }
+
             if (state.isInitiator) {
                 setTimeout(async () => {
                     utils.log('info', '🚀 Lancement de la création d\'offre...');
@@ -1476,6 +1507,16 @@
                         await webrtc.createPeerConnection();
                     }
                     
+                    const hasVideo = state.localStream && state.localStream.getVideoTracks().length > 0;
+                    const hasAudio = state.localStream && state.localStream.getAudioTracks().length > 0;
+                    
+                    if (!hasVideo && !hasAudio) {
+                        utils.log('error', '❌ Pas de tracks disponibles avant l\'envoi de l\'offre');
+                        utils.showToast('Problème de caméra/micro, veuillez rafraîchir', 'error');
+                        return;
+                    }
+                    
+                    utils.log('video', `📹 État avant offre - Vidéo: ${hasVideo}, Audio: ${hasAudio}`);
                     webrtc.createOffer();
                 }, 2000);
             }
@@ -1709,7 +1750,7 @@
     // ============================================
     async function init() {
         try {
-            utils.log('info', '🚀 Initialisation consultation v5.4.0 (Mode Polling + Gestion collisions améliorée)...');
+            utils.log('info', '🚀 Initialisation consultation v5.4.1 (Fix vidéo + Polling)...');
             
             if (!utils.checkBrowserCompatibility()) {
                 throw new Error('Navigateur non compatible');
@@ -1728,12 +1769,33 @@
                 state.localStream = stream;
                 
                 if (elements.localVideo) { 
-                    elements.localVideo.srcObject = stream; 
-                    elements.localVideo.muted = true; 
-                    elements.localVideo.play().catch(e => utils.log('warn', 'Erreur play local:', e)); 
+                    elements.localVideo.srcObject = stream;
+                    elements.localVideo.muted = true;
+                    
+                    try {
+                        await elements.localVideo.play();
+                        utils.log('success', '✅ Vidéo locale démarrée');
+                        state.localVideoStarted = true;
+                    } catch (playError) {
+                        utils.log('warn', '⚠️ Lecture auto-bloquée:', playError);
+                        elements.localVideo.muted = true;
+                        await elements.localVideo.play();
+                        state.localVideoStarted = true;
+                    }
                 }
                 
-                utils.log('success', '✅ Autorisation média obtenue');
+                const videoTracks = stream.getVideoTracks();
+                const audioTracks = stream.getAudioTracks();
+                utils.log('success', `✅ Stream obtenu - Vidéo: ${videoTracks.length} track(s), Audio: ${audioTracks.length} track(s)`);
+                
+                if (videoTracks.length === 0) {
+                    utils.showToast('Aucune caméra détectée', 'warning');
+                }
+                
+                if (audioTracks.length === 0) {
+                    utils.showToast('Aucun microphone détecté', 'warning');
+                }
+                
                 utils.showToast('Caméra et micro activés', 'success');
             } catch (error) {
                 utils.log('error', '❌ Permission refusée:', error.message);
@@ -1751,6 +1813,7 @@
 
             initSocket();
             await webrtc.loadIceServers();
+            await webrtc.createPeerConnection();
             initEventListeners();
             
             state.initializationComplete = true;
@@ -1777,9 +1840,22 @@
         webrtc, 
         chat, 
         CONFIG, 
-        version: '5.4.0-polling-collision-fixed',
+        version: '5.4.1-fix-video',
         restart: () => {
             webrtc.resetConnection();
+        },
+        debug: function() {
+            console.log('=== DEBUG CONSULTATION ===');
+            console.log('Local stream:', state.localStream);
+            console.log('Video tracks:', state.localStream?.getVideoTracks().length);
+            console.log('Audio tracks:', state.localStream?.getAudioTracks().length);
+            console.log('PeerConnection:', state.peerConnection);
+            console.log('Connection state:', state.peerConnection?.connectionState);
+            console.log('Signaling state:', state.peerConnection?.signalingState);
+            console.log('Other socket ID:', state.otherSocketId);
+            console.log('Is initiator:', state.isInitiator);
+            console.log('Is connected:', state.isConnected);
+            console.log('========================');
         }
     };
 })();

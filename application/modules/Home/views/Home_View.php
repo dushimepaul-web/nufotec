@@ -847,6 +847,154 @@
 </div>
 <?php endif; ?>
 
+
+
+
+
+
+
+
+
+
+<section class="hero">
+    <div class="hero-content">
+        
+        <!-- LOGO -->
+        <div class="hero-logo">
+            <img src="assets/images/logo.png" alt="Express Market Logo">
+        </div>
+
+        <h1>Bienvenue sur Express Market</h1>
+        <p>Votre plateforme de commerce en ligne rapide, fiable et sécurisée</p>
+        
+        <div class="hero-buttons">
+            <a href="#" class="btn-primary">Commencer</a>
+            <a href="#" class="btn-secondary">Explorer</a>
+        </div>
+    </div>
+</section>
+<style type="text/css">
+    /* HERO SECTION */
+.hero {
+    height: 90vh;
+    background: linear-gradient(
+        rgba(15, 76, 58, 0.85),
+        rgba(10, 51, 38, 0.9)
+    ),
+    url('assets/images/hero.jpg') center/cover no-repeat;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    color: var(--light);
+}
+
+/* CONTENU */
+.hero-content {
+    max-width: 700px;
+    animation: fadeUp 1s ease-in-out;
+}
+
+/* LOGO */
+.hero-logo img {
+    width: 110px;
+    margin-bottom: 20px;
+    filter: drop-shadow(var(--shadow-glow));
+    transition: var(--transition);
+}
+
+.hero-logo img:hover {
+    transform: scale(1.1);
+}
+
+/* TITRE */
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+/* TEXTE */
+.hero-content p {
+    font-size: 1.2rem;
+    color: var(--gray-light);
+    margin-bottom: 30px;
+}
+
+/* BOUTONS */
+.hero-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* BTN PRIMARY */
+.btn-primary {
+    background: var(--accent);
+    color: var(--dark);
+    padding: 12px 28px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* BTN SECONDARY */
+.btn-secondary {
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 28px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.btn-secondary:hover {
+    background: var(--accent);
+    color: var(--dark);
+    box-shadow: var(--shadow-glow);
+}
+
+/* ANIMATION */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .hero {
+        height: auto;
+        padding: 60px 20px;
+    }
+
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .hero-logo img {
+        width: 90px;
+    }
+}
+</style>
+
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- SECTIONS DE CONTENU DYNAMIQUES - ERGONOMIE OPTIMISÉE -->
 <!-- ═══════════════════════════════════════════════════════ -->
