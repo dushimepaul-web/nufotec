@@ -102,7 +102,8 @@ class Whatsapp extends MY_Controller {
     // ==================== UPLOAD PAR CHUNKS ====================
     
     /**
-     * Étape 1: Initialiser l'upload
+     * ✅ CORRECTION: Initialiser l'upload avec support OGG Opus natif
+     * Détecte et préserve le flag voice pour les messages vocaux
      */
     public function init_chunk_upload() {
         header('Content-Type: application/json');
@@ -122,15 +123,23 @@ class Whatsapp extends MY_Controller {
             return;
         }
         
-        // ✅ CORRECTION: Forcer type audio si MIME type audio
+        // ✅ CORRECTION: Forcer type audio si MIME type audio ou OGG Opus
         $type_envoi = $input['type_envoi'];
         $filetype = $input['filetype'];
         $filename = $input['filename'];
         
-        if (strpos($filetype, 'audio/') === 0 || $this->is_audio_file($filename)) {
+        // Détection OGG Opus natif (depuis le navigateur)
+        $is_ogg_opus = (strpos($filetype, 'audio/ogg') !== false || 
+                       strpos($filetype, 'ogg') !== false || 
+                       strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'ogg');
+        
+        if (strpos($filetype, 'audio/') === 0 || $this->is_audio_file($filename) || $is_ogg_opus) {
             $type_envoi = 'audio';
-            log_message('info', "Forçage type audio: $filename | MIME: $filetype");
+            log_message('info', "Forçage type audio: $filename | MIME: $filetype | OGG Opus: " . ($is_ogg_opus ? 'OUI' : 'NON'));
         }
+        
+        // ✅ NOUVEAU: Détecter si c'est un message vocal natif (OGG Opus du navigateur)
+        $is_voice = $is_ogg_opus || !empty($input['voice']);
         
         // Sauvegarder les métadonnées
         $meta = [
@@ -143,12 +152,13 @@ class Whatsapp extends MY_Controller {
             'groupes_ids' => $input['groupes_ids'],
             'message' => $input['message'],
             'type_envoi' => $type_envoi, // Type corrigé
+            'is_voice' => $is_voice,     // ✅ Flag pour message vocal natif
             'created_at' => time()
         ];
         
         file_put_contents($upload_dir . 'meta.json', json_encode($meta));
         
-        log_message('info', "Whapi Upload initié: $upload_id - {$input['total_chunks']} chunks, Type: $type_envoi, " . 
+        log_message('info', "Whapi Upload initié: $upload_id - {$input['total_chunks']} chunks, Type: $type_envoi, Voice: " . ($is_voice ? 'true' : 'false') . ", " . 
                    round($input['filesize']/1024/1024, 2) . " MB");
         
         echo json_encode(['success' => true, 'upload_id' => $upload_id]);
@@ -261,7 +271,12 @@ class Whatsapp extends MY_Controller {
         fclose($out);
         
         $final_size = filesize($final_path);
-        log_message('info', "Fichier assemblé: $final_path (" . round($final_size/1024/1024, 2) . " MB)");
+        
+        // ✅ Vérification OGG Opus natif
+        $final_mime = mime_content_type($final_path);
+        $is_ogg_opus = (strpos($final_mime, 'audio/ogg') !== false || strpos($final_mime, 'ogg') !== false);
+        
+        log_message('info', "Fichier assemblé: $final_path (" . round($final_size/1024/1024, 2) . " MB) | MIME: $final_mime | OGG Opus: " . ($is_ogg_opus ? 'OUI' : 'NON'));
         
         // Nettoyer les chunks
         array_map('unlink', glob($upload_dir . '*'));
@@ -275,12 +290,14 @@ class Whatsapp extends MY_Controller {
             'groupes_ids' => $meta['groupes_ids'],
             'message' => $meta['message'],
             'type_envoi' => $meta['type_envoi'], // Type déjà corrigé dans init
+            'is_voice' => $meta['is_voice'] ?? false, // ✅ Flag pour message vocal natif
             'delai' => 1000,
             'file_info' => [
                 'name' => $meta['filename'],
                 'path' => $final_path,
                 'size' => $final_size,
-                'type' => $meta['filetype']
+                'type' => $final_mime, // ✅ Utilise le MIME réel détecté
+                'is_ogg_opus' => $is_ogg_opus
             ],
             'status' => 'processing',
             'progress' => 0,
@@ -303,12 +320,15 @@ class Whatsapp extends MY_Controller {
         echo json_encode([
             'success' => true,
             'job_id' => $job_id,
-            'file_size' => $final_size
+            'file_size' => $final_size,
+            'is_voice' => $job['is_voice'],
+            'mime_type' => $final_mime
         ]);
     }
     
     /**
-     * Traitement asynchrone de l'envoi Whapi
+     * ✅ CORRECTION: Traitement asynchrone avec support OGG Opus natif
+     * Passe le flag is_voice à la librairie pour messages vocaux natifs
      */
     private function process_job_async($job_id) {
         $job = $this->get_job($job_id);
@@ -318,12 +338,15 @@ class Whatsapp extends MY_Controller {
         $message = $job['message'];
         $type_envoi = $job['type_envoi'];
         $file_info = $job['file_info'];
+        $is_voice = $job['is_voice'] ?? false; // ✅ Récupère le flag
         
         $filepath = $file_info ? $file_info['path'] : null;
         
         // ✅ LOG détaillé pour debug audio
         if ($type_envoi === 'audio') {
-            log_message('info', "TRAITEMENT AUDIO - Job: $job_id | Fichier: " . ($filepath ? basename($filepath) : 'AUCUN') . " | Groupes: " . count($groupes_ids));
+            log_message('info', "TRAITEMENT AUDIO - Job: $job_id | Fichier: " . ($filepath ? basename($filepath) : 'AUCUN') . 
+                       " | Groupes: " . count($groupes_ids) . " | Voice: " . ($is_voice ? 'true' : 'false') .
+                       " | OGG Opus: " . ($file_info['is_ogg_opus'] ?? false ? 'true' : 'false'));
         }
         
         foreach ($groupes_ids as $index => $groupe_id) {
@@ -340,12 +363,17 @@ class Whatsapp extends MY_Controller {
                 if ($type_envoi === 'texte') {
                     $result = $this->whapi_lib->envoyer_message($groupe_id, $message);
                 } else {
-                    // ✅ Envoi fichier via Whapi - la librairie gère la conversion audio
-                    $result = $this->whapi_lib->envoyer_fichier($groupe_id, $filepath, $message);
+                    // ✅ CORRECTION: Pour l'audio, utiliser envoyer_fichier_audio avec flag voice
+                    if ($type_envoi === 'audio') {
+                        $result = $this->whapi_lib->envoyer_fichier_audio($groupe_id, $filepath, $message, $is_voice);
+                    } else {
+                        $result = $this->whapi_lib->envoyer_fichier($groupe_id, $filepath, $message);
+                    }
                     
                     // Log spécial pour audio
                     if ($type_envoi === 'audio') {
-                        log_message('info', "Résultat envoi audio à $groupe_id: " . ($result['success'] ? 'SUCCÈS' : 'ÉCHEC') . ' - ' . ($result['error'] ?? 'OK'));
+                        log_message('info', "Résultat envoi audio à $groupe_id: " . ($result['success'] ? 'SUCCÈS' : 'ÉCHEC') . 
+                                   ' | Voice: ' . ($result['is_voice'] ?? 'non') . ' | ' . ($result['error'] ?? 'OK'));
                     }
                 }
                 
@@ -373,6 +401,7 @@ class Whatsapp extends MY_Controller {
                 'destinataire_id' => $groupe_id,
                 'statut' => $success ? 'succès' : 'échec',
                 'erreur' => $error,
+                'is_voice' => $is_voice, // ✅ Info pour debug
                 'index' => $index + 1
             ];
             
@@ -425,6 +454,7 @@ class Whatsapp extends MY_Controller {
             'groupes_ids' => $groupes_ids,
             'message' => $message,
             'type_envoi' => $type_envoi,
+            'is_voice' => false,
             'delai' => 1000,
             'file_info' => null,
             'status' => 'processing',
@@ -475,6 +505,7 @@ class Whatsapp extends MY_Controller {
             'status' => $job['status'],
             'progress' => $job['progress'],
             'current_group' => $job['current_group'],
+            'is_voice' => $job['is_voice'] ?? false, // ✅ Info pour le frontend
             'result' => $job['status'] === 'completed' ? $job['result'] : null
         ]);
     }
@@ -495,7 +526,8 @@ class Whatsapp extends MY_Controller {
                 $data['resultat'] = [
                     'success' => ($job['result']['reussis'] ?? 0) > 0,
                     'status_code' => 200,
-                    'response' => $job['result']
+                    'response' => $job['result'],
+                    'is_voice' => $job['is_voice'] ?? false // ✅ Info pour la vue
                 ];
                 $data['message'] = $job['message'];
                 $data['type_envoi'] = $job['type_envoi'];

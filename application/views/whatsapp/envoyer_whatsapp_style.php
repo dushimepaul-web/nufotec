@@ -893,10 +893,9 @@ if (!isset($job_id)) $job_id = null;
 </div>
 
 <!-- Dans le <head> de envoyer_whatsapp_style.php -->
-<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/audiobuffer-to-wav@1.0.0/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 <script>
-/// ==================== CONFIGURATION GLOBALE ====================
+// ==================== CONFIGURATION GLOBALE ====================
 const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5 MB pour Whapi
 let selectedFile = null;
 let currentUploadId = null;
@@ -907,11 +906,9 @@ let currentJobId = null;
 let pollInterval = null;
 let currentType = 'texte';
 
-// ==================== VARIABLES AUDIO (UNIQUES) ====================
-let audioContext = null;
-let audioRecorder = null;
-let audioRecordedChunks = [];
-let audioStream = null;
+// ==================== VARIABLES AUDIO OGG OPUS ====================
+let opusRecorder = null;
+let audioChunks = [];
 let recordingStartTime = null;
 let recordingTimer = null;
 let isRecording = false;
@@ -954,7 +951,7 @@ function updateCounter() {
     const emptyState = document.getElementById('emptyState');
     const previewBubble = document.getElementById('previewBubble');
     if (emptyState) {
-        const hasContent = count > 0 || selectedFile || (currentType === 'audio' && audioRecordedChunks.length > 0);
+        const hasContent = count > 0 || selectedFile || (currentType === 'audio' && audioChunks.length > 0);
         emptyState.style.display = hasContent ? 'none' : 'block';
         if (previewBubble && document.getElementById('previewText')?.textContent) {
             previewBubble.style.display = hasContent ? 'block' : 'none';
@@ -1099,7 +1096,7 @@ function clearFile() {
     }
 }
 
-// ==================== ENREGISTREMENT AUDIO ====================
+// ==================== ENREGISTREMENT AUDIO OGG OPUS ====================
 
 function initWaveBars() {
     const container = document.getElementById('waveContainer');
@@ -1127,33 +1124,35 @@ async function startRecording() {
             await cancelRecording();
         }
 
-        audioContext = new (window.AudioContext || window.webkitAudioContext)({
-            sampleRate: 44100
-        });
-
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                channelCount: 1
-            } 
-        });
-
-        const source = audioContext.createMediaStreamSource(stream);
-        audioRecorder = audioContext.createScriptProcessor(4096, 1, 1);
-        audioRecordedChunks = [];
+        audioChunks = [];
         
-        audioRecorder.onaudioprocess = function(e) {
-            if (!isRecording) return;
-            const channelData = e.inputBuffer.getChannelData(0);
-            audioRecordedChunks.push(new Float32Array(channelData));
-        };
+        // Configuration OGG Opus pour WhatsApp [^32^]
+        opusRecorder = new Recorder({
+            encoderPath: 'https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/encoderWorker.min.js',
+            encoderSampleRate: 48000,        // WhatsApp utilise 48kHz [^17^]
+            encoderApplication: 2048,        // 2048 = Voice (optimisé pour la voix)
+            encoderBitRate: 16000,           // 16 kbps comme WhatsApp Android [^24^]
+            encoderFrameSize: 20,            // 20ms frames
+            numberOfChannels: 1,             // Mono
+            streamPages: true,               // Streaming pour gros fichiers
+            maxFramesPerPage: 40,
+            mediaTrackConstraints: {
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: 1
+                }
+            },
+            ondataavailable: function(arrayBuffer) {
+                // Accumuler les chunks OGG
+                audioChunks.push(arrayBuffer);
+            }
+        });
 
-        source.connect(audioRecorder);
-        audioRecorder.connect(audioContext.destination);
-
-        audioStream = stream;
+        // Démarrer le stream
+        await opusRecorder.start();
+        
         recordingStartTime = Date.now();
         isRecording = true;
 
@@ -1170,7 +1169,7 @@ async function startRecording() {
         const btnAudio = document.getElementById('btnAudio');
         if (btnAudio) btnAudio.classList.add('active');
 
-        log('Enregistrement audio démarré');
+        log('Enregistrement OGG Opus démarré (48kHz, 16kbps, Voice)');
 
     } catch (err) {
         console.error('Erreur:', err);
@@ -1189,72 +1188,54 @@ function updateRecordingTime() {
 }
 
 async function stopRecordingAndSend() {
-    if (!isRecording) return;
+    if (!isRecording || !opusRecorder) return;
     
     isRecording = false;
     clearInterval(recordingTimer);
     
-    // Arrêt propre du recorder
-    if (audioRecorder) {
-        try { audioRecorder.disconnect(); } catch(e) {}
-        audioRecorder = null;
-    }
-    
-    if (audioStream) {
-        audioStream.getTracks().forEach(track => track.stop());
-        audioStream = null;
-    }
-    
-    if (audioContext) {
-        try { await audioContext.close(); } catch(e) {}
-        audioContext = null;
-    }
-
-    log('Conversion en MP3...');
-
     try {
-        const mp3Blob = await convertToMp3(audioRecordedChunks);
+        // Arrêter l'enregistrement
+        await opusRecorder.stop();
+        
         const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
         const mins = Math.floor(duration / 60).toString().padStart(2, '0');
         const secs = (duration % 60).toString().padStart(2, '0');
         
-        const mp3File = new File([mp3Blob], `note_vocale_${Date.now()}.mp3`, { 
-            type: 'audio/mpeg' 
+        // Concaténer tous les chunks OGG
+        const totalLength = audioChunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+        const oggBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
+        
+        // Créer le fichier OGG Opus (format natif WhatsApp)
+        const oggFile = new File([oggBlob], `note_vocale_${Date.now()}.ogg`, { 
+            type: 'audio/ogg; codecs=opus' 
         });
         
-        selectedFile = mp3File;
+        selectedFile = oggFile;
         currentType = 'audio';
         
-        showFilePreview('Note vocale (MP3)', `Durée: ${mins}:${secs} • ${(mp3File.size/1024).toFixed(1)} KB`, 'audio');
-        log('MP3 créé: ' + mp3File.size + ' bytes');
+        showFilePreview('Note vocale (OGG Opus)', `Durée: ${mins}:${secs} • ${(oggFile.size/1024).toFixed(1)} KB`, 'audio');
+        log(`OGG Opus créé: ${oggFile.size} bytes, ${duration}s`);
 
     } catch (err) {
-        console.error('Erreur conversion MP3:', err);
+        console.error('Erreur OGG Opus:', err);
         alert('Erreur conversion audio. Essayez avec un fichier audio plus court.');
     }
 
     resetAudioUI();
-    audioRecordedChunks = [];
+    audioChunks = [];
     recordingStartTime = null;
+    opusRecorder = null;
 }
 
 function cancelRecording() {
     isRecording = false;
     clearInterval(recordingTimer);
     
-    if (audioRecorder) {
-        try { audioRecorder.disconnect(); } catch(e) {}
-        audioRecorder = null;
-    }
-    
-    if (audioStream) {
-        audioStream.getTracks().forEach(track => track.stop());
-        audioStream = null;
-    }
-    
-    if (audioContext) {
-        try { audioContext.close(); } catch(e) {}
-        audioContext = null;
+    if (opusRecorder) {
+        try {
+            opusRecorder.stop();
+        } catch(e) {}
+        opusRecorder = null;
     }
     
     resetAudioState();
@@ -1262,9 +1243,10 @@ function cancelRecording() {
 }
 
 function resetAudioState() {
-    audioRecordedChunks = [];
+    audioChunks = [];
     recordingStartTime = null;
     isRecording = false;
+    opusRecorder = null;
     resetAudioUI();
     
     const btnAudio = document.getElementById('btnAudio');
@@ -1290,52 +1272,6 @@ function clearAudio() {
         document.getElementById('filePreview')?.classList.remove('active');
         setType('texte', document.getElementById('btnTexte'));
     }
-}
-
-function convertToMp3(chunks) {
-    return new Promise((resolve, reject) => {
-        try {
-            if (!chunks || chunks.length === 0) {
-                reject(new Error('Aucune donnée audio'));
-                return;
-            }
-
-            const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-            const audioData = new Float32Array(totalLength);
-            
-            let offset = 0;
-            chunks.forEach(chunk => {
-                audioData.set(chunk, offset);
-                offset += chunk.length;
-            });
-
-            // Conversion PCM 16-bit
-            const samples = new Int16Array(audioData.length);
-            for (let i = 0; i < audioData.length; i++) {
-                const s = Math.max(-1, Math.min(1, audioData[i]));
-                samples[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-            }
-
-            // Encodage MP3 avec lamejs [^9^]
-            const mp3Encoder = new lamejs.Mp3Encoder(1, 44100, 128);
-            const mp3Data = [];
-            const sampleBlockSize = 1152;
-            
-            for (let i = 0; i < samples.length; i += sampleBlockSize) {
-                const sampleChunk = samples.subarray(i, i + sampleBlockSize);
-                const mp3buf = mp3Encoder.encodeBuffer(sampleChunk);
-                if (mp3buf.length > 0) mp3Data.push(mp3buf);
-            }
-            
-            const mp3buf = mp3Encoder.flush();
-            if (mp3buf.length > 0) mp3Data.push(mp3buf);
-
-            resolve(new Blob(mp3Data, { type: 'audio/mpeg' }));
-            
-        } catch (err) {
-            reject(err);
-        }
-    });
 }
 
 // ==================== PRÉVISUALISATION ====================
@@ -1385,7 +1321,8 @@ async function submitForm() {
         if (currentType === 'texte') {
             await envoyerTexte(groupesIds, message);
         } else {
-            const typeToSend = selectedFile?.type?.startsWith('audio/') ? 'audio' : currentType;
+            // Pour l'audio OGG Opus, forcer le type et ajouter voice=true pour l'API
+            const typeToSend = selectedFile?.type?.includes('ogg') ? 'audio' : currentType;
             log('Envoi fichier type: ' + typeToSend + ', MIME: ' + selectedFile?.type);
             await envoyerFichierChunks(groupesIds, message, typeToSend, selectedFile);
         }
@@ -1431,7 +1368,9 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
     log(`Upload démarré: ${totalChunks} chunks, type: ${type}, mime: ${file.type}`);
     showUploadProgress(0, 'Préparation...', 'bi-cloud-arrow-up');
     
-    // Initialisation
+    // Initialisation - Pour OGG Opus, ajouter voice=true si c'est un message vocal
+    const isVoiceMessage = file.type.includes('ogg') && type === 'audio';
+    
     const initResponse = await fetch('<?php echo site_url('whatsapp/init_chunk_upload'); ?>', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1439,11 +1378,12 @@ async function envoyerFichierChunks(groupesIds, message, type, file) {
             upload_id: uploadId,
             filename: file.name,
             filesize: totalSize,
-            filetype: file.type,
+            filetype: file.type,        // audio/ogg; codecs=opus
             total_chunks: totalChunks,
             groupes_ids: groupesIds,
             message: message,
-            type_envoi: type
+            type_envoi: type,           // 'audio'
+            voice: isVoiceMessage       // true pour OGG Opus natif WhatsApp [^18^]
         }),
         signal: abortController.signal
     });
@@ -1582,8 +1522,6 @@ function startPolling(jobId) {
     let attempts = 0;
     
     pollInterval = setInterval(() => {
-        attempts++;
-        
         fetch('<?php echo site_url('whatsapp/check_status/'); ?>' + jobId)
             .then(r => r.json())
             .then(data => {

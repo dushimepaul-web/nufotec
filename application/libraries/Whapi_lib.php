@@ -2,10 +2,10 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Whapi_lib - Librairie robuste pour WhatsApp API
- * Support: texte, image, vidéo, audio, document
+ * Whapi_lib - Librairie pour WhatsApp API
+ * Support: texte, image, vidéo, audio (OGG Opus natif), document
  * Gestion: retry, compression, timeouts adaptatifs
- * CORRECTION: Conversion audio WebM/Opus -> MP3 obligatoire pour WhatsApp
+ * CORRECTION: OGG Opus natif pour messages vocaux WhatsApp
  */
 class Whapi_lib {
     
@@ -150,7 +150,7 @@ class Whapi_lib {
     }
     
     /**
-     * ✅ ROBUSTE: Compression vidéo avec FFmpeg
+     * Compression vidéo avec FFmpeg
      */
     private function compresser_video($input_path, $output_path) {
         if (!$this->ffmpeg_available) {
@@ -170,18 +170,19 @@ class Whapi_lib {
     }
     
     /**
-     * ✅ CORRECTION: Compression audio avec conversion en MP3
-     * WhatsApp ne lit pas bien WebM/Opus sur iOS, MP3 est universel
+     * ✅ CORRECTION: Conversion audio en OGG Opus (format natif WhatsApp)
+     * Remplace l'ancienne conversion MP3
      */
-    private function compresser_audio($input_path, $output_path) {
-        if (!$this->ffmpeg_available) {
-            log_message('error', 'FFmpeg non disponible pour conversion audio');
-            return false;
-        }
+    private function convertir_audio_opus($input_path) {
+        $temp_dir = sys_get_temp_dir();
+        $output_path = $temp_dir . '/whapi_audio_' . uniqid() . '.ogg';
         
-        // Conversion MP3 128kbps mono (optimal pour voix WhatsApp)
+        log_message('info', 'Conversion audio en OGG Opus: ' . basename($input_path));
+        
+        // Conversion OGG Opus 16kbps mono 48kHz (format WhatsApp natif)
+        // -application voip = optimisé pour la voix
         $cmd = sprintf(
-            'ffmpeg -i %s -vn -ar 44100 -ac 1 -b:a 128k -codec:a libmp3lame -q:a 2 %s 2>&1',
+            'ffmpeg -i %s -c:a libopus -ar 48000 -ac 1 -b:a 16k -application voip %s 2>&1',
             escapeshellarg($input_path),
             escapeshellarg($output_path)
         );
@@ -190,32 +191,12 @@ class Whapi_lib {
         
         $success = ($return_var === 0 && file_exists($output_path) && filesize($output_path) > 0);
         
-        if ($this->debug) {
-            log_message('debug', 'Conversion audio: ' . ($success ? 'SUCCÈS' : 'ÉCHEC') . ' (return: ' . $return_var . ')');
-            if (!$success && !empty($output)) {
-                log_message('error', 'FFmpeg output: ' . implode("\n", $output));
-            }
-        }
-        
-        return $success;
-    }
-    
-    /**
-     * ✅ NOUVEAU: Conversion forcée WebM/Opus -> MP3 pour audio
-     * Cette fonction est appelée systématiquement pour les fichiers audio
-     */
-    private function convertir_audio_mp3($input_path) {
-        $temp_dir = sys_get_temp_dir();
-        $output_path = $temp_dir . '/whapi_audio_' . uniqid() . '.mp3';
-        
-        log_message('info', 'Conversion audio en MP3: ' . basename($input_path) . ' -> ' . basename($output_path));
-        
-        if ($this->compresser_audio($input_path, $output_path)) {
+        if ($success) {
             $original_size = filesize($input_path);
             $new_size = filesize($output_path);
             
             log_message('info', sprintf(
-                'Audio converti: %s -> %s (%.1f%% de réduction)',
+                'Audio converti OGG Opus: %s -> %s (%.1f%% de réduction)',
                 $this->format_bytes($original_size),
                 $this->format_bytes($new_size),
                 (1 - $new_size/$original_size) * 100
@@ -230,14 +211,16 @@ class Whapi_lib {
             );
         }
         
-        // Échec conversion
+        // Échec: nettoyer
         if (file_exists($output_path)) {
             @unlink($output_path);
         }
         
+        log_message('error', 'Échec conversion OGG Opus: ' . implode("\n", $output));
+        
         return array(
             'success' => false,
-            'error' => 'Échec conversion audio en MP3'
+            'error' => 'Échec conversion audio en OGG Opus'
         );
     }
     
@@ -251,53 +234,59 @@ class Whapi_lib {
     }
     
     /**
-     * ✅ ROBUSTE: Préparation fichier avec conversion audio obligatoire
+     * ✅ CORRECTION: Préparation fichier avec OGG Opus natif
+     * Accepte OGG Opus du navigateur sans conversion
      */
     private function preparer_fichier($file_path, $type) {
         $file_size = filesize($file_path);
+        $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+        $mime = mime_content_type($file_path);
         
-        // ✅ CORRECTION: Pour l'audio, TOUJOURS convertir en MP3
-        // Dans preparer_fichier(), remplacez la partie audio :
-
-if ($type === 'audio') {
-    $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
-    $mime = mime_content_type($file_path);
-    
-    log_message('info', "Préparation audio: $extension | MIME: $mime | Taille: " . $this->format_bytes($file_size));
-    
-    // ✅ Si c'est déjà du MP3 (converti par le navigateur), envoyer tel quel
-    if ($extension === 'mp3' || strpos($mime, 'audio/mpeg') !== false) {
-        log_message('info', 'Audio déjà en MP3 (converti par navigateur), envoi direct');
-        return array(
-            'path' => $file_path,
-            'temp' => false,
-            'original_size' => $file_size,
-            'final_size' => $file_size
-        );
-    }
-    
-    // Si FFmpeg disponible (optionnel), sinon erreur
-    if ($this->ffmpeg_available) {
-        $conversion = $this->convertir_audio_mp3($file_path);
-        if ($conversion['success']) {
-            return $conversion;
+        // ✅ AUDIO: OGG Opus natif pour WhatsApp
+        if ($type === 'audio') {
+            log_message('info', "Préparation audio: $extension | MIME: $mime | Taille: " . $this->format_bytes($file_size));
+            
+            // Si c'est déjà OGG Opus (depuis le navigateur), envoyer tel quel
+            if ($extension === 'ogg' && (strpos($mime, 'ogg') !== false || strpos($mime, 'opus') !== false)) {
+                log_message('info', '✅ Audio OGG Opus natif détecté, envoi direct sans conversion');
+                return array(
+                    'path' => $file_path,
+                    'temp' => false,
+                    'original_size' => $file_size,
+                    'final_size' => $file_size,
+                    'is_voice' => true  // Flag pour API
+                );
+            }
+            
+            // Si FFmpeg disponible et format différent: convertir en OGG Opus
+            if ($this->ffmpeg_available && $extension !== 'ogg') {
+                $conversion = $this->convertir_audio_opus($file_path);
+                if ($conversion['success']) {
+                    $conversion['is_voice'] = true;
+                    return $conversion;
+                }
+                // Si conversion échoue, essayer d'envoyer tel quel
+                log_message('warning', 'Conversion OGG échouée, tentative envoi direct');
+            }
+            
+            // Sans FFmpeg ou conversion échouée: accepter tel quel
+            return array(
+                'path' => $file_path,
+                'temp' => false,
+                'original_size' => $file_size,
+                'final_size' => $file_size,
+                'is_voice' => false  // Pas de flag voice si format inconnu
+            );
         }
-    }
-    
-    // ❌ SANS FFMPEG : Refuser les formats non-MP3
-    log_message('error', "Format audio non supporté sans FFmpeg: $extension");
-    return array(
-        'error' => 'Format audio non supporté. Le navigateur doit convertir en MP3 avant envoi.',
-        'path' => null
-    );
-}
+        
         // Pour les autres types: compression seulement si > 16MB
         if ($file_size < $this->compression_threshold) {
             return array(
                 'path' => $file_path,
                 'temp' => false,
                 'original_size' => $file_size,
-                'final_size' => $file_size
+                'final_size' => $file_size,
+                'is_voice' => false
             );
         }
         
@@ -311,7 +300,7 @@ if ($type === 'audio') {
             }
         }
         
-        // Compression vidéo uniquement (pas audio ici, déjà géré)
+        // Compression vidéo uniquement
         $temp_dir = sys_get_temp_dir();
         $temp_path = $temp_dir . '/whapi_' . uniqid() . '_' . basename($file_path);
         
@@ -326,7 +315,8 @@ if ($type === 'audio') {
                 'path' => $temp_path,
                 'temp' => true,
                 'original_size' => $file_size,
-                'final_size' => filesize($temp_path)
+                'final_size' => filesize($temp_path),
+                'is_voice' => false
             );
         }
         
@@ -342,158 +332,173 @@ if ($type === 'audio') {
     }
     
     /**
-     * ✅ ROBUSTE: Envoi fichier avec retry et gestion erreurs
+     * ✅ CORRECTION: Envoi fichier avec support OGG Opus natif
+     * Ajoute voice=true pour les messages vocaux OGG Opus
      */
-    private function envoyer_fichier_direct($groupe_id, $file_path, $type, $caption = '', $filename = '') {
-        if (!file_exists($file_path)) {
-            return array(
-                'success' => false,
-                'error' => 'Fichier introuvable: ' . $file_path,
-                'status_code' => 0
-            );
-        }
-        
-        // Préparer fichier (conversion MP3 pour audio)
-        $preparation = $this->preparer_fichier($file_path, $type);
-        
-        if (isset($preparation['error'])) {
-            return array(
-                'success' => false,
-                'error' => $preparation['error'],
-                'status_code' => 413 // Payload Too Large
-            );
-        }
-        
-        $file_to_send = $preparation['path'];
-        $is_temp = $preparation['temp'];
-        $file_size = $preparation['final_size'];
-        
-        // Timeout adaptatif selon taille
-        $timeout = max(120, ceil($file_size / 1048576) * 10); // 10s par MB minimum 120s
-        
-        // Détection endpoint
-        $endpoint = $this->_get_endpoint($type);
-        
-        $url = $this->base_url . $endpoint;
-        
-        $post_data = array(
-            'to' => $groupe_id,
-            'caption' => (string)$caption
-        );
-        
-        if ($type === 'document') {
-            $post_data['filename'] = $filename ? $filename : basename($file_path);
-        }
-        
-        // Log détaillé pour debug audio
-        if ($type === 'audio') {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $final_mime = finfo_file($finfo, $file_to_send);
-            finfo_close($finfo);
-            
-            log_message('info', sprintf(
-                'Envoi audio à %s | Endpoint: %s | Fichier: %s | MIME: %s | Taille: %s',
-                $groupe_id,
-                $endpoint,
-                basename($file_to_send),
-                $final_mime,
-                $this->format_bytes($file_size)
-            ));
-        }
-        
-        // Envoi avec retry
-        $tentative = 0;
-        $success = false;
-        $last_error = null;
-        $last_http_code = 0;
-        $response_data = null;
-        
-        while ($tentative < $this->max_retries && !$success) {
-            $ch = curl_init();
-            
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime_type = finfo_file($finfo, $file_to_send);
-            finfo_close($finfo);
-            
-            $cfile = new CURLFile($file_to_send, $mime_type, basename($file_to_send));
-            $post_data['media'] = $cfile;
-            
-            curl_setopt_array($ch, array(
-                CURLOPT_URL => $url,
-                CURLOPT_POST => true,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => $timeout,
-                CURLOPT_CONNECTTIMEOUT => 30,
-                CURLOPT_HTTPHEADER => array(
-                    'Authorization: Bearer ' . $this->api_key,
-                    'Accept: application/json'
-                ),
-                CURLOPT_POSTFIELDS => $post_data,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS => 5
-            ));
-            
-            $response = curl_exec($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curl_error = curl_error($ch);
-            $curl_errno = curl_errno($ch);
-            curl_close($ch);
-            
-            if ($curl_error) {
-                $last_error = 'cURL (' . $curl_errno . '): ' . $curl_error;
-                $tentative++;
-                
-                if ($tentative < $this->max_retries) {
-                    sleep($this->retry_delay * $tentative);
-                }
-                continue;
-            }
-            
-            $response_data = json_decode($response, true);
-            $last_http_code = $http_code;
-            
-            if ($http_code >= 200 && $http_code < 300) {
-                $success = true;
-            } else {
-                $last_error = $this->_extract_error($response_data, $http_code);
-                $tentative++;
-                
-                if ($tentative < $this->max_retries) {
-                    sleep($this->retry_delay * $tentative);
-                }
-            }
-        }
-        
-        // Nettoyage fichier temporaire
-        if ($is_temp && file_exists($file_to_send)) {
-            @unlink($file_to_send);
-            log_message('debug', 'Fichier temporaire nettoyé: ' . $file_to_send);
-        }
-        
-        // Log debug
-        if ($this->debug) {
-            log_message('debug', 'Whapi envoi - Type: ' . $type . ' | Endpoint: ' . $endpoint);
-            log_message('debug', 'Whapi envoi - Taille: ' . $file_size . ' | Tentatives: ' . $tentative);
-            log_message('debug', 'Whapi envoi - HTTP: ' . $last_http_code . ' | Success: ' . ($success ? 'OUI' : 'NON'));
-            if (!$success && $last_error) {
-                log_message('error', 'Whapi erreur: ' . $last_error);
-            }
-        }
-        
+    /**
+ * ✅ CORRECTION: Envoi fichier avec support OGG Opus natif
+ * Ajoute voice=true pour les messages vocaux OGG Opus
+ */
+private function envoyer_fichier_direct($groupe_id, $file_path, $type, $caption = '', $filename = '', $force_voice = false) {
+    if (!file_exists($file_path)) {
         return array(
-            'success' => $success,
-            'status_code' => $last_http_code,
-            'response' => $response_data,
-            'error' => $success ? null : $last_error,
-            'tentatives' => $tentative,
-            'compression' => $is_temp,
-            'taille_originale' => $preparation['original_size'],
-            'taille_finale' => $preparation['final_size']
+            'success' => false,
+            'error' => 'Fichier introuvable: ' . $file_path,
+            'status_code' => 0
         );
     }
     
+    // Préparer fichier (OGG Opus natif pour audio)
+    $preparation = $this->preparer_fichier($file_path, $type);
+    
+    if (isset($preparation['error'])) {
+        return array(
+            'success' => false,
+            'error' => $preparation['error'],
+            'status_code' => 413
+        );
+    }
+    
+    $file_to_send = $preparation['path'];
+    $is_temp = $preparation['temp'];
+    $file_size = $preparation['final_size'];
+    
+    // ✅ CORRECTION: Force voice si paramètre explicite ou détection OGG Opus
+    $is_voice = $force_voice || ($preparation['is_voice'] ?? false);
+    
+    // Timeout adaptatif selon taille
+    $timeout = max(120, ceil($file_size / 1048576) * 10);
+    
+    // Détection endpoint
+    $endpoint = $this->_get_endpoint($type);
+    
+    $url = $this->base_url . $endpoint;
+    
+    $post_data = array(
+        'to' => $groupe_id,
+        'caption' => (string)$caption
+    );
+    
+    // ✅ AJOUT: voice=true pour OGG Opus natif (affichage message vocal WhatsApp)
+    if ($type === 'audio' && $is_voice) {
+        $post_data['voice'] = 'true';
+        log_message('info', "Flag 'voice=true' activé pour message vocal natif");
+    }
+    
+    if ($type === 'document') {
+        $post_data['filename'] = $filename ? $filename : basename($file_path);
+    }
+    
+    // Log détaillé pour debug audio
+    if ($type === 'audio') {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $final_mime = finfo_file($finfo, $file_to_send);
+        finfo_close($finfo);
+        
+        log_message('info', sprintf(
+            'Envoi audio à %s | Endpoint: %s | Fichier: %s | MIME: %s | Taille: %s | Voice: %s',
+            $groupe_id,
+            $endpoint,
+            basename($file_to_send),
+            $final_mime,
+            $this->format_bytes($file_size),
+            $is_voice ? 'OUI' : 'NON'
+        ));
+    }
+    
+    // Envoi avec retry
+    $tentative = 0;
+    $success = false;
+    $last_error = null;
+    $last_http_code = 0;
+    $response_data = null;
+    
+    while ($tentative < $this->max_retries && !$success) {
+        $ch = curl_init();
+        
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $file_to_send);
+        finfo_close($finfo);
+        
+        $cfile = new CURLFile($file_to_send, $mime_type, basename($file_to_send));
+        $post_data['media'] = $cfile;
+        
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $url,
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => 30,
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Bearer ' . $this->api_key,
+                'Accept: application/json'
+            ),
+            CURLOPT_POSTFIELDS => $post_data,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 5
+        ));
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        $curl_errno = curl_errno($ch);
+        curl_close($ch);
+        
+        if ($curl_error) {
+            $last_error = 'cURL (' . $curl_errno . '): ' . $curl_error;
+            $tentative++;
+            
+            if ($tentative < $this->max_retries) {
+                sleep($this->retry_delay * $tentative);
+            }
+            continue;
+        }
+        
+        $response_data = json_decode($response, true);
+        $last_http_code = $http_code;
+        
+        if ($http_code >= 200 && $http_code < 300) {
+            $success = true;
+        } else {
+            $last_error = $this->_extract_error($response_data, $http_code);
+            $tentative++;
+            
+            if ($tentative < $this->max_retries) {
+                sleep($this->retry_delay * $tentative);
+            }
+        }
+    }
+    
+    // Nettoyage fichier temporaire
+    if ($is_temp && file_exists($file_to_send)) {
+        @unlink($file_to_send);
+        log_message('debug', 'Fichier temporaire nettoyé: ' . $file_to_send);
+    }
+    
+    // Log debug
+    if ($this->debug) {
+        log_message('debug', 'Whapi envoi - Type: ' . $type . ' | Endpoint: ' . $endpoint);
+        log_message('debug', 'Whapi envoi - Taille: ' . $file_size . ' | Tentatives: ' . $tentative);
+        log_message('debug', 'Whapi envoi - HTTP: ' . $last_http_code . ' | Success: ' . ($success ? 'OUI' : 'NON'));
+        if (!$success && $last_error) {
+            log_message('error', 'Whapi erreur: ' . $last_error);
+        }
+    }
+    
+    return array(
+        'success' => $success,
+        'status_code' => $last_http_code,
+        'response' => $response_data,
+        'error' => $success ? null : $last_error,
+        'tentatives' => $tentative,
+        'compression' => $is_temp,
+        'taille_originale' => $preparation['original_size'],
+        'taille_finale' => $preparation['final_size'],
+        'is_voice' => $is_voice  // ✅ Retourne info pour debug
+    );
+}
     /**
      * Détermine le bon endpoint selon le type
      */
@@ -501,7 +506,7 @@ if ($type === 'audio') {
         $endpoints = array(
             'image' => '/messages/image',
             'video' => '/messages/video',
-            'audio' => '/messages/audio',  // Endpoint spécifique audio
+            'audio' => '/messages/audio',  // Endpoint audio
             'document' => '/messages/document'
         );
         
@@ -525,7 +530,7 @@ if ($type === 'audio') {
     }
     
     /**
-     * ✅ CORRECTION: Détection type de fichier avec priorité audio
+     * Détection type de fichier avec priorité audio
      */
     public function envoyer_fichier($groupe_id, $file_path, $caption = '') {
         if (!file_exists($file_path)) {
@@ -549,7 +554,7 @@ if ($type === 'audio') {
         } elseif (strpos($mime_type, 'audio/') === 0) {
             $type = 'audio';
         } else {
-            // Fallback extension avec détection audio améliorée
+            // Fallback extension
             $types = array(
                 'image' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'],
                 'video' => ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', '3gp', 'm4v'],
@@ -565,7 +570,7 @@ if ($type === 'audio') {
             }
         }
         
-        // ✅ FORCER type audio si extension audio (sécurité)
+        // Forçage type audio si extension audio
         if (in_array($extension, ['mp3', 'wav', 'ogg', 'm4a', 'opus', 'weba', 'webm']) && $type !== 'audio') {
             log_message('warning', "Forçage type audio pour extension: $extension");
             $type = 'audio';
@@ -605,6 +610,7 @@ if ($type === 'audio') {
                 'erreur' => isset($resultat['error']) ? $resultat['error'] : null,
                 'tentatives' => isset($resultat['tentatives']) ? $resultat['tentatives'] : 1,
                 'compression' => isset($resultat['compression']) ? $resultat['compression'] : false,
+                'is_voice' => isset($resultat['is_voice']) ? $resultat['is_voice'] : false,
                 'index' => $index + 1
             );
             
@@ -663,4 +669,33 @@ if ($type === 'audio') {
         
         return $result;
     }
+
+    /**
+ * ✅ NOUVELLE MÉTHODE: Envoi audio avec flag voice explicite
+ * Pour OGG Opus natif du navigateur
+ */
+public function envoyer_fichier_audio($groupe_id, $file_path, $caption = '', $is_voice = false) {
+    if (!file_exists($file_path)) {
+        return array(
+            'success' => false,
+            'error' => 'Fichier introuvable',
+            'status_code' => 0
+        );
+    }
+    
+    $mime_type = mime_content_type($file_path);
+    $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+    
+    // Forcer type audio
+    $type = 'audio';
+    
+    // Si OGG Opus natif et is_voice=true, passer directement
+    if ($is_voice && $extension === 'ogg' && (strpos($mime_type, 'ogg') !== false || strpos($mime_type, 'audio/ogg') !== false)) {
+        log_message('info', "Envoi OGG Opus natif avec voice=true: $file_path");
+        return $this->envoyer_fichier_direct($groupe_id, $file_path, $type, $caption, '', true);
+    }
+    
+    // Sinon traitement normal
+    return $this->envoyer_fichier($groupe_id, $file_path, $caption);
+}
 }
