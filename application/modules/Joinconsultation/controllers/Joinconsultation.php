@@ -8,7 +8,6 @@ class Joinconsultation extends MY_Controller {
         $this->load->model('JoinConsultation_model');
         $this->load->library('form_validation');
         $this->load->helper('url');
-        $this->load->helper('file');
     }
 
     // URL : /Joinconsultation/index?room=ABC123&user=12
@@ -84,7 +83,7 @@ class Joinconsultation extends MY_Controller {
             show_404();
         }
 
-        // Extraction des données
+        // Extraction des données (support objet et tableau)
         $consultation_id = is_object($consultation) ? $consultation->id : $consultation['id'];
         $patient_user_id = is_object($consultation) ? $consultation->patient_user_id : $consultation['patient_user_id'];
         $medecin_user_id = is_object($consultation) ? $consultation->medecin_user_id : $consultation['medecin_user_id'];
@@ -122,9 +121,6 @@ class Joinconsultation extends MY_Controller {
             show_error('L\'autre participant est introuvable.', 404);
         }
 
-        // 🔑 CRÉER LE SALON DAILY.CO AVEC LE room_id EXISTANT
-        $daily_room_url = $this->JoinConsultation_model->getOrCreateDailyRoom($room_id, $consultation_id);
-        
         // Préparer les données pour la vue
         $current_user_data = $this->session->userdata();
         $current_user_data['id'] = $current_user_data['user_id'];
@@ -140,9 +136,12 @@ class Joinconsultation extends MY_Controller {
         $otherRoleLabel = ($current_role === 'patient') ? 'Dr. ' : '';
         $waitingMessage = ($current_role === 'patient') ? 'En attente du médecin...' : 'En attente du patient...';
 
+        // Nom du salon Jitsi (basé sur room_id)
+        $jitsi_room_name = 'consultation_' . $room_id;
+
         $data = array(
             'room_id'           => $room_id,
-            'daily_room_url'    => $daily_room_url,  // ← URL du salon Daily.co
+            'jitsi_room_name'   => $jitsi_room_name,
             'current_user'      => $current_user_data,
             'other_user'        => $other_user,
             'consultation'      => $consultation,

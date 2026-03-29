@@ -6,7 +6,6 @@
     <title>Consultation avec <?= htmlspecialchars($other_prenom . ' ' . $other_nom) ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <style>
-        /* Vos styles existants */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #111b21; height: 100vh; overflow: hidden; }
         
@@ -38,7 +37,7 @@
         
         .header-actions button.danger:hover { background: #dc3c3c; color: white; }
         
-        #daily-container {
+        #jitsi-container {
             position: fixed;
             top: 60px;
             left: 0;
@@ -117,7 +116,7 @@
     </div>
 </div>
 
-<div id="daily-container"></div>
+<div id="jitsi-container"></div>
 
 <div id="waiting-overlay">
     <div class="waiting-content">
@@ -129,13 +128,12 @@
 
 <div id="toast-container"></div>
 
-<!-- Daily.co SDK -->
-<script src="https://unpkg.com/@daily-co/daily-js@0.45.0"></script>
+<!-- Jitsi Meet SDK -->
+<script src="https://meet.jit.si/external_api.js"></script>
 
 <script>
-// Configuration - Utilisation du room_id de votre consultation
-const roomId = <?= json_encode($room_id) ?>;
-const dailyRoomUrl = <?= json_encode($daily_room_url) ?>;
+// Configuration
+const jitsiRoomName = <?= json_encode($jitsi_room_name) ?>;
 const consultationId = <?= json_encode(is_object($consultation) ? $consultation->id : $consultation['id']) ?>;
 const userName = <?= json_encode(($current_role === 'patient' ? 'Patient' : 'Dr. ') . ($current_user['prenom'] ?? 'Utilisateur')) ?>;
 
@@ -144,9 +142,9 @@ const leaveBtn = document.getElementById('leave-call');
 const otherStatus = document.getElementById('other-status');
 const waitingOverlay = document.getElementById('waiting-overlay');
 const toastContainer = document.getElementById('toast-container');
-const dailyContainer = document.getElementById('daily-container');
+const jitsiContainer = document.getElementById('jitsi-container');
 
-let callFrame = null;
+let jitsiApi = null;
 let isConnected = false;
 
 function showToast(message, type = 'info') {
@@ -169,87 +167,90 @@ function closeWaitingOverlay() {
     if (waitingOverlay) waitingOverlay.style.display = 'none';
 }
 
-async function startCall() {
-    console.log('🚀 Démarrage Daily.co...');
-    console.log('📌 Room ID consultation:', roomId);
-    console.log('📌 Daily URL:', dailyRoomUrl);
+function startJitsiCall() {
+    console.log('🚀 Démarrage Jitsi Meet...');
+    console.log('📌 Salon:', jitsiRoomName);
     console.log('👤 Utilisateur:', userName);
     
     updateStatus('Connexion...', true);
     
-    if (!dailyRoomUrl) {
-        console.error('❌ Pas d\'URL Daily.co');
-        showToast('Erreur: Impossible de créer la salle de consultation', 'error');
+    if (!jitsiRoomName) {
+        console.error('❌ Pas de nom de salon');
+        showToast('Erreur: Impossible de créer la salle', 'error');
         setTimeout(() => window.location.href = '/', 3000);
         return;
     }
     
     try {
-        callFrame = DailyIframe.createFrame(dailyContainer, {
-            iframeStyle: {
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                border: 'none'
+        const domain = 'meet.jit.si';
+        const options = {
+            roomName: jitsiRoomName,
+            width: '100%',
+            height: '100%',
+            parentNode: jitsiContainer,
+            userInfo: {
+                displayName: userName
             },
-            showLeaveButton: false,
-            showFullscreenButton: true,
-            showParticipantsBar: true,
-            videoSource: true,
-            audioSource: true,
-            userName: userName,
-            lang: 'fr'
-        });
+            configOverwrite: {
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+                disableDeepLinking: true,
+                disableInviteFunctions: true,
+                enableWelcomePage: false,
+                enableClosePage: false,
+                disableProfile: true,
+                defaultLanguage: 'fr',
+                lang: 'fr'
+            },
+            interfaceConfigOverwrite: {
+                SHOW_JITSI_WATERMARK: false,
+                SHOW_WATERMARK_FOR_GUESTS: false,
+                DEFAULT_BACKGROUND: '#111b21',
+                TOOLBAR_BUTTONS: [
+                    'microphone', 'camera', 'closedcaptions', 'desktop', 
+                    'fullscreen', 'fodeviceselection', 'hangup', 
+                    'profile', 'chat', 'recording', 'settings', 
+                    'shareaudio', 'sharedvideo', 'tileview'
+                ]
+            }
+        };
         
-        callFrame.on('joining-meeting', () => {
-            console.log('🔄 Connexion au salon...');
-            updateStatus('Connexion...', true);
-        });
+        jitsiApi = new JitsiMeetExternalAPI(domain, options);
         
-        callFrame.on('joined-meeting', (e) => {
-            console.log('✅ Salon rejoint avec succès!', e);
+        jitsiApi.addListener('videoConferenceJoined', () => {
+            console.log('✅ Consultation rejointe!');
             isConnected = true;
             closeWaitingOverlay();
             updateStatus('En ligne', true);
             showToast('Consultation démarrée!', 'success');
         });
         
-        callFrame.on('participant-joined', (e) => {
-            console.log('👤 Participant rejoint:', e.participant.userName);
+        jitsiApi.addListener('participantJoined', (participant) => {
+            console.log('👤 Participant rejoint:', participant.displayName);
             updateStatus('En ligne', true);
-            showToast(`${e.participant.userName || 'Le participant'} a rejoint`, 'success');
+            showToast(`${participant.displayName || 'Le participant'} a rejoint`, 'success');
         });
         
-        callFrame.on('participant-left', (e) => {
-            console.log('👤 Participant quitté');
+        jitsiApi.addListener('participantLeft', (participant) => {
+            console.log('👤 Participant quitté:', participant.displayName);
             updateStatus('Hors ligne', false);
             showToast('Le participant a quitté', 'warning');
         });
         
-        callFrame.on('left-meeting', () => {
-            console.log('❌ Salon quitté');
+        jitsiApi.addListener('readyToClose', () => {
+            console.log('❌ Consultation terminée');
             isConnected = false;
             window.location.href = '/';
         });
         
-        callFrame.on('error', (e) => {
-            console.error('❌ Erreur Daily:', e);
-            showToast('Erreur de connexion: ' + (e.errorMsg || 'Vérifiez votre connexion'), 'error');
-            updateStatus('Erreur', false);
-        });
-        
-        // Rejoindre le salon avec l'URL générée
-        callFrame.join({ url: dailyRoomUrl });
-        
     } catch (error) {
-        console.error('❌ Erreur:', error);
+        console.error('❌ Erreur Jitsi:', error);
         showToast('Erreur de démarrage: ' + error.message, 'error');
         updateStatus('Erreur', false);
     }
 }
 
+// Bouton quitter
 if (leaveBtn) {
     leaveBtn.onclick = async () => {
         if (confirm('Quitter la consultation ?')) {
@@ -261,23 +262,22 @@ if (leaveBtn) {
                     });
                 } catch (e) {}
             }
-            if (callFrame) {
-                callFrame.leave();
-            } else {
-                window.location.href = '/';
+            if (jitsiApi) {
+                jitsiApi.executeCommand('hangup');
             }
+            window.location.href = '/';
         }
     };
 }
 
-startCall();
+// Démarrer
+startJitsiCall();
 
-window.debugDaily = () => {
-    console.log('=== DEBUG ===');
-    console.log('Room ID consultation:', roomId);
-    console.log('Daily URL:', dailyRoomUrl);
+window.debugJitsi = () => {
+    console.log('=== DEBUG JITSI ===');
+    console.log('Salon:', jitsiRoomName);
     console.log('Connecté:', isConnected);
-    console.log('CallFrame:', !!callFrame);
+    console.log('Jitsi API:', !!jitsiApi);
     console.log('User:', userName);
 };
 </script>
