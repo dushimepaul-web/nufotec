@@ -412,4 +412,89 @@ public function api_envoyer_tous() {
         ->set_content_type('application/json')
         ->set_output(json_encode($resultat));
 }
+/**
+ * Formulaire d'envoi avec fichier
+ */
+public function envoyer_fichier() {
+    $data['groupes'] = $this->Groupe_model->get_all_groupes();
+    $data['total_groupes'] = $this->Groupe_model->compter_groupes();
+    $data['types_fichiers'] = [
+        'image' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        'document' => ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'],
+        'video' => ['mp4', 'avi', 'mov', 'wmv', 'mkv'],
+        'audio' => ['mp3', 'wav', 'ogg', 'm4a']
+    ];
+    
+    $this->load->view('whatsapp/envoyer_fichier', $data);
+}
+
+/**
+ * Traite l'envoi de fichier
+ */
+public function traiter_envoi_fichier() {
+    $groupes_ids = $this->input->post('groupes_ids');
+    $caption = $this->input->post('caption');
+    $fichier = $_FILES['fichier'] ?? null;
+    
+    if (empty($groupes_ids)) {
+        $this->session->set_flashdata('error', 'Veuillez sélectionner au moins un groupe');
+        redirect('whatsapp/envoyer_fichier');
+        return;
+    }
+    
+    if (!$fichier || $fichier['error'] != UPLOAD_ERR_OK) {
+        $this->session->set_flashdata('error', 'Veuillez sélectionner un fichier valide');
+        redirect('whatsapp/envoyer_fichier');
+        return;
+    }
+    
+    // Vérifier la taille du fichier (max 16MB pour WhatsApp)
+    $max_size = 16 * 1024 * 1024; // 16MB
+    if ($fichier['size'] > $max_size) {
+        $this->session->set_flashdata('error', 'Le fichier est trop volumineux (max 16MB)');
+        redirect('whatsapp/envoyer_fichier');
+        return;
+    }
+    
+    // Créer le dossier d'upload s'il n'existe pas
+    $upload_dir = FCPATH . 'uploads/whatsapp/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+    
+    // Générer un nom unique pour le fichier
+    $extension = pathinfo($fichier['name'], PATHINFO_EXTENSION);
+    $filename = time() . '_' . uniqid() . '.' . $extension;
+    $filepath = $upload_dir . $filename;
+    
+    // Déplacer le fichier
+    if (!move_uploaded_file($fichier['tmp_name'], $filepath)) {
+        $this->session->set_flashdata('error', 'Erreur lors de l\'upload du fichier');
+        redirect('whatsapp/envoyer_fichier');
+        return;
+    }
+    
+    // Récupérer les noms des groupes
+    $groupes_info = [];
+    foreach ($groupes_ids as $groupe_id) {
+        $groupe = $this->Groupe_model->get_groupe_par_id_whatsapp($groupe_id);
+        if ($groupe) {
+            $groupes_info[] = $groupe;
+        }
+    }
+    
+    // Envoyer le fichier
+    $resultat = $this->whapi_lib->envoyer_fichier_multigroupes($groupes_ids, $filepath, $caption);
+    
+    // Supprimer le fichier temporaire
+    @unlink($filepath);
+    
+    $data['resultat'] = $resultat;
+    $data['groupes_info'] = $groupes_info;
+    $data['caption'] = $caption;
+    $data['fichier_nom'] = $fichier['name'];
+    $data['fichier_type'] = $fichier['type'];
+    
+    $this->load->view('whatsapp/resultat_envoi_fichier', $data);
+}
 }

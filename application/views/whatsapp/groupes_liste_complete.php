@@ -139,6 +139,9 @@
     <a href="<?= site_url('whatsapp/envoyer_par_nom') ?>" class="btn btn-success">
         <i class="fas fa-paper-plane"></i> Envoi sélectif
     </a>
+    <a href="<?= site_url('whatsapp/envoyer_fichier') ?>" class="btn btn-info">
+    <i class="fas fa-paperclip"></i> Envoyer un fichier
+</a>
 </div>
 
 <!-- Modal pour envoyer à tous -->
@@ -175,6 +178,7 @@
         </div>
     </div>
 </div>
+
     <script>
         function copierId(id) {
             navigator.clipboard.writeText(id).then(function() {
