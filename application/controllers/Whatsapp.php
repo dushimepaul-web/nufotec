@@ -130,7 +130,7 @@ class Whatsapp extends MY_Controller {
         foreach ($resultat['response']['groups'] as $groupe) {
             $this->Groupe_model->sauvegarder(
                 $groupe['id'],
-                $groupe['name'],
+                $groupe['nom'],
                 $groupe['description'] ?? ''
             );
             $compteur++;
@@ -224,7 +224,7 @@ class Whatsapp extends MY_Controller {
             echo "<h4>Groupes trouvés: " . count($data['groups']) . "</h4>";
             echo "<pre>";
             foreach ($data['groups'] as $g) {
-                echo "- " . $g['name'] . " (" . $g['id'] . ")\n";
+                echo "- " . $g['nom'] . " (" . $g['id'] . ")\n";
             }
             echo "</pre>";
         } else {
