@@ -128,7 +128,7 @@ class Whatsapp extends MY_Controller {
     if (isset($resultat['response']['groups'])) {
         $compteur = 0;
         foreach ($resultat['response']['groups'] as $groupe) {
-            $this->groupe_model->sauvegarder(
+            $this->Groupe_model->sauvegarder(
                 $groupe['id'],
                 $groupe['name'],
                 $groupe['description'] ?? ''
