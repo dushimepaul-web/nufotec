@@ -25,20 +25,7 @@ class Groupe_model extends CI_Model {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     }
     
-    /**
-     * Sauvegarde ou met à jour un groupe
-     */
-    public function sauvegarder($groupe_id, $nom, $description = '') {
-        $data = array(
-            'groupe_id' => $groupe_id,
-            'nom' => $nom,
-            'description' => $description,
-            'actif' => 1
-        );
-        
-        $this->db->replace($this->table, $data);
-        return $this->db->insert_id();
-    }
+    
     
     /**
      * Récupère tous les groupes actifs avec ID et nom
