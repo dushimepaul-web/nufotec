@@ -1,5 +1,5 @@
 // ============================================
-// CONSULTATION.JS - VERSION FINALE PRODUCTION
+// CONSULTATION.JS - VERSION AVEC FORCE CONNEXION
 // ============================================
 
 (function() {
@@ -24,7 +24,8 @@
         isConnected: false,
         pendingIceCandidates: [],
         reconnectAttempts: 0,
-        turnConnected: false
+        turnConnected: false,
+        connectionCheckInterval: null
     };
 
     const elements = {
@@ -92,15 +93,13 @@
                     rtcpMuxPolicy: 'require'
                 });
                 
+                // Timeout plus long pour connexions internationales
                 let iceTimeout = setTimeout(() => {
                     if (state.peerConnection && !state.isConnected) {
-                        const iceState = state.peerConnection.iceConnectionState;
-                        if (iceState === 'checking') {
-                            utils.log('⚠️ Connexion lente, tentative avec STUN+RELAY...');
-                            this.switchToHybridMode();
-                        }
+                        utils.log('⚠️ Timeout ICE, vérification manuelle...');
+                        this.forceCheckConnection();
                     }
-                }, 30000);
+                }, 45000);
                 
                 state.peerConnection.onicecandidate = (event) => {
                     if (event.candidate && state.otherSocketId && state.socket) {
@@ -120,7 +119,6 @@
                     }
                 };
                 
-                // Gestion des tracks - Version corrigée sans erreur play
                 state.peerConnection.ontrack = (event) => {
                     utils.log(`📹 Track reçu: ${event.track.kind}`);
                     
@@ -131,7 +129,6 @@
                     
                     if (elements.remoteVideo && elements.remoteVideo.srcObject !== state.remoteStream) {
                         elements.remoteVideo.srcObject = state.remoteStream;
-                        // Lecture silencieuse - ignorer toutes les erreurs de play
                         elements.remoteVideo.play().catch(() => {});
                     }
                 };
@@ -142,6 +139,10 @@
                     
                     if (connState === 'connected') {
                         clearTimeout(iceTimeout);
+                        if (state.connectionCheckInterval) {
+                            clearInterval(state.connectionCheckInterval);
+                            state.connectionCheckInterval = null;
+                        }
                         state.isConnected = true;
                         state.reconnectAttempts = 0;
                         utils.closeWaitingOverlay();
@@ -153,6 +154,9 @@
                         state.isConnected = false;
                         utils.log('❌ Connexion échouée');
                         this.handleFailure();
+                    } else if (connState === 'disconnected') {
+                        utils.log('⚠️ Connexion interrompue, tentative de reprise...');
+                        this.restartIce();
                     }
                 };
                 
@@ -163,8 +167,13 @@
                     if (iceState === 'connected' || iceState === 'completed') {
                         clearTimeout(iceTimeout);
                         utils.log('✅ ICE connecté');
+                        // Forcer la vérification de connexion
+                        setTimeout(() => this.forceCheckConnection(), 1000);
                     } else if (iceState === 'failed') {
                         utils.log('❌ ICE échoué');
+                        this.restartIce();
+                    } else if (iceState === 'disconnected') {
+                        utils.log('⚠️ ICE déconnecté, tentative de reprise...');
                         this.restartIce();
                     }
                 };
@@ -197,6 +206,34 @@
             }
         },
         
+        // Vérification forcée de la connexion
+        forceCheckConnection() {
+            if (!state.peerConnection || state.isConnected) return;
+            
+            const iceState = state.peerConnection.iceConnectionState;
+            const connState = state.peerConnection.connectionState;
+            
+            utils.log(`🔍 Vérification forcée - ICE: ${iceState}, Connection: ${connState}`);
+            
+            // Si on a des tracks mais que la connexion n'est pas déclarée connected
+            if (state.remoteStream && state.remoteStream.getTracks().length > 0) {
+                if (iceState === 'connected' || iceState === 'completed') {
+                    utils.log('✅ Détection manuelle: connexion établie!');
+                    state.isConnected = true;
+                    utils.closeWaitingOverlay();
+                    utils.updateOtherStatus(true);
+                    utils.showToast('Consultation démarrée!', 'success');
+                    return;
+                }
+            }
+            
+            // Si toujours bloqué, tenter un restart
+            if (!state.isConnected && iceState !== 'connected') {
+                utils.log('⚠️ Connexion bloquée, tentative de restart...');
+                this.restartIce();
+            }
+        },
+        
         async switchToHybridMode() {
             if (!state.peerConnection || state.isConnected) return;
             
@@ -211,6 +248,10 @@
                     iceCandidatePoolSize: 10
                 });
                 
+                // Copier les listeners
+                newPC.ontrack = state.peerConnection.ontrack;
+                newPC.onicecandidate = state.peerConnection.onicecandidate;
+                
                 if (state.localStream) {
                     state.localStream.getTracks().forEach(track => {
                         newPC.addTrack(track, state.localStream);
@@ -219,11 +260,13 @@
                 
                 const oldPC = state.peerConnection;
                 state.peerConnection = newPC;
-                oldPC.close();
                 
+                // Renégocier
                 if (state.isInitiator) {
                     await this.createOffer();
                 }
+                
+                setTimeout(() => oldPC.close(), 1000);
             } catch (error) {
                 utils.log(`❌ Switch hybride échoué: ${error.message}`);
             }
@@ -287,11 +330,12 @@
                 
                 await state.peerConnection.setLocalDescription(offer);
                 
+                // Attendre ICE gathering avec timeout plus long
                 await new Promise((resolve) => {
                     if (state.peerConnection.iceGatheringState === 'complete') {
                         resolve();
                     } else {
-                        const timeout = setTimeout(resolve, 10000);
+                        const timeout = setTimeout(resolve, 15000);
                         const checkState = () => {
                             if (state.peerConnection.iceGatheringState === 'complete') {
                                 clearTimeout(timeout);
@@ -332,6 +376,9 @@
                     sdp: state.peerConnection.localDescription
                 });
                 utils.log('📤 Réponse envoyée');
+                
+                // Vérifier la connexion après quelques secondes
+                setTimeout(() => this.forceCheckConnection(), 5000);
             } catch (error) {
                 utils.log(`❌ Erreur: ${error.message}`);
             }
@@ -345,6 +392,9 @@
             try {
                 await state.peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
                 utils.log('✅ Réponse appliquée');
+                
+                // Vérifier la connexion après quelques secondes
+                setTimeout(() => this.forceCheckConnection(), 5000);
             } catch (error) {
                 utils.log(`❌ Erreur: ${error.message}`);
             }
@@ -367,6 +417,10 @@
         },
         
         cleanup() {
+            if (state.connectionCheckInterval) {
+                clearInterval(state.connectionCheckInterval);
+                state.connectionCheckInterval = null;
+            }
             if (state.peerConnection) {
                 try { state.peerConnection.close(); } catch(e) {}
                 state.peerConnection = null;
@@ -375,6 +429,7 @@
             if (elements.remoteVideo) elements.remoteVideo.srcObject = null;
             state.pendingIceCandidates = [];
             state.turnConnected = false;
+            state.isConnected = false;
             utils.log('🧹 Nettoyé');
         }
     };
@@ -505,7 +560,7 @@
     }
 
     async function init() {
-        utils.log('🚀 Démarrage consultation v6.3 (TURN forcé)...');
+        utils.log('🚀 Démarrage consultation v6.4 (Force connexion)...');
         
         if (!CONFIG.roomId) {
             utils.log('❌ roomId manquant');
@@ -541,6 +596,8 @@
         if (state.peerConnection) {
             console.log('ICE state:', state.peerConnection.iceConnectionState);
             console.log('Connection:', state.peerConnection.connectionState);
+            console.log('Signaling:', state.peerConnection.signalingState);
+            console.log('Remote tracks:', state.remoteStream?.getTracks().length || 0);
         }
     };
 })();
