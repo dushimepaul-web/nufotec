@@ -578,64 +578,103 @@ public function test_document() {
  * Méthode de test pour l'envoi de document
  * URL: http://votre-site.com/whatsapp/test_envoi_document
  */
-public function test_envoi_document() {
+/**
+ * Test spécifique pour l'envoi de document
+ * URL: http://votre-site.com/whatsapp/test_document
+ */
+public function test_document() {
     // Activer l'affichage des erreurs
     ini_set('display_errors', 1);
     error_reporting(E_ALL);
     
-    echo "<h1>Test d'envoi de document WhatsApp</h1>";
+    echo "<h1>Test d'envoi de document .docx</h1>";
     
-    // Charger la library
     $this->load->library('whapi_lib');
     
-    // 1. Vérifier la configuration
-    echo "<h3>1. Configuration</h3>";
-    $config = $this->config->item('whapi');
-    echo "Base URL: " . $config['base_url'] . "<br>";
-    echo "API Key: " . substr($config['api_key'], 0, 10) . "..." . substr($config['api_key'], -5) . "<br>";
-    echo "Timeout: " . $config['timeout'] . "<br>";
+    // Utiliser le premier groupe de la liste
+    $groupe_id = "120363265564772421@g.us"; // (chants) de Louange pour la chorale de la victoire
     
-    // 2. Tester la connexion à l'API
-    echo "<h3>2. Test de connexion à l'API</h3>";
-    $test = $this->whapi_lib->test_connexion();
-    echo "<pre>";
-    print_r($test);
-    echo "</pre>";
+    // Chemin du fichier - À ADAPTER selon l'emplacement réel
+    $file_path = FCPATH . 'uploads/whatsapp/contrat_nufotec.docx';
     
-    if (!$test['success']) {
-        echo "❌ Échec de connexion à l'API Whapi<br>";
+    // Vérifier si le fichier existe
+    echo "<h3>1. Vérification du fichier</h3>";
+    if (!file_exists($file_path)) {
+        echo "❌ Fichier introuvable: " . $file_path . "<br>";
+        
+        // Lister les fichiers dans le dossier uploads
+        $upload_dir = FCPATH . 'uploads/whatsapp/';
+        if (is_dir($upload_dir)) {
+            echo "Fichiers disponibles dans " . $upload_dir . ":<br>";
+            $files = scandir($upload_dir);
+            foreach ($files as $file) {
+                if ($file != '.' && $file != '..') {
+                    echo "- " . $file . "<br>";
+                }
+            }
+        }
         return;
     }
-    echo "✅ Connexion API OK<br>";
+    echo "✅ Fichier trouvé: " . $file_path . "<br>";
+    echo "Taille: " . round(filesize($file_path) / 1024, 2) . " KB<br>";
+    echo "Extension: " . pathinfo($file_path, PATHINFO_EXTENSION) . "<br>";
     
-    // 3. Lister les groupes disponibles
-    echo "<h3>3. Groupes disponibles</h3>";
-    $groupes = $this->whapi_lib->get_groupes();
-    if ($groupes['success'] && isset($groupes['response']['groups'])) {
-        echo "Groupes trouvés: " . count($groupes['response']['groups']) . "<br>";
-        foreach ($groupes['response']['groups'] as $g) {
-            $nom = isset($g['name']) ? $g['name'] : (isset($g['subject']) ? $g['subject'] : 'Sans nom');
-            echo "- " . $nom . " (" . $g['id'] . ")<br>";
-        }
-    } else {
-        echo "❌ Impossible de récupérer les groupes<br>";
-        echo "<pre>";
-        print_r($groupes);
-        echo "</pre>";
+    // 2. Test d'upload
+    echo "<h3>2. Test d'upload du fichier</h3>";
+    $upload = $this->whapi_lib->uploader_fichier($file_path);
+    echo "<pre>";
+    print_r($upload);
+    echo "</pre>";
+    
+    if (!$upload['success']) {
+        echo "❌ Upload échoué<br>";
+        echo "Erreur: " . ($upload['error'] ?? 'Inconnue') . "<br>";
+        return;
     }
+    echo "✅ Upload réussi!<br>";
+    echo "URL du fichier: " . $upload['url'] . "<br>";
     
-    // 4. Tester l'envoi d'un message texte (pour vérifier que l'API fonctionne)
-    echo "<h3>4. Test d'envoi de message texte</h3>";
-    if (isset($groupes['response']['groups'][0])) {
-        $groupe_test_id = $groupes['response']['groups'][0]['id'];
-        echo "Envoi vers: " . $groupe_test_id . "<br>";
-        
-        $resultat_texte = $this->whapi_lib->envoyer_message_groupe($groupe_test_id, "Test de connexion depuis CodeIgniter - " . date('H:i:s'));
-        echo "<pre>";
-        print_r($resultat_texte);
-        echo "</pre>";
+    // 3. Test d'envoi du document
+    echo "<h3>3. Test d'envoi du document avec /messages/document</h3>";
+    $resultat = $this->whapi_lib->envoyer_document(
+        $groupe_id,
+        $file_path,
+        'contrat_nufotec.docx',
+        'Test d\'envoi de document .docx - ' . date('H:i:s')
+    );
+    
+    echo "<pre>";
+    print_r($resultat);
+    echo "</pre>";
+    
+    if ($resultat['success']) {
+        echo "✅ Document envoyé avec succès!<br>";
     } else {
-        echo "❌ Aucun groupe disponible pour le test<br>";
+        echo "❌ Échec de l'envoi du document<br>";
+        echo "Code HTTP: " . ($resultat['status_code'] ?? 'N/A') . "<br>";
+        echo "Erreur: " . ($resultat['error'] ?? json_encode($resultat['response'])) . "<br>";
+        
+        // Alternative: essayer avec l'endpoint générique
+        echo "<h3>4. Alternative: essayer avec /messages/media</h3>";
+        $resultat2 = $this->whapi_lib->envoyer_media_generique(
+            $groupe_id,
+            $file_path,
+            'Test via endpoint générique'
+        );
+        echo "<pre>";
+        print_r($resultat2);
+        echo "</pre>";
+        
+        // Alternative: envoyer un message avec lien
+        echo "<h3>5. Alternative: envoyer un message avec lien</h3>";
+        $resultat3 = $this->whapi_lib->envoyer_lien_telechargement(
+            $groupe_id,
+            $file_path,
+            'Téléchargez le document ici'
+        );
+        echo "<pre>";
+        print_r($resultat3);
+        echo "</pre>";
     }
     
     echo "<h3>Test terminé</h3>";

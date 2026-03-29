@@ -401,4 +401,46 @@ public function envoyer_media_generique($groupe_id, $file_path, $caption = '') {
     
     return $this->requete_api('POST', $url, $payload);
 }
+
+/**
+ * Envoi via l'endpoint générique /messages/media
+ */
+public function envoyer_media_generique($groupe_id, $file_path, $caption = '') {
+    $upload_result = $this->uploader_fichier($file_path);
+    if (!$upload_result['success']) {
+        return $upload_result;
+    }
+    
+    $url = $this->base_url . '/messages/media';
+    
+    $payload = array(
+        'to' => $groupe_id,
+        'media' => $upload_result['url'],
+        'caption' => $caption
+    );
+    
+    return $this->requete_api('POST', $url, $payload);
+}
+
+/**
+ * Alternative: envoyer un message avec un lien de téléchargement
+ */
+public function envoyer_lien_telechargement($groupe_id, $file_path, $caption = '') {
+    // Uploader le fichier
+    $upload = $this->uploader_fichier($file_path);
+    if (!$upload['success']) {
+        return $upload;
+    }
+    
+    // Créer un message avec le lien
+    $message = "📄 *Document: " . basename($file_path) . "*\n\n";
+    $message .= "🔗 *Lien de téléchargement:*\n";
+    $message .= $upload['url'] . "\n\n";
+    if ($caption) {
+        $message .= "📝 *Note:* " . $caption . "\n";
+    }
+    $message .= "\n_Cliquez sur le lien pour télécharger le document._";
+    
+    return $this->envoyer_message_groupe($groupe_id, $message);
+}
 }
