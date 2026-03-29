@@ -573,4 +573,71 @@ public function test_document() {
     print_r($resultat3);
     echo "</pre>";
 }
+
+/**
+ * Méthode de test pour l'envoi de document
+ * URL: http://votre-site.com/whatsapp/test_envoi_document
+ */
+public function test_envoi_document() {
+    // Activer l'affichage des erreurs
+    ini_set('display_errors', 1);
+    error_reporting(E_ALL);
+    
+    echo "<h1>Test d'envoi de document WhatsApp</h1>";
+    
+    // Charger la library
+    $this->load->library('whapi_lib');
+    
+    // 1. Vérifier la configuration
+    echo "<h3>1. Configuration</h3>";
+    $config = $this->config->item('whapi');
+    echo "Base URL: " . $config['base_url'] . "<br>";
+    echo "API Key: " . substr($config['api_key'], 0, 10) . "..." . substr($config['api_key'], -5) . "<br>";
+    echo "Timeout: " . $config['timeout'] . "<br>";
+    
+    // 2. Tester la connexion à l'API
+    echo "<h3>2. Test de connexion à l'API</h3>";
+    $test = $this->whapi_lib->test_connexion();
+    echo "<pre>";
+    print_r($test);
+    echo "</pre>";
+    
+    if (!$test['success']) {
+        echo "❌ Échec de connexion à l'API Whapi<br>";
+        return;
+    }
+    echo "✅ Connexion API OK<br>";
+    
+    // 3. Lister les groupes disponibles
+    echo "<h3>3. Groupes disponibles</h3>";
+    $groupes = $this->whapi_lib->get_groupes();
+    if ($groupes['success'] && isset($groupes['response']['groups'])) {
+        echo "Groupes trouvés: " . count($groupes['response']['groups']) . "<br>";
+        foreach ($groupes['response']['groups'] as $g) {
+            $nom = isset($g['name']) ? $g['name'] : (isset($g['subject']) ? $g['subject'] : 'Sans nom');
+            echo "- " . $nom . " (" . $g['id'] . ")<br>";
+        }
+    } else {
+        echo "❌ Impossible de récupérer les groupes<br>";
+        echo "<pre>";
+        print_r($groupes);
+        echo "</pre>";
+    }
+    
+    // 4. Tester l'envoi d'un message texte (pour vérifier que l'API fonctionne)
+    echo "<h3>4. Test d'envoi de message texte</h3>";
+    if (isset($groupes['response']['groups'][0])) {
+        $groupe_test_id = $groupes['response']['groups'][0]['id'];
+        echo "Envoi vers: " . $groupe_test_id . "<br>";
+        
+        $resultat_texte = $this->whapi_lib->envoyer_message_groupe($groupe_test_id, "Test de connexion depuis CodeIgniter - " . date('H:i:s'));
+        echo "<pre>";
+        print_r($resultat_texte);
+        echo "</pre>";
+    } else {
+        echo "❌ Aucun groupe disponible pour le test<br>";
+    }
+    
+    echo "<h3>Test terminé</h3>";
+}
 }
