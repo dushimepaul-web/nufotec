@@ -813,4 +813,20 @@ public function sync_all_groups_with_db() {
         'stats' => $total_stats
     );
 }
+
+/**
+ * Helper: Formater un numéro de téléphone pour affichage
+ */
+private function format_phone_number($phone) {
+    // Supprimer le @s.whatsapp.net si présent
+    $phone = str_replace('@s.whatsapp.net', '', $phone);
+    $phone = str_replace('@c.us', '', $phone);
+    
+    // Formater avec + si c'est un numéro international
+    if (preg_match('/^\d{10,15}$/', $phone)) {
+        return '+' . $phone;
+    }
+    
+    return $phone;
+}
 }
