@@ -85,7 +85,7 @@ class Product_categories extends MY_Controller {
         $id = $this->input->post('id');
         
         // Vérifier s'il y a des produits dans cette catégorie
-        $products = $this->Model->read('products', ['category_id' => $id]);
+        $products = $this->Model->read('advertise_product', ['category_id' => $id]);
         if (!empty($products)) {
             $this->session->set_flashdata('error', 'Impossible de supprimer cette catégorie car elle contient des produits.');
             redirect(base_url('product_categories'));

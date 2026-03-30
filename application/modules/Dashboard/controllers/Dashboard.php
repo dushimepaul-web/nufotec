@@ -17,8 +17,8 @@ class Dashboard extends MY_Controller {
         'info'      => '#FFD000',
         'light'     => '#f8f9fa',
         'dark'      => '#212529',
-        'agf_green' => '#2E7D32',
-        'agf_blue'  => '#01579B'
+        'NUFOTEC_green' => '#2E7D32',
+        'NUFOTEC_blue'  => '#01579B'
     ];
 
     private $cache_duration = 300; // 5 minutes
@@ -66,7 +66,7 @@ class Dashboard extends MY_Controller {
         }
 
         $data = [
-            'page_title'       => 'Tableau de Bord AGF - Administration',
+            'page_title'       => 'Tableau de Bord NUFOTEC - Administration',
             'user_role'        => $this->session->userdata('role_nom'),
             'theme_colors'     => $this->theme_colors,
             'current_date'     => date('d/m/Y H:i'),
@@ -346,7 +346,7 @@ class Dashboard extends MY_Controller {
                               ->area_m2 ?? 0;
         $hectares = round($total_area / 10000, 2);
 
-        $config = $this->_get_agf_config();
+        $config = $this->_get_NUFOTEC_config();
 
         return [
             'superficie_hectares' => $hectares ?: ($config['superficie_hectares'] ?? 50),
@@ -359,10 +359,10 @@ class Dashboard extends MY_Controller {
         ];
     }
 
-    private function _get_agf_config() {
-        $configs = $this->db->where('categorie', 'agf_identity')
-                            ->or_where('categorie', 'agf_facility')
-                            ->or_where('categorie', 'agf_finance')
+    private function _get_NUFOTEC_config() {
+        $configs = $this->db->where('categorie', 'NUFOTEC_identity')
+                            ->or_where('categorie', 'NUFOTEC_facility')
+                            ->or_where('categorie', 'NUFOTEC_finance')
                             ->or_where('categorie', 'contact')
                             ->get('configurations')
                             ->result_array();

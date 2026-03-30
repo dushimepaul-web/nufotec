@@ -9,7 +9,7 @@ function getStatusBadge($statut, $type = 'default') {
         'commande' => [
             'livree'      => ['bg' => 'success', 'icon' => 'bx-check-circle', 'txt' => 'Livrée'],
             'expediee'    => ['bg' => 'info', 'icon' => 'bx-truck', 'txt' => 'Expédiée'],
-            'confirmee'   => ['bg' => 'primary', 'icon' => 'bx-check', 'txt' => 'Confirmée'],
+            'confirmee'   => ['bg' => 'success', 'icon' => 'bx-check', 'txt' => 'Confirmée'],
             'annulee'     => ['bg' => 'danger', 'icon' => 'bx-x-circle', 'txt' => 'Annulée'],
             'en_attente'  => ['bg' => 'warning', 'icon' => 'bx-time', 'txt' => 'En attente'],
             'preparation' => ['bg' => 'secondary', 'icon' => 'bx-package', 'txt' => 'Préparation'],
@@ -17,7 +17,7 @@ function getStatusBadge($statut, $type = 'default') {
         ],
         'consultation' => [
             'en_attente'  => ['bg' => 'warning', 'icon' => 'bx-time', 'txt' => 'En attente'],
-            'confirmee'   => ['bg' => 'primary', 'icon' => 'bx-calendar-check', 'txt' => 'Confirmée'],
+            'confirmee'   => ['bg' => 'success', 'icon' => 'bx-calendar-check', 'txt' => 'Confirmée'],
             'en_cours'    => ['bg' => 'info', 'icon' => 'bx-video', 'txt' => 'En cours'],
             'terminee'    => ['bg' => 'success', 'icon' => 'bx-check-double', 'txt' => 'Terminée'],
             'annulee'     => ['bg' => 'danger', 'icon' => 'bx-x', 'txt' => 'Annulée'],
@@ -26,7 +26,7 @@ function getStatusBadge($statut, $type = 'default') {
         'user' => [
             'active'      => ['bg' => 'success', 'icon' => 'bx-check-circle', 'txt' => 'Actif'],
             'inactive'    => ['bg' => 'secondary', 'icon' => 'bx-x-circle', 'txt' => 'Inactif'],
-            'verified'    => ['bg' => 'primary', 'icon' => 'bx-badge-check', 'txt' => 'Vérifié'],
+            'verified'    => ['bg' => 'success', 'icon' => 'bx-badge-check', 'txt' => 'Vérifié'],
             'unverified'  => ['bg' => 'warning', 'icon' => 'bx-time', 'txt' => 'Non vérifié']
         ]
     ];
@@ -77,19 +77,19 @@ $latest_consultations = $latest_consultations ?? [];
 $low_stock_products   = $low_stock_products ?? [];
 $pending_verifications = $pending_verifications ?? [];
 
-$page_title = 'Tableau de Bord AGF - Administration';
+$page_title = 'Tableau de Bord NUFOTEC - Administration';
 ?>
 
 <style>
 :root {
-    --agf-primary: #062C54;
-    --agf-secondary: #1a8c78;
-    --agf-success: #0F766E;
-    --agf-warning: #FF8C00;
-    --agf-danger: #DC143C;
-    --agf-info: #FFD000;
-    --agf-light: #f8f9fa;
-    --agf-dark: #212529;
+    --NUFOTEC-success: #062C54;
+    --NUFOTEC-secondary: #1a8c78;
+    --NUFOTEC-success: #0F766E;
+    --NUFOTEC-warning: #FF8C00;
+    --NUFOTEC-danger: #DC143C;
+    --NUFOTEC-info: #FFD000;
+    --NUFOTEC-light: #f8f9fa;
+    --NUFOTEC-dark: #212529;
 }
 
 /* Card Styles */
@@ -121,7 +121,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
 }
 
 /* Gradient Backgrounds */
-.bg-gradient-primary {
+.bg-gradient-success {
     background: linear-gradient(135deg, #062C54 0%, #0d4a8c 100%);
 }
 
@@ -187,7 +187,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
     top: 0;
     bottom: 0;
     width: 2px;
-    background: linear-gradient(to bottom, var(--agf-primary), var(--agf-secondary));
+    background: linear-gradient(to bottom, var(--NUFOTEC-success), var(--NUFOTEC-secondary));
 }
 
 .activity-item {
@@ -203,7 +203,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: var(--agf-primary);
+    background: var(--NUFOTEC-success);
     border: 3px solid white;
     box-shadow: 0 0 0 3px rgba(6, 44, 84, 0.1);
 }
@@ -301,7 +301,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
-    background: var(--agf-primary);
+    background: var(--NUFOTEC-success);
     border-radius: 3px;
 }
 
@@ -316,7 +316,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
     justify-content: center;
 }
 
-.bg-soft-primary {
+.bg-soft-success {
     background: rgba(6, 44, 84, 0.1);
 }
 
@@ -344,11 +344,11 @@ $page_title = 'Tableau de Bord AGF - Administration';
             <!-- Header de bienvenue -->
             <div class="row g-3 mb-4">
                 <div class="col-12">
-                    <div class="card border-0 shadow-sm bg-gradient-primary text-white">
+                    <div class="card border-0 shadow-sm bg-gradient-success text-white">
                         <div class="card-body p-4">
                             <div class="row align-items-center">
                                 <div class="col-lg-8">
-                                    <h4 class="mb-1 fw-bold">AGF-PHYTOMED</h4>
+                                    <h4 class="mb-1 fw-bold">NUFOTEC-PHYTOMED</h4>
                                     <p class="mb-0 opacity-75">Excellence Agro-Industrielle</p>
                                     <div class="d-flex gap-4 mt-3">
                                         <div class="d-flex align-items-center gap-2">
@@ -362,7 +362,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                     </div>
                                 </div>
                                 <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                                    <div class="badge bg-white text-primary px-3 py-2 rounded-pill mb-2">
+                                    <div class="badge bg-white text-success px-3 py-2 rounded-pill mb-2">
                                         <i class="bx bx-time me-1"></i> <?= date('d/m/Y H:i') ?>
                                     </div>
                                     <div class="small opacity-75">
@@ -423,7 +423,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                         </span>
                                     </div>
                                 </div>
-                                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                <div class="stat-icon bg-success bg-opacity-10 text-success">
                                     <i class="bx bx-group"></i>
                                 </div>
                             </div>
@@ -502,7 +502,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                     <p class="text-muted mb-1 small text-uppercase fw-bold tracking-wider">Invest. Planifiés</p>
                                     <h2 class="mb-2 fw-bold text-dark"><?= formatMoney($investment_stats['montant_total'] ?? 0, '$') ?></h2>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                                        <span class="badge bg-success bg-opacity-10 text-success">
                                             <i class="bx bx-layer"></i> <?= $investment_stats['total_phases'] ?? 0 ?> phases
                                         </span>
                                     </div>
@@ -525,22 +525,22 @@ $page_title = 'Tableau de Bord AGF - Administration';
                 </div>
             </div>
 
-            <!-- Section AGF Facility & Real-time Stats -->
+            <!-- Section NUFOTEC Facility & Real-time Stats -->
             <div class="row g-3 mb-4">
-                <!-- AGF Facility Stats -->
+                <!-- NUFOTEC Facility Stats -->
                 <div class="col-lg-4">
                     <div class="card shadow-sm h-100 border-0">
                         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-bold text-primary">
-                                <i class="bx bx-building-house me-2"></i>AGF Facility
+                            <h6 class="mb-0 fw-bold text-success">
+                                <i class="bx bx-building-house me-2"></i>NUFOTEC Facility
                             </h6>
-                            <span class="badge bg-primary bg-opacity-10 text-primary small">Live</span>
+                            <span class="badge bg-success bg-opacity-10 text-success small">Live</span>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-6">
                                     <div class="facility-stat">
-                                        <i class="bx bx-area fs-2 text-primary mb-2"></i>
+                                        <i class="bx bx-area fs-2 text-success mb-2"></i>
                                         <h5 class="mb-0 fw-bold"><?= $facility_stats['superficie_hectares'] ?? 50 ?> ha</h5>
                                         <small class="text-muted">Superficie</small>
                                     </div>
@@ -594,7 +594,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                             </div>
                         </div>
                         <div class="col-md-3 col-6">
-                            <div class="card bg-gradient-primary text-white border-0 shadow-sm">
+                            <div class="card bg-gradient-success text-white border-0 shadow-sm">
                                 <div class="card-body p-3 text-center">
                                     <i class="bx bx-show fs-2 mb-2 opacity-75"></i>
                                     <h4 class="mb-1 fw-bold" data-realtime="today_visits"><?= number_format($visitor_analytics['today_visits'] ?? 0) ?></h4>
@@ -628,9 +628,9 @@ $page_title = 'Tableau de Bord AGF - Administration';
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0 fw-bold">Aperçu des revenus (30 jours)</h6>
                                 <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary active" onclick="updateChart('revenue', 7)">7J</button>
-                                    <button class="btn btn-outline-primary" onclick="updateChart('revenue', 30)">30J</button>
-                                    <button class="btn btn-outline-primary" onclick="updateChart('revenue', 90)">90J</button>
+                                    <button class="btn btn-outline-success active" onclick="updateChart('revenue', 7)">7J</button>
+                                    <button class="btn btn-outline-success" onclick="updateChart('revenue', 30)">30J</button>
+                                    <button class="btn btn-outline-success" onclick="updateChart('revenue', 90)">90J</button>
                                 </div>
                             </div>
                             <div class="chart-container" style="height: 200px;">
@@ -698,7 +698,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                     <small class="text-muted">Aujourd'hui</small>
                                 </div>
                                 <div class="text-center flex-grow-1">
-                                    <h4 class="mb-0 fw-bold text-primary"><?= formatMoney($telemedecine_stats['revenue_today'] ?? 0) ?></h4>
+                                    <h4 class="mb-0 fw-bold text-success"><?= formatMoney($telemedecine_stats['revenue_today'] ?? 0) ?></h4>
                                     <small class="text-muted">Revenus</small>
                                 </div>
                             </div>
@@ -723,7 +723,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                 <div class="col-lg-4">
                     <div class="card shadow-sm h-100 border-0">
                         <div class="card-header bg-white border-0 py-3">
-                            <h6 class="mb-0 fw-bold text-primary">
+                            <h6 class="mb-0 fw-bold text-success">
                                 <i class="bx bx-trending-up me-2"></i>Phases d'Investissement
                             </h6>
                         </div>
@@ -733,7 +733,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                     <?php foreach ($investment_stats['phases'] as $phase): ?>
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="small fw-bold"><?= htmlspecialchars($phase['nom_phase'] ?? '') ?></span>
-                                        <span class="badge bg-primary bg-opacity-10 text-primary"><?= formatMoney($phase['montant_total'] ?? 0, $phase['devise'] ?? '$') ?></span>
+                                        <span class="badge bg-success text-white bg-opacity-10 text-success"><?= formatMoney($phase['montant_total'] ?? 0, $phase['devise'] ?? '$') ?></span>
                                     </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
@@ -743,7 +743,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                             <div class="p-3 bg-light rounded-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="small">Total planifié</span>
-                                    <span class="fw-bold text-primary"><?= formatMoney($investment_stats['montant_total'] ?? 0, 'USD') ?></span>
+                                    <span class="fw-bold text-success"><?= formatMoney($investment_stats['montant_total'] ?? 0, 'USD') ?></span>
                                 </div>
                             </div>
                         </div>
@@ -758,7 +758,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                     <div class="card shadow-sm h-100 border-0">
                         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 fw-bold">
-                                <i class="bx bx-user-plus me-2 text-primary"></i>Derniers inscrits
+                                <i class="bx bx-user-plus me-2 text-success"></i>Derniers inscrits
                             </h6>
                             <a href="<?= base_url('Users') ?>" class="btn btn-sm btn-link text-decoration-none">Voir tout</a>
                         </div>
@@ -782,7 +782,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                                         <?php if (!empty($user['photo']) && $user['photo'] != 'default-avatar.png'): ?>
                                                             <img src="<?= base_url('uploads/users/' . $user['photo']) ?>" class="rounded-circle" width="32" height="32" alt="avatar">
                                                         <?php else: ?>
-                                                            <span class="small fw-bold text-primary"><?= strtoupper(substr($user['prenom'] ?? $user['nom'] ?? 'U', 0, 1)) ?></span>
+                                                            <span class="small fw-bold text-success"><?= strtoupper(substr($user['prenom'] ?? $user['nom'] ?? 'U', 0, 1)) ?></span>
                                                         <?php endif; ?>
                                                     </div>
                                                     <div>
@@ -906,7 +906,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                             <div>
                                                 <div class="small fw-bold"><?= htmlspecialchars(($activity['prenom'] ?? '') . ' ' . ($activity['nom'] ?? '')) ?></div>
                                                 <div class="small text-muted"><?= htmlspecialchars($activity['description'] ?? $activity['action'] ?? '') ?></div>
-                                                <div class="text-primary small"><?= timeAgo($activity['created_at'] ?? '') ?></div>
+                                                <div class="text-success small"><?= timeAgo($activity['created_at'] ?? '') ?></div>
                                             </div>
                                             <span class="badge bg-light text-dark small"><?= $activity['module'] ?? 'system' ?></span>
                                         </div>
@@ -951,13 +951,13 @@ $page_title = 'Tableau de Bord AGF - Administration';
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 fw-bold">
-                                <i class="bx bx-chart me-2 text-primary"></i>Analyses détaillées
+                                <i class="bx bx-chart me-2 text-success"></i>Analyses détaillées
                             </h6>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary active" onclick="switchChart('revenue')">Revenus</button>
-                                <button class="btn btn-outline-primary" onclick="switchChart('users')">Utilisateurs</button>
-                                <button class="btn btn-outline-primary" onclick="switchChart('orders')">Commandes</button>
-                                <button class="btn btn-outline-primary" onclick="switchChart('consultations')">Consultations</button>
+                                <button class="btn btn-outline-success active" onclick="switchChart('revenue')">Revenus</button>
+                                <button class="btn btn-outline-success" onclick="switchChart('users')">Utilisateurs</button>
+                                <button class="btn btn-outline-success" onclick="switchChart('orders')">Commandes</button>
+                                <button class="btn btn-outline-success" onclick="switchChart('consultations')">Consultations</button>
                             </div>
                         </div>
                         <div class="card-body">
@@ -997,7 +997,7 @@ Chart.defaults.color = '#6c757d';
 // Données PHP vers JS
 const chartsData = <?= json_encode($charts_data) ?>;
 const themeColors = {
-    primary: '#062C54',
+    success: '#062C54',
     secondary: '#1a8c78',
     success: '#0F766E',
     warning: '#FF8C00',
@@ -1028,7 +1028,7 @@ function initCharts() {
             datasets: [{
                 label: 'Revenus',
                 data: revenueData,
-                borderColor: themeColors.primary,
+                borderColor: themeColors.success,
                 backgroundColor: 'rgba(6, 44, 84, 0.1)',
                 borderWidth: 2,
                 tension: 0.4,
@@ -1066,7 +1066,7 @@ function initCharts() {
             datasets: [{
                 label: 'Revenus (F)',
                 data: chartsData.revenue?.data || [],
-                borderColor: themeColors.primary,
+                borderColor: themeColors.success,
                 backgroundColor: 'rgba(6, 44, 84, 0.05)',
                 borderWidth: 3,
                 tension: 0.4,
@@ -1112,7 +1112,7 @@ function initCharts() {
             datasets: [{
                 data: rolesData,
                 backgroundColor: [
-                    themeColors.primary,
+                    themeColors.success,
                     themeColors.secondary,
                     themeColors.success,
                     themeColors.warning,
@@ -1145,7 +1145,7 @@ function initCharts() {
                 data: statusData,
                 backgroundColor: [
                     themeColors.warning,
-                    themeColors.primary,
+                    themeColors.success,
                     themeColors.success,
                     themeColors.info,
                     themeColors.danger
@@ -1186,7 +1186,7 @@ function switchChart(type) {
     let config = {
         label: '',
         data: [],
-        color: themeColors.primary
+        color: themeColors.success
     };
     
     switch(type) {
@@ -1194,7 +1194,7 @@ function switchChart(type) {
             config = {
                 data: chartsData.revenue?.data || [],
                 label: 'Revenus (F)',
-                color: themeColors.primary
+                color: themeColors.success
             };
             break;
         case 'users':
