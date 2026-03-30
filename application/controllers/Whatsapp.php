@@ -1,11 +1,14 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Contrôleur WhatsApp - Gestion des groupes, participants et envois
+ */
 class Whatsapp extends MY_Controller {
     
     private $jobs_dir;
     private $chunks_dir;
-    private $chunk_size = 1572864; // 1.5 MB exactement
+    private $chunk_size = 1572864; // 1.5 MB
     
     public function __construct() {
         parent::__construct();
@@ -13,23 +16,27 @@ class Whatsapp extends MY_Controller {
         $this->load->model('Groupe_model');
         $this->load->helper(['form', 'url', 'file']);
         
-        // Dossiers
+        // Création des dossiers nécessaires
         $this->jobs_dir = FCPATH . 'uploads/jobs/';
         $this->chunks_dir = FCPATH . 'uploads/chunks/';
         
         foreach ([$this->jobs_dir, $this->chunks_dir] as $dir) {
-            if (!is_dir($dir)) mkdir($dir, 0777, true);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
         }
         
-        // Configuration serveur pour chunks
-        ini_set('max_execution_time', 0); // Illimité
+        // Configuration PHP pour les uploads par chunks
+        ini_set('max_execution_time', 0);
         ini_set('memory_limit', '256M');
-        ini_set('post_max_size', '2M'); // 2M suffit pour un chunk
+        ini_set('post_max_size', '2M');
         ini_set('upload_max_filesize', '2M');
     }
     
+    // ==================== DASHBOARD & GROUPES ====================
+    
     /**
-     * Dashboard
+     * Page d'accueil - Dashboard
      */
     public function index() {
         $data['stats'] = [
@@ -41,7 +48,7 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * Liste des groupes
+     * Liste des groupes WhatsApp
      */
     public function groupes() {
         $data['groupes'] = $this->Groupe_model->get_all_groupes();
@@ -51,10 +58,11 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * Synchroniser avec Whapi
+     * Synchroniser les groupes avec l'API Whapi
      */
     public function synchroniser() {
         $config = $this->config->item('whapi');
+        
         if (empty($config['api_key'])) {
             $this->session->set_flashdata('error', 'Configuration Whapi manquante');
             redirect('whatsapp/groupes');
@@ -89,8 +97,10 @@ class Whatsapp extends MY_Controller {
         redirect('whatsapp/groupes');
     }
     
+    // ==================== ENVOI AUX GROUPES ====================
+    
     /**
-     * Interface d'envoi
+     * Interface d'envoi aux groupes (style WhatsApp)
      */
     public function envoyer() {
         $data['groupes'] = $this->Groupe_model->get_all_groupes();
@@ -99,11 +109,8 @@ class Whatsapp extends MY_Controller {
         $this->load->view('whatsapp/envoyer_whatsapp_style', $data);
     }
     
-    // ==================== UPLOAD PAR CHUNKS ====================
-    
     /**
-     * ✅ CORRECTION: Initialiser l'upload avec support OGG Opus natif
-     * Détecte et préserve le flag voice pour les messages vocaux
+     * Initialiser l'upload par chunks pour groupes
      */
     public function init_chunk_upload() {
         header('Content-Type: application/json');
@@ -123,25 +130,21 @@ class Whatsapp extends MY_Controller {
             return;
         }
         
-        // ✅ CORRECTION: Forcer type audio si MIME type audio ou OGG Opus
+        // Détection du type audio/OGG Opus
         $type_envoi = $input['type_envoi'];
         $filetype = $input['filetype'];
         $filename = $input['filename'];
         
-        // Détection OGG Opus natif (depuis le navigateur)
         $is_ogg_opus = (strpos($filetype, 'audio/ogg') !== false || 
                        strpos($filetype, 'ogg') !== false || 
                        strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'ogg');
         
         if (strpos($filetype, 'audio/') === 0 || $this->is_audio_file($filename) || $is_ogg_opus) {
             $type_envoi = 'audio';
-            log_message('info', "Forçage type audio: $filename | MIME: $filetype | OGG Opus: " . ($is_ogg_opus ? 'OUI' : 'NON'));
         }
         
-        // ✅ NOUVEAU: Détecter si c'est un message vocal natif (OGG Opus du navigateur)
         $is_voice = $is_ogg_opus || !empty($input['voice']);
         
-        // Sauvegarder les métadonnées
         $meta = [
             'upload_id' => $upload_id,
             'filename' => $filename,
@@ -151,30 +154,20 @@ class Whatsapp extends MY_Controller {
             'received_chunks' => [],
             'groupes_ids' => $input['groupes_ids'],
             'message' => $input['message'],
-            'type_envoi' => $type_envoi, // Type corrigé
-            'is_voice' => $is_voice,     // ✅ Flag pour message vocal natif
+            'type_envoi' => $type_envoi,
+            'is_voice' => $is_voice,
             'created_at' => time()
         ];
         
         file_put_contents($upload_dir . 'meta.json', json_encode($meta));
         
-        log_message('info', "Whapi Upload initié: $upload_id - {$input['total_chunks']} chunks, Type: $type_envoi, Voice: " . ($is_voice ? 'true' : 'false') . ", " . 
-                   round($input['filesize']/1024/1024, 2) . " MB");
+        log_message('info', "Upload groupes initié: $upload_id - Type: $type_envoi, Voice: " . ($is_voice ? 'true' : 'false'));
         
         echo json_encode(['success' => true, 'upload_id' => $upload_id]);
     }
     
     /**
-     * Vérifie si c'est un fichier audio par extension
-     */
-    private function is_audio_file($filename) {
-        $audio_exts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma', 'opus', 'weba', 'webm'];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        return in_array($ext, $audio_exts);
-    }
-    
-    /**
-     * Étape 2: Recevoir un chunk
+     * Recevoir un chunk pour groupes
      */
     public function upload_chunk() {
         header('Content-Type: application/json');
@@ -190,15 +183,12 @@ class Whatsapp extends MY_Controller {
             return;
         }
         
-        // Vérifier le chunk
         if (empty($_FILES['chunk_data']) || $_FILES['chunk_data']['error'] !== UPLOAD_ERR_OK) {
             $error = isset($_FILES['chunk_data']) ? $this->get_upload_error($_FILES['chunk_data']['error']) : 'Aucun fichier';
-            log_message('error', "Chunk error: $error");
             echo json_encode(['success' => false, 'error' => 'Chunk invalide: ' . $error]);
             return;
         }
         
-        // Sauvegarder le chunk
         $chunk_path = $upload_dir . 'chunk_' . $chunk_index . '.part';
         
         if (!move_uploaded_file($_FILES['chunk_data']['tmp_name'], $chunk_path)) {
@@ -206,19 +196,12 @@ class Whatsapp extends MY_Controller {
             return;
         }
         
-        // Vérifier la taille
-        $chunk_size = filesize($chunk_path);
-        
-        // Mettre à jour les métadonnées
         $meta_path = $upload_dir . 'meta.json';
         $meta = json_decode(file_get_contents($meta_path), true);
         $meta['received_chunks'][] = $chunk_index;
         $meta['received_chunks'] = array_unique($meta['received_chunks']);
         sort($meta['received_chunks']);
         file_put_contents($meta_path, json_encode($meta));
-        
-        log_message('debug', "Chunk reçu: $upload_id - chunk " . ($chunk_index + 1) . "/$total_chunks (" . 
-                   round($chunk_size/1024, 2) . " KB)");
         
         echo json_encode([
             'success' => true, 
@@ -229,7 +212,7 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * Étape 3: Finaliser et envoyer via Whapi
+     * Finaliser et envoyer aux groupes
      */
     public function finalize_and_send() {
         header('Content-Type: application/json');
@@ -242,7 +225,6 @@ class Whatsapp extends MY_Controller {
             return;
         }
         
-        // Lire les métadonnées
         $meta = json_decode(file_get_contents($upload_dir . 'meta.json'), true);
         
         // Assembler les chunks
@@ -271,32 +253,28 @@ class Whatsapp extends MY_Controller {
         fclose($out);
         
         $final_size = filesize($final_path);
-        
-        // ✅ Vérification OGG Opus natif
         $final_mime = mime_content_type($final_path);
         $is_ogg_opus = (strpos($final_mime, 'audio/ogg') !== false || strpos($final_mime, 'ogg') !== false);
-        
-        log_message('info', "Fichier assemblé: $final_path (" . round($final_size/1024/1024, 2) . " MB) | MIME: $final_mime | OGG Opus: " . ($is_ogg_opus ? 'OUI' : 'NON'));
         
         // Nettoyer les chunks
         array_map('unlink', glob($upload_dir . '*'));
         rmdir($upload_dir);
         
-        // Créer le job et lancer l'envoi Whapi
+        // Créer le job
         $job_id = 'job_' . $upload_id;
         
         $job = [
             'job_id' => $job_id,
             'groupes_ids' => $meta['groupes_ids'],
             'message' => $meta['message'],
-            'type_envoi' => $meta['type_envoi'], // Type déjà corrigé dans init
-            'is_voice' => $meta['is_voice'] ?? false, // ✅ Flag pour message vocal natif
+            'type_envoi' => $meta['type_envoi'],
+            'is_voice' => $meta['is_voice'] ?? false,
             'delai' => 1000,
             'file_info' => [
                 'name' => $meta['filename'],
                 'path' => $final_path,
                 'size' => $final_size,
-                'type' => $final_mime, // ✅ Utilise le MIME réel détecté
+                'type' => $final_mime,
                 'is_ogg_opus' => $is_ogg_opus
             ],
             'status' => 'processing',
@@ -327,8 +305,7 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * ✅ CORRECTION: Traitement asynchrone avec support OGG Opus natif
-     * Passe le flag is_voice à la librairie pour messages vocaux natifs
+     * Traitement asynchrone pour envoi aux groupes
      */
     private function process_job_async($job_id) {
         $job = $this->get_job($job_id);
@@ -338,19 +315,11 @@ class Whatsapp extends MY_Controller {
         $message = $job['message'];
         $type_envoi = $job['type_envoi'];
         $file_info = $job['file_info'];
-        $is_voice = $job['is_voice'] ?? false; // ✅ Récupère le flag
+        $is_voice = $job['is_voice'] ?? false;
         
         $filepath = $file_info ? $file_info['path'] : null;
         
-        // ✅ LOG détaillé pour debug audio
-        if ($type_envoi === 'audio') {
-            log_message('info', "TRAITEMENT AUDIO - Job: $job_id | Fichier: " . ($filepath ? basename($filepath) : 'AUCUN') . 
-                       " | Groupes: " . count($groupes_ids) . " | Voice: " . ($is_voice ? 'true' : 'false') .
-                       " | OGG Opus: " . ($file_info['is_ogg_opus'] ?? false ? 'true' : 'false'));
-        }
-        
         foreach ($groupes_ids as $index => $groupe_id) {
-            // Mettre à jour la progression
             $job['current_group'] = $groupe_id;
             $job['progress'] = round((($index + 1) / count($groupes_ids)) * 100);
             $job['updated_at'] = date('Y-m-d H:i:s');
@@ -363,34 +332,22 @@ class Whatsapp extends MY_Controller {
                 if ($type_envoi === 'texte') {
                     $result = $this->whapi_lib->envoyer_message($groupe_id, $message);
                 } else {
-                    // ✅ CORRECTION: Pour l'audio, utiliser envoyer_fichier_audio avec flag voice
                     if ($type_envoi === 'audio') {
                         $result = $this->whapi_lib->envoyer_fichier_audio($groupe_id, $filepath, $message, $is_voice);
                     } else {
                         $result = $this->whapi_lib->envoyer_fichier($groupe_id, $filepath, $message);
-                    }
-                    
-                    // Log spécial pour audio
-                    if ($type_envoi === 'audio') {
-                        log_message('info', "Résultat envoi audio à $groupe_id: " . ($result['success'] ? 'SUCCÈS' : 'ÉCHEC') . 
-                                   ' | Voice: ' . ($result['is_voice'] ?? 'non') . ' | ' . ($result['error'] ?? 'OK'));
                     }
                 }
                 
                 $success = $result['success'] ?? false;
                 if (!$success) {
                     $error = $result['error'] ?? 'Erreur inconnue';
-                    log_message('error', "Whapi erreur pour $groupe_id: " . $error);
-                } else {
-                    log_message('info', "Message envoyé à $groupe_id via Whapi");
                 }
                 
             } catch (Exception $e) {
                 $error = $e->getMessage();
-                log_message('error', "Exception pour $groupe_id: " . $error);
             }
             
-            // Mettre à jour le résultat
             if ($success) {
                 $job['result']['reussis']++;
             } else {
@@ -401,34 +358,29 @@ class Whatsapp extends MY_Controller {
                 'destinataire_id' => $groupe_id,
                 'statut' => $success ? 'succès' : 'échec',
                 'erreur' => $error,
-                'is_voice' => $is_voice, // ✅ Info pour debug
                 'index' => $index + 1
             ];
             
             $this->save_job($job_id, $job);
             
-            // Délai entre les envois (respecter les limites Whapi)
             if ($index < count($groupes_ids) - 1) {
-                usleep(1000000); // 1 seconde entre chaque groupe
+                usleep(1000000);
             }
         }
         
-        // Finaliser
         $job['status'] = 'completed';
         $job['progress'] = 100;
         $job['current_group'] = null;
         $job['updated_at'] = date('Y-m-d H:i:s');
         $this->save_job($job_id, $job);
         
-        // Nettoyer le fichier après envoi
         if ($filepath && file_exists($filepath)) {
             @unlink($filepath);
-            log_message('info', "Fichier nettoyé: $filepath");
         }
     }
     
     /**
-     * Envoi texte simple (sans chunks)
+     * Envoi texte simple aux groupes
      */
     public function traiter_envoi() {
         header('Content-Type: application/json');
@@ -480,7 +432,7 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * Vérifier le statut d'un job
+     * Vérifier le statut d'un job groupes
      */
     public function check_status($job_id = null) {
         header('Content-Type: application/json');
@@ -505,13 +457,13 @@ class Whatsapp extends MY_Controller {
             'status' => $job['status'],
             'progress' => $job['progress'],
             'current_group' => $job['current_group'],
-            'is_voice' => $job['is_voice'] ?? false, // ✅ Info pour le frontend
+            'is_voice' => $job['is_voice'] ?? false,
             'result' => $job['status'] === 'completed' ? $job['result'] : null
         ]);
     }
     
     /**
-     * Afficher le résultat
+     * Afficher le résultat pour groupes
      */
     public function resultat($job_id = null) {
         $job_id = $job_id ?? $this->input->get('job_id');
@@ -527,7 +479,7 @@ class Whatsapp extends MY_Controller {
                     'success' => ($job['result']['reussis'] ?? 0) > 0,
                     'status_code' => 200,
                     'response' => $job['result'],
-                    'is_voice' => $job['is_voice'] ?? false // ✅ Info pour la vue
+                    'is_voice' => $job['is_voice'] ?? false
                 ];
                 $data['message'] = $job['message'];
                 $data['type_envoi'] = $job['type_envoi'];
@@ -537,17 +489,505 @@ class Whatsapp extends MY_Controller {
         $this->load->view('whatsapp/envoyer_whatsapp_style', $data);
     }
     
+    // ==================== PARTICIPANTS ====================
+    
+    /**
+     * Voir les participants d'un groupe spécifique
+     */
+    public function participants_groupe($group_id = null) {
+        if (!$group_id) {
+            $this->session->set_flashdata('error', 'ID du groupe manquant');
+            redirect('whatsapp/groupes');
+            return;
+        }
+        
+        $group_id = urldecode($group_id);
+        $this->load->model('Participant_model');
+        
+        $result = $this->whapi_lib->get_group_participants($group_id, true);
+        
+        if (!$result['success']) {
+            $participants_db = $this->Participant_model->get_by_groupe($group_id);
+            
+            if (empty($participants_db)) {
+                $this->session->set_flashdata('error', 'Erreur API: ' . $result['error']);
+                redirect('whatsapp/groupes');
+                return;
+            }
+            
+            $data['group'] = [
+                'group_id' => $group_id,
+                'group_name' => 'Données en cache',
+                'participants_count' => count($participants_db)
+            ];
+            $data['participants'] = $participants_db;
+            $data['from_cache'] = true;
+        } else {
+            $data['group'] = $result;
+            $data['participants'] = $result['participants'];
+            $data['sync_stats'] = $result['sync_stats'] ?? null;
+            $data['from_cache'] = false;
+        }
+        
+        $data['groupes'] = $this->Groupe_model->get_all_groupes();
+        $this->load->view('whatsapp/participants_groupe', $data);
+    }
+    
+    /**
+     * Interface d'envoi aux participants (tous les numéros de la BDD)
+     */
+    public function participants_envoyer() {
+        $this->load->model('Participant_model');
+        
+        $data['participants'] = $this->Participant_model->get_all_participants();
+        $data['groupes'] = $this->Groupe_model->get_all_groupes();
+        $data['resultat'] = null;
+        $data['message'] = '';
+        $data['type_envoi'] = 'texte';
+        $data['job_id'] = null;
+        
+        $this->load->view('whatsapp/participants_envoyer', $data);
+    }
+    
+    /**
+     * Synchroniser tous les participants de tous les groupes
+     */
+    public function synchroniser_participants() {
+        $result = $this->whapi_lib->sync_all_groups_with_db();
+        
+        if ($result['success']) {
+            $stats = $result['stats'];
+            $this->session->set_flashdata('success', sprintf(
+                '%d groupes synchronisés: %d nouveaux, %d mis à jour, %d supprimés',
+                $stats['groups'],
+                $stats['inserted'],
+                $stats['updated'],
+                $stats['deleted']
+            ));
+        } else {
+            $this->session->set_flashdata('error', 'Erreur: ' . $result['error']);
+        }
+        
+        redirect('whatsapp/participants_envoyer');
+    }
+    
+    // ==================== ENVOI AUX PARTICIPANTS ====================
+    
+    /**
+     * Initialiser l'upload par chunks pour participants
+     */
+    public function init_chunk_upload_participants() {
+        header('Content-Type: application/json');
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$input || empty($input['upload_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Données invalides']);
+            return;
+        }
+        
+        $upload_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $input['upload_id']);
+        $upload_dir = $this->chunks_dir . $upload_id . '/';
+        
+        if (!mkdir($upload_dir, 0777, true)) {
+            echo json_encode(['success' => false, 'error' => 'Impossible de créer le dossier temporaire']);
+            return;
+        }
+        
+        // Détection type audio
+        $type_envoi = $input['type_envoi'];
+        $filetype = $input['filetype'];
+        $filename = $input['filename'];
+        
+        $is_ogg_opus = (strpos($filetype, 'audio/ogg') !== false || 
+                       strpos($filetype, 'ogg') !== false || 
+                       strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'ogg');
+        
+        if (strpos($filetype, 'audio/') === 0 || $this->is_audio_file($filename) || $is_ogg_opus) {
+            $type_envoi = 'audio';
+        }
+        
+        $is_voice = $is_ogg_opus || !empty($input['voice']);
+        
+        $meta = [
+            'upload_id' => $upload_id,
+            'filename' => $filename,
+            'filesize' => $input['filesize'],
+            'filetype' => $filetype,
+            'total_chunks' => $input['total_chunks'],
+            'received_chunks' => [],
+            'phones' => $input['phones'],
+            'message' => $input['message'],
+            'type_envoi' => $type_envoi,
+            'is_voice' => $is_voice,
+            'created_at' => time()
+        ];
+        
+        file_put_contents($upload_dir . 'meta.json', json_encode($meta));
+        
+        log_message('info', "Upload participants initié: $upload_id - Voice: " . ($is_voice ? 'true' : 'false'));
+        
+        echo json_encode(['success' => true, 'upload_id' => $upload_id]);
+    }
+    
+    /**
+     * Recevoir un chunk pour participants
+     */
+    public function upload_chunk_participants() {
+        header('Content-Type: application/json');
+        
+        $upload_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $this->input->post('upload_id'));
+        $chunk_index = (int)$this->input->post('chunk_index');
+        $total_chunks = (int)$this->input->post('total_chunks');
+        
+        $upload_dir = $this->chunks_dir . $upload_id . '/';
+        
+        if (!is_dir($upload_dir)) {
+            echo json_encode(['success' => false, 'error' => 'Upload non trouvé']);
+            return;
+        }
+        
+        if (empty($_FILES['chunk_data']) || $_FILES['chunk_data']['error'] !== UPLOAD_ERR_OK) {
+            $error = isset($_FILES['chunk_data']) ? $this->get_upload_error($_FILES['chunk_data']['error']) : 'Aucun fichier';
+            echo json_encode(['success' => false, 'error' => 'Chunk invalide: ' . $error]);
+            return;
+        }
+        
+        $chunk_path = $upload_dir . 'chunk_' . $chunk_index . '.part';
+        
+        if (!move_uploaded_file($_FILES['chunk_data']['tmp_name'], $chunk_path)) {
+            echo json_encode(['success' => false, 'error' => 'Erreur sauvegarde chunk']);
+            return;
+        }
+        
+        $meta_path = $upload_dir . 'meta.json';
+        $meta = json_decode(file_get_contents($meta_path), true);
+        $meta['received_chunks'][] = $chunk_index;
+        $meta['received_chunks'] = array_unique($meta['received_chunks']);
+        sort($meta['received_chunks']);
+        file_put_contents($meta_path, json_encode($meta));
+        
+        echo json_encode([
+            'success' => true, 
+            'chunk' => $chunk_index + 1,
+            'total' => $total_chunks,
+            'received' => count($meta['received_chunks'])
+        ]);
+    }
+    
+    /**
+     * Finaliser et envoyer aux participants
+     */
+    public function finalize_and_send_participants() {
+        header('Content-Type: application/json');
+        
+        $upload_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $this->input->post('upload_id'));
+        $upload_dir = $this->chunks_dir . $upload_id . '/';
+        
+        if (!is_dir($upload_dir)) {
+            echo json_encode(['success' => false, 'error' => 'Upload non trouvé']);
+            return;
+        }
+        
+        $meta = json_decode(file_get_contents($upload_dir . 'meta.json'), true);
+        
+        // Assembler les chunks
+        $final_filename = $upload_id . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $meta['filename']);
+        $final_path = $this->jobs_dir . $final_filename;
+        
+        $out = fopen($final_path, 'wb');
+        if (!$out) {
+            echo json_encode(['success' => false, 'error' => 'Impossible de créer le fichier final']);
+            return;
+        }
+        
+        for ($i = 0; $i < $meta['total_chunks']; $i++) {
+            $chunk_path = $upload_dir . 'chunk_' . $i . '.part';
+            
+            if (!file_exists($chunk_path)) {
+                fclose($out);
+                unlink($final_path);
+                echo json_encode(['success' => false, 'error' => 'Chunk manquant: ' . ($i + 1)]);
+                return;
+            }
+            
+            fwrite($out, file_get_contents($chunk_path));
+        }
+        
+        fclose($out);
+        
+        $final_size = filesize($final_path);
+        $final_mime = mime_content_type($final_path);
+        $is_ogg_opus = (strpos($final_mime, 'audio/ogg') !== false || strpos($final_mime, 'ogg') !== false);
+        
+        // Nettoyer les chunks
+        array_map('unlink', glob($upload_dir . '*'));
+        rmdir($upload_dir);
+        
+        // Créer le job
+        $job_id = 'job_participants_' . $upload_id;
+        
+        $job = [
+            'job_id' => $job_id,
+            'phones' => $meta['phones'],
+            'message' => $meta['message'],
+            'type_envoi' => $meta['type_envoi'],
+            'is_voice' => $meta['is_voice'] ?? false,
+            'delai' => 1000,
+            'file_info' => [
+                'name' => $meta['filename'],
+                'path' => $final_path,
+                'size' => $final_size,
+                'type' => $final_mime,
+                'is_ogg_opus' => $is_ogg_opus
+            ],
+            'status' => 'processing',
+            'progress' => 0,
+            'current_phone' => null,
+            'result' => [
+                'total' => count($meta['phones']),
+                'reussis' => 0,
+                'echoues' => 0,
+                'details' => []
+            ],
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $this->save_job($job_id, $job);
+        
+        // Lancer le traitement asynchrone
+        $this->process_job_participants_async($job_id);
+        
+        echo json_encode([
+            'success' => true,
+            'job_id' => $job_id,
+            'file_size' => $final_size,
+            'is_voice' => $job['is_voice'],
+            'mime_type' => $final_mime
+        ]);
+    }
+    
+    /**
+     * Traitement asynchrone pour envoi aux participants
+     */
+    private function process_job_participants_async($job_id) {
+        $job = $this->get_job($job_id);
+        if (!$job) return;
+        
+        $phones = $job['phones'];
+        $message = $job['message'];
+        $type_envoi = $job['type_envoi'];
+        $file_info = $job['file_info'];
+        $is_voice = $job['is_voice'] ?? false;
+        
+        $filepath = $file_info ? $file_info['path'] : null;
+        
+        foreach ($phones as $index => $phone) {
+            $job['current_phone'] = $phone;
+            $job['progress'] = round((($index + 1) / count($phones)) * 100);
+            $job['updated_at'] = date('Y-m-d H:i:s');
+            $this->save_job($job_id, $job);
+            
+            $success = false;
+            $error = null;
+            
+            try {
+                // Formater le numéro pour Whapi
+                $formatted_phone = $this->format_phone_for_whapi($phone);
+                
+                if ($type_envoi === 'texte') {
+                    $result = $this->whapi_lib->envoyer_message($formatted_phone, $message);
+                } else {
+                    if ($type_envoi === 'audio') {
+                        $result = $this->whapi_lib->envoyer_fichier_audio($formatted_phone, $filepath, $message, $is_voice);
+                    } else {
+                        $result = $this->whapi_lib->envoyer_fichier($formatted_phone, $filepath, $message);
+                    }
+                }
+                
+                $success = $result['success'] ?? false;
+                if (!$success) {
+                    $error = $result['error'] ?? 'Erreur inconnue';
+                }
+                
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+            }
+            
+            if ($success) {
+                $job['result']['reussis']++;
+            } else {
+                $job['result']['echoues']++;
+            }
+            
+            $job['result']['details'][] = [
+                'destinataire_id' => $phone,
+                'statut' => $success ? 'succès' : 'échec',
+                'erreur' => $error,
+                'index' => $index + 1
+            ];
+            
+            $this->save_job($job_id, $job);
+            
+            if ($index < count($phones) - 1) {
+                usleep(1000000);
+            }
+        }
+        
+        $job['status'] = 'completed';
+        $job['progress'] = 100;
+        $job['current_phone'] = null;
+        $job['updated_at'] = date('Y-m-d H:i:s');
+        $this->save_job($job_id, $job);
+        
+        if ($filepath && file_exists($filepath)) {
+            @unlink($filepath);
+        }
+    }
+    
+    /**
+     * Envoi texte simple aux participants
+     */
+    public function traiter_envoi_participants() {
+        header('Content-Type: application/json');
+        
+        $phones = $this->input->post('phones');
+        $message = trim($this->input->post('message') ?? '');
+        $type_envoi = $this->input->post('type_envoi') ?: 'texte';
+        
+        if (empty($phones) || !is_array($phones)) {
+            echo json_encode(['success' => false, 'error' => 'Aucun participant sélectionné']);
+            return;
+        }
+        
+        if ($type_envoi === 'texte' && empty($message)) {
+            echo json_encode(['success' => false, 'error' => 'Message requis']);
+            return;
+        }
+        
+        $job_id = 'job_participants_' . uniqid() . '_' . time();
+        
+        $job = [
+            'job_id' => $job_id,
+            'phones' => $phones,
+            'message' => $message,
+            'type_envoi' => $type_envoi,
+            'is_voice' => false,
+            'delai' => 1000,
+            'file_info' => null,
+            'status' => 'processing',
+            'progress' => 0,
+            'result' => [
+                'total' => count($phones),
+                'reussis' => 0,
+                'echoues' => 0,
+                'details' => []
+            ],
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $this->save_job($job_id, $job);
+        $this->process_job_participants_async($job_id);
+        
+        echo json_encode([
+            'success' => true,
+            'job_id' => $job_id,
+            'status' => 'processing'
+        ]);
+    }
+    
+    /**
+     * Vérifier le statut d'un job participants
+     */
+    public function check_status_participants($job_id = null) {
+        header('Content-Type: application/json');
+        
+        $job_id = $job_id ?? $this->input->get('job_id');
+        
+        if (!$job_id) {
+            echo json_encode(['success' => false, 'error' => 'Job ID manquant']);
+            return;
+        }
+        
+        $job = $this->get_job($job_id);
+        
+        if (!$job) {
+            echo json_encode(['success' => false, 'error' => 'Job non trouvé']);
+            return;
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'job_id' => $job_id,
+            'status' => $job['status'],
+            'progress' => $job['progress'],
+            'current_phone' => $job['current_phone'],
+            'is_voice' => $job['is_voice'] ?? false,
+            'result' => $job['status'] === 'completed' ? $job['result'] : null
+        ]);
+    }
+    
+    /**
+     * Afficher le résultat pour participants
+     */
+    public function resultat_participants($job_id = null) {
+        $this->load->model('Participant_model');
+        
+        $job_id = $job_id ?? $this->input->get('job_id');
+        
+        $data['participants'] = $this->Participant_model->get_all_participants();
+        $data['groupes'] = $this->Groupe_model->get_all_groupes();
+        $data['resultat'] = null;
+        $data['job_id'] = $job_id;
+        
+        if ($job_id) {
+            $job = $this->get_job($job_id);
+            if ($job && $job['status'] === 'completed') {
+                $data['resultat'] = [
+                    'success' => ($job['result']['reussis'] ?? 0) > 0,
+                    'status_code' => 200,
+                    'response' => $job['result'],
+                    'is_voice' => $job['is_voice'] ?? false
+                ];
+                $data['message'] = $job['message'];
+                $data['type_envoi'] = $job['type_envoi'];
+            }
+        }
+        
+        $this->load->view('whatsapp/participants_envoyer', $data);
+    }
+    
     // ==================== HELPERS ====================
     
+    /**
+     * Vérifier si c'est un fichier audio par extension
+     */
+    private function is_audio_file($filename) {
+        $audio_exts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma', 'opus', 'weba', 'webm'];
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        return in_array($ext, $audio_exts);
+    }
+    
+    /**
+     * Sauvegarder un job dans un fichier JSON
+     */
     private function save_job($job_id, $job) {
         file_put_contents($this->jobs_dir . $job_id . '.json', json_encode($job, JSON_PRETTY_PRINT));
     }
     
+    /**
+     * Récupérer un job depuis un fichier JSON
+     */
     private function get_job($job_id) {
         $file = $this->jobs_dir . $job_id . '.json';
         return file_exists($file) ? json_decode(file_get_contents($file), true) : null;
     }
     
+    /**
+     * Obtenir le message d'erreur d'upload
+     */
     private function get_upload_error($code) {
         $errors = [
             UPLOAD_ERR_INI_SIZE => 'Fichier trop gros (php.ini)',
@@ -562,7 +1002,22 @@ class Whatsapp extends MY_Controller {
     }
     
     /**
-     * Nettoyage automatique
+     * Formater un numéro de téléphone pour Whapi
+     */
+    private function format_phone_for_whapi($phone) {
+        // Supprimer tous les caractères non numériques
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // Ajouter le suffixe WhatsApp si pas présent
+        if (strpos($phone, '@') === false) {
+            $phone = $phone . '@s.whatsapp.net';
+        }
+        
+        return $phone;
+    }
+    
+    /**
+     * Nettoyage automatique des anciens jobs
      */
     public function cleanup() {
         $now = time();
@@ -591,128 +1046,4 @@ class Whatsapp extends MY_Controller {
         
         echo "Nettoyé: $deleted éléments";
     }
-
-
- /**
- * ✅ MODIFIÉ: Voir les participants (avec sync auto)
- */
-public function participants($group_id = null) {
-    if (!$group_id) {
-        $this->session->set_flashdata('error', 'ID du groupe manquant');
-        redirect('whatsapp/groupes');
-        return;
-    }
-    
-    $group_id = urldecode($group_id);
-    
-    // Charger le modèle
-    $this->load->model('Participant_model');
-    
-    // Appel API avec sauvegarde automatique (save_to_db = true par défaut)
-    $result = $this->whapi_lib->get_group_participants($group_id, true);
-    
-    if (!$result['success']) {
-        // Si échec API, essayer de récupérer depuis la BDD
-        $participants_db = $this->Participant_model->get_by_groupe($group_id);
-        
-        if (empty($participants_db)) {
-            $this->session->set_flashdata('error', 'Erreur API: ' . $result['error'] . ' - Aucune donnée en cache');
-            redirect('whatsapp/groupes');
-            return;
-        }
-        
-        // Utiliser les données en cache
-        $data['group'] = [
-            'group_id' => $group_id,
-            'group_name' => 'Données en cache (API indisponible)',
-            'participants_count' => count($participants_db)
-        ];
-        $data['participants'] = $participants_db;
-        $data['from_cache'] = true;
-        
-        $this->session->set_flashdata('warning', 'Données récupérées du cache local');
-    } else {
-        // Données fraîches de l'API (déjà sauvegardées en BDD)
-        $data['group'] = $result;
-        $data['participants'] = $result['participants'];
-        $data['sync_stats'] = $result['sync_stats'] ?? null;
-        $data['from_cache'] = false;
-    }
-    
-    $data['groupes'] = $this->Groupe_model->get_all_groupes();
-    $this->load->view('whatsapp/participants', $data);
-}
-
-/**
- * ✅ NOUVEAU: Synchronisation manuelle d'un groupe
- */
-public function sync_participants($group_id = null) {
-    if (!$group_id) {
-        $this->session->set_flashdata('error', 'ID du groupe manquant');
-        redirect('whatsapp/groupes');
-        return;
-    }
-    
-    $group_id = urldecode($group_id);
-    
-    // Force la resynchronisation
-    $result = $this->whapi_lib->get_group_participants($group_id, true);
-    
-    if ($result['success']) {
-        $stats = $result['sync_stats'];
-        $this->session->set_flashdata('success', sprintf(
-            'Synchronisé: %d nouveaux, %d mis à jour, %d supprimés',
-            $stats['inserted'],
-            $stats['updated'],
-            $stats['deleted']
-        ));
-    } else {
-        $this->session->set_flashdata('error', 'Erreur: ' . $result['error']);
-    }
-    
-    redirect('whatsapp/participants/' . urlencode($group_id));
-}
-
-/**
- * ✅ MODIFIÉ: Synchronisation complète de tous les groupes
- */
-public function synchroniser_participants() {
-    $result = $this->whapi_lib->sync_all_groups_with_db();
-    
-    if ($result['success']) {
-        $stats = $result['stats'];
-        $this->session->set_flashdata('success', sprintf(
-            '%d groupes synchronisés: %d nouveaux, %d mis à jour, %d supprimés',
-            $stats['groups'],
-            $stats['inserted'],
-            $stats['updated'],
-            $stats['deleted']
-        ));
-    } else {
-        $this->session->set_flashdata('error', 'Erreur: ' . $result['error']);
-    }
-    
-    redirect('whatsapp/groupes');
-}
-
-/**
- * ✅ NOUVEAU: Rechercher un participant par numéro
- */
-public function rechercher_participant() {
-    $query = $this->input->get('q');
-    
-    if (empty($query)) {
-        echo json_encode(['success' => false, 'error' => 'Requête vide']);
-        return;
-    }
-    
-    $this->load->model('Participant_model');
-    $results = $this->Participant_model->rechercher($query);
-    
-    echo json_encode([
-        'success' => true,
-        'count' => count($results),
-        'results' => $results
-    ]);
-}
 }

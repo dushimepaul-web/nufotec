@@ -165,4 +165,19 @@ class Participant_model extends CI_Model {
         }
         return $phone;
     }
+
+    /**
+ * ✅ Récupérer tous les participants avec info groupe
+ */
+public function get_all_participants() {
+    $this->db->select('p.*, g.nom as groupe_name');
+    $this->db->from($this->table . ' p');
+    $this->db->join('groupes_whatsapp g', 'g.groupe_id = p.groupe_id', 'left');
+    $this->db->order_by('p.groupe_id', 'ASC');
+    $this->db->order_by('p.is_creator', 'DESC');
+    $this->db->order_by('p.is_admin', 'DESC');
+    $this->db->order_by('p.profile_name', 'ASC');
+    
+    return $this->db->get()->result();
+}
 }
