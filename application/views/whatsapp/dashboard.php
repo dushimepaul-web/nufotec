@@ -155,7 +155,10 @@
                     <i class="bi bi-speedometer2 me-2"></i> Dashboard
                 </a>
                 <a href="<?= site_url('whatsapp/envoyer') ?>" class="btn btn-light text-start mb-2">
-                    <i class="bi bi-send me-2"></i> Envoyer Message
+                    <i class="bi bi-send me-2"></i> Envoyer Message au groupe
+                </a>
+                <a href="<?= site_url('whatsapp/participants_envoyer') ?>" class="btn btn-light text-start mb-2">
+                    <i class="bi bi-send me-2"></i> Envoyer Message au personne
                 </a>
                 <a href="<?= site_url('whatsapp/groupes') ?>" class="btn btn-light text-start mb-2">
                     <i class="bi bi-people me-2"></i> Groupes
