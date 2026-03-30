@@ -84,9 +84,9 @@ class Participant_model extends CI_Model {
             $stats['deleted'] = $this->db->delete($this->table);
         }
         
-        // Mettre à jour le timestamp de synchronisation du groupe
-        $this->db->where('id_groupe', $groupe_id)
-                 ->update('groupes_whatsapp', ['last_sync' => $now]);
+        // ✅ CORRECTION: Mettre à jour le timestamp du groupe (colonne 'groupe_id' pas 'id_groupe')
+        $this->db->where('groupe_id', $groupe_id)
+                 ->update('groupes_whatsapp', ['updated_at' => $now]);
         
         return $stats;
     }
