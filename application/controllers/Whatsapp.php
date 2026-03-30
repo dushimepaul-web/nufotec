@@ -591,4 +591,128 @@ class Whatsapp extends MY_Controller {
         
         echo "Nettoyé: $deleted éléments";
     }
+
+
+ /**
+ * ✅ MODIFIÉ: Voir les participants (avec sync auto)
+ */
+public function participants($group_id = null) {
+    if (!$group_id) {
+        $this->session->set_flashdata('error', 'ID du groupe manquant');
+        redirect('whatsapp/groupes');
+        return;
+    }
+    
+    $group_id = urldecode($group_id);
+    
+    // Charger le modèle
+    $this->load->model('Participant_model');
+    
+    // Appel API avec sauvegarde automatique (save_to_db = true par défaut)
+    $result = $this->whapi_lib->get_group_participants($group_id, true);
+    
+    if (!$result['success']) {
+        // Si échec API, essayer de récupérer depuis la BDD
+        $participants_db = $this->Participant_model->get_by_groupe($group_id);
+        
+        if (empty($participants_db)) {
+            $this->session->set_flashdata('error', 'Erreur API: ' . $result['error'] . ' - Aucune donnée en cache');
+            redirect('whatsapp/groupes');
+            return;
+        }
+        
+        // Utiliser les données en cache
+        $data['group'] = [
+            'group_id' => $group_id,
+            'group_name' => 'Données en cache (API indisponible)',
+            'participants_count' => count($participants_db)
+        ];
+        $data['participants'] = $participants_db;
+        $data['from_cache'] = true;
+        
+        $this->session->set_flashdata('warning', 'Données récupérées du cache local');
+    } else {
+        // Données fraîches de l'API (déjà sauvegardées en BDD)
+        $data['group'] = $result;
+        $data['participants'] = $result['participants'];
+        $data['sync_stats'] = $result['sync_stats'] ?? null;
+        $data['from_cache'] = false;
+    }
+    
+    $data['groupes'] = $this->Groupe_model->get_all_groupes();
+    $this->load->view('whatsapp/participants', $data);
+}
+
+/**
+ * ✅ NOUVEAU: Synchronisation manuelle d'un groupe
+ */
+public function sync_participants($group_id = null) {
+    if (!$group_id) {
+        $this->session->set_flashdata('error', 'ID du groupe manquant');
+        redirect('whatsapp/groupes');
+        return;
+    }
+    
+    $group_id = urldecode($group_id);
+    
+    // Force la resynchronisation
+    $result = $this->whapi_lib->get_group_participants($group_id, true);
+    
+    if ($result['success']) {
+        $stats = $result['sync_stats'];
+        $this->session->set_flashdata('success', sprintf(
+            'Synchronisé: %d nouveaux, %d mis à jour, %d supprimés',
+            $stats['inserted'],
+            $stats['updated'],
+            $stats['deleted']
+        ));
+    } else {
+        $this->session->set_flashdata('error', 'Erreur: ' . $result['error']);
+    }
+    
+    redirect('whatsapp/participants/' . urlencode($group_id));
+}
+
+/**
+ * ✅ MODIFIÉ: Synchronisation complète de tous les groupes
+ */
+public function synchroniser_participants() {
+    $result = $this->whapi_lib->sync_all_groups_with_db();
+    
+    if ($result['success']) {
+        $stats = $result['stats'];
+        $this->session->set_flashdata('success', sprintf(
+            '%d groupes synchronisés: %d nouveaux, %d mis à jour, %d supprimés',
+            $stats['groups'],
+            $stats['inserted'],
+            $stats['updated'],
+            $stats['deleted']
+        ));
+    } else {
+        $this->session->set_flashdata('error', 'Erreur: ' . $result['error']);
+    }
+    
+    redirect('whatsapp/groupes');
+}
+
+/**
+ * ✅ NOUVEAU: Rechercher un participant par numéro
+ */
+public function rechercher_participant() {
+    $query = $this->input->get('q');
+    
+    if (empty($query)) {
+        echo json_encode(['success' => false, 'error' => 'Requête vide']);
+        return;
+    }
+    
+    $this->load->model('Participant_model');
+    $results = $this->Participant_model->rechercher($query);
+    
+    echo json_encode([
+        'success' => true,
+        'count' => count($results),
+        'results' => $results
+    ]);
+}
 }

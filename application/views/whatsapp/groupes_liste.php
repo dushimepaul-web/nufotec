@@ -207,20 +207,35 @@
                                             </td>
                                             <td class="text-end">
                                                 <div class="btn-group">
+                                                    <!-- ✅ NOUVEAU: Lien vers les participants -->
+                                                    <a href="<?= site_url('whatsapp/participants/' . urlencode($groupe['groupe_id'])) ?>" 
+                                                       class="btn btn-sm btn-info" 
+                                                       title="Voir les participants">
+                                                        <i class="bi bi-people"></i> 
+                                                        <span class="badge bg-light text-info ms-1"><?= $groupe['participants_count'] ?? '?' ?></span>
+                                                    </a>
+                                                    
                                                     <a href="<?= site_url('whatsapp/tester/' . urlencode($groupe['groupe_id'])) ?>" 
                                                        class="btn btn-sm btn-outline-success" 
                                                        onclick="return confirm('Envoyer un message de test à <?= htmlspecialchars($groupe['nom']) ?> ?')"
                                                        title="Test">
                                                         <i class="bi bi-send"></i>
                                                     </a>
+                                                    
                                                     <a href="<?= site_url('whatsapp/envoyer?groupe=' . urlencode($groupe['groupe_id'])) ?>" 
                                                        class="btn btn-sm btn-outline-primary" title="Envoyer message">
                                                         <i class="bi bi-chat-left-text"></i>
                                                     </a>
+                                                    
                                                     <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
                                                         <i class="bi bi-three-dots-vertical"></i>
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li>
+                                                            <a class="dropdown-item" href="<?= site_url('whatsapp/sync_participants/' . urlencode($groupe['groupe_id'])) ?>">
+                                                                <i class="bi bi-arrow-repeat me-2 text-info"></i>Synchroniser participants
+                                                            </a>
+                                                        </li>
                                                         <li>
                                                             <a class="dropdown-item" href="<?= site_url('whatsapp/envoyer?groupe=' . urlencode($groupe['groupe_id']) . '&type=fichier') ?>">
                                                                 <i class="bi bi-paperclip me-2"></i>Envoyer fichier

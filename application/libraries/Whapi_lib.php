@@ -698,4 +698,167 @@ public function envoyer_fichier_audio($groupe_id, $file_path, $caption = '', $is
     // Sinon traitement normal
     return $this->envoyer_fichier($groupe_id, $file_path, $caption);
 }
+
+
+
+/**
+ * ✅ NOUVEAU: Récupérer les participants d'un groupe WhatsApp
+ * Retourne la liste des membres avec leur numéro de téléphone
+ */
+public function get_group_participants($group_id) {
+    // Nettoyer l'ID du groupe (encoder le @ si présent)
+    $group_id = urlencode($group_id);
+    
+    $url = $this->base_url . '/groups/' . $group_id;
+    
+    $result = $this->requete_api('GET', $url);
+    
+    if (!$result['success']) {
+        return array(
+            'success' => false,
+            'error' => $result['error'] ?? 'Erreur récupération groupe',
+            'participants' => []
+        );
+    }
+    
+    // Extraire les participants de la réponse
+    $group_data = $result['response'] ?? [];
+    $participants = $group_data['participants'] ?? [];
+    
+    // Formater les données des participants
+    $formatted_participants = [];
+    foreach ($participants as $participant) {
+        $formatted_participants[] = array(
+            'phone' => $participant['id'],           // Numéro sans le @s.whatsapp.net
+            'number_formatted' => $this->format_phone_number($participant['id']),
+            'rank' => $participant['rank'] ?? 'member', // creator, admin, member
+            'is_admin' => in_array($participant['rank'] ?? '', ['creator', 'admin']),
+            'is_creator' => ($participant['rank'] ?? '') === 'creator'
+        );
+    }
+    
+    log_message('info', 'Groupe ' . $group_id . ': ' . count($formatted_participants) . ' participants récupérés');
+    
+    return array(
+        'success' => true,
+        'group_id' => $group_data['id'] ?? $group_id,
+        'group_name' => $group_data['name'] ?? 'Groupe sans nom',
+        'group_description' => $group_data['description'] ?? '',
+        'participants_count' => count($formatted_participants),
+        'participants' => $formatted_participants,
+        'raw_data' => $group_data // Pour debug
+    );
+}
+
+/**
+ * ✅ NOUVEAU: Récupérer tous les groupes avec leurs participants
+ * Utile pour synchronisation complète
+ */
+/**
+ * ✅ MODIFIÉ: Récupérer les participants avec sauvegarde automatique en BDD
+ */
+public function get_group_participants($group_id, $save_to_db = true) {
+    $group_id_clean = urlencode($group_id);
+    $url = $this->base_url . '/groups/' . $group_id_clean;
+    
+    $result = $this->requete_api('GET', $url);
+    
+    if (!$result['success']) {
+        return array(
+            'success' => false,
+            'error' => $result['error'] ?? 'Erreur récupération groupe',
+            'participants' => []
+        );
+    }
+    
+    $group_data = $result['response'] ?? [];
+    $participants_raw = $group_data['participants'] ?? [];
+    
+    // Formater les participants
+    $formatted_participants = [];
+    foreach ($participants_raw as $p) {
+        $formatted_participants[] = array(
+            'phone' => $p['id'],
+            'number_formatted' => $this->format_phone_number($p['id']),
+            'rank' => $p['rank'] ?? 'member',
+            'is_admin' => in_array($p['rank'] ?? '', ['creator', 'admin']),
+            'is_creator' => ($p['rank'] ?? '') === 'creator',
+            'profile_name' => $p['name'] ?? null
+        );
+    }
+    
+    // ✅ SAUVEGARDE AUTOMATIQUE EN BASE DE DONNÉES
+    if ($save_to_db && !empty($formatted_participants)) {
+        $this->CI->load->model('Participant_model');
+        $stats = $this->CI->Participant_model->synchroniser_groupe(
+            $group_data['id'] ?? $group_id, 
+            $formatted_participants
+        );
+        
+        log_message('info', sprintf(
+            'Participants synchronisés - Groupe: %s | Inserted: %d | Updated: %d | Deleted: %d',
+            $group_id,
+            $stats['inserted'],
+            $stats['updated'],
+            $stats['deleted']
+        ));
+    }
+    
+    return array(
+        'success' => true,
+        'group_id' => $group_data['id'] ?? $group_id,
+        'group_name' => $group_data['name'] ?? 'Groupe sans nom',
+        'participants_count' => count($formatted_participants),
+        'participants' => $formatted_participants,
+        'sync_stats' => $stats ?? null // Retourne les stats de sync
+    );
+}
+
+/**
+ * ✅ MODIFIÉ: Synchroniser tous les groupes avec leurs participants
+ */
+public function sync_all_groups_with_db() {
+    $url = $this->base_url . '/groups?count=100';
+    $result = $this->requete_api('GET', $url);
+    
+    if (!$result['success']) {
+        return array('success' => false, 'error' => $result['error']);
+    }
+    
+    $this->CI->load->model('Participant_model');
+    $groups = $result['response'] ?? [];
+    $total_stats = ['groups' => 0, 'inserted' => 0, 'updated' => 0, 'deleted' => 0];
+    
+    foreach ($groups as $group) {
+        $participants = [];
+        foreach ($group['participants'] ?? [] as $p) {
+            $participants[] = [
+                'phone' => $p['id'],
+                'number_formatted' => $this->format_phone_number($p['id']),
+                'rank' => $p['rank'] ?? 'member',
+                'profile_name' => $p['name'] ?? null
+            ];
+        }
+        
+        $stats = $this->CI->Participant_model->synchroniser_groupe($group['id'], $participants);
+        
+        $total_stats['groups']++;
+        $total_stats['inserted'] += $stats['inserted'];
+        $total_stats['updated'] += $stats['updated'];
+        $total_stats['deleted'] += $stats['deleted'];
+    }
+    
+    log_message('info', sprintf(
+        'Synchronisation complète - Groupes: %d | Inserted: %d | Updated: %d | Deleted: %d',
+        $total_stats['groups'],
+        $total_stats['inserted'],
+        $total_stats['updated'],
+        $total_stats['deleted']
+    ));
+    
+    return array(
+        'success' => true,
+        'stats' => $total_stats
+    );
+}
 }
