@@ -86,7 +86,7 @@ class Participant_model extends CI_Model {
         
         // Mettre à jour le timestamp de synchronisation du groupe
         $this->db->where('id_groupe', $groupe_id)
-                 ->update('whatsapp_groupes', ['last_sync' => $now]);
+                 ->update('groupes_whatsapp', ['last_sync' => $now]);
         
         return $stats;
     }
