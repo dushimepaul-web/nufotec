@@ -186,6 +186,9 @@
                 <a href="<?= site_url('whatsapp/synchroniser') ?>" class="btn btn-light text-start mb-2" onclick="return confirm('Synchroniser les groupes avec WhatsApp ?')">
                     <i class="bi bi-arrow-repeat me-2"></i> Synchroniser
                 </a>
+                <a href="<?= site_url('whatsapp/participants_envoyer') ?>" class="btn btn-light text-start mb-2">
+                    <i class="bi bi-send me-2"></i> Envoyer Message au personne
+                </a>
                 <a href="<?= site_url('whatsapp/logs') ?>" class="btn btn-light text-start mb-2">
                     <i class="bi bi-journal-text me-2"></i> Logs API
                 </a>
