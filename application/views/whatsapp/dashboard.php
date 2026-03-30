@@ -155,10 +155,10 @@
                     <i class="bi bi-speedometer2 me-2"></i> Dashboard
                 </a>
                 <a href="<?= site_url('whatsapp/envoyer') ?>" class="btn btn-light text-start mb-2">
-                    <i class="bi bi-send me-2"></i> Envoyer Message au groupe
+                    <i class="bi bi-send me-2"></i>groupes
                 </a>
                 <a href="<?= site_url('whatsapp/participants_envoyer') ?>" class="btn btn-light text-start mb-2">
-                    <i class="bi bi-send me-2"></i> Envoyer Message au personne
+                    <i class="bi bi-send me-2"></i> Inbox personne
                 </a>
                 <a href="<?= site_url('whatsapp/groupes') ?>" class="btn btn-light text-start mb-2">
                     <i class="bi bi-people me-2"></i> Groupes
@@ -185,9 +185,6 @@
                 
                 <a href="<?= site_url('whatsapp/synchroniser') ?>" class="btn btn-light text-start mb-2" onclick="return confirm('Synchroniser les groupes avec WhatsApp ?')">
                     <i class="bi bi-arrow-repeat me-2"></i> Synchroniser
-                </a>
-                <a href="<?= site_url('whatsapp/participants_envoyer') ?>" class="btn btn-light text-start mb-2">
-                    <i class="bi bi-send me-2"></i> Envoyer Message au personne
                 </a>
                 <a href="<?= site_url('whatsapp/logs') ?>" class="btn btn-light text-start mb-2">
                     <i class="bi bi-journal-text me-2"></i> Logs API
