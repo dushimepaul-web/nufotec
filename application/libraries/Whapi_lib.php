@@ -701,54 +701,6 @@ public function envoyer_fichier_audio($groupe_id, $file_path, $caption = '', $is
 
 
 
-/**
- * ✅ NOUVEAU: Récupérer les participants d'un groupe WhatsApp
- * Retourne la liste des membres avec leur numéro de téléphone
- */
-public function get_group_participants($group_id) {
-    // Nettoyer l'ID du groupe (encoder le @ si présent)
-    $group_id = urlencode($group_id);
-    
-    $url = $this->base_url . '/groups/' . $group_id;
-    
-    $result = $this->requete_api('GET', $url);
-    
-    if (!$result['success']) {
-        return array(
-            'success' => false,
-            'error' => $result['error'] ?? 'Erreur récupération groupe',
-            'participants' => []
-        );
-    }
-    
-    // Extraire les participants de la réponse
-    $group_data = $result['response'] ?? [];
-    $participants = $group_data['participants'] ?? [];
-    
-    // Formater les données des participants
-    $formatted_participants = [];
-    foreach ($participants as $participant) {
-        $formatted_participants[] = array(
-            'phone' => $participant['id'],           // Numéro sans le @s.whatsapp.net
-            'number_formatted' => $this->format_phone_number($participant['id']),
-            'rank' => $participant['rank'] ?? 'member', // creator, admin, member
-            'is_admin' => in_array($participant['rank'] ?? '', ['creator', 'admin']),
-            'is_creator' => ($participant['rank'] ?? '') === 'creator'
-        );
-    }
-    
-    log_message('info', 'Groupe ' . $group_id . ': ' . count($formatted_participants) . ' participants récupérés');
-    
-    return array(
-        'success' => true,
-        'group_id' => $group_data['id'] ?? $group_id,
-        'group_name' => $group_data['name'] ?? 'Groupe sans nom',
-        'group_description' => $group_data['description'] ?? '',
-        'participants_count' => count($formatted_participants),
-        'participants' => $formatted_participants,
-        'raw_data' => $group_data // Pour debug
-    );
-}
 
 /**
  * ✅ NOUVEAU: Récupérer tous les groupes avec leurs participants
