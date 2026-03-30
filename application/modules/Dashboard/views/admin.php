@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 include VIEWPATH . 'includes/backend/Header.php';
 
-// Helper pour les badges de statut (inchangé)
+// Helper pour les badges de statut
 function getStatusBadge($statut, $type = 'default') {
     $configs = [
         'commande' => [
@@ -41,7 +41,8 @@ function getStatusBadge($statut, $type = 'default') {
 
 // Helper pour formater les montants
 function formatMoney($amount, $currency = 'F') {
-    return number_format($amount ?? 0, 0, ',', ' ') . ' ' . $currency;
+    if ($amount === null) $amount = 0;
+    return number_format($amount, 0, ',', ' ') . ' ' . $currency;
 }
 
 // Helper pour formater les dates relatives
@@ -264,6 +265,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
     border-radius: 50%;
     background: #0F766E;
     position: relative;
+    margin: 0 auto;
 }
 
 .pulse-dot::after {
@@ -302,6 +304,25 @@ $page_title = 'Tableau de Bord AGF - Administration';
     background: var(--agf-primary);
     border-radius: 3px;
 }
+
+/* Avatar */
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    background: rgba(6, 44, 84, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-soft-primary {
+    background: rgba(6, 44, 84, 0.1);
+}
+
+.tracking-wider {
+    letter-spacing: 0.5px;
+}
 </style>
 
 <div class="wrapper">
@@ -320,7 +341,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
 
         <div class="page-wrapper px-4 py-4 bg-light">
             
-            <!-- Header de bienvenue (simplifié, sans agf_identity) -->
+            <!-- Header de bienvenue -->
             <div class="row g-3 mb-4">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm bg-gradient-primary text-white">
@@ -332,7 +353,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                     <div class="d-flex gap-4 mt-3">
                                         <div class="d-flex align-items-center gap-2">
                                             <i class="bx bx-map"></i>
-                                            <span>Muyinga, Burundi</span>
+                                            <span>Bujumbura, Burundi</span>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
                                             <i class="bx bx-phone"></i>
@@ -541,7 +562,7 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                 <div class="col-6">
                                     <div class="facility-stat">
                                         <i class="bx bx-flask fs-2 text-warning mb-2"></i>
-                                        <h5 class="mb-0 fw-bold"><?= $facility_stats['lab_equipment'] ? 'Oui' : 'Non' ?></h5>
+                                        <h5 class="mb-0 fw-bold"><?= isset($facility_stats['lab_equipment']) && $facility_stats['lab_equipment'] ? 'Oui' : 'Non' ?></h5>
                                         <small class="text-muted">Lab. R&D</small>
                                     </div>
                                 </div>
@@ -683,12 +704,16 @@ $page_title = 'Tableau de Bord AGF - Administration';
                             </div>
                             <div class="mt-3">
                                 <h6 class="small text-muted mb-2">Par type de consultation</h6>
-                                <?php foreach ($telemedecine_stats['by_type'] ?? [] as $type): ?>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small"><i class="bx bx-video me-1"></i><?= ucfirst($type['type'] ?? 'N/A') ?></span>
-                                    <span class="badge bg-light text-dark"><?= $type['count'] ?? 0 ?></span>
-                                </div>
-                                <?php endforeach; ?>
+                                <?php if (!empty($telemedecine_stats['by_type'])): ?>
+                                    <?php foreach ($telemedecine_stats['by_type'] as $type): ?>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small"><i class="bx bx-video me-1"></i><?= ucfirst($type['type'] ?? 'N/A') ?></span>
+                                        <span class="badge bg-light text-dark"><?= $type['count'] ?? 0 ?></span>
+                                    </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center text-muted small">Aucune donnée</div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -704,12 +729,16 @@ $page_title = 'Tableau de Bord AGF - Administration';
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <?php foreach ($investment_stats['phases'] ?? [] as $phase): ?>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small fw-bold"><?= htmlspecialchars($phase['nom_phase'] ?? '') ?></span>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary"><?= formatMoney($phase['montant_total'] ?? 0, $phase['devise'] ?? '$') ?></span>
-                                </div>
-                                <?php endforeach; ?>
+                                <?php if (!empty($investment_stats['phases'])): ?>
+                                    <?php foreach ($investment_stats['phases'] as $phase): ?>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-bold"><?= htmlspecialchars($phase['nom_phase'] ?? '') ?></span>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary"><?= formatMoney($phase['montant_total'] ?? 0, $phase['devise'] ?? '$') ?></span>
+                                    </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center text-muted small">Aucune phase d'investissement</div>
+                                <?php endif; ?>
                             </div>
                             <div class="p-3 bg-light rounded-3">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -736,37 +765,43 @@ $page_title = 'Tableau de Bord AGF - Administration';
                         <div class="table-responsive custom-scroll">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light">
-                                    <tr>
+                                     <tr>
                                         <th class="ps-3">Utilisateur</th>
                                         <th>Type</th>
                                         <th>Statut</th>
                                         <th class="pe-3">Action</th>
-                                    </tr>
+                                      </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if (!empty($latest_users)): foreach (array_slice($latest_users, 0, 6) as $user): ?>
-                                    <tr class="table-hover-row">
-                                        <td class="ps-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-sm bg-soft-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
-                                                    <span class="small fw-bold text-primary"><?= strtoupper(substr($user['prenom'] ?: $user['nom'], 0, 1)) ?></span>
+                                    <?php if (!empty($latest_users)): ?>
+                                        <?php foreach (array_slice($latest_users, 0, 6) as $user): ?>
+                                        <tr class="table-hover-row">
+                                            <td class="ps-3">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <?php if (!empty($user['photo']) && $user['photo'] != 'default-avatar.png'): ?>
+                                                            <img src="<?= base_url('uploads/users/' . $user['photo']) ?>" class="rounded-circle" width="32" height="32" alt="avatar">
+                                                        <?php else: ?>
+                                                            <span class="small fw-bold text-primary"><?= strtoupper(substr($user['prenom'] ?? $user['nom'] ?? 'U', 0, 1)) ?></span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div>
+                                                        <div class="small fw-bold"><?= htmlspecialchars(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></div>
+                                                        <div class="text-muted" style="font-size: 0.75rem;"><?= htmlspecialchars($user['email'] ?? '') ?></div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div class="small fw-bold"><?= htmlspecialchars(($user['prenom'] ?: '') . ' ' . ($user['nom'] ?: '')) ?></div>
-                                                    <div class="text-muted" style="font-size: 0.75rem;"><?= htmlspecialchars($user['email'] ?: '') ?></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-light text-dark small"><?= $user['type_utilisateur'] ?: 'user' ?></span></td>
-                                        <td><?= getStatusBadge($user['is_active'] ? 'active' : 'inactive', 'user') ?></td>
-                                        <td class="pe-3">
-                                            <a href="<?= base_url('Users/edit/'.$user['id']) ?>" class="btn btn-sm btn-light rounded-circle" data-bs-toggle="tooltip" title="Modifier">
-                                                <i class="bx bx-edit-alt"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; else: ?>
-                                    <tr><td colspan="4" class="text-center py-4 text-muted">Aucun utilisateur récent</td></tr>
+                                            </td>
+                                            <td><span class="badge bg-light text-dark small"><?= $user['type_utilisateur'] ?? 'user' ?></span></td>
+                                            <td><?= getStatusBadge(($user['is_active'] ?? 0) ? 'active' : 'inactive', 'user') ?></td>
+                                            <td class="pe-3">
+                                                <a href="<?= base_url('Users/edit/'.$user['id']) ?>" class="btn btn-sm btn-light rounded-circle" data-bs-toggle="tooltip" title="Modifier">
+                                                    <i class="bx bx-edit-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr><td colspan="4" class="text-center py-4 text-muted">Aucun utilisateur récent</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -786,32 +821,34 @@ $page_title = 'Tableau de Bord AGF - Administration';
                         <div class="table-responsive custom-scroll">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light">
-                                    <tr>
+                                     <tr>
                                         <th class="ps-3">N°</th>
                                         <th>Client</th>
                                         <th>Montant</th>
                                         <th>Statut</th>
                                         <th class="pe-3"></th>
-                                    </tr>
+                                      </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if (!empty($latest_orders)): foreach (array_slice($latest_orders, 0, 6) as $cmd): ?>
-                                    <tr class="table-hover-row">
-                                        <td class="ps-3 fw-bold">#<?= str_pad($cmd['id'] ?: 0, 6, '0', STR_PAD_LEFT) ?></td>
-                                        <td>
-                                            <div class="small"><?= htmlspecialchars(($cmd['prenom'] ?: '') . ' ' . ($cmd['nom'] ?: '')) ?></div>
-                                            <div class="text-muted" style="font-size: 0.75rem;"><?= $cmd['nb_items'] ?: 0 ?> article(s)</div>
-                                        </td>
-                                        <td class="fw-bold"><?= formatMoney($cmd['total_ttc'] ?: 0) ?></td>
-                                        <td><?= getStatusBadge($cmd['statut'] ?: 'en_attente', 'commande') ?></td>
-                                        <td class="pe-3">
-                                            <a href="<?= base_url('Commandes/details/'.$cmd['id']) ?>" class="btn btn-sm btn-light rounded-circle">
-                                                <i class="bx bx-show"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; else: ?>
-                                    <tr><td colspan="5" class="text-center py-4 text-muted">Aucune commande récente</td></tr>
+                                    <?php if (!empty($latest_orders)): ?>
+                                        <?php foreach (array_slice($latest_orders, 0, 6) as $cmd): ?>
+                                        <tr class="table-hover-row">
+                                            <td class="ps-3 fw-bold">#<?= str_pad($cmd['id'] ?? 0, 6, '0', STR_PAD_LEFT) ?></td>
+                                            <td>
+                                                <div class="small"><?= htmlspecialchars(($cmd['prenom'] ?? '') . ' ' . ($cmd['nom'] ?? '')) ?></div>
+                                                <div class="text-muted" style="font-size: 0.75rem;"><?= $cmd['nb_items'] ?? 0 ?> article(s)</div>
+                                            </td>
+                                            <td class="fw-bold"><?= formatMoney($cmd['total_ttc'] ?? 0) ?></td>
+                                            <td><?= getStatusBadge($cmd['statut'] ?? 'en_attente', 'commande') ?></td>
+                                            <td class="pe-3">
+                                                <a href="<?= base_url('Commandes/details/'.$cmd['id']) ?>" class="btn btn-sm btn-light rounded-circle">
+                                                    <i class="bx bx-show"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr><td colspan="5" class="text-center py-4 text-muted">Aucune commande récente</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -832,25 +869,27 @@ $page_title = 'Tableau de Bord AGF - Administration';
                             <a href="<?= base_url('Consultations') ?>" class="btn btn-sm btn-link text-decoration-none">Tout</a>
                         </div>
                         <div class="list-group list-group-flush custom-scroll">
-                            <?php if (!empty($latest_consultations)): foreach (array_slice($latest_consultations, 0, 5) as $cons): ?>
-                            <div class="list-group-item px-3 py-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="small fw-bold"><?= htmlspecialchars(($cons['patient_prenom'] ?: '') . ' ' . ($cons['patient_nom'] ?: '')) ?></div>
-                                        <div class="text-muted small">Dr. <?= htmlspecialchars(($cons['medecin_prenom'] ?: '') . ' ' . ($cons['medecin_nom'] ?: '')) ?></div>
-                                        <div class="text-info small"><i class="bx bx-time me-1"></i><?= timeAgo($cons['date_souhaitee']) ?></div>
+                            <?php if (!empty($latest_consultations)): ?>
+                                <?php foreach (array_slice($latest_consultations, 0, 5) as $cons): ?>
+                                <div class="list-group-item px-3 py-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="small fw-bold"><?= htmlspecialchars(($cons['patient_prenom'] ?? '') . ' ' . ($cons['patient_nom'] ?? '')) ?></div>
+                                            <div class="text-muted small">Dr. <?= htmlspecialchars(($cons['medecin_prenom'] ?? '') . ' ' . ($cons['medecin_nom'] ?? '')) ?></div>
+                                            <div class="text-info small"><i class="bx bx-time me-1"></i><?= timeAgo($cons['date_souhaitee'] ?? '') ?></div>
+                                        </div>
+                                        <?= getStatusBadge($cons['statut'] ?? 'en_attente', 'consultation') ?>
                                     </div>
-                                    <?= getStatusBadge($cons['statut'] ?: 'en_attente', 'consultation') ?>
                                 </div>
-                            </div>
-                            <?php endforeach; else: ?>
-                            <div class="list-group-item text-center py-4 text-muted">Aucune consultation récente</div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="list-group-item text-center py-4 text-muted">Aucune consultation récente</div>
                             <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-                <!-- Stock Faible (vide) & Activité récente -->
+                <!-- Activité récente -->
                 <div class="col-lg-6">
                     <div class="card shadow-sm h-100 border-0">
                         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
@@ -860,19 +899,21 @@ $page_title = 'Tableau de Bord AGF - Administration';
                         </div>
                         <div class="card-body p-0">
                             <div class="activity-timeline custom-scroll p-3">
-                                <?php if (!empty($recent_activities)): foreach (array_slice($recent_activities, 0, 5) as $activity): ?>
-                                <div class="activity-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <div class="small fw-bold"><?= htmlspecialchars(($activity['prenom'] ?: '') . ' ' . ($activity['nom'] ?: '')) ?></div>
-                                            <div class="small text-muted"><?= htmlspecialchars($activity['description'] ?: $activity['action'] ?: '') ?></div>
-                                            <div class="text-primary small"><?= timeAgo($activity['created_at']) ?></div>
+                                <?php if (!empty($recent_activities)): ?>
+                                    <?php foreach (array_slice($recent_activities, 0, 5) as $activity): ?>
+                                    <div class="activity-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="small fw-bold"><?= htmlspecialchars(($activity['prenom'] ?? '') . ' ' . ($activity['nom'] ?? '')) ?></div>
+                                                <div class="small text-muted"><?= htmlspecialchars($activity['description'] ?? $activity['action'] ?? '') ?></div>
+                                                <div class="text-primary small"><?= timeAgo($activity['created_at'] ?? '') ?></div>
+                                            </div>
+                                            <span class="badge bg-light text-dark small"><?= $activity['module'] ?? 'system' ?></span>
                                         </div>
-                                        <span class="badge bg-light text-dark small"><?= $activity['module'] ?: 'system' ?></span>
                                     </div>
-                                </div>
-                                <?php endforeach; else: ?>
-                                <div class="text-center py-4 text-muted">Aucune activité récente</div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center py-4 text-muted">Aucune activité récente</div>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -889,11 +930,15 @@ $page_title = 'Tableau de Bord AGF - Administration';
                                 <i class="bx bx-zap me-2 text-warning"></i>Actions rapides
                             </h6>
                             <div class="d-flex flex-wrap gap-2">
-                                <?php foreach ($quick_actions ?: [] as $action): ?>
-                                <a href="<?= $action['link'] ?>" class="quick-action-btn btn btn-<?= $action['color'] ?> btn-sm shadow-sm">
-                                    <i class="<?= $action['icon'] ?> me-2"></i><?= $action['title'] ?>
-                                </a>
-                                <?php endforeach; ?>
+                                <?php if (!empty($quick_actions)): ?>
+                                    <?php foreach ($quick_actions as $action): ?>
+                                    <a href="<?= $action['link'] ?>" class="quick-action-btn btn btn-<?= $action['color'] ?> btn-sm shadow-sm">
+                                        <i class="<?= $action['icon'] ?> me-2"></i><?= $action['title'] ?>
+                                    </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-muted small">Aucune action rapide disponible</div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -962,141 +1007,161 @@ const themeColors = {
 
 // Mini Chart Revenus
 const revenueMiniCtx = document.getElementById('revenueMiniChart').getContext('2d');
-const revenueMiniChart = new Chart(revenueMiniCtx, {
-    type: 'line',
-    data: {
-        labels: chartsData.revenue?.labels?.slice(-7) || [],
-        datasets: [{
-            label: 'Revenus',
-            data: chartsData.revenue?.data?.slice(-7) || [],
-            borderColor: themeColors.primary,
-            backgroundColor: 'rgba(6, 44, 84, 0.1)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true,
-            pointRadius: 0,
-            pointHoverRadius: 4
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { display: false },
-            y: { 
-                display: true,
-                ticks: {
-                    callback: function(value) {
-                        return value >= 1000000 ? (value/1000000).toFixed(1) + 'M' : 
-                               value >= 1000 ? (value/1000).toFixed(0) + 'k' : value;
-                    },
-                    font: { size: 10 }
-                }
-            }
-        }
-    }
-});
+let revenueMiniChart = null;
 
 // Main Chart
 let currentChart = 'revenue';
-const mainCtx = document.getElementById('mainChart').getContext('2d');
-let mainChart = new Chart(mainCtx, {
-    type: 'line',
-    data: {
-        labels: chartsData.revenue?.labels || [],
-        datasets: [{
-            label: 'Revenus (F)',
-            data: chartsData.revenue?.data || [],
-            borderColor: themeColors.primary,
-            backgroundColor: 'rgba(6, 44, 84, 0.05)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-            mode: 'index',
-            intersect: false,
+let mainChart = null;
+let rolesChart = null;
+let orderStatusChart = null;
+
+// Fonction pour initialiser les graphiques
+function initCharts() {
+    // Mini chart
+    const revenueData = chartsData.revenue?.data?.slice(-7) || [];
+    const revenueLabels = chartsData.revenue?.labels?.slice(-7) || [];
+    
+    revenueMiniChart = new Chart(revenueMiniCtx, {
+        type: 'line',
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Revenus',
+                data: revenueData,
+                borderColor: themeColors.primary,
+                backgroundColor: 'rgba(6, 44, 84, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 4
+            }]
         },
-        plugins: {
-            legend: {
-                position: 'top',
-                align: 'end',
-                labels: { usePointStyle: true, boxWidth: 8 }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return formatMoney(value);
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { 
+                    display: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value >= 1000000 ? (value/1000000).toFixed(1) + 'M' : 
+                                   value >= 1000 ? (value/1000).toFixed(0) + 'k' : value;
+                        },
+                        font: { size: 10 }
                     }
                 }
             }
         }
-    }
-});
+    });
 
-// Roles Doughnut Chart
-const rolesCtx = document.getElementById('rolesChart').getContext('2d');
-new Chart(rolesCtx, {
-    type: 'doughnut',
-    data: {
-        labels: chartsData.roles_distribution?.map(r => r.role) || [],
-        datasets: [{
-            data: chartsData.roles_distribution?.map(r => r.count) || [],
-            backgroundColor: [
-                themeColors.primary,
-                themeColors.secondary,
-                themeColors.success,
-                themeColors.warning,
-                themeColors.info,
-                themeColors.danger
-            ],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: {
-            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+    // Main chart
+    const mainCtx = document.getElementById('mainChart').getContext('2d');
+    mainChart = new Chart(mainCtx, {
+        type: 'line',
+        data: {
+            labels: chartsData.revenue?.labels || [],
+            datasets: [{
+                label: 'Revenus (F)',
+                data: chartsData.revenue?.data || [],
+                borderColor: themeColors.primary,
+                backgroundColor: 'rgba(6, 44, 84, 0.05)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: { usePointStyle: true, boxWidth: 8 }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatMoneyValue(value);
+                        }
+                    }
+                }
+            }
         }
-    }
-});
+    });
 
-// Order Status Pie Chart
-const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
-new Chart(orderStatusCtx, {
-    type: 'pie',
-    data: {
-        labels: chartsData.order_status?.map(s => s.statut) || [],
-        datasets: [{
-            data: chartsData.order_status?.map(s => s.count) || [],
-            backgroundColor: [
-                themeColors.warning,
-                themeColors.primary,
-                themeColors.success,
-                themeColors.info,
-                themeColors.danger
-            ],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+    // Roles Doughnut Chart
+    const rolesCtx = document.getElementById('rolesChart').getContext('2d');
+    const rolesLabels = chartsData.roles_distribution?.map(r => r.role) || [];
+    const rolesData = chartsData.roles_distribution?.map(r => r.count) || [];
+    
+    rolesChart = new Chart(rolesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: rolesLabels,
+            datasets: [{
+                data: rolesData,
+                backgroundColor: [
+                    themeColors.primary,
+                    themeColors.secondary,
+                    themeColors.success,
+                    themeColors.warning,
+                    themeColors.info,
+                    themeColors.danger
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+            }
         }
-    }
-});
+    });
+
+    // Order Status Pie Chart
+    const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    const statusLabels = chartsData.order_status?.map(s => s.statut) || [];
+    const statusData = chartsData.order_status?.map(s => s.count) || [];
+    
+    orderStatusChart = new Chart(orderStatusCtx, {
+        type: 'pie',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusData,
+                backgroundColor: [
+                    themeColors.warning,
+                    themeColors.primary,
+                    themeColors.success,
+                    themeColors.info,
+                    themeColors.danger
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+            }
+        }
+    });
+}
 
 // Fonctions de mise à jour
 function updateChart(type, period) {
@@ -1104,31 +1169,67 @@ function updateChart(type, period) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                revenueMiniChart.data.labels = data.data.labels.slice(-period);
-                revenueMiniChart.data.datasets[0].data = data.data.values;
-                revenueMiniChart.update();
+                const newData = data.data.revenue?.data?.slice(-period) || [];
+                const newLabels = data.data.revenue?.labels?.slice(-period) || [];
+                if (revenueMiniChart) {
+                    revenueMiniChart.data.labels = newLabels;
+                    revenueMiniChart.data.datasets[0].data = newData;
+                    revenueMiniChart.update();
+                }
             }
-        });
+        })
+        .catch(err => console.error('Error updating chart:', err));
 }
 
 function switchChart(type) {
     currentChart = type;
-    const dataMap = {
-        'revenue': { data: chartsData.revenue, label: 'Revenus (F)', color: themeColors.primary },
-        'users': { data: chartsData.users, label: 'Nouveaux utilisateurs', color: themeColors.success },
-        'orders': { data: chartsData.orders, label: 'Commandes', color: themeColors.warning },
-        'consultations': { data: chartsData.consultations, label: 'Consultations', color: themeColors.info }
+    let config = {
+        label: '',
+        data: [],
+        color: themeColors.primary
     };
     
-    const config = dataMap[type];
-    mainChart.data.datasets[0].data = config.data?.data || [];
-    mainChart.data.datasets[0].label = config.label;
-    mainChart.data.datasets[0].borderColor = config.color;
-    mainChart.data.datasets[0].backgroundColor = hexToRgba(config.color, 0.05);
-    mainChart.update();
+    switch(type) {
+        case 'revenue':
+            config = {
+                data: chartsData.revenue?.data || [],
+                label: 'Revenus (F)',
+                color: themeColors.primary
+            };
+            break;
+        case 'users':
+            config = {
+                data: chartsData.users?.data || [],
+                label: 'Nouveaux utilisateurs',
+                color: themeColors.success
+            };
+            break;
+        case 'orders':
+            config = {
+                data: chartsData.orders?.data || [],
+                label: 'Commandes',
+                color: themeColors.warning
+            };
+            break;
+        case 'consultations':
+            config = {
+                data: chartsData.consultations?.data || [],
+                label: 'Consultations',
+                color: themeColors.info
+            };
+            break;
+    }
+    
+    if (mainChart) {
+        mainChart.data.datasets[0].data = config.data;
+        mainChart.data.datasets[0].label = config.label;
+        mainChart.data.datasets[0].borderColor = config.color;
+        mainChart.data.datasets[0].backgroundColor = hexToRgba(config.color, 0.05);
+        mainChart.update();
+    }
     
     // Update active button
-    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+    document.querySelectorAll('#mainChart + .btn-group .btn, .card-header .btn-group .btn').forEach(btn => {
         btn.classList.remove('active');
         if(btn.textContent.toLowerCase().includes(type)) btn.classList.add('active');
     });
@@ -1141,7 +1242,8 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function formatMoney(value) {
+function formatMoneyValue(value) {
+    if (value === null || value === undefined) return '0 F';
     return value >= 1000000 ? (value/1000000).toFixed(1) + 'M F' : 
            value >= 1000 ? (value/1000).toFixed(0) + 'k F' : value + ' F';
 }
@@ -1158,13 +1260,20 @@ setInterval(() => {
                         el.textContent = data.data[key].toLocaleString();
                     }
                 });
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                const lastUpdateEl = document.getElementById('lastUpdate');
+                if (lastUpdateEl) {
+                    lastUpdateEl.textContent = new Date().toLocaleTimeString();
+                }
             }
-        });
+        })
+        .catch(err => console.error('Error fetching realtime stats:', err));
 }, 60000);
 
-// Tooltips
+// Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    
+    // Tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
 });

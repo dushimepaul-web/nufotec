@@ -27,7 +27,12 @@ class Dashboard extends MY_Controller {
         parent::__construct();
         
         $this->load->helper(['security', 'text', 'date', 'number']);
-        $this->load->library(['user_agent', 'form_validation', 'upload', 'cache']);
+        $this->load->library(['user_agent', 'form_validation', 'upload']);
+        
+        // Vérifier si cache library est disponible
+        if (file_exists(APPPATH . 'libraries/Cache.php')) {
+            $this->load->library('cache');
+        }
         
         $this->_update_user_activity();
     }
@@ -38,12 +43,10 @@ class Dashboard extends MY_Controller {
     public function index() {
         $role_slug = $this->session->userdata('role_slug');
 
-        
         $dashboard_map = [
-            'admin'  => 'admin_dashboard',
-            'medecin'=> 'medecin_dashboard',
+            'admin'   => 'admin_dashboard',
+            'medecin' => 'medecin_dashboard',
         ];
-          
           
         if (!isset($dashboard_map[$role_slug])) {
             redirect('Admin');
@@ -58,8 +61,9 @@ class Dashboard extends MY_Controller {
     // ========================================================================
 
     public function admin_dashboard() {
-            is_admin();
-
+        if (!$this->is_admin()) {
+            redirect('Admin');
+        }
 
         $data = [
             'page_title'       => 'Tableau de Bord AGF - Administration',
@@ -100,35 +104,67 @@ class Dashboard extends MY_Controller {
     // ========================================================================
 
     public function medecin_dashboard() {
-        is_medecin();
-       
+        if (!$this->is_medecin()) {
+            redirect('Admin');
+        }
 
         $user_id = $this->session->userdata('user_id');
-        $medecin = $this->db->where('id', $user_id)->get('users')->row();
         
+        // Récupérer les informations du médecin
+        $medecin = $this->db
+            ->select('m.*, u.prenom, u.nom, u.email, u.telephone, u.photo')
+            ->from('medecins m')
+            ->join('users u', 'm.user_id = u.id')
+            ->where('m.user_id', $user_id)
+            ->get()
+            ->row();
         
         if (!$medecin) {
             redirect('Admin');
         }
 
+        // Statistiques des consultations
+        $today = date('Y-m-d');
+        
         $data = [
             'page_title' => 'Mon Espace Médecin',
-            'medecin_id' => $medecin->id,
+            'medecin'    => $medecin,
             'stats' => [
-                'today_appointments'   => $this->db->where('medecin_id', $medecin->id)->where('DATE(date_souhaitee)', date('Y-m-d'))->count_all_results('consultations'),
-                'pending_appointments' => $this->db->where('medecin_id', $medecin->id)->where('statut', 'en_attente')->count_all_results('consultations'),
-                'total_patients'       => $this->db->where('medecin_id', $medecin->id)->count_all_results('consultations')
+                'today_appointments'   => $this->db->where('medecin_id', $medecin->id)
+                                            ->where('DATE(date_souhaitee)', $today)
+                                            ->count_all_results('consultations'),
+                'pending_appointments' => $this->db->where('medecin_id', $medecin->id)
+                                            ->where('statut', 'en_attente')
+                                            ->count_all_results('consultations'),
+                'total_patients'       => $this->db->where('medecin_id', $medecin->id)
+                                            ->count_all_results('consultations'),
+                'completed'            => $this->db->where('medecin_id', $medecin->id)
+                                            ->where('statut', 'terminee')
+                                            ->count_all_results('consultations'),
+                'total_revenue'        => $this->db->select('COALESCE(SUM(honoraires_consultation), 0) as total')
+                                            ->where('medecin_id', $medecin->id)
+                                            ->where('statut', 'terminee')
+                                            ->get('consultations')
+                                            ->row()
+                                            ->total
             ],
             'upcoming' => $this->db->where('medecin_id', $medecin->id)
                                     ->where('date_souhaitee >=', date('Y-m-d H:i:s'))
+                                    ->where_in('statut', ['confirmee', 'en_attente'])
                                     ->order_by('date_souhaitee', 'ASC')
                                     ->limit(10)
                                     ->get('consultations')
+                                    ->result_array(),
+            'recent_patients' => $this->db->select('c.*, u.prenom, u.nom, u.telephone')
+                                    ->from('consultations c')
+                                    ->join('users u', 'c.patient_id = u.id')
+                                    ->where('c.medecin_id', $medecin->id)
+                                    ->order_by('c.created_at', 'DESC')
+                                    ->limit(10)
+                                    ->get()
                                     ->result_array()
         ];
 
-
-        
         $this->load->view('medecin', $data);
     }
 
@@ -137,7 +173,7 @@ class Dashboard extends MY_Controller {
     // ========================================================================
 
     public function moderator_dashboard() {
-        if ($this->session->userdata('role_slug') !== 'admin') {
+        if (!$this->is_admin()) {
             redirect('Dashboard');
         }
         $data['page_title'] = 'Tableau de Bord Modérateur';
@@ -149,7 +185,7 @@ class Dashboard extends MY_Controller {
     }
 
     public function investisseur_dashboard() {
-        if ($this->session->userdata('role_slug') !== 'admin') {
+        if (!$this->is_admin()) {
             redirect('Dashboard');
         }
         $data = [
@@ -160,7 +196,7 @@ class Dashboard extends MY_Controller {
     }
 
     public function broker_dashboard() {
-        if ($this->session->userdata('role_slug') !== 'admin') {
+        if (!$this->is_admin()) {
             redirect('Dashboard');
         }
         $data['page_title'] = 'Tableau de Bord Courtier';
@@ -169,13 +205,17 @@ class Dashboard extends MY_Controller {
     }
 
     public function entreprise_dashboard() {
-        if ($this->session->userdata('role_slug') !== 'admin') {
+        if (!$this->is_admin()) {
             redirect('Dashboard');
         }
         $user_id = $this->session->userdata('user_id');
         $data = [
             'page_title' => 'Espace Entreprise',
-            'orders' => $this->db->where('user_id', $user_id)->order_by('created_at', 'DESC')->limit(10)->get('commandes')->result_array(),
+            'orders' => $this->db->where('user_id', $user_id)
+                                ->order_by('created_at', 'DESC')
+                                ->limit(10)
+                                ->get('commandes')
+                                ->result_array(),
             'stats' => [
                 'total_orders' => $this->db->where('user_id', $user_id)->count_all_results('commandes')
             ]
@@ -184,46 +224,77 @@ class Dashboard extends MY_Controller {
     }
 
     public function patient_dashboard() {
-        if ($this->session->userdata('role_slug') !== 'admin') {
+        if (!$this->is_admin()) {
             redirect('Dashboard');
         }
         $user_id = $this->session->userdata('user_id');
         $data = [
             'page_title' => 'Mon Espace Santé',
-            'upcoming_consultations' => $this->db->where('patient_id', $user_id)->where_in('statut', ['confirmee', 'en_attente'])->order_by('date_souhaitee', 'ASC')->get('consultations')->result_array(),
-            'history' => $this->db->where('patient_id', $user_id)->where('statut', 'terminee')->order_by('date_fin', 'DESC')->limit(5)->get('consultations')->result_array()
+            'upcoming_consultations' => $this->db->where('patient_id', $user_id)
+                                            ->where_in('statut', ['confirmee', 'en_attente'])
+                                            ->order_by('date_souhaitee', 'ASC')
+                                            ->get('consultations')
+                                            ->result_array(),
+            'history' => $this->db->where('patient_id', $user_id)
+                                ->where('statut', 'terminee')
+                                ->order_by('date_fin', 'DESC')
+                                ->limit(5)
+                                ->get('consultations')
+                                ->result_array()
         ];
         $this->load->view('patient', $data);
     }
 
     public function user_dashboard() {
-        if ($this->session->userdata('role_slug') !== 'admin') {
+        if (!$this->is_admin()) {
             redirect('Dashboard');
         }
         $user_id = $this->session->userdata('user_id');
         $data = [
             'page_title' => 'Mon Tableau de Bord',
             'user' => $this->db->where('id', $user_id)->get('users')->row_array(),
-            'recent_orders' => $this->db->where('user_id', $user_id)->order_by('created_at', 'DESC')->limit(5)->get('commandes')->result_array(),
-            'favorites' => $this->db->select('p.*')->from('favoris f')->join('produits p', 'f.produit_id = p.id_produit')->where('f.user_id', $user_id)->get()->result_array()
+            'recent_orders' => $this->db->where('user_id', $user_id)
+                                    ->order_by('created_at', 'DESC')
+                                    ->limit(5)
+                                    ->get('commandes')
+                                    ->result_array(),
+            'favorites' => $this->db->select('p.*')
+                                    ->from('favoris f')
+                                    ->join('produits p', 'f.produit_id = p.id_produit')
+                                    ->where('f.user_id', $user_id)
+                                    ->get()
+                                    ->result_array()
         ];
         $this->load->view('backend/dashboard/user_dashboard', $data);
     }
 
     // ========================================================================
-    // MÉTHODES DE RÉCUPÉRATION DE DONNÉES (inchangées)
+    // MÉTHODES DE RÉCUPÉRATION DE DONNÉES
     // ========================================================================
 
     private function _get_global_stats() {
         $cache_key = 'global_stats_' . date('YmdH');
-        if ($cached = $this->cache->get($cache_key)) return $cached;
+        if (isset($this->cache) && $cached = $this->cache->get($cache_key)) {
+            return $cached;
+        }
+
+        // Statistiques des utilisateurs
+        $total_users = $this->db->where('deleted_at IS NULL', null, false)->count_all_results('users');
+        $active_users = $this->db->where('is_active', 1)->where('deleted_at IS NULL', null, false)->count_all_results('users');
+        $verified_users = $this->db->where('email_verified_at IS NOT NULL', null, false)->count_all_results('users');
+        
+        // Utilisateurs inscrits aujourd'hui
+        $today = date('Y-m-d');
+        $today_users = $this->db->where('DATE(created_at)', $today)
+                                ->where('deleted_at IS NULL', null, false)
+                                ->count_all_results('users');
 
         $stats = [
             'users' => [
-                'total'    => $this->db->where('deleted_at', NULL)->count_all_results('users'),
-                'today'    => $this->_count_today('users'),
-                'active'   => $this->db->where('is_active', 1)->where('deleted_at', NULL)->count_all_results('users'),
-                'verified' => $this->db->where('email_verified_at IS NOT NULL', NULL, FALSE)->count_all_results('users'),
+                'total'    => $total_users,
+                'today'    => $today_users,
+                'active'   => $active_users,
+                'verified' => $verified_users,
                 'by_type'  => $this->_get_users_by_type()
             ],
             'medecins' => [
@@ -247,8 +318,10 @@ class Dashboard extends MY_Controller {
                 'delivered'  => $this->db->where('statut', 'livree')->count_all_results('commandes')
             ],
             'sessions' => [
-                'active_now'   => $this->db->where('is_active', 1)->where('last_activity >=', date('Y-m-d H:i:s', strtotime('-15 minutes')))->count_all_results('user_sessions'),
-                'unique_today' => $this->db->where('date_visite', date('Y-m-d'))->count_all_results('statistiques_visites')
+                'active_now'   => $this->db->where('is_active', 1)
+                                        ->where('last_activity >=', date('Y-m-d H:i:s', strtotime('-15 minutes')))
+                                        ->count_all_results('user_sessions'),
+                'unique_today' => $this->db->where('visit_date', $today)->count_all_results('visitors_logs')
             ],
             'content' => [
                 'actualites' => $this->db->count_all_results('actualites_blog'),
@@ -259,12 +332,18 @@ class Dashboard extends MY_Controller {
             ]
         ];
 
-        $this->cache->save($cache_key, $stats, $this->cache_duration);
+        if (isset($this->cache)) {
+            $this->cache->save($cache_key, $stats, $this->cache_duration);
+        }
         return $stats;
     }
 
     private function _get_facility_stats() {
-        $total_area = $this->db->select_sum('area_m2')->where('node_level', 4)->get('facility_tree')->row()->area_m2 ?? 0;
+        $total_area = $this->db->select_sum('area_m2')
+                              ->where('node_level', 4)
+                              ->get('facility_tree')
+                              ->row()
+                              ->area_m2 ?? 0;
         $hectares = round($total_area / 10000, 2);
 
         $config = $this->_get_agf_config();
@@ -282,11 +361,11 @@ class Dashboard extends MY_Controller {
 
     private function _get_agf_config() {
         $configs = $this->db->where('categorie', 'agf_identity')
-            ->or_where('categorie', 'agf_facility')
-            ->or_where('categorie', 'agf_finance')
-            ->or_where('categorie', 'contact')
-            ->get('configurations')
-            ->result_array();
+                            ->or_where('categorie', 'agf_facility')
+                            ->or_where('categorie', 'agf_finance')
+                            ->or_where('categorie', 'contact')
+                            ->get('configurations')
+                            ->result_array();
         
         $result = [];
         foreach ($configs as $config) {
@@ -296,6 +375,7 @@ class Dashboard extends MY_Controller {
     }
 
     private function _get_financial_metrics() {
+        // Statistiques des commandes
         $order_stats = $this->db->query("
             SELECT 
                 COALESCE(SUM(total_ttc), 0) as total_revenue,
@@ -308,14 +388,18 @@ class Dashboard extends MY_Controller {
             WHERE statut != 'annulee'
         ")->row_array();
 
+        // Statistiques des consultations
         $consultation_stats = $this->db->query("
             SELECT 
-                COALESCE(SUM(honoraires_consultation), 0) as total_revenue,
+                COALESCE(SUM(prix_ttc), 0) as total_revenue,
                 COUNT(*) as total_consultations,
-                COUNT(CASE WHEN statut = 'terminee' THEN 1 END) as completed_consultations
+                COUNT(CASE WHEN statut = 'terminee' THEN 1 END) as completed_consultations,
+                COUNT(CASE WHEN statut = 'en_attente' THEN 1 END) as pending_consultations
             FROM consultations
+            WHERE statut NOT IN ('annulee', 'refusee')
         ")->row_array();
 
+        // Total des investissements planifiés
         $investment_phases = $this->db->select_sum('montant_total')->get('investissement_phases')->row()->montant_total ?? 0;
 
         return [
@@ -325,18 +409,19 @@ class Dashboard extends MY_Controller {
                 'today'           => (float) $order_stats['today_revenue'],
                 'this_month'      => (float) $order_stats['month_revenue'],
                 'total_count'     => (int) $order_stats['total_orders'],
-                'average_order'   => round((float) $order_stats['avg_order_value'], 2)
+                'average_order'   => round((float) ($order_stats['avg_order_value'] ?? 0), 2)
             ],
             'consultations' => [
                 'total_revenue'   => (float) $consultation_stats['total_revenue'],
                 'total_count'     => (int) $consultation_stats['total_consultations'],
-                'completed_count' => (int) $consultation_stats['completed_consultations']
+                'completed_count' => (int) $consultation_stats['completed_consultations'],
+                'pending_count'   => (int) $consultation_stats['pending_consultations']
             ],
             'investments' => [
                 'total_planned'   => (float) $investment_phases
             ],
             'global' => [
-                'total_revenue'   => (float) $order_stats['total_revenue'] + $consultation_stats['total_revenue']
+                'total_revenue'   => (float) $order_stats['total_revenue'] + (float) $consultation_stats['total_revenue']
             ]
         ];
     }
@@ -345,19 +430,21 @@ class Dashboard extends MY_Controller {
         $today = date('Y-m-d');
         $yesterday = date('Y-m-d', strtotime('-1 day'));
 
-        $today_visits = $this->db->where('date_visite', $today)->count_all_results('statistiques_visites');
-        $yesterday_visits = $this->db->where('date_visite', $yesterday)->count_all_results('statistiques_visites');
-        $unique_visitors = $this->db->where('date_visite', $today)->group_by('ip_address')->count_all_results('statistiques_visites');
+        $today_visits = $this->db->where('visit_date', $today)->count_all_results('visitors_logs');
+        $yesterday_visits = $this->db->where('visit_date', $yesterday)->count_all_results('visitors_logs');
+        $unique_visitors = $this->db->where('visit_date', $today)->group_by('ip_address')->count_all_results('visitors_logs');
 
+        // Top pages
         $top_pages = $this->db->query("
             SELECT page, COUNT(*) as views
-            FROM statistiques_visites
-            WHERE date_visite = CURDATE()
+            FROM visitors_logs
+            WHERE visit_date = CURDATE()
             GROUP BY page
             ORDER BY views DESC
             LIMIT 5
         ")->result_array();
 
+        // Sources de trafic
         $referrers = $this->db->query("
             SELECT 
                 CASE 
@@ -367,17 +454,18 @@ class Dashboard extends MY_Controller {
                     ELSE 'Autres'
                 END as source,
                 COUNT(*) as visits
-            FROM statistiques_visites
-            WHERE date_visite = CURDATE()
+            FROM visitors_logs
+            WHERE visit_date = CURDATE()
             GROUP BY source
         ")->result_array();
 
+        // Types d'appareils
         $devices = $this->db->query("
             SELECT 
                 CASE 
-                    WHEN user_agent LIKE '%Mobile%' AND user_agent NOT LIKE '%Tablet%' THEN 'Mobile'
-                    WHEN user_agent LIKE '%Tablet%' THEN 'Tablette'
-                    ELSE 'Desktop'
+                    WHEN device = 'Mobile' THEN 'Mobile'
+                    WHEN device = 'Desktop' THEN 'Desktop'
+                    ELSE 'Autre'
                 END as device_type,
                 COUNT(*) as count
             FROM visitors_logs
@@ -385,6 +473,7 @@ class Dashboard extends MY_Controller {
             GROUP BY device_type
         ")->result_array();
 
+        // Pays visiteurs
         $countries = $this->db->query("
             SELECT country, COUNT(*) as visits 
             FROM visitors_logs 
@@ -408,22 +497,20 @@ class Dashboard extends MY_Controller {
     }
 
     private function _get_ecommerce_stats() {
+        // Catégories et leur nombre de produits
         $categories = $this->db->query("
             SELECT 
-                c.id_categorie as id,
-                c.nom_categorie as nom,
-                c.slug,
-                c.image_url as image,
-                COUNT(p.id_produit) as product_count,
-                COALESCE(SUM(p.nb_favoris), 0) as total_favoris
-            FROM categories c
-            LEFT JOIN produits p ON c.id_categorie = p.id_categorie AND p.est_actif = 1
-            WHERE c.is_active = 1
-            GROUP BY c.id_categorie
+                c.id as id,
+                c.name as nom,
+                COUNT(p.id_produit) as product_count
+            FROM product_categories c
+            LEFT JOIN produits p ON c.id = p.id_categorie AND p.est_actif = 1
+            GROUP BY c.id
             ORDER BY product_count DESC
             LIMIT 6
         ")->result_array();
 
+        // Produits les plus populaires (favoris)
         $top_products = $this->db->query("
             SELECT 
                 p.id_produit as id,
@@ -432,14 +519,15 @@ class Dashboard extends MY_Controller {
                 p.prix_public as prix_ttc,
                 p.image_principale,
                 p.nb_favoris,
-                c.nom_categorie as categorie_nom
+                pc.name as categorie_nom
             FROM produits p
-            LEFT JOIN categories c ON p.id_categorie = c.id_categorie
+            LEFT JOIN product_categories pc ON p.id_categorie = pc.id
             WHERE p.est_actif = 1
             ORDER BY p.nb_favoris DESC
             LIMIT 5
         ")->result_array();
 
+        // Statistiques des paniers
         $cart_stats = $this->db->query("
             SELECT 
                 AVG(total_ttc) as avg_value,
@@ -450,6 +538,7 @@ class Dashboard extends MY_Controller {
             WHERE est_actif = 1
         ")->row_array();
 
+        // Paniers abandonnés
         $abandoned_carts = $this->db->query("
             SELECT COUNT(*) as total
             FROM paniers p
@@ -490,7 +579,7 @@ class Dashboard extends MY_Controller {
                 ->count_all_results('consultations'),
             
             'revenue_today' => $this->db
-                ->select('COALESCE(SUM(honoraires_consultation), 0) as total')
+                ->select('COALESCE(SUM(prix_ttc), 0) as total')
                 ->where('DATE(date_fin)', $today)
                 ->where('statut', 'terminee')
                 ->get('consultations')
@@ -558,6 +647,7 @@ class Dashboard extends MY_Controller {
         $users_data = $this->_get_time_series_count('users', $days);
         $consultations_data = $this->_get_time_series_count('consultations', $days);
 
+        // Distribution des rôles
         $roles_dist = $this->db->query("
             SELECT r.nom as role, COUNT(u.id) as count
             FROM roles r
@@ -566,12 +656,14 @@ class Dashboard extends MY_Controller {
             ORDER BY count DESC
         ")->result_array();
 
+        // Statuts des commandes
         $order_status = $this->db->query("
             SELECT statut, COUNT(*) as count, SUM(total_ttc) as total
             FROM commandes
             GROUP BY statut
         ")->result_array();
 
+        // Types d'utilisateurs
         $user_types = $this->db->query("
             SELECT type_utilisateur, COUNT(*) as count
             FROM users
@@ -677,26 +769,42 @@ class Dashboard extends MY_Controller {
 
     private function _get_system_alerts() {
         $alerts = [];
+        
         $pending_orders = $this->db->where('statut', 'en_attente')->count_all_results('commandes');
         if ($pending_orders > 0) {
             $alerts[] = [
                 'type' => 'warning',
                 'icon' => 'bx bx-cart',
                 'title' => 'Commandes en attente',
-                'message' => "{$pending_orders} commande(s) en attente",
+                'message' => "{$pending_orders} commande(s) en attente de traitement",
                 'link' => base_url('Commandes?statut=en_attente')
             ];
         }
+        
         $pending_consultations = $this->db->where('statut', 'en_attente')->count_all_results('consultations');
         if ($pending_consultations > 0) {
             $alerts[] = [
                 'type' => 'info',
                 'icon' => 'bx bx-calendar',
                 'title' => 'Consultations en attente',
-                'message' => "{$pending_consultations} consultation(s) en attente",
+                'message' => "{$pending_consultations} consultation(s) en attente de confirmation",
                 'link' => base_url('Consultations?statut=en_attente')
             ];
         }
+        
+        $unverified_users = $this->db->where('email_verified_at IS NULL', null, false)
+                                     ->where('is_active', 0)
+                                     ->count_all_results('users');
+        if ($unverified_users > 0) {
+            $alerts[] = [
+                'type' => 'danger',
+                'icon' => 'bx bx-user-x',
+                'title' => 'Utilisateurs non vérifiés',
+                'message' => "{$unverified_users} utilisateur(s) en attente de vérification",
+                'link' => base_url('Users?verified=0')
+            ];
+        }
+        
         return $alerts;
     }
 
@@ -729,11 +837,9 @@ class Dashboard extends MY_Controller {
                 u.nom,
                 u.email,
                 u.telephone,
-                COUNT(cl.id) as nb_items
+                (SELECT COUNT(*) FROM commande_lignes cl WHERE cl.commande_id = cmd.id) as nb_items
             FROM commandes cmd
             JOIN users u ON cmd.user_id = u.id
-            LEFT JOIN commande_lignes cl ON cmd.id = cl.commande_id
-            GROUP BY cmd.id
             ORDER BY cmd.created_at DESC
             LIMIT {$limit}
         ")->result_array();
@@ -759,12 +865,15 @@ class Dashboard extends MY_Controller {
     }
 
     private function _get_low_stock_products($limit = 6) {
+        // Table produits n'a pas de champ stock, retourner tableau vide
         return [];
     }
 
     private function _get_pending_verifications() {
         return [
-            'users_unverified'  => $this->db->where('email_verified_at', NULL)->where('is_active', 0)->count_all_results('users'),
+            'users_unverified'  => $this->db->where('email_verified_at IS NULL', null, false)
+                                            ->where('is_active', 0)
+                                            ->count_all_results('users'),
             'users_inactive'    => $this->db->where('is_active', 0)->count_all_results('users'),
             'produits_inactive' => $this->db->where('est_actif', 0)->count_all_results('produits'),
             'consultations_pending' => $this->db->where('statut', 'en_attente')->count_all_results('consultations')
@@ -783,18 +892,41 @@ class Dashboard extends MY_Controller {
         $user_id = $this->session->userdata('user_id');
         if ($user_id) {
             $this->db->where('id', $user_id)
-                ->update('users', ['last_login_at' => date('Y-m-d H:i:s')]);
+                     ->update('users', ['last_login_at' => date('Y-m-d H:i:s')]);
         }
     }
 
+    // ========================================================================
+    // MÉTHODES DE VÉRIFICATION DES RÔLES
+    // ========================================================================
+
+    private function is_admin() {
+        $role_slug = $this->session->userdata('role_slug');
+        return $role_slug === 'admin';
+    }
+
+    private function is_medecin() {
+        $role_slug = $this->session->userdata('role_slug');
+        return $role_slug === 'medecin';
+    }
+
+    // ========================================================================
+    // API ENDPOINTS
+    // ========================================================================
+
     public function api_stats() {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+        
         $type = $this->input->get('type');
         $response = ['success' => true, 'timestamp' => date('c')];
+        
         switch($type) {
             case 'realtime':
                 $response['data'] = [
                     'online_users' => count($this->_get_online_users()),
-                    'today_visits' => $this->db->where('date_visite', date('Y-m-d'))->count_all_results('statistiques_visites'),
+                    'today_visits' => $this->db->where('visit_date', date('Y-m-d'))->count_all_results('visitors_logs'),
                     'pending_orders' => $this->db->where('statut', 'en_attente')->count_all_results('commandes'),
                     'server_time' => date('H:i:s')
                 ];
@@ -807,13 +939,16 @@ class Dashboard extends MY_Controller {
                 $response['data'] = $this->_get_charts_data();
                 break;
             default:
-                $response = ['success' => false, 'error' => 'Type inconnu'];
+                $response = ['success' => false, 'error' => 'Type de statistique inconnu'];
         }
+        
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
     public function mark_notification_read() {
-        if (!$this->input->is_ajax_request()) show_404();
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
         echo json_encode(['success' => true]);
     }
 }
