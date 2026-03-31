@@ -20,7 +20,7 @@ class Autre extends MY_Controller {
         $filtre = $this->input->get('filtre');
         $types_valides = ['photo', 'book', 'texte', 'link', 'other'];
         
-        $config['base_url'] = base_url('autre/admin_liste');
+        $config['base_url'] = base_url('Autre/admin_liste');
         $config['per_page'] = 12;
         
         if ($filtre && in_array($filtre, $types_valides)) {
@@ -90,7 +90,7 @@ class Autre extends MY_Controller {
                     $this->session->set_flashdata('error', 'Erreur lors de l\'ajout');
                 }
                 
-                redirect('autre/admin_liste');
+                redirect('Autre/admin_liste');
             }
         }
         
