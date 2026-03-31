@@ -166,7 +166,7 @@
             <div class="menu-title">Administration</div>
         </a>
         <ul>
-            <li><a href="<?= base_url('users/Users') ?>" class="<?= $this->uri->segment(1) == 'Users' ? 'active' : '' ?>"><i class='bx bx-user-circle'></i>Utilisateurs</a></li>
+            <li><a href="<?= base_url('users') ?>" class="<?= $this->uri->segment(1) == 'Users' ? 'active' : '' ?>"><i class='bx bx-user-circle'></i>Utilisateurs</a></li>
             <li><a href="<?= base_url('Roles') ?>" class="<?= $this->uri->segment(1) == 'Roles' ? 'active' : '' ?>"><i class='bx bx-lock-alt'></i>Rôles</a></li>
             <li><a href="<?= base_url('Users/Medecins') ?>" class="<?= $this->uri->segment(2) == 'Medecins' ? 'active' : '' ?>"><i class='bx bx-plus-medical'></i>Médecins</a></li>
             <li class="submenu-divider"></li>
