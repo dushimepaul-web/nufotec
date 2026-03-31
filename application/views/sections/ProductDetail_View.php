@@ -967,17 +967,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             const message = [
-                `🛒 *NOUVELLE COMMANDE - ${SITE_NAME}*`,
+                `🛒 *PRODUIT D'INTÉRÊT - ${SITE_NAME}*`,
                 ``,
                 `📦 *PRODUIT*`,
                 `Nom: ${currentProduct.title}`,
-                `Prix: ${currentProduct.price}`,
-                `Référence: #${currentProduct.id}`,
+                `Prix de référence : ${currentProduct.price}`,
                 `Lien: ${currentProduct.url}`,
                 ``,
                 `👤 *CLIENT*`,
                 `Nom: ${formData.name}`,
-                `Téléphone: ${formData.phone}`,
+                `WhatsApp : ${formData.phone}`,
+                `Tél mobile: ${formData.phone}`,
                 `Pays: ${formData.country}`,
                 `Ville: ${formData.city}`,
                 `Adresse: ${formData.address}`,
