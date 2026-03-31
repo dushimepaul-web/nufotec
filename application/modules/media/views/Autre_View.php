@@ -130,7 +130,7 @@
             </div>
         </div>
     </div>
-</div>
+
 
 <!-- Modal Upload -->
 <div class="modal fade" id="uploadModal" tabindex="-1">
