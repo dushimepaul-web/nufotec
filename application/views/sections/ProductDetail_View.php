@@ -871,17 +871,17 @@ include VIEWPATH.'includes/frontend/Header.php';
 
             <div class="d-flex gap-2 flex-wrap">
                 
-                <!-- WhatsApp avec CURRENT URL + retour à la ligne -->
-<a href="https://wa.me/25779666439?text=<?= urlencode(
-    "Bonjour, je souhaite connaître le prix réel de ANTIMICROBIAL.\n\n" .
-    "Source: NUFOTEC.COM\n" .
-    "Produit: ANTIMICROBIAL\n" .
-    "Lien du produit: " . current_url()
-) ?>" 
-   class="btn btn-sm btn-success" 
-   target="_blank">
-    <i class="bx bxl-whatsapp me-1"></i> WhatsApp
-</a>
+                <!-- WhatsApp avec le NOM RÉEL DU PRODUIT et CURRENT URL -->
+                <a href="https://wa.me/25779666439?text=<?= urlencode(
+                    "Bonjour, je souhaite connaître le prix réel de " . htmlspecialchars($product['title'] ?? 'ce produit') . ".\n\n" .
+                    "Source: www.nufotec.com\n" .
+                    "Produit: " . htmlspecialchars($product['title'] ?? '') . "\n" .
+                    "Lien du produit: " . current_url()
+                ) ?>" 
+                   class="btn btn-sm btn-success" 
+                   target="_blank">
+                    <i class="bx bxl-whatsapp me-1"></i> WhatsApp
+                </a>
 
                 <!-- Fermer -->
                 <button type="button" class="btn btn-sm btn-warning ms-auto" data-bs-dismiss="toast">
@@ -891,7 +891,6 @@ include VIEWPATH.'includes/frontend/Header.php';
         </div>
     </div>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const toastEl = document.getElementById('priceToast');
