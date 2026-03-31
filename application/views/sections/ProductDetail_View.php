@@ -866,7 +866,7 @@ include VIEWPATH.'includes/frontend/Header.php';
         <div class="toast-body">
             <p class="mb-2">
                 ⚠️  
-                <strong class="text-warning">Contactez-nous pour le prix réel.</strong>
+                <strong class="text-warning">Veuillez nous contacter via WhatsApp (+257) 79 666 439 ou Email nufotecburundi2026@gmail.com pour connaitre le prix actualisé</strong>
             </p>
 
             <div class="d-flex gap-2 flex-wrap">
