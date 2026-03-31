@@ -110,8 +110,6 @@
                             <ul class="footer-links">
                                 <li><a href="<?= base_url() ?>">Accueil</a></li>
                                 <li><a href="<?= base_url('a-propos') ?>">À Propos</a></li>
-                                <li><a href="<?= base_url('boutique') ?>">Boutique</a></li>
-                                <li><a href="<?= base_url('Medicins') ?>">Téléconsultation</a></li>
                                 <li><a href="<?= base_url('investissement') ?>">Investissement</a></li>
                                 <li><a href="<?= base_url('Home/Media') ?>">Médias</a></li>
                                 <li><a href="<?= base_url('Home/Contact') ?>">Contact</a></li>
@@ -136,15 +134,15 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="<?= base_url('boutique') ?>">
+                                    <a href="<?= base_url('Products') ?>">
                                         <i class="bi bi-shop"></i>
                                         Vente de Produits
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="<?= base_url('investissement') ?>">
+                                    <a href="<?= base_url('Investors-form') ?>">
                                         <i class="bi bi-graph-up-arrow"></i>
-                                        Recherche d'Investissement
+                                        Investir
                                     </a>
                                 </li>
                             </ul>

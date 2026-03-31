@@ -3,8 +3,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Autre Controller - Gestion des médias divers
- * Upload chunked 1.5MB, miniatures modifiables, interface moderne
- * Version: 4.0 - Style YouTube Studio
+ * Upload chunked 5MB, miniatures automatiques selon type
+ * Version: 4.1 - Miniatures simplifiées
  */
 class Autre extends MX_Controller {
 
@@ -18,7 +18,6 @@ class Autre extends MX_Controller {
         parent::__construct();
         
         $this->_csrf_off();
-        
         $this->initializePaths();
         $this->initializeConfig();
         $this->checkGDAvailability();
@@ -27,12 +26,16 @@ class Autre extends MX_Controller {
         $this->load->model('media/Model_media', 'Model');
     }
 
+    // ==================== DÉSACTIVATION CSRF ====================
+
     private function _csrf_off()
     {
         if ($this->input->is_ajax_request() || $this->input->server('REQUEST_METHOD') === 'POST') {
             $this->config->set_item('csrf_protection', FALSE);
         }
     }
+
+    // ==================== INITIALISATION ====================
 
     private function initializePaths()
     {
@@ -41,16 +44,14 @@ class Autre extends MX_Controller {
             'temp'       => $base . 'uploads/temp/autre/',
             'files'      => $base . 'attachments/Autre/Files/',
             'thumbnails' => $base . 'attachments/Autre/Thumbnails/',
-            'custom'     => $base . 'attachments/Autre/Thumbnails/Custom/',
         ];
     }
 
     private function initializeConfig()
     {
-        // CHUNK SIZE 1.5 MB = 1.5 * 1024 * 1024 = 1572864 bytes
         $this->upload_config = [
-            'chunk_size'    => 1572864,  // 1.5 MB chunks
-            'max_file_size' => 2 * 1024 * 1024 * 1024, // 2GB max
+            'chunk_size'    => 5 * 1024 * 1024,
+            'max_file_size' => 2 * 1024 * 1024 * 1024,
         ];
 
         $this->type_configs = [
@@ -116,21 +117,32 @@ class Autre extends MX_Controller {
         }
     }
 
+    // ==================== FONCTIONS SLUG (inchangées) ====================
+
     private function generateSlug($title, $id = null)
     {
         $slug = strtolower(trim($title));
-        if (empty($slug)) $slug = 'media';
+        if (empty($slug)) {
+            $slug = 'media';
+        }
         
         $replacements = [
-            ' ' => '-', "'" => '-', '"' => '-',
+            ' ' => '-',
+            "'" => '-',
+            '"' => '-',
             'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
             'à' => 'a', 'â' => 'a', 'ä' => 'a',
-            'î' => 'i', 'ï' => 'i', 'ô' => 'o', 'ö' => 'o',
-            'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ç' => 'c',
-            '/' => '-', '\\' => '-', '&' => 'et', '?' => '', '!' => '',
-            '.' => '-', ',' => '-', ';' => '-', ':' => '-', '(' => '', ')' => '',
-            '[' => '', ']' => '', '{' => '', '}' => '', '+' => '-', '*' => '',
-            '#' => '', '@' => '', '%' => '', '^' => '', '=' => '-'
+            'î' => 'i', 'ï' => 'i',
+            'ô' => 'o', 'ö' => 'o',
+            'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c',
+            'œ' => 'oe',
+            '/' => '-', '\\' => '-', '&' => 'et',
+            '?' => '', '!' => '', '.' => '-', ',' => '-',
+            ';' => '-', ':' => '-', '(' => '', ')' => '',
+            '[' => '', ']' => '', '{' => '', '}' => '',
+            '+' => '-', '*' => '', '#' => '', '@' => '',
+            '%' => '', '^' => '', '=' => '-'
         ];
         
         foreach ($replacements as $search => $replace) {
@@ -146,7 +158,10 @@ class Autre extends MX_Controller {
             $slug = preg_replace('/-+$/', '', $slug);
         }
         
-        if ($id) $slug = $slug . '-' . $id;
+        if ($id) {
+            $slug = $slug . '-' . $id;
+        }
+        
         return $slug;
     }
 
@@ -175,8 +190,11 @@ class Autre extends MX_Controller {
                 }
             }
         }
+        
         return $slug;
     }
+
+    // ==================== VUE PRINCIPALE ====================
 
     public function index()
     {
@@ -185,6 +203,8 @@ class Autre extends MX_Controller {
         foreach ($items as &$item) {
             $item['taille_formatee'] = !empty($item['taille']) ? $this->formatBytes($item['taille']) : '-';
             $item['type_config'] = $this->type_configs[$item['sous_type'] ?? 'other'] ?? $this->type_configs['other'];
+            // Ajouter l'URL de miniature pour la vue
+            $item['thumbnail_url'] = $this->getThumbnailUrl($item);
         }
 
         $data = [
@@ -196,6 +216,101 @@ class Autre extends MX_Controller {
         
         $this->load->view('Autre_View', $data);
     }
+
+    // ==================== NOUVELLE FONCTION: Get Thumbnail URL ====================
+
+    /**
+     * Génère l'URL de miniature selon le type - LOGIQUE SIMPLIFIÉE
+     */
+    private function getThumbnailUrl($item)
+    {
+        $sous_type = $item['sous_type'] ?? 'other';
+        
+        // 1. LIEN: YouTube = miniature YouTube, sinon favicon
+        if ($sous_type === 'link') {
+            return $this->extractLinkThumb($item['lien'] ?? '');
+        }
+        
+        // 2. IMAGE: l'image elle-même sert de miniature
+        if ($sous_type === 'photo') {
+            if (!empty($item['fichier'])) {
+                return base_url($item['fichier']);
+            }
+        }
+        
+        // 3. PDF/BOOK: icône PDF
+        if ($sous_type === 'book') {
+            return base_url('assets/images/pdf-default.png');
+        }
+        
+        // 4. TEXTE: icône texte
+        if ($sous_type === 'texte') {
+            return base_url('assets/images/text-default.png');
+        }
+        
+        // 5. AUTRE: icône selon extension
+        if ($sous_type === 'other') {
+            $ext = strtolower(pathinfo($item['fichier'] ?? '', PATHINFO_EXTENSION));
+            return base_url($this->getFileIcon($ext));
+        }
+        
+        // Fallback
+        return base_url('assets/images/file-default.png');
+    }
+
+    /**
+     * Extrait la miniature d'un lien (YouTube, Vimeo, ou favicon)
+     */
+    private function extractLinkThumb($url)
+    {
+        if (empty($url)) {
+            return base_url('assets/images/link-default.png');
+        }
+        
+        // YouTube
+        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
+            return "https://img.youtube.com/vi/{$m[1]}/mqdefault.jpg";
+        }
+        
+        // Vimeo
+        if (preg_match('/vimeo\.com\/(\d+)/', $url, $m)) {
+            return "https://vumbnail.com/{$m[1]}.jpg";
+        }
+        
+        // Favicon pour autres liens
+        $domain = parse_url($url, PHP_URL_HOST);
+        if ($domain) {
+            return "https://www.google.com/s2/favicons?domain={$domain}&sz=128";
+        }
+        
+        return base_url('assets/images/link-default.png');
+    }
+
+    /**
+     * Icône selon extension de fichier
+     */
+    private function getFileIcon($ext)
+    {
+        $icons = [
+            'pdf'  => 'assets/images/pdf-default.png',
+            'doc'  => 'assets/images/doc-default.png',
+            'docx' => 'assets/images/doc-default.png',
+            'xls'  => 'assets/images/xls-default.png',
+            'xlsx' => 'assets/images/xls-default.png',
+            'ppt'  => 'assets/images/ppt-default.png',
+            'pptx' => 'assets/images/ppt-default.png',
+            'zip'  => 'assets/images/zip-default.png',
+            'rar'  => 'assets/images/zip-default.png',
+            'mp3'  => 'assets/images/audio-default.png',
+            'mp4'  => 'assets/images/video-default.png',
+            'avi'  => 'assets/images/video-default.png',
+            'mkv'  => 'assets/images/video-default.png',
+        ];
+        
+        return $icons[$ext] ?? 'assets/images/file-default.png';
+    }
+
+    // ==================== API UPLOAD (simplifié) ====================
 
     public function initUpload()
     {
@@ -219,14 +334,20 @@ class Autre extends MX_Controller {
         $config = $this->type_configs[$sous_type];
         
         if ($config['max_size'] > 0 && $file_size > $config['max_size']) {
-            echo json_encode(['success' => false, 'message' => 'Fichier trop grand. Max: ' . $this->formatBytes($config['max_size'])]);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Fichier trop grand. Max: ' . $this->formatBytes($config['max_size'])
+            ]);
             return;
         }
 
         if ($config['accept'] && $config['accept'] !== '*') {
             $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
             if (!in_array($ext, $config['accept'])) {
-                echo json_encode(['success' => false, 'message' => 'Format non supporté: ' . $ext]);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Format non supporté: ' . $ext
+                ]);
                 return;
             }
         }
@@ -239,7 +360,6 @@ class Autre extends MX_Controller {
             return;
         }
 
-        // Calcul du nombre de chunks avec chunk size 1.5 MB
         $total_chunks = (int)ceil($file_size / $this->upload_config['chunk_size']);
         
         $metadata = [
@@ -256,11 +376,12 @@ class Autre extends MX_Controller {
         file_put_contents($temp_dir . 'metadata.json', json_encode($metadata));
 
         echo json_encode([
-            'success' => true, 
-            'upload_id' => $upload_id, 
-            'chunk_size' => $this->upload_config['chunk_size'], 
+            'success'      => true,
+            'upload_id'    => $upload_id,
+            'chunk_size'   => $this->upload_config['chunk_size'],
             'total_chunks' => $total_chunks
         ]);
+        return;
     }
 
     public function uploadChunk()
@@ -293,21 +414,23 @@ class Autre extends MX_Controller {
                 sort($metadata['uploaded_chunks']);
                 file_put_contents($metadata_file, json_encode($metadata));
             }
+            
             $uploaded = count($metadata['uploaded_chunks']);
             echo json_encode([
-                'success' => true, 
-                'message' => 'Chunk déjà présent', 
+                'success'  => true,
+                'message'  => 'Chunk déjà présent',
                 'progress' => [
-                    'uploaded_chunks' => $uploaded, 
-                    'total_chunks' => $metadata['total_chunks'], 
-                    'percent' => round(($uploaded / $metadata['total_chunks']) * 100, 2)
+                    'uploaded_chunks' => $uploaded,
+                    'total_chunks'    => $metadata['total_chunks'],
+                    'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
                 ]
             ]);
             return;
         }
 
         if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(['success' => false, 'message' => 'Erreur chunk']);
+            $error = $_FILES['chunk']['error'] ?? 'unknown';
+            echo json_encode(['success' => false, 'message' => 'Erreur chunk: ' . $error]);
             return;
         }
 
@@ -322,14 +445,15 @@ class Autre extends MX_Controller {
 
         $uploaded = count($metadata['uploaded_chunks']);
         echo json_encode([
-            'success' => true, 
-            'message' => 'Chunk reçu', 
+            'success'  => true,
+            'message'  => 'Chunk reçu',
             'progress' => [
-                'uploaded_chunks' => $uploaded, 
-                'total_chunks' => $metadata['total_chunks'], 
-                'percent' => round(($uploaded / $metadata['total_chunks']) * 100, 2)
+                'uploaded_chunks' => $uploaded,
+                'total_chunks'    => $metadata['total_chunks'],
+                'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
             ]
         ]);
+        return;
     }
 
     public function completeUpload()
@@ -354,11 +478,20 @@ class Autre extends MX_Controller {
 
         $metadata = json_decode(file_get_contents($metadata_file), true);
 
+        $missing = [];
         for ($i = 0; $i < $metadata['total_chunks']; $i++) {
             if (!file_exists($temp_dir . 'chunk_' . $i)) {
-                echo json_encode(['success' => false, 'message' => 'Chunks manquants']);
-                return;
+                $missing[] = $i;
             }
+        }
+
+        if (!empty($missing)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Chunks manquants',
+                'missing' => $missing
+            ]);
+            return;
         }
 
         $safe_name     = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($metadata['file_name'], PATHINFO_FILENAME));
@@ -382,174 +515,28 @@ class Autre extends MX_Controller {
         @rmdir($temp_dir);
 
         $sous_type = $metadata['sous_type'];
-        $processing = $this->processFile($original_path, $original_name, $sous_type);
-
-        $thumbnail_obj = new stdClass();
-        if (!empty($processing['thumbnail'])) {
-            $thumbnail_obj->generated = $processing['thumbnail'];
-        }
-
+        
+        // Retourner les données pour le frontend
+        $file_url = 'attachments/Autre/Files/' . $original_name;
+        
         echo json_encode([
             'success' => true,
             'message' => 'Upload complété',
             'data'    => [
-                'original_file'  => 'attachments/Autre/Files/' . $original_name,
+                'original_file'  => $file_url,
                 'file_name'      => $original_name,
                 'file_size'      => $this->formatBytes(filesize($original_path)),
                 'sous_type'      => $sous_type,
-                'thumbnails'     => $thumbnail_obj,
-                'extra_data'     => $processing['extra'] ?? null,
                 'form_suggestions' => [
                     'titre'     => $this->suggestTitle($metadata['file_name']),
                     'categorie' => $this->suggestCategory($sous_type)
                 ]
             ]
         ]);
+        return;
     }
 
-    public function uploadThumbnail()
-    {
-        $this->_csrf_off();
-        $this->output->set_content_type('application/json');
-        
-        if (empty($_FILES['thumbnail_file']) || $_FILES['thumbnail_file']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(['success' => false, 'message' => 'Aucun fichier reçu']);
-            return;
-        }
-
-        $file = $_FILES['thumbnail_file'];
-        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $valid_ext = ['gif', 'jpg', 'png', 'jpeg', 'webp', 'svg'];
-
-        if (!in_array($file_extension, $valid_ext)) {
-            echo json_encode(['success' => false, 'message' => 'Format non supporté']);
-            return;
-        }
-
-        if (!is_dir($this->paths['custom'])) {
-            mkdir($this->paths['custom'], 0777, TRUE);
-        }
-
-        $code = date("YmdHis") . uniqid();
-        $final_filename = $code . "." . $file_extension;
-        $destination = $this->paths['custom'] . $final_filename;
-        
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur déplacement']);
-            return;
-        }
-
-        if ($this->gd_available) {
-            $this->resizeThumbnail($destination, 800, 800);
-        }
-
-        $relative_path = 'attachments/Autre/Thumbnails/Custom/' . $final_filename;
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Miniature uploadée',
-            'file_path' => $relative_path,
-            'preview_url' => base_url($relative_path)
-        ]);
-    }
-
-    private function resizeThumbnail($file_path, $max_width, $max_height)
-    {
-        if (!$this->gd_available) return;
-        
-        list($width, $height, $type) = getimagesize($file_path);
-        if ($width <= $max_width && $height <= $max_height) return;
-
-        $ratio = min($max_width / $width, $max_height / $height);
-        $new_width = round($width * $ratio);
-        $new_height = round($height * $ratio);
-
-        switch ($type) {
-            case IMAGETYPE_JPEG: $src_image = @imagecreatefromjpeg($file_path); break;
-            case IMAGETYPE_PNG: $src_image = @imagecreatefrompng($file_path); break;
-            case IMAGETYPE_GIF: $src_image = @imagecreatefromgif($file_path); break;
-            case IMAGETYPE_WEBP: $src_image = @imagecreatefromwebp($file_path); break;
-            default: return;
-        }
-
-        if (!$src_image) return;
-
-        $dst_image = imagecreatetruecolor($new_width, $new_height);
-        
-        if ($type == IMAGETYPE_PNG) {
-            imagealphablending($dst_image, false);
-            imagesavealpha($dst_image, true);
-        }
-
-        imagecopyresampled($dst_image, $src_image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-
-        switch ($type) {
-            case IMAGETYPE_JPEG: imagejpeg($dst_image, $file_path, 90); break;
-            case IMAGETYPE_PNG: imagepng($dst_image, $file_path, 6); break;
-            case IMAGETYPE_GIF: imagegif($dst_image, $file_path); break;
-            case IMAGETYPE_WEBP: imagewebp($dst_image, $file_path, 90); break;
-        }
-
-        imagedestroy($src_image);
-        imagedestroy($dst_image);
-    }
-
-    private function processFile($file_path, $filename, $sous_type)
-    {
-        $result = ['thumbnail' => null, 'extra' => null];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-
-        switch ($sous_type) {
-            case 'photo':
-                $result['thumbnail'] = 'attachments/Autre/Files/' . $filename;
-                $dims = @getimagesize($file_path);
-                if ($dims) $result['extra'] = ['dimensions' => $dims[0] . 'x' . $dims[1]];
-                break;
-                
-            case 'book':
-                $result['thumbnail'] = 'assets/images/pdf-default.png';
-                $content = file_get_contents($file_path, false, null, 0, 50000);
-                if (preg_match('/\/Type\s*\/Pages.*?\/Count\s+(\d+)/s', $content, $m)) {
-                    $result['extra'] = ['pages' => (int)$m[1]];
-                }
-                break;
-                
-            case 'other':
-                $result['thumbnail'] = $this->getFileIcon($ext);
-                break;
-        }
-        return $result;
-    }
-
-    private function getFileIcon($ext)
-    {
-        $icons = [
-            'pdf' => 'assets/images/pdf-default.png',
-            'doc' => 'assets/images/doc-default.png',
-            'docx' => 'assets/images/doc-default.png',
-            'xls' => 'assets/images/xls-default.png',
-            'xlsx' => 'assets/images/xls-default.png',
-            'ppt' => 'assets/images/ppt-default.png',
-            'pptx' => 'assets/images/ppt-default.png',
-            'zip' => 'assets/images/zip-default.png',
-        ];
-        return $icons[$ext] ?? 'assets/images/file-default.png';
-    }
-
-    private function extractLinkThumb($url)
-    {
-        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
-            return "https://img.youtube.com/vi/{$m[1]}/mqdefault.jpg";
-        }
-        if (preg_match('/vimeo\.com\/(\d+)/', $url, $m)) {
-            return "https://vumbnail.com/{$m[1]}.jpg";
-        }
-        $domain = parse_url($url, PHP_URL_HOST);
-        if ($domain) {
-            return "https://www.google.com/s2/favicons?domain={$domain}&sz=128";
-        }
-        return 'assets/images/link-default.png';
-    }
+    // ==================== CRUD ====================
 
     public function Create()
     {
@@ -570,8 +557,7 @@ class Autre extends MX_Controller {
             return;
         }
 
-        $auto_data = json_decode($this->input->post('auto_detected_data') ?: '{}', true);
-        $data = $this->prepareData($sous_type, 'create', $auto_data);
+        $data = $this->prepareData($sous_type, 'create');
         
         if (!$data) {
             redirect(base_url('autre'));
@@ -624,12 +610,6 @@ class Autre extends MX_Controller {
 
         if ($current['sous_type'] === 'link') {
             $data['lien'] = $this->input->post('lien');
-            $data['miniature'] = $this->extractLinkThumb($data['lien']);
-        }
-
-        $new_thumbnail = $this->input->post('thumbnail');
-        if (!empty($new_thumbnail) && $new_thumbnail !== ($current['miniature'] ?? '')) {
-            $data['miniature'] = $new_thumbnail;
         }
 
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
@@ -644,12 +624,16 @@ class Autre extends MX_Controller {
         $item = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
         
         if ($item) {
-            if (!empty($item['fichier']) && file_exists(FCPATH . $item['fichier'])) @unlink(FCPATH . $item['fichier']);
-            if (!empty($item['miniature']) && strpos($item['miniature'], 'http') !== 0 && file_exists(FCPATH . $item['miniature'])) @unlink(FCPATH . $item['miniature']);
+            $this->deleteFiles($item);
             
-            $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => 0, 'updated_at' => date('Y-m-d H:i:s')]);
+            $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
+                'est_actif'  => 0,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+            
             $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Élément supprimé' : 'Erreur suppression');
         }
+        
         redirect(base_url('autre'));
     }
 
@@ -658,11 +642,16 @@ class Autre extends MX_Controller {
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        $id = $this->input->post('id');
+        $id     = $this->input->post('id');
         $status = $this->input->post('est_actif');
         
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => $status, 'updated_at' => date('Y-m-d H:i:s')]);
+        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
+            'est_actif'  => $status,
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+        
         echo json_encode(['success' => (bool)$rsp]);
+        return;
     }
 
     public function toggleField()
@@ -670,7 +659,7 @@ class Autre extends MX_Controller {
         $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        $id = $this->input->post('id');
+        $id    = $this->input->post('id');
         $field = $this->input->post('field');
         $value = $this->input->post('value');
         
@@ -680,11 +669,18 @@ class Autre extends MX_Controller {
             return;
         }
         
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [$field => $value, 'updated_at' => date('Y-m-d H:i:s')]);
+        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
+            $field       => $value,
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+        
         echo json_encode(['success' => (bool)$rsp]);
+        return;
     }
 
-    private function prepareData($sous_type, $mode, $auto_data = [])
+    // ==================== HELPERS ====================
+
+    private function prepareData($sous_type, $mode)
     {
         $type_db = $this->type_configs[$sous_type]['type_db'] ?? 'autre';
         
@@ -709,13 +705,11 @@ class Autre extends MX_Controller {
         switch ($sous_type) {
             case 'link':
                 $data['lien'] = $this->input->post('lien');
-                $data['miniature'] = $this->extractLinkThumb($data['lien']);
                 $data['fichier'] = null;
                 break;
                 
             case 'texte':
                 $data['contenu_texte'] = $this->input->post('contenu_texte') ?: null;
-                $data['miniature'] = 'assets/images/text-default.png';
                 $data['fichier'] = null;
                 break;
                 
@@ -728,19 +722,18 @@ class Autre extends MX_Controller {
                     $data['taille'] = filesize($full);
                     $data['mime_type'] = mime_content_type($full);
                     $data['lien'] = null;
-                    
-                    $manual_thumbnail = $this->input->post('thumbnail');
-                    if (!empty($manual_thumbnail)) {
-                        $data['miniature'] = $manual_thumbnail;
-                    } else {
-                        $thumbnails = $auto_data['thumbnails'] ?? new stdClass();
-                        $data['miniature'] = $thumbnails->generated ?? $this->getFileIcon(pathinfo($file_path, PATHINFO_EXTENSION));
-                    }
                 }
                 break;
         }
 
         return $data;
+    }
+
+    private function deleteFiles($item)
+    {
+        if (!empty($item['fichier']) && file_exists(FCPATH . $item['fichier'])) {
+            @unlink(FCPATH . $item['fichier']);
+        }
     }
 
     private function getExistingCategories()
@@ -820,11 +813,13 @@ class Autre extends MX_Controller {
         $updated = 0;
         foreach ($items as $item) {
             $slug = $this->generateUniqueSlug($item['titre'], $item['id_media']);
+            
             $this->db->where('id_media', $item['id_media']);
             $this->db->update('galerie_medias', ['slug' => $slug]);
             $updated++;
+            echo "ID: {$item['id_media']} - Slug: {$slug}<br>";
         }
         
-        echo "Total mis à jour: {$updated} slugs";
+        echo "<br>Total mis à jour: {$updated} slugs pour les médias divers.";
     }
 }
