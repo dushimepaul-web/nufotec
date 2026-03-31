@@ -1499,12 +1499,12 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             ?>
             <a href="<?= $logged_in ? base_url('home-patient') : base_url('Auth') ?>" class="action-btn d-none d-lg-flex" title="<?= $logged_in ? 'My account' : 'Sign in' ?>">
     <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
-        <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
-    <?php elseif ($logged_in): ?>
-        <div class="avatar-placeholder"><?= $initials ?></div>
-    <?php else: ?>
-        <i class="bi bi-person-circle"></i>
-    <?php endif; ?>
+    <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
+<?php elseif ($logged_in): ?>
+    <img src="<?= base_url('assets/img/default-avatar.png') ?>" alt="Avatar" class="avatar default-avatar">
+<?php else: ?>
+    <i class="bi bi-person-circle"></i>
+<?php endif; ?>
     <span class="d-none d-lg-inline"><?= $logged_in ? 'My account' : 'Sign in' ?></span>
 </a>
 

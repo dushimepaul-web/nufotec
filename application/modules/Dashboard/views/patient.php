@@ -289,14 +289,14 @@
             </nav>
 
             <div class="p-4 border-t border-slate-100">
-                <div class="bg-gradient-to-r from-primary-500 to-medical-500 rounded-xl p-4 text-white">
-                    <p class="text-xs font-medium opacity-90">Besoin d'aide ?</p>
-                    <p class="text-sm font-semibold mt-1">Support 24/7</p>
-                    <button class="mt-2 text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors">
-                        Contacter
-                    </button>
-                </div>
-            </div>
+    <div class="bg-gradient-to-r from-primary-500 to-medical-500 rounded-xl p-4 text-white">
+        <p class="text-xs font-medium opacity-90">Besoin d'aide ?</p>
+        <p class="text-sm font-semibold mt-1">Support 24/7</p>
+        <a href="<?= base_url('Home/Contact') ?>" class="inline-block mt-2 text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors">
+            Contacter
+        </a>
+    </div>
+</div>
         </aside>
 
         <!-- Contenu Principal -->
@@ -372,7 +372,7 @@
                         <?php endif; ?>
                     </button>
 
-                    <a href="<?= base_url('nouvelle-consultation') ?>" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                    <a href="<?= base_url('Medicins') ?>" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
                         <i class="fas fa-plus"></i>
                         <span>Nouvelle Consultation</span>
                     </a>

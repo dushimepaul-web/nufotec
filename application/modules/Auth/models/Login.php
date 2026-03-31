@@ -74,7 +74,7 @@ class Login extends CI_Model {
         'prenom' => $data['prenom'] ?? '',
         'telephone' => $data['telephone'] ?? null,
         'role_id' => $default_role_id, // AJOUTER role_id
-        'type_utilisateur' => $data['type_utilisateur'] ?? 'visiteur',
+        'type_utilisateur' => $data['type_utilisateur'],
         'is_active' => $data['is_active'] ?? 1,
         'created_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s')

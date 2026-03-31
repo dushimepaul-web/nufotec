@@ -282,7 +282,7 @@ public function register() {
             'email' => $email,
             'telephone' => $phone,
             'password' => $hashed_password,
-            'type_utilisateur' => 'visiteur',
+            'type_utilisateur' => 'patient',
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
             'is_active' => 1

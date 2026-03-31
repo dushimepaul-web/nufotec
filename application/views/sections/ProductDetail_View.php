@@ -873,7 +873,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                 
                 <!-- WhatsApp avec le NOM RÉEL DU PRODUIT et CURRENT URL -->
                 <a href="https://wa.me/25779666439?text=<?= urlencode(
-                    "Bonjour, je souhaite connaître le prix réel de " . htmlspecialchars($product['title'] ?? 'ce produit') . ".\n\n" .
+                    "Bonjour, je souhaite connaître le prix actualisé de " . htmlspecialchars($product['title'] ?? 'ce produit') . ".\n\n" .
                     "Source: www.nufotec.com\n" .
                     "Produit: " . htmlspecialchars($product['title'] ?? '') . "\n" .
                     "Lien du produit: " . current_url()
