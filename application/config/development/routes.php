@@ -154,11 +154,11 @@ $route['calendrier'] = 'Users/Medecin_Calendrier/index';
  
 
 
-$route['users'] = 'users/Users/index';
-$route['users-create'] = 'users/Users/Create';
-$route['users-update'] = 'users/Users/Update';
-$route['users-delete'] = 'users/Users/Delete';
-$route['users-create'] = 'users/Users/Create';
+$route['users'] = 'Users/Users/index';
+$route['users-create'] = 'Users/Users/Create';
+$route['users-update'] = 'Users/Users/Update';
+$route['users-delete'] = 'Users/Users/Delete';
+$route['users-create'] = 'Users/Users/Create';
  
 
  
