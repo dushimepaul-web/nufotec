@@ -875,130 +875,214 @@ public function apiSearch()
     }
 
     /**
- * Télécharger un fichier média
- */
-/**
- * Télécharger un fichier média avec gestion avancée
- */
-/**
- * Télécharger un fichier média avec gestion avancée
- */
-/**
- * Télécharger un fichier média avec les bons chemins
- */
-public function downloader($identifier)
-{
-    $user = $this->getCurrentUser();
-    
-    // Déterminer si c'est un ID numérique ou un slug
-    if (is_numeric($identifier)) {
-        // Recherche par ID
-        $media = $this->db->query("
-            SELECT id_media, fichier, titre, type, sous_type, taille, slug
-            FROM galerie_medias 
-            WHERE id_media = ? AND est_actif = 1
-        ", [$identifier])->row_array();
-    } else {
-        // Recherche par slug
-        $media = $this->db->query("
-            SELECT id_media, fichier, titre, type, sous_type, taille, slug
-            FROM galerie_medias 
-            WHERE slug = ? AND est_actif = 1
-        ", [$identifier])->row_array();
-    }
-    
-    if (!$media || empty($media['fichier'])) {
-        log_message('error', 'Média non trouvé: ' . $identifier);
-        show_404();
-        return;
-    }
-    
-    // Construire le chemin complet selon le type
-    $base = FCPATH;
-    $file_path = '';
-    
-    switch($media['type']) {
-        case 'video':
-            $file_path = $base . 'attachments/Video/Originals/' . $media['fichier'];
-            if (!file_exists($file_path)) {
-                $file_path = $base . 'attachments/Video/Encoded/' . $media['fichier'];
-            }
-            break;
-            
-        case 'audio':
-            $file_path = $base . 'attachments/Audio/Originals/' . $media['fichier'];
-            if (!file_exists($file_path)) {
-                $file_path = $base . 'attachments/Audio/Converted/' . $media['fichier'];
-            }
-            break;
-            
-        case 'image':
-            $file_path = $base . 'attachments/Images/' . $media['fichier'];
-            break;
-            
-        case 'document':
-            $file_path = $base . 'attachments/Documents/' . $media['fichier'];
-            break;
-            
-        default:
-            $file_path = $base . $media['fichier'];
-            break;
-    }
-    
-    // Vérifier si le fichier existe
-    if (!file_exists($file_path)) {
-        log_message('error', 'Fichier non trouvé: ' . $file_path);
-        $possible_paths = [
-            $base . 'attachments/Video/Originals/' . $media['fichier'],
-            $base . 'attachments/Video/Encoded/' . $media['fichier'],
-            $base . 'attachments/Audio/Originals/' . $media['fichier'],
-            $base . 'attachments/Audio/Converted/' . $media['fichier'],
-            $base . 'attachments/Images/' . $media['fichier'],
-            $base . 'attachments/Documents/' . $media['fichier'],
-            $base . 'uploads/temp/video/' . $media['fichier'],
-            $base . 'uploads/temp/audio/' . $media['fichier'],
-        ];
-        
-        $found = false;
-        foreach ($possible_paths as $path) {
-            if (file_exists($path)) {
-                $file_path = $path;
-                $found = true;
-                break;
-            }
+     * Télécharger un fichier média - VERSION CORRIGÉE
+     * Supporte à la fois les paramètres GET et les segments d'URL
+     */
+    public function downloader($identifier = null)
+    {
+        // Récupérer l'identifiant depuis les différentes sources possibles
+        if (empty($identifier)) {
+            $identifier = $this->input->get('slug') ?? $this->input->get('id');
         }
         
-        if (!$found) {
+        // Vérifier qu'un identifiant est fourni
+        if (empty($identifier)) {
+            log_message('error', 'Aucun identifiant fourni pour le téléchargement');
             show_404();
             return;
         }
+        
+        $user = $this->getCurrentUser();
+        
+        // Déterminer si c'est un ID numérique ou un slug
+        if (is_numeric($identifier)) {
+            // Recherche par ID
+            $media = $this->db->query("
+                SELECT id_media, fichier, titre, type, sous_type, taille, slug
+                FROM galerie_medias 
+                WHERE id_media = ? AND est_actif = 1
+            ", [$identifier])->row_array();
+        } else {
+            // Recherche par slug
+            $media = $this->db->query("
+                SELECT id_media, fichier, titre, type, sous_type, taille, slug
+                FROM galerie_medias 
+                WHERE slug = ? AND est_actif = 1
+            ", [$identifier])->row_array();
+        }
+        
+        if (!$media || empty($media['fichier'])) {
+            log_message('error', 'Média non trouvé: ' . $identifier);
+            show_404();
+            return;
+        }
+        
+        // Construire le chemin complet selon le type
+        $base = FCPATH;
+        $file_path = '';
+        
+        switch($media['type']) {
+            case 'video':
+                $file_path = $base . 'attachments/Video/Originals/' . $media['fichier'];
+                if (!file_exists($file_path)) {
+                    $file_path = $base . 'attachments/Video/Encoded/' . $media['fichier'];
+                }
+                break;
+                
+            case 'audio':
+                $file_path = $base . 'attachments/Audio/Originals/' . $media['fichier'];
+                if (!file_exists($file_path)) {
+                    $file_path = $base . 'attachments/Audio/Converted/' . $media['fichier'];
+                }
+                break;
+                
+            case 'image':
+                $file_path = $base . 'attachments/Images/' . $media['fichier'];
+                break;
+                
+            case 'document':
+                $file_path = $base . 'attachments/Documents/' . $media['fichier'];
+                break;
+                
+            default:
+                $file_path = $base . $media['fichier'];
+                break;
+        }
+        
+        // Vérifier si le fichier existe
+        if (!file_exists($file_path)) {
+            log_message('error', 'Fichier non trouvé: ' . $file_path);
+            $possible_paths = [
+                $base . 'attachments/Video/Originals/' . $media['fichier'],
+                $base . 'attachments/Video/Encoded/' . $media['fichier'],
+                $base . 'attachments/Audio/Originals/' . $media['fichier'],
+                $base . 'attachments/Audio/Converted/' . $media['fichier'],
+                $base . 'attachments/Images/' . $media['fichier'],
+                $base . 'attachments/Documents/' . $media['fichier'],
+                $base . 'uploads/temp/video/' . $media['fichier'],
+                $base . 'uploads/temp/audio/' . $media['fichier'],
+            ];
+            
+            $found = false;
+            foreach ($possible_paths as $path) {
+                if (file_exists($path)) {
+                    $file_path = $path;
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if (!$found) {
+                show_404();
+                return;
+            }
+        }
+        
+        // Log du téléchargement
+        $this->db->insert('media_downloads', [
+            'id_media' => $media['id_media'],
+            'user_id' => $user ? $user['id'] : null,
+            'ip_address' => $this->input->ip_address(),
+            'user_agent' => $this->input->user_agent(),
+            'downloaded_at' => date('Y-m-d H:i:s')
+        ]);
+        
+        // Mettre à jour le compteur
+        $this->db->query("
+            UPDATE galerie_medias 
+            SET telechargements = telechargements + 1 
+            WHERE id_media = ?
+        ", [$media['id_media']]);
+        
+        // Nettoyer le nom du fichier pour le téléchargement
+        $extension = strtolower(pathinfo($media['fichier'], PATHINFO_EXTENSION));
+        $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $media['titre']);
+        $filename = $filename . '.' . $extension;
+        
+        // Forcer le téléchargement avec les bons headers pour mobile
+        $this->load->helper('download');
+        $this->load->helper('file');
+        
+        $mime = get_mime_by_extension($file_path) ?: 'application/octet-stream';
+        $file_size = filesize($file_path);
+        
+        // Headers pour forcer le téléchargement sur tous les navigateurs y compris mobile
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . $file_size);
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        
+        // Support pour les requêtes range (streaming/download progressif)
+        if (isset($_SERVER['HTTP_RANGE'])) {
+            $this->rangeDownload($file_path);
+        } else {
+            readfile($file_path);
+        }
+        
+        exit;
     }
     
-    // Log du téléchargement
-    $this->db->insert('media_downloads', [
-        'id_media' => $media['id_media'],
-        'user_id' => $user ? $user['id'] : null,
-        'ip_address' => $this->input->ip_address(),
-        'user_agent' => $this->input->user_agent(),
-        'downloaded_at' => date('Y-m-d H:i:s')
-    ]);
-    
-    // Mettre à jour le compteur
-    $this->db->query("
-        UPDATE galerie_medias 
-        SET telechargements = telechargements + 1 
-        WHERE id_media = ?
-    ", [$media['id_media']]);
-    
-    // Nettoyer le nom du fichier
-    $extension = strtolower(pathinfo($media['fichier'], PATHINFO_EXTENSION));
-    $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $media['titre']);
-    $filename = $filename . '.' . $extension;
-    
-    // Forcer le téléchargement
-    $this->load->helper('download');
-    $file_data = file_get_contents($file_path);
-    force_download($filename, $file_data);
-}
+    /**
+     * Gestion des téléchargements par plages (pour support mobile et reprise)
+     */
+    private function rangeDownload($file)
+    {
+        $fp = @fopen($file, 'rb');
+        $size = filesize($file);
+        $length = $size;
+        $start = 0;
+        $end = $size - 1;
+        
+        header('Accept-Ranges: bytes');
+        
+        if (isset($_SERVER['HTTP_RANGE'])) {
+            $c_start = $start;
+            $c_end = $end;
+            
+            list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
+            if (strpos($range, ',') !== false) {
+                header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                header("Content-Range: bytes $start-$end/$size");
+                exit;
+            }
+            
+            if ($range == '-') {
+                $c_start = $size - substr($range, 1);
+            } else {
+                $range = explode('-', $range);
+                $c_start = $range[0];
+                $c_end = (isset($range[1]) && is_numeric($range[1])) ? $range[1] : $size;
+            }
+            
+            $c_end = ($c_end > $end) ? $end : $c_end;
+            if ($c_start > $c_end || $c_start > $size - 1 || $c_end >= $size) {
+                header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                header("Content-Range: bytes $start-$end/$size");
+                exit;
+            }
+            
+            $start = $c_start;
+            $end = $c_end;
+            $length = $end - $start + 1;
+            fseek($fp, $start);
+            header('HTTP/1.1 206 Partial Content');
+        }
+        
+        header("Content-Range: bytes $start-$end/$size");
+        header("Content-Length: $length");
+        
+        $buffer = 1024 * 8;
+        while (!feof($fp) && ($p = ftell($fp)) <= $end) {
+            if ($p + $buffer > $end) {
+                $buffer = $end - $p + 1;
+            }
+            echo fread($fp, $buffer);
+            flush();
+        }
+        
+        fclose($fp);
+    }
 
 }

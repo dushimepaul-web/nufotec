@@ -756,11 +756,9 @@ function getMediaThumbnail($media) {
                             <source src="<?= htmlspecialchars($fichier) ?>" type="video/mp4">
                             Votre navigateur ne supporte pas la lecture vidéo.
                         </video>
-                        <!-- Pour les vidéos -->
-<button class="download-floating" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-    <i class="bi bi-download"></i>
-</button>
-
+                        <button class="download-floating" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+                            <i class="bi bi-download"></i>
+                        </button>
                     </div>
                     
                 <?php elseif ($type === 'audio' && !empty($fichier)): ?>
@@ -769,8 +767,8 @@ function getMediaThumbnail($media) {
                         <div class="audio-title"><?= htmlspecialchars($media['titre']) ?></div>
                         <div class="audio-artist"><?= htmlspecialchars($media['artist'] ?? $media['credits'] ?? 'Artiste inconnu') ?></div>
                         <button class="btn btn-outline-light btn-sm mb-3" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-    <i class="bi bi-download"></i> Télécharger
-</button>
+                            <i class="bi bi-download"></i> Télécharger
+                        </button>
                         
                         <audio id="audioElement" src="<?= htmlspecialchars($fichier) ?>" preload="metadata"></audio>
                         <div class="audio-controls">
@@ -799,8 +797,8 @@ function getMediaThumbnail($media) {
                     <div class="image-viewer">
                         <img src="<?= htmlspecialchars($fichier) ?>" alt="<?= htmlspecialchars($media['titre']) ?>" loading="lazy">
                         <button class="download-floating" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-    <i class="bi bi-download"></i>
-</button>
+                            <i class="bi bi-download"></i>
+                        </button>
                     </div>
                     
                 <?php else: ?>
@@ -814,8 +812,8 @@ function getMediaThumbnail($media) {
                         <?php endif; ?>
                         <?php if ($is_downloadable): ?>
                             <button class="action-btn" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-    <i class="bi bi-download"></i> Télécharger
-</button>
+                                <i class="bi bi-download"></i> Télécharger
+                            </button>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -846,7 +844,7 @@ function getMediaThumbnail($media) {
                             <i class="bi bi-share"></i> <span class="d-none d-md-inline">Partager</span>
                         </button>
                         <?php if ($is_downloadable && $type !== 'audio'): ?>
-                            <button class="action-btn" id="downloadBtn" onclick="downloadMedia(<?= (int)$media['id_media'] ?>)">
+                            <button class="action-btn" id="downloadBtn" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
                                 <i class="bi bi-download"></i> <span class="d-none d-md-inline">Télécharger</span>
                                 <?php if (!empty($media['taille'])): ?>
                                     <small class="text-secondary ms-1">(<?= formatFileSize($media['taille']) ?>)</small>
@@ -1042,33 +1040,31 @@ function nextTrack() {
     showToast('Fonctionnalité à venir', 'info'); 
 }
 
-// Download Media - Version corrigée
-function downloadMedia(mediaSlug) {
-    // Trouver tous les boutons de téléchargement
-    const btns = document.querySelectorAll('[onclick*="downloadMedia"]');
-    let originalHtmls = [];
+// Fonction de téléchargement corrigée pour mobile
+function downloadMedia(identifier) {
+    // Déterminer si c'est un ID numérique ou un slug
+    const isNumeric = !isNaN(identifier) && !isNaN(parseFloat(identifier));
+    const paramName = isNumeric ? 'id' : 'slug';
     
-    // Désactiver tous les boutons et sauvegarder leur contenu
-    btns.forEach((btn, index) => {
-        originalHtmls[index] = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Téléchargement...';
-        btn.disabled = true;
-    });
+    // Construire l'URL de téléchargement
+    const downloadUrl = '<?= base_url("media/downloader") ?>?' + paramName + '=' + encodeURIComponent(identifier);
     
-    // UTILISE CETTE URL À LA PLACE
-    const downloadUrl = '<?= base_url("media/downloader/") ?>' + mediaSlug;
-    window.location.href = downloadUrl;
+    // Créer un lien temporaire pour forcer le téléchargement
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', ''); // Force le téléchargement
+    link.style.display = 'none';
+    document.body.appendChild(link);
     
-    // Réinitialiser les boutons après 2 secondes
-    setTimeout(() => {
-        btns.forEach((btn, index) => {
-            btn.innerHTML = originalHtmls[index];
-            btn.disabled = false;
-        });
-        showToast('Téléchargement démarré !', 'success');
-    }, 2000);
+    // Simuler le clic
+    link.click();
+    
+    // Nettoyer
+    document.body.removeChild(link);
+    
+    // Afficher le toast
+    showToast('Téléchargement démarré !', 'success');
 }
-
 
 // Likes & Dislikes
 function toggleLike(mediaId) {
