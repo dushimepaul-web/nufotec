@@ -117,179 +117,6 @@
                                 </div>
                             </td>
                         </tr>
-
-                        <!-- MODAL VIEW -->
-                        <div class="modal fade" id="view_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow">
-                                    <div class="modal-header bg-primary text-white">
-                                        <h5 class="modal-title"><i class="bx bx-show me-2"></i>Détails du lien</h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        <div class="text-center mb-4">
-                                            <i class="bi bi-<?= $value['icon_name'] ?>" style="font-size: 4rem; color: #0f4c3a;"></i>
-                                            <h4 class="mt-3 mb-1"><?= htmlspecialchars($value['label']) ?></h4>
-                                            <span class="badge bg-light text-dark text-uppercase"><?= htmlspecialchars($value['platform']) ?></span>
-                                        </div>
-                                        <table class="table table-borderless table-sm">
-                                            <tr>
-                                                <td class="text-muted" style="width: 40%">Plateforme:</td>
-                                                <td class="fw-bold text-uppercase"><?= htmlspecialchars($value['platform']) ?></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">URL:</td>
-                                                <td>
-                                                    <a href="<?= htmlspecialchars($value['url']) ?>" target="_blank" class="text-break">
-                                                        <?= htmlspecialchars($value['url']) ?> <i class="bx bx-external-link"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Ordre d'affichage:</td>
-                                                <td><?= $value['display_order'] ?></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Nouvel onglet:</td>
-                                                <td><?= $value['target_blank'] ? '<span class="badge bg-success">Oui</span>' : '<span class="badge bg-secondary">Non</span>' ?></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Statut:</td>
-                                                <td>
-                                                    <?php if ($value['is_active']): ?>
-                                                        <span class="badge bg-success">Actif</span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-danger">Inactif</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Créé le:</td>
-                                                <td><?= date('d/m/Y H:i', strtotime($value['created_at'])) ?></td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <div class="modal-footer bg-light">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- MODAL UPDATE -->
-                        <div class="modal fade" id="update_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow">
-                                    <div class="modal-header bg-warning text-dark">
-                                        <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier le lien</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <form action="<?= base_url('social-update') ?>" method="POST">
-                                        <input type="hidden" name="id" value="<?= $value['id'] ?>">
-                                        <div class="modal-body p-4">
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Plateforme <small class="text-muted">(non modifiable)</small></label>
-                                                <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($value['platform']) ?>" disabled readonly>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Label <span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" name="label" value="<?= htmlspecialchars($value['label']) ?>" required>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">URL <span class="text-danger">*</span></label>
-                                                <input type="url" class="form-control" name="url" value="<?= htmlspecialchars($value['url']) ?>" required>
-                                            </div>
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Nom de l'icône <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" name="icon_name" value="<?= $value['icon_name'] ?>" required>
-                                                    <small class="text-muted">Ex: linkedin, facebook, twitter-x</small>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Ordre d'affichage</label>
-                                                    <input type="number" class="form-control" name="display_order" value="<?= $value['display_order'] ?>" min="0">
-                                                </div>
-                                            </div>
-                                            <div class="row g-3 mt-2">
-                                                <div class="col-md-6">
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active_upd_<?= $value['id'] ?>" value="1" <?= $value['is_active'] ? 'checked' : '' ?>>
-                                                        <label class="form-check-label" for="is_active_upd_<?= $value['id'] ?>">Actif</label>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="target_blank" id="target_blank_upd_<?= $value['id'] ?>" value="1" <?= $value['target_blank'] ? 'checked' : '' ?>>
-                                                        <label class="form-check-label" for="target_blank_upd_<?= $value['id'] ?>">Nouvel onglet</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer bg-light">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                            <button type="submit" class="btn btn-warning">
-                                                <i class="bx bx-save me-2"></i>Enregistrer
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- MODAL DELETE -->
-                        <div class="modal fade" id="delete_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow">
-                                    <div class="modal-header bg-danger text-white">
-                                        <h5 class="modal-title"><i class="bx bx-trash me-2"></i>Confirmer la suppression</h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4 text-center">
-                                        <i class="bx bx-error-circle text-danger" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Êtes-vous sûr ?</h5>
-                                        <p class="text-muted">Vous allez supprimer <strong><?= htmlspecialchars($value['label']) ?></strong></p>
-                                    </div>
-                                    <form action="<?= base_url('social-delete') ?>" method="POST">
-                                        <input type="hidden" name="id" value="<?= $value['id'] ?>">
-                                        <div class="modal-footer bg-light justify-content-center">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="bx bx-trash me-2"></i>Supprimer
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- MODAL STATUS -->
-                        <div class="modal fade" id="status_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow">
-                                    <div class="modal-header <?= $value['is_active'] ? 'bg-warning' : 'bg-success' ?> text-white">
-                                        <h5 class="modal-title">
-                                            <i class="bx <?= $value['is_active'] ? 'bx-block' : 'bx-check-circle' ?> me-2"></i>
-                                            <?= $value['is_active'] ? 'Désactiver' : 'Activer' ?> le lien
-                                        </h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        <p class="mb-0">Voulez-vous vraiment <strong><?= $value['is_active'] ? 'désactiver' : 'activer' ?></strong> le lien <strong><?= htmlspecialchars($value['label']) ?></strong> ?</p>
-                                    </div>
-                                    <form action="<?= base_url('social/ChangeStatus') ?>" method="POST">
-                                        <input type="hidden" name="id" value="<?= $value['id'] ?>">
-                                        <input type="hidden" name="is_active" value="<?= $value['is_active'] ?>">
-                                        <div class="modal-footer bg-light">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                            <button type="submit" class="btn <?= $value['is_active'] ? 'btn-warning' : 'btn-success' ?>">
-                                                <?= $value['is_active'] ? 'Désactiver' : 'Activer' ?>
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
@@ -310,6 +137,188 @@
 
 </div>
 </div>
+
+<!-- ============================================
+MODAUX PLACÉS EN DEHORS DU TABLEAU
+============================================ -->
+
+<?php if (!empty($social_links)): ?>
+<?php foreach ($social_links as $value): ?>
+
+<!-- MODAL VIEW -->
+<div class="modal fade" id="view_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bx bx-show me-2"></i>Détails du lien</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <i class="bi bi-<?= $value['icon_name'] ?>" style="font-size: 4rem; color: #0f4c3a;"></i>
+                    <h4 class="mt-3 mb-1"><?= htmlspecialchars($value['label']) ?></h4>
+                    <span class="badge bg-light text-dark text-uppercase"><?= htmlspecialchars($value['platform']) ?></span>
+                </div>
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <td class="text-muted" style="width: 40%">Plateforme:</td>
+                        <td class="fw-bold text-uppercase"><?= htmlspecialchars($value['platform']) ?></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">URL:</td>
+                        <td>
+                            <a href="<?= htmlspecialchars($value['url']) ?>" target="_blank" class="text-break">
+                                <?= htmlspecialchars($value['url']) ?> <i class="bx bx-external-link"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Ordre d'affichage:</td>
+                        <td><?= $value['display_order'] ?></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Nouvel onglet:</td>
+                        <td><?= $value['target_blank'] ? '<span class="badge bg-success">Oui</span>' : '<span class="badge bg-secondary">Non</span>' ?></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Statut:</td>
+                        <td>
+                            <?php if ($value['is_active']): ?>
+                                <span class="badge bg-success">Actif</span>
+                            <?php else: ?>
+                                <span class="badge bg-danger">Inactif</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Créé le:</td>
+                        <td><?= date('d/m/Y H:i', strtotime($value['created_at'])) ?></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL UPDATE -->
+<div class="modal fade" id="update_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier le lien</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="<?= base_url('social-update') ?>" method="POST">
+                <input type="hidden" name="id" value="<?= $value['id'] ?>">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Plateforme <small class="text-muted">(non modifiable)</small></label>
+                        <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($value['platform']) ?>" disabled readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="label" value="<?= htmlspecialchars($value['label']) ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">URL <span class="text-danger">*</span></label>
+                        <input type="url" class="form-control" name="url" value="<?= htmlspecialchars($value['url']) ?>" required>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nom de l'icône <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="icon_name" value="<?= $value['icon_name'] ?>" required>
+                            <small class="text-muted">Ex: linkedin, facebook, twitter-x</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ordre d'affichage</label>
+                            <input type="number" class="form-control" name="display_order" value="<?= $value['display_order'] ?>" min="0">
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="is_active_upd_<?= $value['id'] ?>" value="1" <?= $value['is_active'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="is_active_upd_<?= $value['id'] ?>">Actif</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="target_blank" id="target_blank_upd_<?= $value['id'] ?>" value="1" <?= $value['target_blank'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="target_blank_upd_<?= $value['id'] ?>">Nouvel onglet</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bx bx-save me-2"></i>Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DELETE -->
+<div class="modal fade" id="delete_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bx bx-trash me-2"></i>Confirmer la suppression</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <i class="bx bx-error-circle text-danger" style="font-size: 3rem;"></i>
+                <h5 class="mt-3">Êtes-vous sûr ?</h5>
+                <p class="text-muted">Vous allez supprimer <strong><?= htmlspecialchars($value['label']) ?></strong></p>
+            </div>
+            <form action="<?= base_url('social-delete') ?>" method="POST">
+                <input type="hidden" name="id" value="<?= $value['id'] ?>">
+                <div class="modal-footer bg-light justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bx bx-trash me-2"></i>Supprimer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL STATUS -->
+<div class="modal fade" id="status_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header <?= $value['is_active'] ? 'bg-warning' : 'bg-success' ?> text-white">
+                <h5 class="modal-title">
+                    <i class="bx <?= $value['is_active'] ? 'bx-block' : 'bx-check-circle' ?> me-2"></i>
+                    <?= $value['is_active'] ? 'Désactiver' : 'Activer' ?> le lien
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="mb-0">Voulez-vous vraiment <strong><?= $value['is_active'] ? 'désactiver' : 'activer' ?></strong> le lien <strong><?= htmlspecialchars($value['label']) ?></strong> ?</p>
+            </div>
+            <form action="<?= base_url('social/ChangeStatus') ?>" method="POST">
+                <input type="hidden" name="id" value="<?= $value['id'] ?>">
+                <input type="hidden" name="is_active" value="<?= $value['is_active'] ?>">
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn <?= $value['is_active'] ? 'btn-warning' : 'btn-success' ?>">
+                        <?= $value['is_active'] ? 'Désactiver' : 'Activer' ?>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php endforeach; ?>
+<?php endif; ?>
 
 <!-- MODAL CREATE -->
 <div class="modal fade" id="create_social" tabindex="-1" aria-hidden="true">
