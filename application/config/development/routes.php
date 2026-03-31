@@ -182,15 +182,14 @@ $route['video/uploadThumbnail'] = 'media/Video/uploadThumbnail';
 
 
 
-// Routes pour le contrôleur Autre (media/Autre.php)
-$route['autre'] = 'media/Autre/index';
-$route['autre/(:any)'] = 'media/Autre/$1';
-$route['autre/index'] = 'media/Autre/index';
-$route['autre/Create'] = 'media/Autre/Create';
-$route['autre/Update'] = 'media/Autre/Update';
-$route['autre/Delete'] = 'media/Autre/Delete';
-$route['autre/ChangeStatus'] = 'media/Autre/ChangeStatus';
-$route['autre/toggleField'] = 'media/Autre/toggleField';
+$route['autre/admin_liste'] = 'media/Autre/admin_liste';
+$route['autre/admin_liste/(:num)'] = 'media/Autre/admin_liste/$1';
+$route['autre/admin_ajouter'] = 'media/Autre/admin_ajouter';
+$route['autre/admin_modifier/(:num)'] = 'media/Autre/admin_modifier/$1';
+$route['autre/admin_supprimer/(:num)'] = 'media/Autre/admin_supprimer/$1';
+$route['autre/get_json/(:num)'] = 'media/Autre/get_json/$1';
+
+
 
 // ==========================================
 // AUDIO ROUTES - CORRIGÉES ET OPTIMISÉES
