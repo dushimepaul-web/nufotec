@@ -305,6 +305,7 @@ $route['media/apiGetMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
 $route['media/getCategories'] = 'Home/Media/getCategories';
 $route['media/getStats'] = 'Home/Media/apiGetStats';
 $route['media/apiGetStats'] = 'Home/Media/apiGetStats';
+$route['media/downloader/(:any)'] = 'Home/Media/downloader/$1';
 
 // Waveform
 $route['media/getWaveform/(:num)'] = 'Home/Media/apiGetWaveform/$1';
@@ -323,6 +324,9 @@ $route['blog/index'] = 'Home/Blog/index';
 $route['blog/categorie/(:any)'] = 'Home/Blog/categorie/$1';
 $route['blog/recherche'] = 'Home/Blog/recherche';
 $route['actualite/(:any)'] = 'Home/Blog/article/$1';
+
+
+
 
 
 

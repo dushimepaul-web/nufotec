@@ -1,4 +1,119 @@
-<!DOCTYPE html>
+<?php 
+// Fonction pour obtenir l'URL correcte du fichier selon son type
+function getMediaFileUrl($fichier, $type) {
+    if (empty($fichier)) return '';
+    
+    // Si c'est une URL YouTube ou externe
+    if (preg_match('/^https?:\/\//', $fichier)) {
+        return $fichier;
+    }
+    
+    $base_url = base_url();
+    
+    // Construire l'URL selon le type
+    switch($type) {
+        case 'video':
+            // Essayer d'abord les originals, puis encoded
+            $url = $base_url . 'attachments/Video/Originals/' . $fichier;
+            // Vérifier si le fichier existe (côté serveur)
+            $file_path = FCPATH . 'attachments/Video/Originals/' . $fichier;
+            if (!file_exists($file_path)) {
+                $url = $base_url . 'attachments/Video/Encoded/' . $fichier;
+            }
+            return $url;
+            
+        case 'audio':
+            $url = $base_url . 'attachments/Audio/Originals/' . $fichier;
+            $file_path = FCPATH . 'attachments/Audio/Originals/' . $fichier;
+            if (!file_exists($file_path)) {
+                $url = $base_url . 'attachments/Audio/Converted/' . $fichier;
+            }
+            return $url;
+            
+        case 'image':
+            return $base_url . 'attachments/Images/' . $fichier;
+            
+        case 'document':
+            return $base_url . 'attachments/Documents/' . $fichier;
+            
+        default:
+            return $base_url . $fichier;
+    }
+}
+
+// Fonction pour vérifier si le fichier existe physiquement
+function isMediaFileExists($fichier, $type) {
+    if (empty($fichier)) return false;
+    
+    // Si c'est une URL externe, on considère qu'elle existe
+    if (preg_match('/^https?:\/\//', $fichier)) {
+        return true;
+    }
+    
+    $base = FCPATH;
+    
+    switch($type) {
+        case 'video':
+            $path = $base . 'attachments/Video/Originals/' . $fichier;
+            if (file_exists($path)) return true;
+            $path = $base . 'attachments/Video/Encoded/' . $fichier;
+            return file_exists($path);
+            
+        case 'audio':
+            $path = $base . 'attachments/Audio/Originals/' . $fichier;
+            if (file_exists($path)) return true;
+            $path = $base . 'attachments/Audio/Converted/' . $fichier;
+            return file_exists($path);
+            
+        case 'image':
+            return file_exists($base . 'attachments/Images/' . $fichier);
+            
+        case 'document':
+            return file_exists($base . 'attachments/Documents/' . $fichier);
+            
+        default:
+            return file_exists($base . $fichier);
+    }
+}
+
+// Fonction pour obtenir la miniature
+function getMediaThumbnail($media) {
+    if (!empty($media['youtube_id'])) {
+        return "https://img.youtube.com/vi/{$media['youtube_id']}/hqdefault.jpg";
+    }
+    
+    if (!empty($media['miniature']) && file_exists(FCPATH . $media['miniature'])) {
+        return base_url($media['miniature']);
+    }
+    
+    // Pour les vidéos
+    if ($media['type'] === 'video' && !empty($media['fichier'])) {
+        $thumb_path = FCPATH . 'attachments/Video/Thumbnails/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_thumb.jpg';
+        if (file_exists($thumb_path)) {
+            return base_url('attachments/Video/Thumbnails/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_thumb.jpg');
+        }
+    }
+    
+    // Pour les audios
+    if ($media['type'] === 'audio' && !empty($media['fichier'])) {
+        $cover_path = FCPATH . 'attachments/Audio/Covers/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_cover.jpg';
+        if (file_exists($cover_path)) {
+            return base_url('attachments/Audio/Covers/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_cover.jpg');
+        }
+    }
+    
+    // Images par défaut
+    $defaults = [
+        'audio' => base_url('assets/images/audio-default.png'),
+        'video' => base_url('assets/images/video-default.jpg'),
+        'image' => base_url('assets/images/image-default.jpg'),
+        'document' => base_url('assets/images/document-default.jpg'),
+        'default' => base_url('assets/images/default-thumbnail.jpg')
+    ];
+    
+    return $defaults[$media['type']] ?? $defaults['default'];
+}
+?><!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -641,9 +756,11 @@
                             <source src="<?= htmlspecialchars($fichier) ?>" type="video/mp4">
                             Votre navigateur ne supporte pas la lecture vidéo.
                         </video>
-                        <button class="download-floating" onclick="downloadMedia(<?= (int)$media['id_media'] ?>)">
-                            <i class="bi bi-download"></i>
-                        </button>
+                        <!-- Pour les vidéos -->
+<button class="download-floating" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+    <i class="bi bi-download"></i>
+</button>
+
                     </div>
                     
                 <?php elseif ($type === 'audio' && !empty($fichier)): ?>
@@ -651,13 +768,9 @@
                         <div class="audio-cover" style="background-image: url('<?= htmlspecialchars($media['cover_url'] ?? base_url('assets/images/audio-default.png')) ?>')"></div>
                         <div class="audio-title"><?= htmlspecialchars($media['titre']) ?></div>
                         <div class="audio-artist"><?= htmlspecialchars($media['artist'] ?? $media['credits'] ?? 'Artiste inconnu') ?></div>
-                        
-                        <button class="btn btn-outline-light btn-sm mb-3" onclick="downloadMedia(<?= (int)$media['id_media'] ?>)">
-                            <i class="bi bi-download"></i> Télécharger <?= strtoupper(pathinfo($media['fichier'], PATHINFO_EXTENSION)) ?>
-                            <?php if (!empty($media['taille'])): ?>
-                                (<?= formatFileSize($media['taille']) ?>)
-                            <?php endif; ?>
-                        </button>
+                        <button class="btn btn-outline-light btn-sm mb-3" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+    <i class="bi bi-download"></i> Télécharger
+</button>
                         
                         <audio id="audioElement" src="<?= htmlspecialchars($fichier) ?>" preload="metadata"></audio>
                         <div class="audio-controls">
@@ -685,9 +798,9 @@
                 <?php elseif ($type === 'image' && !empty($fichier)): ?>
                     <div class="image-viewer">
                         <img src="<?= htmlspecialchars($fichier) ?>" alt="<?= htmlspecialchars($media['titre']) ?>" loading="lazy">
-                        <button class="download-floating" onclick="downloadMedia(<?= (int)$media['id_media'] ?>)">
-                            <i class="bi bi-download"></i>
-                        </button>
+                        <button class="download-floating" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+    <i class="bi bi-download"></i>
+</button>
                     </div>
                     
                 <?php else: ?>
@@ -700,9 +813,9 @@
                             </a>
                         <?php endif; ?>
                         <?php if ($is_downloadable): ?>
-                            <button class="btn btn-outline-light mt-3 ms-2" onclick="downloadMedia(<?= (int)$media['id_media'] ?>)">
-                                <i class="bi bi-download"></i> Télécharger
-                            </button>
+                            <button class="action-btn" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+    <i class="bi bi-download"></i> Télécharger
+</button>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -929,35 +1042,33 @@ function nextTrack() {
     showToast('Fonctionnalité à venir', 'info'); 
 }
 
-// Download Media
-function downloadMedia(mediaId) {
-    const btn = document.getElementById('downloadBtn');
-    let originalHtml = '';
+// Download Media - Version corrigée
+function downloadMedia(mediaSlug) {
+    // Trouver tous les boutons de téléchargement
+    const btns = document.querySelectorAll('[onclick*="downloadMedia"]');
+    let originalHtmls = [];
     
-    if (btn) {
-        originalHtml = btn.innerHTML;
+    // Désactiver tous les boutons et sauvegarder leur contenu
+    btns.forEach((btn, index) => {
+        originalHtmls[index] = btn.innerHTML;
         btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Téléchargement...';
         btn.disabled = true;
-    }
+    });
     
-    // Créer un lien invisible pour le téléchargement
-    const downloadUrl = '<?= base_url('media/download/') ?>' + mediaId;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = '';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // UTILISE CETTE URL À LA PLACE
+    const downloadUrl = '<?= base_url("media/downloader/") ?>' + mediaSlug;
+    window.location.href = downloadUrl;
     
-    // Réinitialiser le bouton après 2 secondes
+    // Réinitialiser les boutons après 2 secondes
     setTimeout(() => {
-        if (btn) {
-            btn.innerHTML = originalHtml;
+        btns.forEach((btn, index) => {
+            btn.innerHTML = originalHtmls[index];
             btn.disabled = false;
-        }
+        });
         showToast('Téléchargement démarré !', 'success');
     }, 2000);
 }
+
 
 // Likes & Dislikes
 function toggleLike(mediaId) {

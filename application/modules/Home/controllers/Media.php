@@ -5,7 +5,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Media Controller - Interface Visiteur
  * Interface moderne inspirée de YouTube & Spotify
  */
-class Media extends Public_Controller {
+class Media extends MY_Controller{
 
     function __construct()
     {
@@ -883,95 +883,122 @@ public function apiSearch()
 /**
  * Télécharger un fichier média avec gestion avancée
  */
-public function download($id_media)
+/**
+ * Télécharger un fichier média avec les bons chemins
+ */
+public function downloader($identifier)
 {
     $user = $this->getCurrentUser();
     
-    $media = $this->db->query("
-        SELECT id_media, fichier, titre, type, sous_type, taille 
-        FROM galerie_medias 
-        WHERE id_media = ? AND est_actif = 1
-    ", [$id_media])->row_array();
+    // Déterminer si c'est un ID numérique ou un slug
+    if (is_numeric($identifier)) {
+        // Recherche par ID
+        $media = $this->db->query("
+            SELECT id_media, fichier, titre, type, sous_type, taille, slug
+            FROM galerie_medias 
+            WHERE id_media = ? AND est_actif = 1
+        ", [$identifier])->row_array();
+    } else {
+        // Recherche par slug
+        $media = $this->db->query("
+            SELECT id_media, fichier, titre, type, sous_type, taille, slug
+            FROM galerie_medias 
+            WHERE slug = ? AND est_actif = 1
+        ", [$identifier])->row_array();
+    }
     
     if (!$media || empty($media['fichier'])) {
+        log_message('error', 'Média non trouvé: ' . $identifier);
         show_404();
         return;
     }
     
-    $file_path = FCPATH . $media['fichier'];
+    // Construire le chemin complet selon le type
+    $base = FCPATH;
+    $file_path = '';
     
+    switch($media['type']) {
+        case 'video':
+            $file_path = $base . 'attachments/Video/Originals/' . $media['fichier'];
+            if (!file_exists($file_path)) {
+                $file_path = $base . 'attachments/Video/Encoded/' . $media['fichier'];
+            }
+            break;
+            
+        case 'audio':
+            $file_path = $base . 'attachments/Audio/Originals/' . $media['fichier'];
+            if (!file_exists($file_path)) {
+                $file_path = $base . 'attachments/Audio/Converted/' . $media['fichier'];
+            }
+            break;
+            
+        case 'image':
+            $file_path = $base . 'attachments/Images/' . $media['fichier'];
+            break;
+            
+        case 'document':
+            $file_path = $base . 'attachments/Documents/' . $media['fichier'];
+            break;
+            
+        default:
+            $file_path = $base . $media['fichier'];
+            break;
+    }
+    
+    // Vérifier si le fichier existe
     if (!file_exists($file_path)) {
-        show_404();
-        return;
+        log_message('error', 'Fichier non trouvé: ' . $file_path);
+        $possible_paths = [
+            $base . 'attachments/Video/Originals/' . $media['fichier'],
+            $base . 'attachments/Video/Encoded/' . $media['fichier'],
+            $base . 'attachments/Audio/Originals/' . $media['fichier'],
+            $base . 'attachments/Audio/Converted/' . $media['fichier'],
+            $base . 'attachments/Images/' . $media['fichier'],
+            $base . 'attachments/Documents/' . $media['fichier'],
+            $base . 'uploads/temp/video/' . $media['fichier'],
+            $base . 'uploads/temp/audio/' . $media['fichier'],
+        ];
+        
+        $found = false;
+        foreach ($possible_paths as $path) {
+            if (file_exists($path)) {
+                $file_path = $path;
+                $found = true;
+                break;
+            }
+        }
+        
+        if (!$found) {
+            show_404();
+            return;
+        }
     }
     
     // Log du téléchargement
     $this->db->insert('media_downloads', [
-        'id_media' => $id_media,
+        'id_media' => $media['id_media'],
         'user_id' => $user ? $user['id'] : null,
         'ip_address' => $this->input->ip_address(),
         'user_agent' => $this->input->user_agent(),
         'downloaded_at' => date('Y-m-d H:i:s')
     ]);
     
-    // Mettre à jour le compteur de téléchargements
+    // Mettre à jour le compteur
     $this->db->query("
         UPDATE galerie_medias 
         SET telechargements = telechargements + 1 
         WHERE id_media = ?
-    ", [$id_media]);
+    ", [$media['id_media']]);
     
-    // Déterminer le type MIME et l'extension
+    // Nettoyer le nom du fichier
     $extension = strtolower(pathinfo($media['fichier'], PATHINFO_EXTENSION));
-    $filename = $this->security->sanitize_filename($media['titre']) . '.' . $extension;
+    $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $media['titre']);
+    $filename = $filename . '.' . $extension;
     
-    // Tableau des types MIME
-    $mime_types = [
-        'mp4' => 'video/mp4',
-        'webm' => 'video/webm',
-        'mov' => 'video/quicktime',
-        'avi' => 'video/x-msvideo',
-        'mkv' => 'video/x-matroska',
-        'mp3' => 'audio/mpeg',
-        'wav' => 'audio/wav',
-        'ogg' => 'audio/ogg',
-        'm4a' => 'audio/mp4',
-        'flac' => 'audio/flac',
-        'jpg' => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'png' => 'image/png',
-        'gif' => 'image/gif',
-        'webp' => 'image/webp',
-        'svg' => 'image/svg+xml',
-        'pdf' => 'application/pdf',
-        'doc' => 'application/msword',
-        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'xls' => 'application/vnd.ms-excel',
-        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'zip' => 'application/zip',
-        'rar' => 'application/x-rar-compressed',
-        '7z' => 'application/x-7z-compressed'
-    ];
-    
-    $mime_type = $mime_types[$extension] ?? 'application/octet-stream';
-    
-    // IMPORTANT: Nettoyer le buffer de sortie
-    if (ob_get_level()) {
-        ob_end_clean();
-    }
-    
-    // Headers pour forcer le téléchargement
-    header('Content-Type: ' . $mime_type);
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Content-Length: ' . filesize($file_path));
-    header('Content-Transfer-Encoding: binary');
-    header('Cache-Control: no-cache, must-revalidate');
-    header('Pragma: no-cache');
-    header('Expires: 0');
-    
-    // Envoyer le fichier
-    readfile($file_path);
-    exit;
+    // Forcer le téléchargement
+    $this->load->helper('download');
+    $file_data = file_get_contents($file_path);
+    force_download($filename, $file_data);
 }
 
 }
