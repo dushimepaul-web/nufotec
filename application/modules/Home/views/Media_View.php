@@ -621,6 +621,11 @@
             <i class="bi bi-file-earmark-text-fill"></i><span>Documents</span>
         </a>
     </div>
+    <div class="sidebar-section">
+        <a href="<?= base_url('') ?>" class="sidebar-item <?= !isset($current_type) && !isset($search_query) ? 'active' : '' ?>">
+            <i class="bi bi-house-fill"></i><span>Quiter</span>
+        </a>
+    </div>
 </aside>
 
 <main class="main-content">
