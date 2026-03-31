@@ -1376,28 +1376,23 @@ body {
 
                     <div class="doctor-footer">
                         <div class="price-block">
-                            <div class="price-label">Consultation</div>
-                            <div class="price-value">
-                                <?= number_format($prix_usd, 2) ?> <span>USD</span>
-                            </div>
-                            <div class="price-equivalents-container">
-                                <?php if($prix_eur > 0): ?>
-                                <div class="price-equivalent-item">
-                                    <i class="bi bi-currency-euro"></i>
-                                    <span><?= number_format($prix_eur, 2) ?> EUR</span>
-                                </div>
-                                <?php endif; ?>
-                                <?php if($prix_bif > 0): ?>
-                                <div class="price-equivalent-item">
-                                    <i class="bi bi-cash-stack"></i>
-                                    <span><?= number_format($prix_bif, 0) ?> BIF</span>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            <?php if($is_online): ?>
-                            <div class="next-slot"><i class="bi bi-lightning-charge-fill"></i> <?= $prochain_slot ?></div>
-                            <?php endif; ?>
-                        </div>
+    <div class="price-label">Consultation</div>
+    <div class="price-value">
+        <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
+    </div>
+    
+    <!-- Prix Burundi -->
+    <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
+        <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
+        <strong>Patients résidant au Burundi: 40 000 Fbu </strong>
+    </div>
+    
+    
+    
+    <?php if($is_online): ?>
+    <div class="next-slot"><i class="bi bi-lightning-charge-fill"></i> <?= $prochain_slot ?></div>
+    <?php endif; ?>
+</div>
                         
                         <div class="doctor-actions">
                             <button class="btn-consult btn-consult-secondary" onclick="openDetailModal(<?= $medecin['id'] ?>)">
@@ -1481,19 +1476,17 @@ body {
                                 </div>
                             </div>
 
-                            <div class="detail-section">
-                                <h4><i class="bi bi-currency-exchange"></i> Tarifs</h4>
-                                <div class="tarif-card">
-                                    <div class="price-main"><?= number_format($prix_usd, 2) ?> <small>USD</small></div>
-                                    <div class="modal-equivalents">
-                                        <div class="modal-equivalent"><i class="bi bi-currency-euro"></i> <?= number_format($prix_eur, 2) ?> EUR</div>
-                                        <div class="modal-equivalent"><i class="bi bi-cash-stack"></i> <?= number_format($prix_bif, 0) ?> BIF</div>
-                                    </div>
-                                    <div class="taux-info">
-                                        <i class="bi bi-info-circle"></i> Taux: 1 USD = <?= number_format($taux['USD_TO_EUR'] ?? 0.92, 4) ?> EUR | 1 USD = <?= number_format($taux['USD_TO_BIF'] ?? 2900, 0) ?> BIF
-                                    </div>
-                                </div>
-                            </div>
+                           <div class="detail-section">
+    <h4><i class="bi bi-currency-exchange"></i> Tarifs</h4>
+    <div class="tarif-card">
+        <div class="price-main"><?= number_format($prix_usd, 2) ?> <small>USD/EUR</small></div>
+        
+        <div class="burundi-price" style="margin-top: 10px; padding: 12px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; color: #155724;">
+            <i class="bi bi-geo-alt-fill" style="color: #28a745;"></i>
+            <strong>Patients résidant au Burundi: 40 000 Fbu</strong>
+        </div>
+    </div>
+</div>
 
                             <div class="text-center mt-4">
                                 <?php if($is_online): ?>
