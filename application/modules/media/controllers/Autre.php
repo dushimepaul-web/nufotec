@@ -1,554 +1,86 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/**
- * Autre Controller - Gestion des médias divers
- * Upload chunked 5MB, miniatures automatiques selon type
- * Version: 4.1 - Miniatures simplifiées
- */
 class Autre extends MX_Controller {
-
-    private $paths;
-    private $upload_config;
-    private $type_configs;
-    private $gd_available = false;
 
     function __construct()
     {
         parent::__construct();
-        
-        $this->_csrf_off();
-        $this->initializePaths();
-        $this->initializeConfig();
-        $this->checkGDAvailability();
-        $this->ensureDirectories();
-        
         $this->load->model('media/Model_media', 'Model');
-    }
-
-    // ==================== DÉSACTIVATION CSRF ====================
-
-    private function _csrf_off()
-    {
-        if ($this->input->is_ajax_request() || $this->input->server('REQUEST_METHOD') === 'POST') {
+        
+        // Désactiver CSRF pour les requêtes AJAX
+        if ($this->input->is_ajax_request()) {
             $this->config->set_item('csrf_protection', FALSE);
         }
     }
 
-    // ==================== INITIALISATION ====================
-
-    private function initializePaths()
-    {
-        $base = FCPATH;
-        $this->paths = [
-            'temp'       => $base . 'uploads/temp/autre/',
-            'files'      => $base . 'attachments/Autre/Files/',
-            'thumbnails' => $base . 'attachments/Autre/Thumbnails/',
-        ];
-    }
-
-    private function initializeConfig()
-    {
-        $this->upload_config = [
-            'chunk_size'    => 5 * 1024 * 1024,
-            'max_file_size' => 2 * 1024 * 1024 * 1024,
-        ];
-
-        $this->type_configs = [
-            'link' => [
-                'label'   => 'Lien / URL',
-                'icon'    => 'bx-link',
-                'color'   => 'info',
-                'accept'  => null,
-                'max_size'=> 0,
-                'has_file'=> false,
-                'type_db' => 'link'
-            ],
-            'book' => [
-                'label'   => 'Livre / PDF',
-                'icon'    => 'bx-book',
-                'color'   => 'warning',
-                'accept'  => ['pdf', 'epub', 'mobi'],
-                'max_size'=> 500 * 1024 * 1024,
-                'has_file'=> true,
-                'type_db' => 'autre'
-            ],
-            'texte' => [
-                'label'   => 'Texte',
-                'icon'    => 'bx-text',
-                'color'   => 'success',
-                'accept'  => null,
-                'max_size'=> 0,
-                'has_file'=> false,
-                'type_db' => 'autre'
-            ],
-            'photo' => [
-                'label'   => 'Photo / Image',
-                'icon'    => 'bx-image',
-                'color'   => 'danger',
-                'accept'  => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff'],
-                'max_size'=> 50 * 1024 * 1024,
-                'has_file'=> true,
-                'type_db' => 'image'
-            ],
-            'other' => [
-                'label'   => 'Autre fichier',
-                'icon'    => 'bx-file',
-                'color'   => 'secondary',
-                'accept'  => '*',
-                'max_size'=> 500 * 1024 * 1024,
-                'has_file'=> true,
-                'type_db' => 'autre'
-            ]
-        ];
-    }
-
-    private function checkGDAvailability()
-    {
-        $this->gd_available = extension_loaded('gd') && function_exists('imagecreatetruecolor');
-    }
-
-    private function ensureDirectories()
-    {
-        foreach ($this->paths as $path) {
-            if (!is_dir($path)) {
-                @mkdir($path, 0777, true);
-            }
-        }
-    }
-
-    // ==================== FONCTIONS SLUG (inchangées) ====================
-
-    private function generateSlug($title, $id = null)
-    {
-        $slug = strtolower(trim($title));
-        if (empty($slug)) {
-            $slug = 'media';
-        }
-        
-        $replacements = [
-            ' ' => '-',
-            "'" => '-',
-            '"' => '-',
-            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
-            'à' => 'a', 'â' => 'a', 'ä' => 'a',
-            'î' => 'i', 'ï' => 'i',
-            'ô' => 'o', 'ö' => 'o',
-            'ù' => 'u', 'û' => 'u', 'ü' => 'u',
-            'ç' => 'c',
-            'œ' => 'oe',
-            '/' => '-', '\\' => '-', '&' => 'et',
-            '?' => '', '!' => '', '.' => '-', ',' => '-',
-            ';' => '-', ':' => '-', '(' => '', ')' => '',
-            '[' => '', ']' => '', '{' => '', '}' => '',
-            '+' => '-', '*' => '', '#' => '', '@' => '',
-            '%' => '', '^' => '', '=' => '-'
-        ];
-        
-        foreach ($replacements as $search => $replace) {
-            $slug = str_replace($search, $replace, $slug);
-        }
-        
-        $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
-        $slug = preg_replace('/-+/', '-', $slug);
-        $slug = trim($slug, '-');
-        
-        if (strlen($slug) > 80) {
-            $slug = substr($slug, 0, 80);
-            $slug = preg_replace('/-+$/', '', $slug);
-        }
-        
-        if ($id) {
-            $slug = $slug . '-' . $id;
-        }
-        
-        return $slug;
-    }
-
-    private function generateUniqueSlug($title, $id = null)
-    {
-        $slug = $this->generateSlug($title, $id);
-        
-        if (!$id) {
-            $existing = $this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows();
-            if ($existing > 0) {
-                $counter = 2;
-                $original_slug = $slug;
-                while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows() > 0) {
-                    $slug = $original_slug . '-' . $counter;
-                    $counter++;
-                }
-            }
-        } else {
-            $existing = $this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ? AND id_media != ?", [$slug, $id])->num_rows();
-            if ($existing > 0) {
-                $counter = 2;
-                $original_slug = $slug;
-                while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ? AND id_media != ?", [$slug, $id])->num_rows() > 0) {
-                    $slug = $original_slug . '-' . $counter;
-                    $counter++;
-                }
-            }
-        }
-        
-        return $slug;
-    }
-
-    // ==================== VUE PRINCIPALE ====================
-
+    // ==================== INDEX ====================
     public function index()
     {
-        $items = $this->Model->read('galerie_medias', ['type' => 'autre'], 'id_media', 'DESC');
+        $items = $this->db->query("
+            SELECT * FROM galerie_medias 
+            WHERE type IN ('autre', 'link', 'image') 
+            ORDER BY id_media DESC
+        ")->result_array();
         
         foreach ($items as &$item) {
             $item['taille_formatee'] = !empty($item['taille']) ? $this->formatBytes($item['taille']) : '-';
-            $item['type_config'] = $this->type_configs[$item['sous_type'] ?? 'other'] ?? $this->type_configs['other'];
-            // Ajouter l'URL de miniature pour la vue
-            $item['thumbnail_url'] = $this->getThumbnailUrl($item);
         }
 
         $data = [
-            'items'        => $items,
-            'categories'   => $this->getExistingCategories(),
-            'stats'        => $this->calculateStats(),
-            'type_configs' => $this->type_configs
+            'items'      => $items,
+            'categories' => $this->getCategories()
         ];
         
         $this->load->view('Autre_View', $data);
     }
 
-    // ==================== NOUVELLE FONCTION: Get Thumbnail URL ====================
-
-    /**
-     * Génère l'URL de miniature selon le type - LOGIQUE SIMPLIFIÉE
-     */
-    private function getThumbnailUrl($item)
+    // ==================== UPLOAD IMAGE (MINIATURE) ====================
+    public function upload_image()
     {
-        $sous_type = $item['sous_type'] ?? 'other';
-        
-        // 1. LIEN: YouTube = miniature YouTube, sinon favicon
-        if ($sous_type === 'link') {
-            return $this->extractLinkThumb($item['lien'] ?? '');
-        }
-        
-        // 2. IMAGE: l'image elle-même sert de miniature
-        if ($sous_type === 'photo') {
-            if (!empty($item['fichier'])) {
-                return base_url($item['fichier']);
-            }
-        }
-        
-        // 3. PDF/BOOK: icône PDF
-        if ($sous_type === 'book') {
-            return base_url('assets/images/pdf-default.png');
-        }
-        
-        // 4. TEXTE: icône texte
-        if ($sous_type === 'texte') {
-            return base_url('assets/images/text-default.png');
-        }
-        
-        // 5. AUTRE: icône selon extension
-        if ($sous_type === 'other') {
-            $ext = strtolower(pathinfo($item['fichier'] ?? '', PATHINFO_EXTENSION));
-            return base_url($this->getFileIcon($ext));
-        }
-        
-        // Fallback
-        return base_url('assets/images/file-default.png');
-    }
-
-    /**
-     * Extrait la miniature d'un lien (YouTube, Vimeo, ou favicon)
-     */
-    private function extractLinkThumb($url)
-    {
-        if (empty($url)) {
-            return base_url('assets/images/link-default.png');
-        }
-        
-        // YouTube
-        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
-            return "https://img.youtube.com/vi/{$m[1]}/mqdefault.jpg";
-        }
-        
-        // Vimeo
-        if (preg_match('/vimeo\.com\/(\d+)/', $url, $m)) {
-            return "https://vumbnail.com/{$m[1]}.jpg";
-        }
-        
-        // Favicon pour autres liens
-        $domain = parse_url($url, PHP_URL_HOST);
-        if ($domain) {
-            return "https://www.google.com/s2/favicons?domain={$domain}&sz=128";
-        }
-        
-        return base_url('assets/images/link-default.png');
-    }
-
-    /**
-     * Icône selon extension de fichier
-     */
-    private function getFileIcon($ext)
-    {
-        $icons = [
-            'pdf'  => 'assets/images/pdf-default.png',
-            'doc'  => 'assets/images/doc-default.png',
-            'docx' => 'assets/images/doc-default.png',
-            'xls'  => 'assets/images/xls-default.png',
-            'xlsx' => 'assets/images/xls-default.png',
-            'ppt'  => 'assets/images/ppt-default.png',
-            'pptx' => 'assets/images/ppt-default.png',
-            'zip'  => 'assets/images/zip-default.png',
-            'rar'  => 'assets/images/zip-default.png',
-            'mp3'  => 'assets/images/audio-default.png',
-            'mp4'  => 'assets/images/video-default.png',
-            'avi'  => 'assets/images/video-default.png',
-            'mkv'  => 'assets/images/video-default.png',
-        ];
-        
-        return $icons[$ext] ?? 'assets/images/file-default.png';
-    }
-
-    // ==================== API UPLOAD (simplifié) ====================
-
-    public function initUpload()
-    {
-        $this->_csrf_off();
         $this->output->set_content_type('application/json');
         
-        $file_name = $this->input->post('file_name');
-        $file_size = (int)$this->input->post('file_size');
-        $sous_type = $this->input->post('sous_type') ?: 'other';
-
-        if (empty($file_name) || $file_size <= 0) {
-            echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
+        if (empty($_FILES['thumbnail_file'])) {
+            echo json_encode(['success' => false, 'message' => 'Aucun fichier']);
             return;
         }
-
-        if (!isset($this->type_configs[$sous_type])) {
-            echo json_encode(['success' => false, 'message' => 'Type non supporté']);
-            return;
-        }
-
-        $config = $this->type_configs[$sous_type];
         
-        if ($config['max_size'] > 0 && $file_size > $config['max_size']) {
+        $file = $_FILES['thumbnail_file'];
+        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp', 'svg');
+        
+        if (!in_array($file_extension, $valid_ext)) {
+            echo json_encode(['success' => false, 'message' => 'Format non supporté']);
+            return;
+        }
+        
+        $ref_folder = FCPATH . 'attachments/Autre/Thumbnails/';
+        if (!is_dir($ref_folder)) {
+            mkdir($ref_folder, 0777, TRUE);
+        }
+        
+        $code = date("YmdHis") . uniqid();
+        $filename = $code . "." . $file_extension;
+        
+        if (move_uploaded_file($file['tmp_name'], $ref_folder . $filename)) {
             echo json_encode([
-                'success' => false, 
-                'message' => 'Fichier trop grand. Max: ' . $this->formatBytes($config['max_size'])
+                'success' => true,
+                'file_path' => 'attachments/Autre/Thumbnails/' . $filename,
+                'preview_url' => base_url('attachments/Autre/Thumbnails/' . $filename)
             ]);
-            return;
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erreur upload']);
         }
-
-        if ($config['accept'] && $config['accept'] !== '*') {
-            $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-            if (!in_array($ext, $config['accept'])) {
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Format non supporté: ' . $ext
-                ]);
-                return;
-            }
-        }
-
-        $upload_id = 'autre_' . uniqid() . '_' . bin2hex(random_bytes(4));
-        $temp_dir  = $this->paths['temp'] . $upload_id . '/';
-        
-        if (!@mkdir($temp_dir, 0777, true)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur création dossier']);
-            return;
-        }
-
-        $total_chunks = (int)ceil($file_size / $this->upload_config['chunk_size']);
-        
-        $metadata = [
-            'upload_id'       => $upload_id,
-            'file_name'       => $file_name,
-            'file_size'       => $file_size,
-            'sous_type'       => $sous_type,
-            'total_chunks'    => $total_chunks,
-            'uploaded_chunks' => [],
-            'created_at'      => time(),
-            'status'          => 'uploading'
-        ];
-        
-        file_put_contents($temp_dir . 'metadata.json', json_encode($metadata));
-
-        echo json_encode([
-            'success'      => true,
-            'upload_id'    => $upload_id,
-            'chunk_size'   => $this->upload_config['chunk_size'],
-            'total_chunks' => $total_chunks
-        ]);
-        return;
-    }
-
-    public function uploadChunk()
-    {
-        $this->_csrf_off();
-        $this->output->set_content_type('application/json');
-        
-        $upload_id   = $this->input->post('upload_id');
-        $chunk_index = (int)$this->input->post('chunk_index');
-
-        if (empty($upload_id)) {
-            echo json_encode(['success' => false, 'message' => 'Upload ID manquant']);
-            return;
-        }
-
-        $temp_dir      = $this->paths['temp'] . $upload_id . '/';
-        $metadata_file = $temp_dir . 'metadata.json';
-        
-        if (!file_exists($metadata_file)) {
-            echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
-            return;
-        }
-
-        $metadata   = json_decode(file_get_contents($metadata_file), true);
-        $chunk_path = $temp_dir . 'chunk_' . $chunk_index;
-        
-        if (file_exists($chunk_path)) {
-            if (!in_array($chunk_index, $metadata['uploaded_chunks'])) {
-                $metadata['uploaded_chunks'][] = $chunk_index;
-                sort($metadata['uploaded_chunks']);
-                file_put_contents($metadata_file, json_encode($metadata));
-            }
-            
-            $uploaded = count($metadata['uploaded_chunks']);
-            echo json_encode([
-                'success'  => true,
-                'message'  => 'Chunk déjà présent',
-                'progress' => [
-                    'uploaded_chunks' => $uploaded,
-                    'total_chunks'    => $metadata['total_chunks'],
-                    'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
-                ]
-            ]);
-            return;
-        }
-
-        if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-            $error = $_FILES['chunk']['error'] ?? 'unknown';
-            echo json_encode(['success' => false, 'message' => 'Erreur chunk: ' . $error]);
-            return;
-        }
-
-        if (!@move_uploaded_file($_FILES['chunk']['tmp_name'], $chunk_path)) {
-            echo json_encode(['success' => false, 'message' => 'Erreur écriture disque']);
-            return;
-        }
-
-        $metadata['uploaded_chunks'][] = $chunk_index;
-        sort($metadata['uploaded_chunks']);
-        file_put_contents($metadata_file, json_encode($metadata));
-
-        $uploaded = count($metadata['uploaded_chunks']);
-        echo json_encode([
-            'success'  => true,
-            'message'  => 'Chunk reçu',
-            'progress' => [
-                'uploaded_chunks' => $uploaded,
-                'total_chunks'    => $metadata['total_chunks'],
-                'percent'         => round(($uploaded / $metadata['total_chunks']) * 100, 2)
-            ]
-        ]);
-        return;
-    }
-
-    public function completeUpload()
-    {
-        $this->_csrf_off();
-        $this->output->set_content_type('application/json');
-        
-        $upload_id = $this->input->post('upload_id');
-        
-        if (empty($upload_id)) {
-            echo json_encode(['success' => false, 'message' => 'Upload ID manquant']);
-            return;
-        }
-
-        $temp_dir      = $this->paths['temp'] . $upload_id . '/';
-        $metadata_file = $temp_dir . 'metadata.json';
-        
-        if (!file_exists($metadata_file)) {
-            echo json_encode(['success' => false, 'message' => 'Session non trouvée']);
-            return;
-        }
-
-        $metadata = json_decode(file_get_contents($metadata_file), true);
-
-        $missing = [];
-        for ($i = 0; $i < $metadata['total_chunks']; $i++) {
-            if (!file_exists($temp_dir . 'chunk_' . $i)) {
-                $missing[] = $i;
-            }
-        }
-
-        if (!empty($missing)) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Chunks manquants',
-                'missing' => $missing
-            ]);
-            return;
-        }
-
-        $safe_name     = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($metadata['file_name'], PATHINFO_FILENAME));
-        $original_name = date('YmdHis') . '_' . $safe_name . '_' . uniqid() . '.' . pathinfo($metadata['file_name'], PATHINFO_EXTENSION);
-        $original_path = $this->paths['files'] . $original_name;
-        
-        $out = fopen($original_path, 'wb');
-        if (!$out) {
-            echo json_encode(['success' => false, 'message' => 'Impossible de créer fichier']);
-            return;
-        }
-
-        for ($i = 0; $i < $metadata['total_chunks']; $i++) {
-            $chunk_file = $temp_dir . 'chunk_' . $i;
-            fwrite($out, file_get_contents($chunk_file));
-            unlink($chunk_file);
-        }
-        fclose($out);
-
-        @unlink($metadata_file);
-        @rmdir($temp_dir);
-
-        $sous_type = $metadata['sous_type'];
-        
-        // Retourner les données pour le frontend
-        $file_url = 'attachments/Autre/Files/' . $original_name;
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Upload complété',
-            'data'    => [
-                'original_file'  => $file_url,
-                'file_name'      => $original_name,
-                'file_size'      => $this->formatBytes(filesize($original_path)),
-                'sous_type'      => $sous_type,
-                'form_suggestions' => [
-                    'titre'     => $this->suggestTitle($metadata['file_name']),
-                    'categorie' => $this->suggestCategory($sous_type)
-                ]
-            ]
-        ]);
-        return;
     }
 
     // ==================== CRUD ====================
-
     public function Create()
     {
-        $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
-        $this->form_validation->set_rules('sous_type', 'Type', 'required');
-        
+        $this->form_validation->set_rules('titre', 'Titre', 'required|trim');
         $sous_type = $this->input->post('sous_type');
         
-        if ($sous_type === 'link') {
+        if ($sous_type == 'link') {
             $this->form_validation->set_rules('lien', 'Lien', 'required|valid_url');
-        } elseif ($sous_type !== 'texte') {
-            $this->form_validation->set_rules('uploaded_file_path', 'Fichier', 'required');
         }
 
         if ($this->form_validation->run() == FALSE) {
@@ -557,109 +89,97 @@ class Autre extends MX_Controller {
             return;
         }
 
-        $data = $this->prepareData($sous_type, 'create');
-        
-        if (!$data) {
-            redirect(base_url('autre'));
-            return;
+        $data = [
+            'titre'       => $this->input->post('titre'),
+            'type'        => ($sous_type == 'link') ? 'link' : (($sous_type == 'photo') ? 'image' : 'autre'),
+            'sous_type'   => $sous_type,
+            'description' => $this->input->post('description'),
+            'categorie'   => $this->input->post('categorie'),
+            'credits'     => $this->input->post('credits'),
+            'est_actif'   => $this->input->post('est_actif') ? 1 : 1,
+            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
+            'is_for_website'  => $this->input->post('is_for_website') ? 1 : 1,
+            'created_at'  => date('Y-m-d H:i:s'),
+            'updated_at'  => date('Y-m-d H:i:s')
+        ];
+
+        // Gestion selon le type
+        if ($sous_type == 'link') {
+            $data['lien'] = $this->input->post('lien');
+            $data['miniature'] = $this->extractLinkThumb($data['lien']);
+        } elseif ($sous_type == 'texte') {
+            $data['contenu_texte'] = $this->input->post('contenu_texte');
+            $data['miniature'] = 'assets/images/text-default.png';
+        } else {
+            // photo, book, other
+            $data['fichier'] = $this->input->post('uploaded_file_path');
+            $thumbnail = $this->input->post('thumbnail');
+            if (!empty($thumbnail)) {
+                $data['miniature'] = $thumbnail;
+            } elseif ($sous_type == 'photo' && !empty($data['fichier'])) {
+                $data['miniature'] = $data['fichier'];
+            }
         }
-        
-        $data['slug'] = $this->generateUniqueSlug($data['titre']);
+
+        // Générer le slug
+        $data['slug'] = $this->generateSlug($data['titre']);
 
         $rsp = $this->Model->create('galerie_medias', $data);
-        
-        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Élément créé avec succès' : 'Erreur création');
+        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Créé avec succès' : 'Erreur création');
         redirect(base_url('autre'));
     }
 
     public function Update()
     {
         $id = $this->input->post('id');
-        
-        $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
-        
+        $this->form_validation->set_rules('titre', 'Titre', 'required|trim');
+
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
             redirect(base_url('autre'));
             return;
         }
 
-        $current = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
-        
-        if (!$current) {
-            $this->session->set_flashdata('error', 'Élément non trouvé');
-            redirect(base_url('autre'));
-            return;
-        }
-
         $data = [
-            'titre'           => $this->input->post('titre'),
-            'description'     => $this->input->post('description'),
-            'categorie'       => $this->input->post('categorie'),
-            'date_media'      => $this->input->post('date_media'),
-            'credits'         => $this->input->post('credits'),
-            'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
+            'titre'       => $this->input->post('titre'),
+            'description' => $this->input->post('description'),
+            'categorie'   => $this->input->post('categorie'),
+            'credits'     => $this->input->post('credits'),
+            'est_actif'   => $this->input->post('est_actif') ? 1 : 0,
             'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
             'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
-            'updated_at'      => date('Y-m-d H:i:s')
+            'updated_at'  => date('Y-m-d H:i:s')
         ];
-        
-        if ($data['titre'] != $current['titre']) {
-            $data['slug'] = $this->generateUniqueSlug($data['titre'], $id);
-        }
 
-        if ($current['sous_type'] === 'link') {
-            $data['lien'] = $this->input->post('lien');
+        $thumbnail = $this->input->post('thumbnail');
+        if (!empty($thumbnail)) {
+            $data['miniature'] = $thumbnail;
         }
 
         $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
-        
-        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Élément mis à jour' : 'Erreur mise à jour');
+        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Mis à jour' : 'Erreur mise à jour');
         redirect(base_url('autre'));
     }
 
     public function Delete()
     {
         $id = $this->input->post('id');
-        $item = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
-        
-        if ($item) {
-            $this->deleteFiles($item);
-            
-            $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
-                'est_actif'  => 0,
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
-            
-            $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Élément supprimé' : 'Erreur suppression');
-        }
-        
+        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => 0]);
+        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Supprimé' : 'Erreur suppression');
         redirect(base_url('autre'));
     }
 
     public function ChangeStatus()
     {
-        $this->_csrf_off();
-        $this->output->set_content_type('application/json');
-        
-        $id     = $this->input->post('id');
+        $id = $this->input->post('id');
         $status = $this->input->post('est_actif');
-        
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
-            'est_actif'  => $status,
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
-        
+        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => $status]);
         echo json_encode(['success' => (bool)$rsp]);
-        return;
     }
 
     public function toggleField()
     {
-        $this->_csrf_off();
-        $this->output->set_content_type('application/json');
-        
-        $id    = $this->input->post('id');
+        $id = $this->input->post('id');
         $field = $this->input->post('field');
         $value = $this->input->post('value');
         
@@ -669,157 +189,58 @@ class Autre extends MX_Controller {
             return;
         }
         
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [
-            $field       => $value,
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
-        
+        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [$field => $value]);
         echo json_encode(['success' => (bool)$rsp]);
-        return;
     }
 
     // ==================== HELPERS ====================
-
-    private function prepareData($sous_type, $mode)
+    private function generateSlug($title)
     {
-        $type_db = $this->type_configs[$sous_type]['type_db'] ?? 'autre';
+        $slug = strtolower(trim($title));
+        $slug = preg_replace('/[^a-z0-9-]/', '-', $slug);
+        $slug = preg_replace('/-+/', '-', $slug);
+        $slug = trim($slug, '-');
         
-        $data = [
-            'titre'           => $this->input->post('titre'),
-            'type'            => $type_db,
-            'sous_type'       => $sous_type,
-            'description'     => $this->input->post('description') ?: null,
-            'categorie'       => $this->input->post('categorie') ?: null,
-            'date_media'      => $this->input->post('date_media') ?: null,
-            'credits'         => $this->input->post('credits') ?: null,
-            'est_actif'       => $this->input->post('est_actif') ? 1 : 1,
-            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website'  => $this->input->post('is_for_website') ? 1 : 1,
-            'updated_at'      => date('Y-m-d H:i:s')
-        ];
-
-        if ($mode === 'create') {
-            $data['created_at'] = date('Y-m-d H:i:s');
+        // Vérifier l'unicité
+        $original = $slug;
+        $counter = 1;
+        while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows() > 0) {
+            $slug = $original . '-' . $counter;
+            $counter++;
         }
+        return $slug;
+    }
 
-        switch ($sous_type) {
-            case 'link':
-                $data['lien'] = $this->input->post('lien');
-                $data['fichier'] = null;
-                break;
-                
-            case 'texte':
-                $data['contenu_texte'] = $this->input->post('contenu_texte') ?: null;
-                $data['fichier'] = null;
-                break;
-                
-            default:
-                $file_path = $this->input->post('uploaded_file_path');
-                
-                if (!empty($file_path)) {
-                    $full = FCPATH . $file_path;
-                    $data['fichier'] = $file_path;
-                    $data['taille'] = filesize($full);
-                    $data['mime_type'] = mime_content_type($full);
-                    $data['lien'] = null;
-                }
-                break;
+    private function extractLinkThumb($url)
+    {
+        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
+            return "https://img.youtube.com/vi/{$m[1]}/mqdefault.jpg";
         }
-
-        return $data;
-    }
-
-    private function deleteFiles($item)
-    {
-        if (!empty($item['fichier']) && file_exists(FCPATH . $item['fichier'])) {
-            @unlink(FCPATH . $item['fichier']);
+        if (preg_match('/vimeo\.com\/(\d+)/', $url, $m)) {
+            return "https://vumbnail.com/{$m[1]}.jpg";
         }
-    }
-
-    private function getExistingCategories()
-    {
-        $this->db->select('DISTINCT(categorie) as cat');
-        $this->db->where('type', 'autre');
-        $this->db->where('categorie IS NOT NULL');
-        $this->db->where('categorie !=', '');
-        return array_filter(array_column($this->db->get('galerie_medias')->result_array(), 'cat'));
-    }
-
-    private function calculateStats()
-    {
-        $stats = [
-            'total' => 0,
-            'by_type' => array_fill_keys(array_keys($this->type_configs), 0),
-            'total_size' => 0,
-            'total_size_formatted' => '0 B'
-        ];
-
-        $items = $this->Model->read('galerie_medias', ['type' => 'autre', 'est_actif' => 1]);
-        
-        foreach ($items as $item) {
-            $stats['total']++;
-            $type = $item['sous_type'] ?? 'other';
-            if (isset($stats['by_type'][$type])) $stats['by_type'][$type]++;
-            $stats['total_size'] += $item['taille'] ?? 0;
+        $domain = parse_url($url, PHP_URL_HOST);
+        if ($domain) {
+            return "https://www.google.com/s2/favicons?domain={$domain}&sz=128";
         }
-        
-        $stats['total_size_formatted'] = $this->formatBytes($stats['total_size']);
-        return $stats;
+        return 'assets/images/link-default.png';
     }
 
-    private function suggestTitle($filename)
+    private function getCategories()
     {
-        $name = pathinfo($filename, PATHINFO_FILENAME);
-        $name = preg_replace('/[^a-zA-Z0-9]/', ' ', $name);
-        return ucwords(trim($name));
-    }
-
-    private function suggestCategory($sous_type)
-    {
-        $mappings = [
-            'link' => 'Ressources',
-            'book' => 'Documentation',
-            'texte' => 'Articles',
-            'photo' => 'Galerie',
-            'other' => 'Divers'
-        ];
-        return $mappings[$sous_type] ?? 'Général';
+        $result = $this->db->query("SELECT DISTINCT categorie FROM galerie_medias WHERE categorie IS NOT NULL AND categorie != ''")->result_array();
+        return array_column($result, 'categorie');
     }
 
     private function formatBytes($bytes)
     {
         if ($bytes <= 0) return '0 B';
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $units = ['B', 'KB', 'MB', 'GB'];
         $i = 0;
         while ($bytes >= 1024 && $i < count($units) - 1) {
             $bytes /= 1024;
             $i++;
         }
         return round($bytes, 2) . ' ' . $units[$i];
-    }
-
-    public function updateAllSlugs()
-    {
-        if (!$this->session->userdata('is_admin')) {
-            show_404();
-            return;
-        }
-        
-        $items = $this->db->query("
-            SELECT id_media, titre FROM galerie_medias 
-            WHERE type IN ('autre', 'link', 'image') AND est_actif = 1
-        ")->result_array();
-        
-        $updated = 0;
-        foreach ($items as $item) {
-            $slug = $this->generateUniqueSlug($item['titre'], $item['id_media']);
-            
-            $this->db->where('id_media', $item['id_media']);
-            $this->db->update('galerie_medias', ['slug' => $slug]);
-            $updated++;
-            echo "ID: {$item['id_media']} - Slug: {$slug}<br>";
-        }
-        
-        echo "<br>Total mis à jour: {$updated} slugs pour les médias divers.";
     }
 }
