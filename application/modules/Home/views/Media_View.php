@@ -651,7 +651,6 @@
         <img src="" alt="" class="player-thumb" id="playerThumb">
         <div class="player-details">
             <h4 id="playerTitle">Titre</h4>
-            <p id="playerArtist">Artiste</p>
         </div>
     </div>
     <div class="player-controls">
