@@ -180,14 +180,14 @@
     </div>
 </footer>
 
-<!-- Floating Cart Button - Caché sur mobile -->
-<a href="<?= base_url('panier') ?>" class="floating-cart d-none d-md-flex" id="floatingCart" title="Mon panier">
+<!-- Floating Cart Button - Caché sur mobile 
+<a href="" class="floating-cart d-none d-md-flex" id="floatingCart" title="Mon panier">
     <div class="cart-icon-wrapper">
         <i class="bi bi-cart-fill"></i>
         <span class="cart-badge" id="cartBadge">0</span>
     </div>
     <span class="cart-text">Panier</span>
-</a>
+</a>-->
 
 <!-- Mobile Sticky Footer (App Style) -->
 <div class="mobile-sticky-footer d-lg-none">
