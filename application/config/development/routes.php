@@ -362,3 +362,12 @@ $route['product_categories/update'] = 'Advertise_product/Product_categories/upda
 $route['product_categories/delete'] = 'Advertise_product/Product_categories/delete';
 $route['product_categories/view/(:num)'] = 'Advertise_product/Product_categories/view/$1';
 
+
+
+// Social Links
+$route['social'] = 'Social/index';
+$route['social-create'] = 'Social/Create';
+$route['social-update'] = 'Social/Update';
+$route['social-delete'] = 'Social/Delete';
+$route['social/ChangeStatus'] = 'Social/ChangeStatus';
+$route['api/social'] = 'Social/api_get_active';

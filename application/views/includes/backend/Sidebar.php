@@ -153,6 +153,7 @@
                 <li><a href="<?= base_url('media/Video') ?>" class="<?= $this->uri->segment(1) == 'Video' ? 'active' : '' ?>"><i class='bx bx-package'></i>Video</a></li>
                 <li><a href="<?= base_url('media/Audio') ?>" class="<?= $this->uri->segment(1) == 'Audio' ? 'active' : '' ?>"><i class='bx bx-category-alt'></i>Audio</a></li>
                 <li><a href="<?= base_url('media/Autre/admin_liste') ?>" class="<?= $this->uri->segment(1) == 'Autre' ? 'active' : '' ?>"><i class='bx bx-photo-album'></i>Autre</a></li>
+                <li><a href="<?= base_url('social') ?>" class="<?= $this->uri->segment(1) == 'social' ? 'active' : '' ?>"><i class='bx bx-photo-album'></i>Reseaux social</a></li>
             </ul>
         </li>
 <?php endif; ?>

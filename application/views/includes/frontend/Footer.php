@@ -90,12 +90,27 @@
 
                         <!-- Social Links -->
                         <div class="footer-social">
-                            <a href="#" class="social-link" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
-                            <a href="#" class="social-link" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
-                            <a href="#" class="social-link" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                            <a href="#" class="social-link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-                            <a href="#" class="social-link" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
-                        </div>
+    <?php
+    // Connexion et requête directe
+    $CI =& get_instance();
+    
+    $social_links = $CI->db->query("
+        SELECT * FROM social_links 
+        WHERE is_active = 1 
+        ORDER BY display_order ASC
+    ")->result_array();
+    ?>
+    
+    <?php foreach($social_links as $social): ?>
+        <a href="<?= htmlspecialchars($social['url']) ?>" 
+           class="social-link" 
+           aria-label="<?= htmlspecialchars($social['label']) ?>"
+           target="_blank" 
+           rel="noopener noreferrer">
+            <i class="bi bi-<?= $social['icon_name'] ?>"></i>
+        </a>
+    <?php endforeach; ?>
+</div>
                     </div>
 
                     <!-- Column 2: Navigation -->
