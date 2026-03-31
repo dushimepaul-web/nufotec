@@ -88,9 +88,14 @@ class Media extends MY_Controller{
  * Vue filtrée par type de média
  * Pour les vidéos, on affiche aussi les liens vidéo (type 'link')
  */
+/**
+ * Vue filtrée par type de média
+ * image/book/document -> affichés comme "Autre" avec sous-type
+ */
 public function type($type)
 {
-    $valid_types = ['video', 'audio', 'image', 'document', 'link', 'autre'];
+    // Types valides incluant book
+    $valid_types = ['video', 'audio', 'image', 'book', 'document', 'link'];
     
     if (!in_array($type, $valid_types)) {
         show_404();
@@ -99,9 +104,22 @@ public function type($type)
     
     $user = $this->getCurrentUser();
     
-    // Récupérer les médias selon le type
-    $medias = $this->getMediasByType($type);
+    // Types qui s'affichent comme "Autre"
+    $types_autre = ['image', 'book', 'document'];
     
+    // Déterminer l'affichage
+    if (in_array($type, $types_autre)) {
+        $display_type = 'autre';           // Pour le titre principal
+        $sub_type = $type;                  // Sous-type (image/book/document)
+        $page_title = 'Autre';              // Titre de la page
+    } else {
+        $display_type = $type;
+        $sub_type = null;
+        $page_title = ucfirst($type);
+    }
+    
+    // Récupérer les médias selon le type réel
+    $medias = $this->getMediasByType($type);
     $medias = $this->formatMedias($medias);
     
     // Récupérer les statistiques
@@ -112,7 +130,10 @@ public function type($type)
     $data = [
         'medias' => $medias,
         'categories' => $categories,
-        'current_type' => $type,
+        'current_type' => $display_type,     // "autre" ou type normal
+        'original_type' => $type,            // type réel de l'URL
+        'sub_type' => $sub_type,             // image/book/document ou null
+        'page_title' => $page_title,         // "Autre" ou "Video"/"Audio"/"Link"
         'search_query' => null,
         'results_count' => count($medias),
         'user' => $user,
@@ -121,14 +142,19 @@ public function type($type)
     
     $this->load->view('Media_View', $data);
 }
-
 /**
  * Récupérer les médias par type avec gestion spéciale pour les vidéos
  */
+/**
+ * Récupérer les médias par type
+ */
 private function getMediasByType($type)
 {
+    // Types qui s'affichent comme "Autre" mais filtrés individuellement
+    $types_autre = ['image', 'book', 'document'];
+    
     if ($type === 'video') {
-        // Inclure les vidéos locales et les liens vidéo
+        // Vidéos locales + liens vidéo
         $sql = "
             SELECT g.*,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
@@ -153,17 +179,32 @@ private function getMediasByType($type)
                 ))
             )
             ORDER BY 
-                CASE 
-                    WHEN g.type = 'video' THEN 0
-                    ELSE 1
-                END,
+                CASE WHEN g.type = 'video' THEN 0 ELSE 1 END,
                 g.created_at DESC
         ";
-        
         return $this->db->query($sql)->result_array();
         
+    } elseif (in_array($type, $types_autre)) {
+        // image, book, document : filtre sur le type spécifique
+        $sql = "
+            SELECT g.*,
+                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+                   (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+                   (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+                   (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings,
+                   0 as is_video_content,
+                   '{$type}' as sub_type_filter
+            FROM galerie_medias g
+            WHERE g.est_actif = 1 AND g.type = ?
+            ORDER BY g.created_at DESC
+        ";
+        return $this->db->query($sql, [$type])->result_array();
+        
     } else {
-        // Pour les autres types, requête simple
+        // audio, link : filtre standard
         $sql = "
             SELECT g.*,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
@@ -178,11 +219,9 @@ private function getMediasByType($type)
             WHERE g.est_actif = 1 AND g.type = ?
             ORDER BY g.created_at DESC
         ";
-        
         return $this->db->query($sql, [$type])->result_array();
     }
 }
-
 /**
  * Obtenir les statistiques par type
  */
