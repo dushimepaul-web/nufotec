@@ -183,6 +183,7 @@ $route['video/uploadThumbnail'] = 'media/Video/uploadThumbnail';
 
 
 $route['autre/admin_liste'] = 'media/Autre/admin_liste';
+$route['Autre/admin_liste'] = 'media/Autre/admin_liste';
 $route['autre/admin_liste/(:num)'] = 'media/Autre/admin_liste/$1';
 $route['autre/admin_ajouter'] = 'media/Autre/admin_ajouter';
 $route['autre/admin_modifier/(:num)'] = 'media/Autre/admin_modifier/$1';
