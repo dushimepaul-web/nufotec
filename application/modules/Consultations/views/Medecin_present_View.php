@@ -1384,7 +1384,7 @@ body {
     <!-- Prix Burundi -->
     <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
         <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
-        <strong>Patients résidant au Burundi: 40 000 Fbu </strong>
+        <strong>Patients résidant au Burundi:<br> 40 000 Fbu </strong>
     </div>
     
     
@@ -1483,7 +1483,7 @@ body {
         
         <div class="burundi-price" style="margin-top: 10px; padding: 12px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; color: #155724;">
             <i class="bi bi-geo-alt-fill" style="color: #28a745;"></i>
-            <strong>Patients résidant au Burundi: 40 000 Fbu</strong>
+            <strong>Patients résidant au Burundi:<br> 40 000 Fbu</strong>
         </div>
     </div>
 </div>
