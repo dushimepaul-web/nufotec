@@ -305,7 +305,9 @@ $route['media/apiGetMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
 $route['media/getCategories'] = 'Home/Media/getCategories';
 $route['media/getStats'] = 'Home/Media/apiGetStats';
 $route['media/apiGetStats'] = 'Home/Media/apiGetStats';
+// Routes pour le téléchargement
 $route['media/downloader'] = 'Home/Media/downloader';
+$route['media/downloader/(:any)'] = 'Home/Media/downloader/$1';
 
 // Waveform
 $route['media/getWaveform/(:num)'] = 'Home/Media/apiGetWaveform/$1';
