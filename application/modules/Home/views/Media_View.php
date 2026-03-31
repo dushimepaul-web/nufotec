@@ -10,15 +10,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        /* Tous vos styles existants restent identiques */
-        :root {
-            --bg-dark: #0f0f0f;
-            --bg-card: #1a1a1a;
-            --bg-hover: #2a2a2a;
-            --text-primary: #ffffff;
-            --text-secondary: #aaaaaa;
-            --border-color: #333333;
-        }
+    /* Tous vos styles existants restent identiques */
+:root {
+    --bg-dark: #0f0f0f;        /* YouTube dark theme background */
+    --bg-card: #212121;         /* YouTube video card background */
+    --bg-hover: #2a2a2a;        /* YouTube hover effect */
+    --text-primary: #f1f1f1;    /* YouTube primary text */
+    --text-secondary: #aaaaaa;  /* YouTube secondary text */ 
+    --border-color: #2a2a2a;    /* YouTube separator/border */
+}
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow-x: hidden; }

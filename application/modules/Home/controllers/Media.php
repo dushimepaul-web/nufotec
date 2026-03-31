@@ -873,4 +873,88 @@ public function apiSearch()
         }
         return (string)$number;
     }
+
+    /**
+ * Télécharger un fichier média
+ */
+/**
+ * Télécharger un fichier média avec gestion avancée
+ */
+public function download($id_media)
+{
+    $user = $this->getCurrentUser();
+    
+    $media = $this->db->query("
+        SELECT id_media, fichier, titre, type, sous_type, taille 
+        FROM galerie_medias 
+        WHERE id_media = ? AND est_actif = 1
+    ", [$id_media])->row_array();
+    
+    if (!$media || empty($media['fichier'])) {
+        show_404();
+        return;
+    }
+    
+    $file_path = FCPATH . $media['fichier'];
+    
+    if (!file_exists($file_path)) {
+        show_404();
+        return;
+    }
+    
+    // Log du téléchargement
+    $this->db->insert('media_downloads', [
+        'id_media' => $id_media,
+        'user_id' => $user ? $user['id'] : null,
+        'ip_address' => $this->input->ip_address(),
+        'user_agent' => $this->input->user_agent(),
+        'downloaded_at' => date('Y-m-d H:i:s')
+    ]);
+    
+    // Mettre à jour le compteur de téléchargements
+    $this->db->query("
+        UPDATE galerie_medias 
+        SET telechargements = telechargements + 1 
+        WHERE id_media = ?
+    ", [$id_media]);
+    
+    // Déterminer le type MIME
+    $extension = strtolower(pathinfo($media['fichier'], PATHINFO_EXTENSION));
+    $mime_types = [
+        'mp4' => 'video/mp4',
+        'webm' => 'video/webm',
+        'mov' => 'video/quicktime',
+        'avi' => 'video/x-msvideo',
+        'mp3' => 'audio/mpeg',
+        'wav' => 'audio/wav',
+        'ogg' => 'audio/ogg',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'zip' => 'application/zip',
+        'rar' => 'application/x-rar-compressed'
+    ];
+    
+    $mime_type = $mime_types[$extension] ?? 'application/octet-stream';
+    
+    // Headers pour forcer le téléchargement
+    header('Content-Type: ' . $mime_type);
+    header('Content-Disposition: attachment; filename="' . $this->security->sanitize_filename($media['titre']) . '.' . $extension . '"');
+    header('Content-Length: ' . filesize($file_path));
+    header('Cache-Control: no-cache, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    
+    // Vider le buffer et envoyer le fichier
+    ob_clean();
+    flush();
+    readfile($file_path);
+    exit;
+}
+
 }

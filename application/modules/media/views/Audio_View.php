@@ -468,7 +468,7 @@ if (!function_exists('get_quality_badge_audio')) {
                 </div>
             </div>
         </div>
-    </div>
+   
 
     <!-- Upload Modal -->
     <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
@@ -629,7 +629,6 @@ if (!function_exists('get_quality_badge_audio')) {
 
 </div>
 
-<?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">

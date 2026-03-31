@@ -1,5 +1,6 @@
-
-
+<?php 
+include VIEWPATH.'includes/frontend/Header.php'; 
+?>
 <style type="text/css">
 :root {
     --primary: #0f4c3a;
