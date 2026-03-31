@@ -1,246 +1,275 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Autre extends MX_Controller {
+class Autre extends CI_Controller {
 
-    function __construct()
-    {
+    public function __construct() {
         parent::__construct();
-        $this->load->model('media/Model_media', 'Model');
-        
-        // Désactiver CSRF pour les requêtes AJAX
-        if ($this->input->is_ajax_request()) {
-            $this->config->set_item('csrf_protection', FALSE);
-        }
+        $this->load->model('autre_model');
+        $this->load->library('form_validation');
+        $this->load->helper(['url', 'form', 'text']);
     }
 
-    // ==================== INDEX ====================
-    public function index()
-    {
-        $items = $this->db->query("
-            SELECT * FROM galerie_medias 
-            WHERE type IN ('autre', 'link', 'image') 
-            ORDER BY id_media DESC
-        ")->result_array();
-        
-        foreach ($items as &$item) {
-            $item['taille_formatee'] = !empty($item['taille']) ? $this->formatBytes($item['taille']) : '-';
-        }
+    // ============ FRONTEND ============
 
-        $data = [
-            'items'      => $items,
-            'categories' => $this->getCategories()
-        ];
+    // Liste publique des médias "Autre"
+    public function index() {
+        $data['title'] = 'Galerie - Autres Médias';
+        $data['medias'] = $this->autre_model->get_all();
+        $data['stats'] = $this->autre_model->get_stats();
         
-        $this->load->view('Autre_View', $data);
+        $this->load->view('templates/header', $data);
+        $this->load->view('autre/index', $data);
+        $this->load->view('templates/footer');
     }
 
-    // ==================== UPLOAD IMAGE (MINIATURE) ====================
-    public function upload_image()
-    {
-        $this->output->set_content_type('application/json');
+    // Voir un média spécifique
+    public function voir($slug) {
+        $data['media'] = $this->autre_model->get_by_slug($slug);
         
-        if (empty($_FILES['thumbnail_file'])) {
-            echo json_encode(['success' => false, 'message' => 'Aucun fichier']);
-            return;
+        if (!$data['media']) {
+            show_404();
         }
         
-        $file = $_FILES['thumbnail_file'];
-        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp', 'svg');
+        $data['title'] = $data['media']->titre;
         
-        if (!in_array($file_extension, $valid_ext)) {
-            echo json_encode(['success' => false, 'message' => 'Format non supporté']);
-            return;
-        }
-        
-        $ref_folder = FCPATH . 'attachments/Autre/Thumbnails/';
-        if (!is_dir($ref_folder)) {
-            mkdir($ref_folder, 0777, TRUE);
-        }
-        
-        $code = date("YmdHis") . uniqid();
-        $filename = $code . "." . $file_extension;
-        
-        if (move_uploaded_file($file['tmp_name'], $ref_folder . $filename)) {
-            echo json_encode([
-                'success' => true,
-                'file_path' => 'attachments/Autre/Thumbnails/' . $filename,
-                'preview_url' => base_url('attachments/Autre/Thumbnails/' . $filename)
-            ]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Erreur upload']);
-        }
+        $this->load->view('templates/header', $data);
+        $this->load->view('autre/detail', $data);
+        $this->load->view('templates/footer');
     }
 
-    // ==================== CRUD ====================
-    public function Create()
-    {
-        $this->form_validation->set_rules('titre', 'Titre', 'required|trim');
-        $sous_type = $this->input->post('sous_type');
+    // Filtrer par sous_type
+    public function categorie($sous_type) {
+        $types_valides = ['photo', 'book', 'texte', 'link', 'other'];
         
-        if ($sous_type == 'link') {
-            $this->form_validation->set_rules('lien', 'Lien', 'required|valid_url');
+        if (!in_array($sous_type, $types_valides)) {
+            show_404();
         }
+        
+        $data['title'] = 'Catégorie : ' . ucfirst($sous_type);
+        $data['medias'] = $this->autre_model->get_by_sous_type($sous_type);
+        $data['categorie_active'] = $sous_type;
+        
+        $this->load->view('templates/header', $data);
+        $this->load->view('autre/index', $data);
+        $this->load->view('templates/footer');
+    }
 
-        if ($this->form_validation->run() == FALSE) {
-            $this->session->set_flashdata('error', validation_errors());
-            redirect(base_url('autre'));
-            return;
-        }
+    // ============ ADMIN ============
 
-        $data = [
-            'titre'       => $this->input->post('titre'),
-            'type'        => ($sous_type == 'link') ? 'link' : (($sous_type == 'photo') ? 'image' : 'autre'),
-            'sous_type'   => $sous_type,
-            'description' => $this->input->post('description'),
-            'categorie'   => $this->input->post('categorie'),
-            'credits'     => $this->input->post('credits'),
-            'est_actif'   => $this->input->post('est_actif') ? 1 : 1,
-            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website'  => $this->input->post('is_for_website') ? 1 : 1,
-            'created_at'  => date('Y-m-d H:i:s'),
-            'updated_at'  => date('Y-m-d H:i:s')
-        ];
+    // Liste admin avec pagination
+    public function admin_liste($offset = 0) {
+        // Vérifier connexion admin ici...
+        
+        $config['base_url'] = base_url('autre/admin_liste');
+        $config['total_rows'] = $this->autre_model->count_all();
+        $config['per_page'] = 10;
+        
+        $this->load->library('pagination', $config);
+        
+        $data['title'] = 'Gestion - Autres Médias';
+        $data['medias'] = $this->autre_model->get_all($config['per_page'], $offset);
+        $data['pagination'] = $this->pagination->create_links();
+        
+        $this->load->view('admin/templates/header', $data);
+        $this->load->view('autre/admin/liste', $data);
+        $this->load->view('admin/templates/footer');
+    }
 
-        // Gestion selon le type
-        if ($sous_type == 'link') {
-            $data['lien'] = $this->input->post('lien');
-            $data['miniature'] = $this->extractLinkThumb($data['lien']);
-        } elseif ($sous_type == 'texte') {
-            $data['contenu_texte'] = $this->input->post('contenu_texte');
-            $data['miniature'] = 'assets/images/text-default.png';
-        } else {
-            // photo, book, other
-            $data['fichier'] = $this->input->post('uploaded_file_path');
-            $thumbnail = $this->input->post('thumbnail');
-            if (!empty($thumbnail)) {
-                $data['miniature'] = $thumbnail;
-            } elseif ($sous_type == 'photo' && !empty($data['fichier'])) {
-                $data['miniature'] = $data['fichier'];
+    // Formulaire d'ajout
+    public function admin_ajouter() {
+        // Vérifier connexion admin...
+        
+        $data['title'] = 'Ajouter un média';
+        $data['action'] = 'ajouter';
+        
+        if ($this->input->post()) {
+            $this->_validation_form();
+            
+            if ($this->form_validation->run()) {
+                $insert_data = $this->_prepare_data();
+                
+                // Gestion de l'upload selon le type
+                $sous_type = $this->input->post('sous_type');
+                
+                if ($sous_type === 'link') {
+                    // Lien externe
+                    $insert_data['lien'] = $this->input->post('lien');
+                    $insert_data['miniature'] = $this->input->post('miniature_externe');
+                } else {
+                    // Upload fichier
+                    if (!empty($_FILES['fichier']['name'])) {
+                        $fichier = $this->autre_model->upload_fichier(
+                            $_FILES['fichier']['tmp_name'],
+                            $_FILES['fichier']['name']
+                        );
+                        
+                        if ($fichier) {
+                            $insert_data['fichier'] = $fichier;
+                            $insert_data['taille'] = $_FILES['fichier']['size'];
+                            $insert_data['mime_type'] = $_FILES['fichier']['type'];
+                            
+                            // Détecter sous_type si non spécifié
+                            if (empty($sous_type)) {
+                                $insert_data['sous_type'] = $this->autre_model->detecter_sous_type(
+                                    $_FILES['fichier']['name'],
+                                    $_FILES['fichier']['type']
+                                );
+                            }
+                        }
+                    }
+                    
+                    // Upload miniature personnalisée (optionnel)
+                    if (!empty($_FILES['miniature']['name'])) {
+                        $miniature = $this->autre_model->upload_miniature(
+                            $_FILES['miniature']['tmp_name'],
+                            $_FILES['miniature']['name']
+                        );
+                        if ($miniature) {
+                            $insert_data['miniature'] = $miniature;
+                        }
+                    }
+                }
+                
+                $id = $this->autre_model->insert($insert_data);
+                
+                if ($id) {
+                    $this->session->set_flashdata('success', 'Média ajouté avec succès');
+                    redirect('autre/admin_liste');
+                } else {
+                    $data['error'] = 'Erreur lors de l\'ajout';
+                }
             }
         }
-
-        // Générer le slug
-        $data['slug'] = $this->generateSlug($data['titre']);
-
-        $rsp = $this->Model->create('galerie_medias', $data);
-        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Créé avec succès' : 'Erreur création');
-        redirect(base_url('autre'));
+        
+        $this->load->view('admin/templates/header', $data);
+        $this->load->view('autre/admin/form', $data);
+        $this->load->view('admin/templates/footer');
     }
 
-    public function Update()
-    {
-        $id = $this->input->post('id');
-        $this->form_validation->set_rules('titre', 'Titre', 'required|trim');
-
-        if ($this->form_validation->run() == FALSE) {
-            $this->session->set_flashdata('error', validation_errors());
-            redirect(base_url('autre'));
-            return;
+    // Formulaire de modification
+    public function admin_modifier($id) {
+        // Vérifier connexion admin...
+        
+        $data['media'] = $this->autre_model->get_by_id($id);
+        
+        if (!$data['media']) {
+            show_404();
         }
+        
+        $data['title'] = 'Modifier : ' . $data['media']->titre;
+        $data['action'] = 'modifier';
+        
+        if ($this->input->post()) {
+            $this->_validation_form();
+            
+            if ($this->form_validation->run()) {
+                $update_data = $this->_prepare_data();
+                
+                // Gestion fichier si nouveau upload
+                if (!empty($_FILES['fichier']['name'])) {
+                    $fichier = $this->autre_model->upload_fichier(
+                        $_FILES['fichier']['tmp_name'],
+                        $_FILES['fichier']['name']
+                    );
+                    
+                    if ($fichier) {
+                        // Supprimer ancien fichier
+                        if (!empty($data['media']->fichier) && file_exists(FCPATH . $data['media']->fichier)) {
+                            unlink(FCPATH . $data['media']->fichier);
+                        }
+                        
+                        $update_data['fichier'] = $fichier;
+                        $update_data['taille'] = $_FILES['fichier']['size'];
+                        $update_data['mime_type'] = $_FILES['fichier']['type'];
+                    }
+                }
+                
+                // Gestion nouvelle miniature
+                if (!empty($_FILES['miniature']['name'])) {
+                    $miniature = $this->autre_model->upload_miniature(
+                        $_FILES['miniature']['tmp_name'],
+                        $_FILES['miniature']['name']
+                    );
+                    if ($miniature) {
+                        // Supprimer ancienne miniature
+                        if (!empty($data['media']->miniature) && file_exists(FCPATH . $data['media']->miniature)) {
+                            unlink(FCPATH . $data['media']->miniature);
+                        }
+                        $update_data['miniature'] = $miniature;
+                    }
+                }
+                
+                $this->autre_model->update($id, $update_data);
+                $this->session->set_flashdata('success', 'Média modifié avec succès');
+                redirect('autre/admin_liste');
+            }
+        }
+        
+        $this->load->view('admin/templates/header', $data);
+        $this->load->view('autre/admin/form', $data);
+        $this->load->view('admin/templates/footer');
+    }
 
-        $data = [
-            'titre'       => $this->input->post('titre'),
+    // Suppression
+    public function admin_supprimer($id) {
+        // Vérifier connexion admin...
+        
+        $media = $this->autre_model->get_by_id($id);
+        
+        if ($media && $this->autre_model->delete($id)) {
+            $this->session->set_flashdata('success', 'Média supprimé');
+        } else {
+            $this->session->set_flashdata('error', 'Erreur lors de la suppression');
+        }
+        
+        redirect('autre/admin_liste');
+    }
+
+    // Changer statut actif/inactif
+    public function admin_toggle_status($id) {
+        $media = $this->autre_model->get_by_id($id);
+        
+        if ($media) {
+            $new_status = $media->est_actif ? 0 : 1;
+            $this->autre_model->update($id, ['est_actif' => $new_status]);
+        }
+        
+        redirect('autre/admin_liste');
+    }
+
+    // ============ MÉTHODES PRIVÉES ============
+
+    private function _validation_form() {
+        $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
+        $this->form_validation->set_rules('description', 'Description', 'trim');
+        $this->form_validation->set_rules('categorie', 'Catégorie', 'trim|max_length[100]');
+        $this->form_validation->set_rules('credits', 'Crédits', 'trim|max_length[255]');
+        $this->form_validation->set_rules('date_media', 'Date', 'trim');
+        
+        if ($this->input->post('sous_type') === 'link') {
+            $this->form_validation->set_rules('lien', 'Lien externe', 'required|valid_url');
+        }
+    }
+
+    private function _prepare_data() {
+        $titre = $this->input->post('titre');
+        $id = $this->input->post('id_media');
+        
+        return [
+            'titre' => $titre,
+            'slug' => $this->autre_model->generate_slug($titre, $id),
+            'sous_type' => $this->input->post('sous_type'),
             'description' => $this->input->post('description'),
-            'categorie'   => $this->input->post('categorie'),
-            'credits'     => $this->input->post('credits'),
-            'est_actif'   => $this->input->post('est_actif') ? 1 : 0,
+            'categorie' => $this->input->post('categorie'),
+            'date_media' => $this->input->post('date_media') ?: null,
+            'credits' => $this->input->post('credits'),
+            'est_actif' => $this->input->post('est_actif') ? 1 : 0,
+            'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
             'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
-            'updated_at'  => date('Y-m-d H:i:s')
+            'is_for_website' => $this->input->post('is_for_website') ? 1 : 0,
+            'message_reseaux' => $this->input->post('message_reseaux'),
+            'contenu_texte' => $this->input->post('contenu_texte')
         ];
-
-        $thumbnail = $this->input->post('thumbnail');
-        if (!empty($thumbnail)) {
-            $data['miniature'] = $thumbnail;
-        }
-
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
-        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Mis à jour' : 'Erreur mise à jour');
-        redirect(base_url('autre'));
-    }
-
-    public function Delete()
-    {
-        $id = $this->input->post('id');
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => 0]);
-        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Supprimé' : 'Erreur suppression');
-        redirect(base_url('autre'));
-    }
-
-    public function ChangeStatus()
-    {
-        $id = $this->input->post('id');
-        $status = $this->input->post('est_actif');
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], ['est_actif' => $status]);
-        echo json_encode(['success' => (bool)$rsp]);
-    }
-
-    public function toggleField()
-    {
-        $id = $this->input->post('id');
-        $field = $this->input->post('field');
-        $value = $this->input->post('value');
-        
-        $allowed = ['is_for_whatsapp', 'is_for_website', 'est_actif'];
-        if (!in_array($field, $allowed)) {
-            echo json_encode(['success' => false]);
-            return;
-        }
-        
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], [$field => $value]);
-        echo json_encode(['success' => (bool)$rsp]);
-    }
-
-    // ==================== HELPERS ====================
-    private function generateSlug($title)
-    {
-        $slug = strtolower(trim($title));
-        $slug = preg_replace('/[^a-z0-9-]/', '-', $slug);
-        $slug = preg_replace('/-+/', '-', $slug);
-        $slug = trim($slug, '-');
-        
-        // Vérifier l'unicité
-        $original = $slug;
-        $counter = 1;
-        while ($this->db->query("SELECT id_media FROM galerie_medias WHERE slug = ?", [$slug])->num_rows() > 0) {
-            $slug = $original . '-' . $counter;
-            $counter++;
-        }
-        return $slug;
-    }
-
-    private function extractLinkThumb($url)
-    {
-        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
-            return "https://img.youtube.com/vi/{$m[1]}/mqdefault.jpg";
-        }
-        if (preg_match('/vimeo\.com\/(\d+)/', $url, $m)) {
-            return "https://vumbnail.com/{$m[1]}.jpg";
-        }
-        $domain = parse_url($url, PHP_URL_HOST);
-        if ($domain) {
-            return "https://www.google.com/s2/favicons?domain={$domain}&sz=128";
-        }
-        return 'assets/images/link-default.png';
-    }
-
-    private function getCategories()
-    {
-        $result = $this->db->query("SELECT DISTINCT categorie FROM galerie_medias WHERE categorie IS NOT NULL AND categorie != ''")->result_array();
-        return array_column($result, 'categorie');
-    }
-
-    private function formatBytes($bytes)
-    {
-        if ($bytes <= 0) return '0 B';
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
     }
 }

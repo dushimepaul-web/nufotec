@@ -848,6 +848,57 @@ include VIEWPATH.'includes/frontend/Header.php';
     </div>
 </div>
 
+
+<!-- TOAST PRIX RÉEL - Version simple -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    <div id="priceToast" class="toast align-items-center text-white bg-dark border-warning" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+        <div class="d-flex">
+            <div class="toast-body p-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="flex-shrink-0">
+                        <i class="bx bx-dollar-circle fs-1 text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong class="fs-6 text-warning">
+                                <i class="bx bx-info-circle me-1"></i> Information prix
+                            </strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Fermer"></button>
+                        </div>
+                        <p class="mb-2 small text-white-50">
+                            Le prix affiché peut ne pas refléter le prix réel. 
+                            <strong class="text-warning">Contactez-nous pour connaître le prix exact</strong> et bénéficier de nos offres.
+                        </p>
+                        <div class="d-flex gap-2 mt-2">
+                            <a href="https://wa.me/25779666439?text=Bonjour,%20je%20souhaite%20connaître%20le%20prix%20réel%20de%20<?= urlencode($product['title'] ?? 'ce produit') ?>%20sur%20<?= urlencode(SITE_NAME ?? 'NUFOTEC') ?>" 
+                               class="btn btn-sm btn-success" target="_blank">
+                                <i class="bx bxl-whatsapp me-1"></i> Demander le prix
+                            </a>
+                            <a href="tel:25779666439" class="btn btn-sm btn-outline-light">
+                                <i class="bx bx-phone me-1"></i> Appeler
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Afficher le toast au chargement
+    const toastEl = document.getElementById('priceToast');
+    if (toastEl) {
+        const toast = new bootstrap.Toast(toastEl, {
+            autohide: false,  // Ne pas se fermer automatiquement
+            delay: 5000
+        });
+        toast.show();
+    }
+});
+</script>
+
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -980,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 `Adresse: ${formData.address}`,
                 formData.notes ? `Notes: ${formData.notes}` : '',
                 ``,
-                `📅 Commande passée le: ${dateStr}`,
+                `📅 Produit d'intérêt le: ${dateStr}`,
                 `⏳ Statut: En attente de confirmation`
             ].filter(Boolean).join('\n');
             
