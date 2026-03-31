@@ -880,6 +880,9 @@ public function apiSearch()
 /**
  * Télécharger un fichier média avec gestion avancée
  */
+/**
+ * Télécharger un fichier média avec gestion avancée
+ */
 public function download($id_media)
 {
     $user = $this->getCurrentUser();
@@ -918,41 +921,55 @@ public function download($id_media)
         WHERE id_media = ?
     ", [$id_media]);
     
-    // Déterminer le type MIME
+    // Déterminer le type MIME et l'extension
     $extension = strtolower(pathinfo($media['fichier'], PATHINFO_EXTENSION));
+    $filename = $this->security->sanitize_filename($media['titre']) . '.' . $extension;
+    
+    // Tableau des types MIME
     $mime_types = [
         'mp4' => 'video/mp4',
         'webm' => 'video/webm',
         'mov' => 'video/quicktime',
         'avi' => 'video/x-msvideo',
+        'mkv' => 'video/x-matroska',
         'mp3' => 'audio/mpeg',
         'wav' => 'audio/wav',
         'ogg' => 'audio/ogg',
+        'm4a' => 'audio/mp4',
+        'flac' => 'audio/flac',
         'jpg' => 'image/jpeg',
         'jpeg' => 'image/jpeg',
         'png' => 'image/png',
         'gif' => 'image/gif',
         'webp' => 'image/webp',
+        'svg' => 'image/svg+xml',
         'pdf' => 'application/pdf',
         'doc' => 'application/msword',
         'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'zip' => 'application/zip',
-        'rar' => 'application/x-rar-compressed'
+        'rar' => 'application/x-rar-compressed',
+        '7z' => 'application/x-7z-compressed'
     ];
     
     $mime_type = $mime_types[$extension] ?? 'application/octet-stream';
     
+    // IMPORTANT: Nettoyer le buffer de sortie
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    
     // Headers pour forcer le téléchargement
     header('Content-Type: ' . $mime_type);
-    header('Content-Disposition: attachment; filename="' . $this->security->sanitize_filename($media['titre']) . '.' . $extension . '"');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Content-Length: ' . filesize($file_path));
+    header('Content-Transfer-Encoding: binary');
     header('Cache-Control: no-cache, must-revalidate');
     header('Pragma: no-cache');
     header('Expires: 0');
     
-    // Vider le buffer et envoyer le fichier
-    ob_clean();
-    flush();
+    // Envoyer le fichier
     readfile($file_path);
     exit;
 }
