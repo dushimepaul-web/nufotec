@@ -586,6 +586,6 @@ $config['csrf_exclude_uris'] = array(
 
 $config['taux_devise'] = [
     'USD_TO_EUR' => 0.92,
-    'USD_TO_BIF' => 7000
+    'USD_TO_BIF' => 2900
 ];
 
