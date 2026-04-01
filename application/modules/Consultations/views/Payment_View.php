@@ -711,15 +711,18 @@
                     </div>
 
                     <!-- Prix -->
-                    <div class="price-section">
-                        <div class="price-amount">
-                            <?= number_format($prix_usd, 2) ?> <?= htmlspecialchars($consultation['devise'] ?? 'USD') ?>
-                        </div>
-                        <div class="price-equivalents">
-                            <span><i class="bi bi-currency-euro"></i> ≈ <?= number_format($prix_eur, 2) ?> EUR</span>
-                            <span><i class="bi bi-cash-stack"></i> ≈ <?= number_format($prix_bif, 0) ?> BIF</span>
-                        </div>
-                    </div>
+<div class="price-section">
+    <div class="price-value">
+        <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
+    </div>
+    
+    <!-- Prix Burundi -->
+    <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
+        <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
+        <strong>Patients résidant au Burundi:<br> 40 000Fbu</strong>
+    </div>
+  
+</div>
 
                     <!-- Symptômes -->
                     <div class="symptoms-section">

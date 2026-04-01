@@ -371,3 +371,13 @@ $route['social-update'] = 'Social/Update';
 $route['social-delete'] = 'Social/Delete';
 $route['social/ChangeStatus'] = 'Social/ChangeStatus';
 $route['api/social'] = 'Social/api_get_active';
+
+
+
+
+
+
+// Webhook route
+$route['webhook'] = 'chatbot/Chatbot/webhook';
+$route['chatbot/admin'] = 'chatbot/admin/index';
+$route['chatbot/admin/(:any)'] = 'chatbot/admin/$1';

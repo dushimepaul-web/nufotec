@@ -1389,9 +1389,9 @@ function socialLogin(provider) {
     }
     
     if (provider === 'google') {
-        window.location.href = BASE_URL + 'Auth/google_login';
+        window.location.href = BASE_URL + '#';
     } else if (provider === 'facebook') {
-        window.location.href = BASE_URL + 'Auth/facebook_login';
+        window.location.href = BASE_URL + '#';
     }
 }
 

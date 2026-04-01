@@ -1564,22 +1564,25 @@ textarea.form-control {
                             </div>
 
                             <div class="summary-total">
-                                <span><i class="bi bi-cash-stack"></i> Total à payer</span>
-                                <?php
-                                    $taux = $this->config->item('taux_devise');
-                                    $prix_usd = isset($medecin['honoraires_consultation']) ? (float)$medecin['honoraires_consultation'] : 50;
-                                    $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
-                                    $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
-                                ?>
-                                <span id="summary-total">
-                                    <?= number_format($prix_usd, 2) ?> USD
-                                    <br>
-                                    <small>
-                                        ≈ <?= number_format($prix_eur, 2) ?> EUR |
-                                        ≈ <?= number_format($prix_bif, 0) ?> BIF
-                                    </small>
-                                </span>
-                            </div>
+    <span><i class="bi bi-cash-stack"></i> Total à payer</span>
+    <?php
+        $taux = $this->config->item('taux_devise');
+        $prix_usd = isset($medecin['honoraires_consultation']) ? (float)$medecin['honoraires_consultation'] : 50;
+        $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
+        $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
+    ?>
+    <span id="summary-total">
+        <div class="price-value">
+            <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
+        </div>
+        
+        <!-- Prix Burundi -->
+        <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
+            <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
+            <strong>Patients résidant au Burundi: 40 000Fbu</strong>
+        </div>
+    </span>
+</div>
                         </div>
 
                         <div class="terms-checkbox">
@@ -1619,13 +1622,16 @@ textarea.form-control {
                             <i class="bi bi-star-fill" style="color: var(--accent);"></i> <?= htmlspecialchars($medecin['specialite'] ?? 'Médecin généraliste') ?>
                         </p>
                         <div class="doctor-price">
-                            <span class="amount"><?= number_format($prix_usd ?? 50, 2) ?> USD</span>
-                            <br>
-                            <small>
-                                ≈ <?= number_format($prix_eur ?? 46, 2) ?> EUR |
-                                ≈ <?= number_format($prix_bif ?? 145000, 0) ?> BIF
-                            </small>
-                        </div>
+    <div class="price-value">
+        <?= number_format($prix_usd ?? 50, 2) ?> <span>USD/EUR</span>
+    </div>
+</div>
+
+<!-- Prix Burundi -->
+<div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
+    <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
+    <strong>Patients résidant au Burundi:<br> 40 000 Fbu </strong>
+</div>
                         <a style="text-decoration: none;" href="javascript:void(0)" onclick="confirmChangeDoctor()" class="change-doctor-btn">
                             <i class="bi bi-arrow-left"></i> Changer de médecin
                         </a>
