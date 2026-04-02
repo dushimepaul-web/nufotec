@@ -901,12 +901,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // DÉTECTION AUTO DE LA BONNE URL
     // ==========================================
     function getApiUrl() {
-        return '/nufotec/index.php/products/increment_price_request';
-    }
-    
-    function getSaveOrderUrl() {
-        return '/nufotec/index.php/products/save_order_request';
-    }
+    return BASE_URL + 'products/increment_price_request';
+}
+
+function getSaveOrderUrl() {
+    return BASE_URL + 'products/save_order_request';
+}
     
     // ==========================================
     // TOAST PRIX
