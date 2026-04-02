@@ -573,15 +573,20 @@
 <nav class="navbar">
     <div class="container-fluid">
         <div class="logo-wrapper">
-            <button class="menu-icon" onclick="toggleSidebar()">
-                <i class="bi bi-list"></i>
-            </button>
-            <a class="navbar-brand" href="<?= base_url('media') ?>">
-                <i class="bi bi-youtube youtube-icon"></i>
-                <span class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
-                <span class="brand-subname">FR</span>
-            </a>
-        </div>
+    <button class="menu-icon d-md-none" onclick="toggleSidebar()">
+    <i class="bi bi-list"></i>
+</button>
+    <a class="navbar-brand" href="<?= base_url('media') ?>">
+        <?php 
+        $site_logo = $this->Model->get_setting('site_logo');
+        if (!empty($site_logo)): 
+        ?>
+            <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="Logo NUFOTEC" class="logo-img" height="40">
+        <?php endif; ?>
+        <span class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
+        <span class="brand-subname">FR</span>
+    </a>
+</div>
         
         <!-- Desktop Search -->
         <div class="search-container">

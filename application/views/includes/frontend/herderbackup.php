@@ -1422,21 +1422,6 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     <!-- Loading Spinner - UNIQUEMENT sur la page d'accueil -->
 
 
-<!-- ===== LOADING SPINNER NUFOTEC ===== -->
-<?php 
-    $seg1 = strtolower((string)$this->uri->segment(1));
-    // S'affiche si vide (accueil) ou si le contrôleur est Home
-    if($seg1 == '' || $seg1 == 'Home/Home'): 
-?>
-<div class="loading-spinner" id="loadingSpinner">
-    <div class="spinner-box">
-        <img src="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>" class="logo-center" alt="Logo">
-        <div class="spinner-ring"></div>
-    </div>
-    <p class="loader-text"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI')) ?></p>
-</div>
-<?php endif; ?>
-
 
 
 
@@ -1514,12 +1499,12 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             ?>
             <a href="<?= $logged_in ? base_url('home-patient') : base_url('Auth') ?>" class="action-btn d-none d-lg-flex" title="<?= $logged_in ? 'My account' : 'Sign in' ?>">
     <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
-        <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
-    <?php elseif ($logged_in): ?>
-        <div class="avatar-placeholder"><?= $initials ?></div>
-    <?php else: ?>
-        <i class="bi bi-person-circle"></i>
-    <?php endif; ?>
+    <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
+<?php elseif ($logged_in): ?>
+    <img src="<?= base_url('assets/img/default-avatar.png') ?>" alt="Avatar" class="avatar default-avatar">
+<?php else: ?>
+    <i class="bi bi-person-circle"></i>
+<?php endif; ?>
     <span class="d-none d-lg-inline"><?= $logged_in ? 'My account' : 'Sign in' ?></span>
 </a>
 
@@ -1594,6 +1579,8 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                                 <li><a href="<?= base_url('Frontend/Esg_Sustainability') ?>"><i class="bi bi-chevron-right"></i> ESG & Sustainability</a></li>
                                 <li><a href="<?= base_url('risk-analysis') ?>"><i class="bi bi-chevron-right"></i> Risk Analysis</a></li>
                                 <li><a href="<?= base_url('Frontend/Research_Innovation') ?>"><i class="bi bi-chevron-right"></i> Research & Innovation</a></li>
+                                <li><a href="<?= base_url('market-outlook') ?>"><i class="bi bi-chevron-right"></i> Market Outlook</a></li>
+                                <li><a href="<?= base_url('digital-growth') ?>"><i class="bi bi-chevron-right"></i> Digital Growth</a></li>
                             </ul>
                         </div>
                         <div class="mega-column">
@@ -1609,38 +1596,17 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
             <!-- Shop -->
             <li class="nav-item">
-                <a href="<?= base_url('boutique') ?>" class="nav-link">
+                <a href="<?= base_url('Products') ?>" class="nav-link">
                     <span>Shop</span>
                 </a>
             </li>
-
-            <!-- Teleconsultation Mega Menu -->
-            <li class="nav-item mega-menu">
-                <a href="#" class="nav-link">
+            <li class="nav-item">
+                <a href="<?= base_url('Medicins') ?>" class="nav-link">
                     <span>Teleconsultation</span>
-                    <i class="bi bi-chevron-down"></i>
                 </a>
-                <div class="mega-dropdown">
-                    <div class="mega-grid">
-                        <div class="mega-column">
-                            <h3><i class="bi bi-graph-up"></i> Market</h3>
-                            <ul class="mega-list">
-                                <li><a href="<?= base_url('market-outlook') ?>"><i class="bi bi-chevron-right"></i> Market Outlook</a></li>
-                                <li><a href="<?= base_url('industry-reports') ?>"><i class="bi bi-chevron-right"></i> Industry Reports</a></li>
-                                <li><a href="<?= base_url('publications') ?>"><i class="bi bi-chevron-right"></i> Publications</a></li>
-                            </ul>
-                        </div>
-                        <div class="mega-column">
-                            <h3><i class="bi bi-laptop"></i> Platform</h3>
-                            <ul class="mega-list">
-                                <li><a href="<?= base_url('digital-growth') ?>"><i class="bi bi-chevron-right"></i> Digital Growth</a></li>
-                                <li><a href="<?= base_url('Medicins') ?>"><i class="bi bi-chevron-right"></i> Health Consultation</a></li>
-                                <li><a href="<?= base_url('telemedicine-platform') ?>"><i class="bi bi-chevron-right"></i> Telemedicine Platform</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
             </li>
+
+           
 
             <!-- Investment Mega Menu -->
             <li class="nav-item mega-menu">
@@ -1651,16 +1617,10 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 <div class="mega-dropdown">
                     <div class="mega-grid">
                         <div class="mega-column">
-                            <h3><i class="bi bi-piggy-bank"></i> Capital</h3>
-                            <ul class="mega-list">
-                                <li><a href="<?= base_url('investment-projection') ?>"><i class="bi bi-chevron-right"></i> Investment Projection</a></li>
-                                <li><a href="<?= base_url('seed-capital-allocation') ?>"><i class="bi bi-chevron-right"></i> Seed Capital Allocation</a></li>
-                                <li><a href="<?= base_url('financial-projections') ?>"><i class="bi bi-chevron-right"></i> Financial Projections</a></li>
-                            </ul>
-                        </div>
-                        <div class="mega-column">
                             <h3><i class="bi bi-handshake"></i> Partnerships</h3>
+
                             <ul class="mega-list">
+                                 <li><a href="<?= base_url('investment-projection') ?>"><i class="bi bi-chevron-right"></i> Investment Projection</a></li>
                                 <li><a href="<?= base_url('investor-commitment') ?>"><i class="bi bi-chevron-right"></i> Investor Commitment</a></li>
                                 <li><a href="<?= base_url('strategic-partnerships') ?>"><i class="bi bi-chevron-right"></i> Strategic Partnerships</a></li>
                             </ul>
@@ -1683,6 +1643,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                     <span>Media</span>
                 </a>
             </li>
+
         </ul>
 
         <div class="nav-cta">
