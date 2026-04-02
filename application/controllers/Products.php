@@ -205,61 +205,93 @@ class Products extends MY_Controller {
     /**
      * ADMIN: Liste des commandes (pour le backoffice)
      */
-    public function admin_orders()
-    {
-        // Vérifier si l'utilisateur est admin
-        if (!$this->session->userdata('is_admin')) {
-            redirect('admin/login');
-        }
-        
-        // Récupérer toutes les commandes avec les infos produits
-        $this->db->select('o.*, p.title as product_name, p.main_image');
-        $this->db->from('order_requests o');
-        $this->db->join('advertise_product p', 'o.product_id = p.id', 'left');
-        $this->db->order_by('o.created_at', 'DESC');
-        $orders = $this->db->get()->result_array();
-        
-        $data['orders'] = $orders;
-        $data['title'] = 'Gestion des commandes';
-        $this->load->view('admin/orders_list', $data);
-    }
+    /**
+ * ADMIN: Liste des commandes (pour le backoffice)
+ */
+public function admin_orders()
+{
+    is_admin();
+    
+    // Récupérer toutes les commandes avec les infos produits
+    $this->db->select('o.*, p.title as product_name, p.main_image');
+    $this->db->from('order_requests o');
+    $this->db->join('advertise_product p', 'o.product_id = p.id', 'left');
+    $this->db->order_by('o.created_at', 'DESC');
+    $orders = $this->db->get()->result_array();
+    
+    // === AJOUTER LES STATISTIQUES ===
+    $total_orders = $this->Model->count('order_requests');
+    $pending_orders = $this->Model->count('order_requests', ['order_status' => 'pending']);
+    $processing_orders = $this->Model->count('order_requests', ['order_status' => 'processing']);
+    $completed_orders = $this->Model->count('order_requests', ['order_status' => 'completed']);
+    $cancelled_orders = $this->Model->count('order_requests', ['order_status' => 'cancelled']);
+    
+    $data['orders'] = $orders;
+    $data['total_orders'] = $total_orders;
+    $data['pending_orders'] = $pending_orders;
+    $data['processing_orders'] = $processing_orders;
+    $data['completed_orders'] = $completed_orders;
+    $data['cancelled_orders'] = $cancelled_orders;
+    $data['title'] = 'Gestion des commandes';
+    
+    $this->load->view('admin/orders_list', $data);
+}
     
     /**
      * ADMIN: Mettre à jour le statut d'une commande
      */
-    public function update_order_status()
-    {
-        if (!$this->input->is_ajax_request()) {
-            show_404();
-        }
-        
-        $order_id = $this->input->post('order_id');
-        $status = $this->input->post('status');
-        
-        $allowed_status = ['pending', 'processing', 'completed', 'cancelled'];
-        if (!in_array($status, $allowed_status)) {
-            echo json_encode(['success' => false, 'message' => 'Statut invalide']);
-            return;
-        }
-        
-        $updated = $this->Model->update('order_requests', ['order_status' => $status], ['id' => $order_id]);
-        
-        if ($updated) {
-            echo json_encode(['success' => true, 'message' => 'Statut mis à jour']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Erreur de mise à jour']);
-        }
+    /**
+ * ADMIN: Mettre à jour le statut d'une commande
+ */
+public function update_order_status()
+{    
+    is_admin();
+    // Forcer l'en-tête JSON
+    $this->output->set_content_type('application/json');
+    
+    // Vérifier si c'est une requête AJAX
+    if (!$this->input->is_ajax_request()) {
+        echo json_encode(['success' => false, 'message' => 'Requête non autorisée']);
+        return;
     }
+    
+    $order_id = $this->input->post('order_id');
+    $status = $this->input->post('status');
+    
+    // Statuts autorisés
+    $allowed_status = ['pending', 'processing', 'completed', 'cancelled'];
+    if (!in_array($status, $allowed_status)) {
+        echo json_encode(['success' => false, 'message' => 'Statut invalide']);
+        return;
+    }
+    
+    // Mettre à jour le statut
+    $this->db->where('id', $order_id);
+    $updated = $this->db->update('order_requests', [
+        'order_status' => $status,
+        'updated_at' => date('Y-m-d H:i:s')
+    ]);
+    
+    if ($updated) {
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Statut mis à jour avec succès',
+            'new_status' => $status
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour']);
+    }
+}
     
     /**
      * ADMIN: Voir les statistiques des demandes
      */
     public function admin_stats()
     {
-        if (!$this->session->userdata('is_admin')) {
-            redirect('admin/login');
-        }
-        
+        //if (!$this->session->userdata('is_admin')) {
+        //    redirect('admin/login');
+        //}
+        is_admin();
         // Statistiques globales
         $total_orders = $this->Model->count('order_requests');
         $pending_orders = $this->Model->count('order_requests', ['order_status' => 'pending']);
@@ -332,5 +364,51 @@ public function increment_price_request()
     } else {
         echo json_encode(['success' => false, 'message' => 'Produit non trouvé']);
     }
+}
+
+/**
+ * ADMIN: Supprimer une commande
+ */
+public function delete_order()
+{   
+    is_admin();
+    if (!$this->input->is_ajax_request()) show_404();
+    
+    $order_id = $this->input->post('order_id');
+    $deleted = $this->Model->delete('order_requests', ['id' => $order_id]);
+    
+    echo json_encode(['success' => $deleted, 'message' => $deleted ? 'Commande supprimée' : 'Erreur de suppression']);
+}
+
+/**
+ * ADMIN: Exporter les commandes en CSV
+ */
+public function export_orders_csv()
+{    
+    is_admin();
+    $this->db->select('o.*, p.title as product_name');
+    $this->db->from('order_requests o');
+    $this->db->join('advertise_product p', 'o.product_id = p.id', 'left');
+    $this->db->order_by('o.created_at', 'DESC');
+    $orders = $this->db->get()->result_array();
+    
+    $filename = 'commandes_' . date('Y-m-d_H-i-s') . '.csv';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    
+    $output = fopen('php://output', 'w');
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    fputcsv($output, ['ID', 'N° Commande', 'Produit', 'Client', 'Téléphone', 'Pays', 'Ville', 'Adresse', 'Montant', 'Statut', 'Date']);
+    
+    foreach ($orders as $order) {
+        fputcsv($output, [
+            $order['id'], 'CMD-' . str_pad($order['id'], 6, '0', STR_PAD_LEFT), $order['product_title'],
+            $order['customer_name'], $order['customer_phone'], $order['customer_country'],
+            $order['customer_city'], $order['customer_address'], $order['product_price'],
+            $order['order_status'], $order['created_at']
+        ]);
+    }
+    fclose($output);
+    exit;
 }
 }

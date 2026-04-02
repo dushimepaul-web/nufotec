@@ -26,6 +26,7 @@ class Actualites extends MX_Controller {
         $this->load->model('media/Model_media', 'Model');
         $this->load->helper('url');
         $this->load->helper('text');
+        is_admin();
     }
 
     // ==================== DÉSACTIVATION CSRF ====================

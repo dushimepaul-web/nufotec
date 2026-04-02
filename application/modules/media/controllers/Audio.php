@@ -25,6 +25,7 @@ class Audio extends MX_Controller {
         $this->detectFFmpegTools();
         $this->checkGDAvailability();
         $this->ensureDirectories();
+        is_admin();
         
         $this->load->model('media/Model_media', 'Model');
     }

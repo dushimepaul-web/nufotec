@@ -12,6 +12,7 @@ class Mode_payement extends MY_Controller {
     {
         parent::__construct();
         $this->load->model('Model');
+        is_admin();
     }
 
     public function index()

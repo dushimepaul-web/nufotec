@@ -7,7 +7,7 @@ class Medecin_Calendrier extends MY_Controller {
     {
         parent::__construct();
         
-        
+        is_admin();
 
         // Récupérer l'ID du médecin à partir de l'utilisateur connecté
         $user_id = $this->session->userdata('user_id');

@@ -6,10 +6,7 @@ class Slides extends MY_Controller {
     public function __construct()
     {
         parent::__construct();
-        // Vérifier admin
-       // if ($this->session->userdata('logged_in') !== TRUE || $this->session->userdata('role') !== 'admin') {
-        //    redirect('Admin');
-       // }
+        is_admin();
         $this->load->helper('form');
         $this->load->library('upload');
     }

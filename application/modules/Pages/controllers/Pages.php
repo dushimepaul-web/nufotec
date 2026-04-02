@@ -9,6 +9,7 @@ class Pages extends MY_Controller {
         
         $this->load->helper('form');
         $this->load->library('form_validation');
+        is_admin();
     }
     
     public function index()

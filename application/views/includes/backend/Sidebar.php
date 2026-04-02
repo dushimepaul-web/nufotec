@@ -173,6 +173,7 @@
             <li class="submenu-divider"></li>
             <li><a href="<?= base_url('Slides') ?>" class="<?= $this->uri->segment(1) == 'Slides' ? 'active' : '' ?>"><i class='bx bx-slideshow'></i>Slides</a></li>
             <li><a href="<?= base_url('Newsletter') ?>" class="<?= $this->uri->segment(1) == 'Newsletter' ? 'active' : '' ?>"><i class='bx bx-envelope'></i>Newsletter</a></li>
+            <li><a href="<?= base_url('contact_us/Contact_Us') ?>" class="<?= $this->uri->segment(1) == 'Newsletter' ? 'active' : '' ?>"><i class='bx bx-envelope'></i>Contact_us</a></li>
             <li><a href="<?= base_url('Brokers') ?>" class="<?= $this->uri->segment(1) == 'Brokers' ? 'active' : '' ?>"><i class='bx bx-envelope'></i>Brokers</a></li>
             <li><a href="<?= base_url('Email_templates') ?>" class="<?= $this->uri->segment(1) == 'Email_templates' ? 'active' : '' ?>"><i class='bx bx-envelope'></i>Email_templates</a></li>
             <li><a href="<?= base_url('Publication') ?>" class="<?= $this->uri->segment(1) == 'Brokers' ? 'active' : '' ?>"><i class='bx bx-envelope'></i>ADVERTISE</a></li>

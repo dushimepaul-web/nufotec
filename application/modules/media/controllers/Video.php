@@ -19,6 +19,7 @@ class Video extends MX_Controller {
         
         // DÉSACTIVER CSRF POUR TOUTES LES MÉTHODES AJAX
         $this->_csrf_off();
+        is_admin();
         
         $this->initializePaths();
         $this->initializeConfig();

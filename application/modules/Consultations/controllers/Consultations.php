@@ -15,9 +15,7 @@ class Consultations extends MY_Controller {
     function __construct()
     {
         parent::__construct();
-        if ($this->session->userdata('logged_in') !== TRUE) {
-            redirect('Admin');
-        }
+        is_admin();
     }
     
     public function index()
