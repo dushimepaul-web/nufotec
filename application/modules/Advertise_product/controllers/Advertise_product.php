@@ -88,26 +88,25 @@ class Advertise_product extends MY_Controller {
         return $slug;
     }
 
-    // ================== NOUVELLE METHODE POUR ENVOYER LES NOTIFICATIONS ==================
-   private function sendProductNotification($product, $action = 'create')
+private function sendProductNotification($product, $action = 'create')
 {
     // Vérifier que le produit contient les données requises
-    $required_fields = ['id', 'title', 'price', 'description', 'main_image', 'slug'];
+    $required_fields = array('id', 'title', 'price', 'description', 'main_image', 'slug');
     foreach ($required_fields as $field) {
         if (!isset($product[$field])) {
-            log_message('error', "Champ manquant dans le produit: $field");
-            return ['success' => 0, 'error' => 1];
+            log_message('error', "Champ manquant dans le produit: " . $field);
+            return array('success' => 0, 'error' => 1);
         }
     }
 
     // 1. Récupérer tous les emails des utilisateurs actifs (table users)
-    $active_users = $this->Model->read('users', ['is_active' => 1, 'deleted_at' => null], 'id', 'ASC');
+    $active_users = $this->Model->read('users', array('is_active' => 1, 'deleted_at' => null), 'id', 'ASC');
     
     // 2. Récupérer tous les emails de la newsletter
     $newsletter_emails = $this->Model->read('newsletter', null, 'id_newsletter', 'ASC');
     
     // 3. Fusionner et éliminer les doublons
-    $emails = [];
+    $emails = array();
     
     foreach ($active_users as $user) {
         if (!empty($user['email']) && filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
@@ -123,8 +122,8 @@ class Advertise_product extends MY_Controller {
     
     // Si aucun email valide, arrêter ici
     if (empty($emails)) {
-        log_message('info', "Aucun email valide trouvé pour la notification du produit ID {$product['id']}");
-        return ['success' => 0, 'error' => 0];
+        log_message('info', "Aucun email valide trouvé pour la notification du produit ID " . $product['id']);
+        return array('success' => 0, 'error' => 0);
     }
     
     // 4. Préparer l'URL de l'image du produit
@@ -133,12 +132,12 @@ class Advertise_product extends MY_Controller {
         $product_image_url = base_url('assets/images/default-product.jpg');
     }
     
-    // 5. Préparer les variables
+    // 5. Préparer les variables - CORRECTION: sans l'opérateur ?? pour compatibilité PHP 5.x
     $site_url = base_url();
     $product_url = base_url('product/' . $product['id'] . '_' . $product['slug']);
-    $product_title = htmlspecialchars($product['title'] ?? '', ENT_QUOTES, 'UTF-8');
-    $product_price = $product['price']';
-    $product_description = nl2br(htmlspecialchars($product['description'] ?? '', ENT_QUOTES, 'UTF-8'));
+    $product_title = htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8');
+    $product_price = $product['price'];
+    $product_description = nl2br(htmlspecialchars($product['description'], ENT_QUOTES, 'UTF-8'));
     
     // 6. Sujet selon l'action
     if ($action === 'create') {
@@ -243,7 +242,7 @@ class Advertise_product extends MY_Controller {
         // Vérifier que sendgrid_lib est disponible
         if (!isset($this->sendgrid_lib)) {
             log_message('error', 'sendgrid_lib non chargée');
-            return ['success' => $success_count, 'error' => count($emails) - $success_count];
+            return array('success' => $success_count, 'error' => count($emails) - $success_count);
         }
         
         $result = $this->sendgrid_lib->send_email($email, $subject, $message);
@@ -258,7 +257,7 @@ class Advertise_product extends MY_Controller {
     
     log_message('info', "Notifications envoyées : {$success_count} succès, {$error_count} échecs pour le produit ID {$product['id']}");
     
-    return ['success' => $success_count, 'error' => $error_count];
+    return array('success' => $success_count, 'error' => $error_count);
 }
 // ================== CREATE AVEC NOTIFICATION ==================
     
