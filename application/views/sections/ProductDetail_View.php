@@ -870,18 +870,15 @@ include VIEWPATH.'includes/frontend/Header.php';
             </p>
 
             <div class="d-flex gap-2 flex-wrap">
-                
-                <!-- WhatsApp avec le NOM RÉEL DU PRODUIT et CURRENT URL -->
-                <a href="https://wa.me/25779666439?text=<?= urlencode(
-                    "Bonjour, je souhaite connaître le prix actualisé de " . htmlspecialchars($product['title'] ?? 'ce produit') . ".\n\n" .
-                    "Source: www.nufotec.com\n" .
-                    "Produit: " . htmlspecialchars($product['title'] ?? '') . "\n" .
-                    "Lien du produit: " . current_url()
-                ) ?>" 
-                   class="btn btn-sm btn-success" 
-                   target="_blank">
+                <!-- Bouton WhatsApp avec incrémentation -->
+                <button type="button" 
+                        id="priceRequestWhatsAppBtn"
+                        data-product-id="<?= $product['id'] ?>"
+                        data-product-title="<?= htmlspecialchars($product['title']) ?>"
+                        data-product-url="<?= current_url() ?>"
+                        class="btn btn-sm btn-success">
                     <i class="bx bxl-whatsapp me-1"></i> WhatsApp
-                </a>
+                </button>
 
                 <!-- Fermer -->
                 <button type="button" class="btn btn-sm btn-warning ms-auto" data-bs-dismiss="toast">
@@ -891,23 +888,7 @@ include VIEWPATH.'includes/frontend/Header.php';
         </div>
     </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const toastEl = document.getElementById('priceToast');
-    
-    if (toastEl) {
-        const toast = new bootstrap.Toast(toastEl, {
-            autohide: true,
-            delay: 10000,
-            animation: true
-        });
 
-        setTimeout(function() {
-            toast.show();
-        }, 700);
-    }
-});
-</script>
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -916,11 +897,91 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Configuration
+    // ==========================================
+    // DÉTECTION AUTO DE LA BONNE URL
+    // ==========================================
+    function getApiUrl() {
+        return '/nufotec/index.php/products/increment_price_request';
+    }
+    
+    function getSaveOrderUrl() {
+        return '/nufotec/index.php/products/save_order_request';
+    }
+    
+    // ==========================================
+    // TOAST PRIX
+    // ==========================================
+    const toastEl = document.getElementById('priceToast');
+    if (toastEl) {
+        const toast = new bootstrap.Toast(toastEl, {
+            autohide: true,
+            delay: 10000,
+            animation: true
+        });
+        setTimeout(function() {
+            toast.show();
+        }, 700);
+    }
+    
+    // ==========================================
+    // INCRÉMENTATION DU COMPTEUR VIA LE TOAST WHATSAPP
+    // ==========================================
+    const priceRequestBtn = document.getElementById('priceRequestWhatsAppBtn');
+    
+    if (priceRequestBtn) {
+        priceRequestBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            const productId = this.dataset.productId;
+            const productTitle = this.dataset.productTitle;
+            const productUrl = this.dataset.productUrl;
+            
+            // Afficher loader
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="bx bx-loader bx-spin me-1"></i> Chargement...';
+            this.disabled = true;
+            
+            // Construire message WhatsApp
+            const message = `Bonjour, je souhaite connaître le prix actualisé de ${productTitle}.\n\nSource: www.nufotec.com\nProduit: ${productTitle}\nLien du produit: ${productUrl}`;
+            const whatsappUrl = `https://wa.me/25779666439?text=${encodeURIComponent(message)}`;
+            
+            try {
+                // Appel API pour incrémenter (en arrière-plan)
+                const formData = new URLSearchParams();
+                formData.append('product_id', productId);
+                
+                await fetch(getApiUrl(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+                // On ne vérifie même pas le résultat, on continue
+            } catch (error) {
+                console.error('Erreur incrémentation:', error);
+            }
+            
+            // Fermer le toast
+            const toast = bootstrap.Toast.getInstance(toastEl);
+            if (toast) toast.hide();
+            
+            // Restaurer le bouton
+            this.innerHTML = originalText;
+            this.disabled = false;
+            
+            // OUVRIR WHATSAPP DIRECTEMENT SANS ALERTE
+            window.open(whatsappUrl, '_blank');
+        });
+    }
+    
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
     const WHATSAPP_NUMBER = "25779666439";
     const SITE_NAME = "NUFOTEC";
     
-    // Variables globales
     let currentProduct = {
         title: '',
         price: '',
@@ -929,19 +990,17 @@ document.addEventListener('DOMContentLoaded', function() {
         url: ''
     };
     
-    // Initialisation des modals Bootstrap
+    // Initialisation des modals
     const orderModal = new bootstrap.Modal(document.getElementById('orderInfoModal'));
     const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
     
     // ==========================================
-    // MODAL DE COMMANDE
+    // MODAL DE COMMANDE - OUVERTURE
     // ==========================================
     const openOrderBtn = document.getElementById('openOrderModalBtn');
-    const sendOrderBtn = document.getElementById('sendWhatsAppOrderBtn');
     
     if (openOrderBtn) {
         openOrderBtn.addEventListener('click', function() {
-            // Récupérer les données du produit
             currentProduct = {
                 title: this.dataset.title || '',
                 price: this.dataset.price || '',
@@ -950,33 +1009,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 url: window.location.href
             };
             
-            // Vérifier que l'ID existe
             if (!currentProduct.id) {
-                console.error('ID produit manquant');
-                Swal.fire('Erreur', 'Impossible de charger les informations du produit', 'error');
+                Swal.fire('Erreur', 'Impossible de charger les informations', 'error');
                 return;
             }
             
-            // Remplir le modal
             document.getElementById('orderProductTitle').textContent = currentProduct.title;
             document.getElementById('orderProductPrice').textContent = currentProduct.price;
             document.getElementById('orderProductImage').src = currentProduct.image;
             document.getElementById('orderProductRef').textContent = 'Réf: #' + currentProduct.id;
-            
-            // Réinitialiser le formulaire
             document.getElementById('orderForm').reset();
             
-            // Focus sur le premier champ
             setTimeout(() => document.getElementById('customerName').focus(), 100);
-            
             orderModal.show();
         });
     }
     
-    // Envoi WhatsApp
+    // ==========================================
+    // MODAL DE COMMANDE - ENVOI (SANS CONFIRMATION)
+    // ==========================================
+    const sendOrderBtn = document.getElementById('sendWhatsAppOrderBtn');
+    
     if (sendOrderBtn) {
-        sendOrderBtn.addEventListener('click', function() {
-            // Récupérer les valeurs du formulaire
+        sendOrderBtn.addEventListener('click', async function() {
             const formData = {
                 name: document.getElementById('customerName').value.trim(),
                 phone: document.getElementById('customerPhone').value.trim(),
@@ -1013,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Construction du message WhatsApp formaté
+            // Construction du message WhatsApp
             const now = new Date();
             const dateStr = now.toLocaleString('fr-FR', {
                 day: '2-digit',
@@ -1024,55 +1079,55 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             const message = [
-                `🛒 *PRODUIT D'INTÉRÊT - ${SITE_NAME}*`,
+                `🛒 *COMMANDE - ${SITE_NAME}*`,
                 ``,
                 `📦 *PRODUIT*`,
                 `Nom: ${currentProduct.title}`,
-                `Prix de référence : ${currentProduct.price}`,
+                `Prix: ${currentProduct.price}`,
                 `Lien: ${currentProduct.url}`,
                 ``,
                 `👤 *CLIENT*`,
                 `Nom: ${formData.name}`,
-                `WhatsApp : ${formData.phone}`,
-                `Tél mobile: ${formData.phone}`,
+                `Téléphone: ${formData.phone}`,
                 `Pays: ${formData.country}`,
                 `Ville: ${formData.city}`,
                 `Adresse: ${formData.address}`,
                 formData.notes ? `Notes: ${formData.notes}` : '',
                 ``,
-                `📅 Produit d'intérêt le: ${dateStr}`,
+                `📅 Date: ${dateStr}`,
                 `⏳ Statut: En attente de confirmation`
             ].filter(Boolean).join('\n');
             
-            // Encoder pour URL
-            const encodedMessage = encodeURIComponent(message);
-            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+            
+            // Enregistrer en arrière-plan (sans bloquer)
+            const postData = new URLSearchParams({
+                product_id: currentProduct.id,
+                customer_name: formData.name,
+                customer_phone: formData.phone,
+                customer_country: formData.country,
+                customer_city: formData.city,
+                customer_address: formData.address,
+                customer_notes: formData.notes,
+                product_title: currentProduct.title,
+                product_price: currentProduct.price
+            });
+            
+            // Envoi asynchrone silencieux
+            fetch(getSaveOrderUrl(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: postData
+            }).catch(error => console.error('Erreur sauvegarde:', error));
             
             // Fermer le modal
             orderModal.hide();
             
-            // Confirmation avant redirection
-            Swal.fire({
-                title: '✅ Commande prête !',
-                html: `
-                    <div class="text-start">
-                        <p class="mb-2"><strong>Produit:</strong> ${currentProduct.title}</p>
-                        <p class="mb-2"><strong>Référence:</strong> #${currentProduct.id}</p>
-                        <p class="mb-2"><strong>Client:</strong> ${formData.name}</p>
-                        <p class="mb-0 text-muted">Vous allez être redirigé vers WhatsApp...</p>
-                    </div>
-                `,
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: '<i class="bx bxl-whatsapp me-1"></i>Ouvrir WhatsApp',
-                confirmButtonColor: '#25D366',
-                cancelButtonText: 'Fermer',
-                cancelButtonColor: '#6c757d'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.open(whatsappUrl, '_blank');
-                }
-            });
+            // OUVRIR WHATSAPP DIRECTEMENT SANS CONFIRMATION
+            window.open(whatsappUrl, '_blank');
         });
     }
     
@@ -1090,40 +1145,29 @@ document.addEventListener('DOMContentLoaded', function() {
             
             currentProduct = { title, url, image, price };
             
-            // Remplir le modal
             document.getElementById('shareProductTitle').textContent = title;
             document.getElementById('shareProductPrice').textContent = price;
             document.getElementById('shareProductImage').src = image;
             document.getElementById('shareLink').value = url;
             
-            // Encoder pour URLs
             const encodedUrl = encodeURIComponent(url);
             const encodedTitle = encodeURIComponent(`${title} - ${price} sur ${SITE_NAME}`);
             const encodedImage = encodeURIComponent(image);
             const encodedDesc = encodeURIComponent(`Découvrez ${title} sur ${SITE_NAME}`);
             
-            // Configurer les liens de partage
-            const shareLinks = {
-                shareWhatsapp: `https://wa.me/?text=${encodedTitle}%0A%0A${encodedUrl}`,
-                shareFacebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
-                shareTwitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
-                sharePinterest: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&media=${encodedImage}&description=${encodedTitle}`,
-                shareLinkedIn: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-                shareTelegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
-                shareEmail: `mailto:?subject=${encodedTitle}&body=${encodedDesc}%0A%0A${encodedUrl}`
-            };
-            
-            // Appliquer les liens
-            Object.entries(shareLinks).forEach(([id, href]) => {
-                const element = document.getElementById(id);
-                if (element) element.href = href;
-            });
+            document.getElementById('shareWhatsapp').href = `https://wa.me/?text=${encodedTitle}%0A%0A${encodedUrl}`;
+            document.getElementById('shareFacebook').href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`;
+            document.getElementById('shareTwitter').href = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;
+            document.getElementById('sharePinterest').href = `https://pinterest.com/pin/create/button/?url=${encodedUrl}&media=${encodedImage}&description=${encodedTitle}`;
+            document.getElementById('shareLinkedIn').href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+            document.getElementById('shareTelegram').href = `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`;
+            document.getElementById('shareEmail').href = `mailto:?subject=${encodedTitle}&body=${encodedDesc}%0A%0A${encodedUrl}`;
             
             shareModal.show();
         });
     }
     
-    // Partage natif (Web Share API)
+    // Partage natif
     const nativeShareBtn = document.getElementById('shareNativeBtn');
     if (nativeShareBtn) {
         nativeShareBtn.addEventListener('click', async function() {
@@ -1135,52 +1179,36 @@ document.addEventListener('DOMContentLoaded', function() {
                         url: currentProduct.url
                     });
                 } catch (err) {
-                    console.log('Partage annulé:', err);
+                    console.log('Partage annulé');
                 }
             } else {
-                // Fallback: copier le lien
                 copyToClipboard(currentProduct.url);
-                Swal.fire({
-                    title: 'Lien copié !',
-                    text: 'Le lien a été copié dans votre presse-papiers',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
+                Swal.fire('Lien copié !', '', 'success');
+                setTimeout(() => Swal.close(), 1500);
             }
         });
     }
     
-    // Copier le lien
+    // Copier lien
     const copyBtn = document.getElementById('copyLinkBtn');
     if (copyBtn) {
         copyBtn.addEventListener('click', function() {
             const linkInput = document.getElementById('shareLink');
             copyToClipboard(linkInput.value);
-            
-            // Feedback visuel
             const originalHTML = this.innerHTML;
             this.innerHTML = '<i class="bx bx-check"></i> Copié !';
-            this.style.background = '#25D366';
-            this.disabled = true;
-            
             setTimeout(() => {
                 this.innerHTML = originalHTML;
-                this.style.background = '';
-                this.disabled = false;
             }, 2000);
         });
     }
     
-    // Fonction utilitaire: copier dans le presse-papiers
     async function copyToClipboard(text) {
         try {
             await navigator.clipboard.writeText(text);
         } catch (err) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
             document.body.appendChild(textarea);
             textarea.select();
             document.execCommand('copy');
@@ -1188,9 +1216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ==========================================
     // ZOOM IMAGE
-    // ==========================================
     const mainImage = document.getElementById('mainProductImage');
     const zoomBtn = document.getElementById('zoomDetailBtn');
     const zoomImage = document.getElementById('zoomImage');
@@ -1199,24 +1225,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function openZoom() {
         if (mainImage && zoomImage && zoomModalEl) {
             zoomImage.src = mainImage.src;
-            const zoomModal = new bootstrap.Modal(zoomModalEl);
-            zoomModal.show();
+            new bootstrap.Modal(zoomModalEl).show();
         }
     }
     
     if (mainImage) mainImage.addEventListener('click', openZoom);
     if (zoomBtn) zoomBtn.addEventListener('click', openZoom);
     
-    // ==========================================
-    // EFFETS VISUELS
-    // ==========================================
-    
-    // Animation au scroll pour les éléments
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
+    // Animations
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -1224,9 +1240,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 entry.target.style.transform = 'translateY(0)';
             }
         });
-    }, observerOptions);
+    }, { threshold: 0.1 });
     
-    // Observer les cartes de produits similaires
     document.querySelectorAll('.similar-product-card').forEach((card, index) => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
@@ -1237,5 +1252,4 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Product Detail View initialized');
 });
 </script>
-
 <?php include VIEWPATH.'includes/frontend/Footer.php'; ?>

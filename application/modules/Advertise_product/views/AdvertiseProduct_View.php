@@ -17,6 +17,9 @@
             </nav>
         </div>
         <div class="ms-auto">
+             <a class="btn btn-primary" href="<?= base_url('advertise_product/promo') ?>">
+                <i class="bx bx-plus"></i> PROMO
+            </a>
             <a class="btn btn-primary" href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_product">
                 <i class="bx bx-plus"></i> Nouveau Produit
             </a>
