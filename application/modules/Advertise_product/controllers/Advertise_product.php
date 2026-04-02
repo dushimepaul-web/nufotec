@@ -262,13 +262,65 @@ class Advertise_product extends MY_Controller {
     }
     // ================== FIN NOTIFICATION ==================
 
-    // ================== SYSTÈME DE PROMOTION QUOTIDIENNE (NOUVEAU) ==================
-    
+    // ============================================================
+    // SYSTÈME DE PROMOTION QUOTIDIENNE - METHODES PUBLIQUES
+    // ============================================================
+
     /**
      * Envoie un email promotionnel quotidien avec plusieurs produits en vedette
-     * À appeler manuellement ou via cron job une fois par jour
+     * URL: /advertise-product/daily-promo
      */
-    public function sendDailyPromoEmail()
+    public function daily_promo()
+    {
+        // Sécurité: vérifier si admin ou clé secrète
+        if (!$this->session->userdata('admin_logged_in')) {
+            show_404();
+        }
+
+        $result = $this->sendDailyPromoEmail();
+        
+        // Message de confirmation
+        if ($result['success'] > 0) {
+            $this->session->set_flashdata('success', 
+                'Email promotionnel envoyé avec succès à ' . $result['success'] . ' destinataires.');
+        } else {
+            $this->session->set_flashdata('error', 
+                'Aucun email envoyé. Vérifiez les logs pour plus de détails.');
+        }
+        
+        redirect(base_url('advertise-product'));
+    }
+
+    /**
+     * Endpoint pour cron job (sans session, avec clé secrète)
+     * URL: /advertise-product/cron-daily-promo/votre_cle_secrete
+     */
+    public function cron_daily_promo($secret_key = null)
+    {
+        // Clé secrète à configurer
+        $valid_key = 'nufotec_promo_2024'; // Changez cette clé !
+        
+        if ($secret_key !== $valid_key) {
+            show_404();
+        }
+        
+        // Désactiver les limites d'exécution pour les cron jobs
+        set_time_limit(300); // 5 minutes
+        
+        $result = $this->sendDailyPromoEmail();
+        
+        // Retourner un résultat texte pour le cron
+        header('Content-Type: text/plain');
+        echo "NUFOTEC Daily Promo - " . date('Y-m-d H:i:s') . "\n";
+        echo "Succès: " . $result['success'] . "\n";
+        echo "Échecs: " . $result['error'] . "\n";
+        echo "Total: " . ($result['success'] + $result['error']) . "\n";
+    }
+
+    /**
+     * Méthode privée qui fait le travail réel d'envoi
+     */
+    private function sendDailyPromoEmail()
     {
         // Récupérer les produits à promouvoir (ex: 3-5 produits populaires ou en promo)
         $featured_products = $this->Model->read(
