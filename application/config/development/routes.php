@@ -362,7 +362,8 @@ $route['product_categories/update'] = 'Advertise_product/Product_categories/upda
 $route['product_categories/delete'] = 'Advertise_product/Product_categories/delete';
 $route['product_categories/view/(:num)'] = 'Advertise_product/Product_categories/view/$1';
 
-
+$route['products/increment_price_request'] = 'Products/increment_price_request';
+$route['products/save_order_request'] = 'Products/save_order_request';
 
 // Social Links
 $route['social'] = 'Social/index';
