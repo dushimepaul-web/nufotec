@@ -691,15 +691,23 @@ function getMediaThumbnail($media) {
 
 <nav class="navbar">
     <div class="container-fluid d-flex justify-content-between align-items-center">
-        <a class="navbar-brand" href="<?= base_url('media') ?>">
-            <i class="bi bi-youtube"></i> <?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?>
+    <a class="navbar-brand d-flex align-items-center gap-2" href="<?= base_url('media') ?>">
+        <?php 
+        $site_logo = $this->Model->get_setting('site_logo');
+        if (!empty($site_logo)): 
+        ?>
+            <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="Logo NUFOTEC" class="logo-img" height="35">
+        <?php else: ?>
+            <i class="bi bi-youtube"></i>
+        <?php endif; ?>
+        <span><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
+    </a>
+    <div class="d-flex gap-2">
+        <a href="<?= base_url('media') ?>" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-house"></i> <span class="d-none d-sm-inline">Accueil</span>
         </a>
-        <div class="d-flex gap-2">
-            <a href="<?= base_url('media') ?>" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-house"></i> <span class="d-none d-sm-inline">Accueil</span>
-            </a>
-        </div>
     </div>
+</div>
 </nav>
 
 <main class="main-content">
