@@ -270,12 +270,8 @@ class Advertise_product extends MY_Controller {
      * Envoie un email promotionnel quotidien avec plusieurs produits en vedette
      * URL: /advertise-product/daily-promo
      */
-    public function daily_promo()
+    public function promo()
     {
-        // Sécurité: vérifier si admin ou clé secrète
-        if (!$this->session->userdata('admin_logged_in')) {
-            show_404();
-        }
 
         $result = $this->sendDailyPromoEmail();
         
