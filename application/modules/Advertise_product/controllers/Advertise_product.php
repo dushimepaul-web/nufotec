@@ -117,7 +117,7 @@ class Advertise_product extends MY_Controller {
         $site_url = base_url();
         $product_url = base_url('product' . $product['slug']);
         $product_title = htmlspecialchars($product['title']);
-        $product_price = number_format($product['price'], 0, ',', ' ') . ' FBu';
+        $product_price = $product['price'];
         
         if ($action == 'create') {
             $subject = "🆕 NOUVEAU PRODUIT CHEZ NUFOTEC : " . $product_title;
