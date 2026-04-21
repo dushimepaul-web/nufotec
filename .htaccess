@@ -14,22 +14,11 @@ RewriteRule ^socket/(.*) ws://127.0.0.1:3002/socket/$1 [P,L]
 RewriteRule ^socket/(.*) http://127.0.0.1:3002/socket/$1 [P,L]
 
 # ============================================
-# REDIRECTION DE LA RACINE VERS /fr
+# CODEIGNITER
 # ============================================
-RewriteRule ^$ /fr [L,R=301]
-
-# ============================================
-# ROUTES MULTILINGUES POUR CODEIGNITER
-# ============================================
-# Si le fichier ou dossier existe, ne pas réécrire
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-
-# Routes avec préfixe langue (fr, en, ar, sw)
-RewriteRule ^(fr|en|ar|sw)(/.*)?$ index.php/$1$2 [L,QSA]
-
-# Toutes les autres requêtes
-RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+RewriteRule ^(.*)$ index.php/$1 [L]
 
 # ============================================
 # EN-TÊTES POUR WEBSOCKET
