@@ -1,0 +1,122 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class AntiBan {
+    
+    private $CI;
+    private $settings = [];
+    private $message_count = 0;
+    private $last_send_time = null;
+    
+    public function __construct() {
+        $this->CI =& get_instance();
+        $this->load_settings();
+    }
+    
+    private function load_settings() {
+        // Vérifier si la table existe
+        if ($this->CI->db->table_exists('antiban_settings')) {
+            $query = $this->CI->db->get('antiban_settings');
+            foreach ($query->result() as $row) {
+                $this->settings[$row->key] = $row->value;
+            }
+        }
+        
+        // Valeurs par défaut
+        $defaults = [
+            'min_delay_micro' => 500000,
+            'max_delay_micro' => 1500000,
+            'min_delay_seconds' => 2,
+            'max_delay_seconds' => 4,
+            'long_pause_probability' => 20,
+            'long_pause_min' => 5,
+            'long_pause_max' => 10,
+            'batch_size' => 5,
+            'batch_interval' => 60,
+            'max_messages_per_hour' => 60
+        ];
+        
+        foreach ($defaults as $key => $value) {
+            if (!isset($this->settings[$key])) {
+                $this->settings[$key] = $value;
+            }
+        }
+    }
+    
+    /**
+     * Pause intelligente qui imite le comportement humain
+     */
+    public function smart_delay($is_media = false) {
+        // Pour les médias, pause plus longue
+        if ($is_media) {
+            usleep(rand(1000000, 3000000)); // 1-3 sec
+            sleep(rand(3, 8)); // 3-8 sec
+        } else {
+            usleep(rand($this->settings['min_delay_micro'], $this->settings['max_delay_micro']));
+            sleep(rand($this->settings['min_delay_seconds'], $this->settings['max_delay_seconds']));
+        }
+        
+        // Pause longue aléatoire (simule réflexion humaine) - 20% de chance
+        if (rand(1, 100) <= $this->settings['long_pause_probability']) {
+            $pause = rand($this->settings['long_pause_min'], $this->settings['long_pause_max']);
+            sleep($pause);
+        }
+        
+        $this->message_count++;
+        $this->last_send_time = microtime(true);
+    }
+    
+    /**
+     * Simule la vitesse de frappe humaine pour les longs textes
+     */
+    public function typing_delay($message_length) {
+        $chars_per_sec = rand(50, 150); // 50 à 150 caractères par seconde
+        $delay = $message_length / $chars_per_sec;
+        if ($delay > 0.1 && $delay < 10) {
+            usleep($delay * 1000000);
+        }
+    }
+    
+    /**
+     * Vérifie le rate limiting
+     */
+    public function can_send($phone_number = null) {
+        $hour_ago = date('Y-m-d H:i:s', strtotime('-1 hour'));
+        
+        $this->CI->db->where('created_at >', $hour_ago);
+        if ($phone_number) {
+            $this->CI->db->where('sender_number', $phone_number);
+        }
+        $count = $this->CI->db->count_all_results('wa_messages_queue');
+        
+        return $count < $this->settings['max_messages_per_hour'];
+    }
+    
+    /**
+     * Attend entre deux batchs
+     */
+    public function batch_delay($batch_number) {
+        if ($batch_number > 1) {
+            $delay = rand($this->settings['batch_interval'] - 10, $this->settings['batch_interval'] + 10);
+            sleep(max(5, $delay));
+        }
+    }
+    
+    /**
+     * Réinitialise le compteur de messages
+     */
+    public function reset_counter() {
+        $this->message_count = 0;
+    }
+    
+    /**
+     * Récupère les statistiques actuelles
+     */
+    public function get_stats() {
+        return [
+            'message_count' => $this->message_count,
+            'last_send_time' => $this->last_send_time,
+            'settings' => $this->settings
+        ];
+    }
+}

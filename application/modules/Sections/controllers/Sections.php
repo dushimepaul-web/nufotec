@@ -112,13 +112,27 @@ class Sections extends MY_Controller {
 
         $id_page = $this->input->post('id_page');
         $type_section = $this->input->post('type_section');
-        $titre_section = $this->input->post('titre_section');
-        $sous_titre = $this->input->post('sous_titre');
-        $contenu_texte = $this->input->post('contenu_texte'); // TinyMCE envoie ici
-        $image_droite = $this->input->post('image_droite') ? 1 : 0;
-        $bouton_texte = $this->input->post('bouton_texte');
-        $bouton_lien = $this->input->post('bouton_lien');
         
+        // Champs multilingues
+        $titre_section_fr = $this->input->post('titre_section_fr');
+        $titre_section_en = $this->input->post('titre_section_en');
+        $titre_section_sw = $this->input->post('titre_section_sw');
+        
+        $sous_titre_fr = $this->input->post('sous_titre_fr');
+        $sous_titre_en = $this->input->post('sous_titre_en');
+        $sous_titre_sw = $this->input->post('sous_titre_sw');
+        
+        $contenu_texte_fr = $this->input->post('contenu_texte_fr');
+        $contenu_texte_en = $this->input->post('contenu_texte_en');
+        $contenu_texte_sw = $this->input->post('contenu_texte_sw');
+        
+        $bouton_texte_fr = $this->input->post('bouton_texte_fr');
+        $bouton_texte_en = $this->input->post('bouton_texte_en');
+        $bouton_texte_sw = $this->input->post('bouton_texte_sw');
+        
+        // Champs non traduits
+        $image_droite = $this->input->post('image_droite') ? 1 : 0;
+        $bouton_lien = $this->input->post('bouton_lien');
         $ordre = $this->input->post('ordre');
         $custom_class = $this->input->post('custom_class');
         $options_json = $this->input->post('options_json');
@@ -140,16 +154,26 @@ class Sections extends MY_Controller {
         $data = array(
             'id_page' => $id_page,
             'type_section' => $type_section,
-            'titre_section' => $titre_section,
-            'sous_titre' => $sous_titre,
-            'contenu_texte' => $contenu_texte, // Les tableaux HTML sont inclus ici
+            'titre_section_fr' => $titre_section_fr,
+            'titre_section_en' => $titre_section_en,
+            'titre_section_sw' => $titre_section_sw,
+            'sous_titre_fr' => $sous_titre_fr,
+            'sous_titre_en' => $sous_titre_en,
+            'sous_titre_sw' => $sous_titre_sw,
+            'contenu_texte_fr' => $contenu_texte_fr,
+            'contenu_texte_en' => $contenu_texte_en,
+            'contenu_texte_sw' => $contenu_texte_sw,
             'image_url' => $image_url,
             'image_droite' => $image_droite,
-            'bouton_texte' => $bouton_texte,
+            'bouton_texte_fr' => $bouton_texte_fr,
+            'bouton_texte_en' => $bouton_texte_en,
+            'bouton_texte_sw' => $bouton_texte_sw,
             'bouton_lien' => $bouton_lien,
             'ordre' => $ordre,
             'custom_class' => $custom_class,
-            'options_json' => $options_json
+            'options_json' => $options_json,
+            'est_active' => 1,
+            'created_at' => date('Y-m-d H:i:s')
         );
         
         $rsp = $this->Model->create('sections_contenu', $data);
@@ -178,11 +202,26 @@ class Sections extends MY_Controller {
 
         $id_page = $this->input->post('id_page');
         $type_section = $this->input->post('type_section');
-        $titre_section = $this->input->post('titre_section');
-        $sous_titre = $this->input->post('sous_titre');
-        $contenu_texte = $this->input->post('contenu_texte'); // TinyMCE envoie ici
+        
+        // Champs multilingues
+        $titre_section_fr = $this->input->post('titre_section_fr');
+        $titre_section_en = $this->input->post('titre_section_en');
+        $titre_section_sw = $this->input->post('titre_section_sw');
+        
+        $sous_titre_fr = $this->input->post('sous_titre_fr');
+        $sous_titre_en = $this->input->post('sous_titre_en');
+        $sous_titre_sw = $this->input->post('sous_titre_sw');
+        
+        $contenu_texte_fr = $this->input->post('contenu_texte_fr');
+        $contenu_texte_en = $this->input->post('contenu_texte_en');
+        $contenu_texte_sw = $this->input->post('contenu_texte_sw');
+        
+        $bouton_texte_fr = $this->input->post('bouton_texte_fr');
+        $bouton_texte_en = $this->input->post('bouton_texte_en');
+        $bouton_texte_sw = $this->input->post('bouton_texte_sw');
+        
+        // Champs non traduits
         $image_droite = $this->input->post('image_droite') ? 1 : 0;
-        $bouton_texte = $this->input->post('bouton_texte');
         $bouton_lien = $this->input->post('bouton_lien');
         $ordre = $this->input->post('ordre');
         $custom_class = $this->input->post('custom_class');
@@ -192,15 +231,24 @@ class Sections extends MY_Controller {
         $data = array(
             'id_page' => $id_page,
             'type_section' => $type_section,
-            'titre_section' => $titre_section,
-            'sous_titre' => $sous_titre,
-            'contenu_texte' => $contenu_texte, // Les tableaux HTML sont inclus ici
+            'titre_section_fr' => $titre_section_fr,
+            'titre_section_en' => $titre_section_en,
+            'titre_section_sw' => $titre_section_sw,
+            'sous_titre_fr' => $sous_titre_fr,
+            'sous_titre_en' => $sous_titre_en,
+            'sous_titre_sw' => $sous_titre_sw,
+            'contenu_texte_fr' => $contenu_texte_fr,
+            'contenu_texte_en' => $contenu_texte_en,
+            'contenu_texte_sw' => $contenu_texte_sw,
             'image_droite' => $image_droite,
-            'bouton_texte' => $bouton_texte,
+            'bouton_texte_fr' => $bouton_texte_fr,
+            'bouton_texte_en' => $bouton_texte_en,
+            'bouton_texte_sw' => $bouton_texte_sw,
             'bouton_lien' => $bouton_lien,
             'ordre' => $ordre,
             'custom_class' => $custom_class,
-            'options_json' => $options_json
+            'options_json' => $options_json,
+            'updated_at' => date('Y-m-d H:i:s')
         );
 
         // Gestion de l'image
@@ -340,101 +388,70 @@ class Sections extends MY_Controller {
         $this->load->view('ckeditor_browser', $data);
     }
 
-    // Méthode utilitaire (peut être supprimée si non utilisée)
-    private function do_upload_processing($tmp_file, $original_name)
-    {
-        $ref_folder = FCPATH . 'attachments/Sections/';
-        
-        // Extraction et vérification de l'extension
-        $file_extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
-        $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp');
-
-        if (!in_array($file_extension, $valid_ext)) {
-            return NULL;
-        }
-
-        // Création du dossier s'il n'existe pas
-        if (!is_dir($ref_folder)) {
-            mkdir($ref_folder, 0777, TRUE);
-        }
-
-        // Génération d'un nom unique pour éviter les doublons
-        $new_filename = date("YmdHis") . "_" . uniqid() . "." . $file_extension;
-        $destination = $ref_folder . $new_filename;
-
-        // Déplacement du fichier
-        if (move_uploaded_file($tmp_file, $destination)) {
-            return 'attachments/Sections/' . $new_filename;
-        }
-
-        return NULL;
-    }
-
-
-
     /**
- * Activer/Désactiver une section (Toggle Status)
- */
-public function ToggleStatus()
-{
-    // Vérifier si la requête est AJAX
-    if (!$this->input->is_ajax_request()) {
-        show_404();
-        return;
-    }
+     * Activer/Désactiver une section (Toggle Status)
+     */
+    public function ToggleStatus()
+    {
+        // Vérifier si la requête est AJAX
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
 
-    // Récupérer l'ID de la section (accepter 'id' ou 'id_section')
-    $id = $this->input->post('id_section');
-    if (empty($id)) {
-        $id = $this->input->post('id');
-    }
-    
-    if (empty($id)) {
-        $response = [
-            'success' => false,
-            'message' => 'ID de section manquant'
+        // Récupérer l'ID de la section (accepter 'id' ou 'id_section')
+        $id = $this->input->post('id_section');
+        if (empty($id)) {
+            $id = $this->input->post('id');
+        }
+        
+        if (empty($id)) {
+            $response = [
+                'success' => false,
+                'message' => 'ID de section manquant'
+            ];
+            echo json_encode($response);
+            return;
+        }
+
+        // Récupérer la section actuelle
+        $section = $this->Model->readOne('sections_contenu', ['id_section' => $id]);
+        
+        if (!$section) {
+            $response = [
+                'success' => false,
+                'message' => 'Section non trouvée'
+            ];
+            echo json_encode($response);
+            return;
+        }
+
+        // Inverser le statut est_active
+        $new_status = $section['est_active'] == 1 ? 0 : 1;
+        
+        // Mettre à jour la section
+        $update_data = [
+            'est_active' => $new_status,
+            'updated_at' => date('Y-m-d H:i:s')
         ];
+        
+        $result = $this->Model->update('sections_contenu', ['id_section' => $id], $update_data);
+        
+        if ($result) {
+            $status_text = $new_status == 1 ? 'activée' : 'désactivée';
+            $response = [
+                'success' => true,
+                'message' => 'Section ' . $status_text . ' avec succès',
+                'new_status' => $new_status
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour du statut'
+            ];
+        }
+        
         echo json_encode($response);
-        return;
     }
-
-    // Récupérer la section actuelle
-    $section = $this->Model->readOne('sections_contenu', ['id_section' => $id]);
-    
-    if (!$section) {
-        $response = [
-            'success' => false,
-            'message' => 'Section non trouvée'
-        ];
-        echo json_encode($response);
-        return;
-    }
-
-    // Inverser le statut est_active
-    $new_status = $section['est_active'] == 1 ? 0 : 1;
-    
-    // Mettre à jour la section
-    $update_data = [
-        'est_active' => $new_status,
-        'updated_at' => date('Y-m-d H:i:s')
-    ];
-    
-    $result = $this->Model->update('sections_contenu', ['id_section' => $id], $update_data);
-    
-    if ($result) {
-        $status_text = $new_status == 1 ? 'activée' : 'désactivée';
-        $response = [
-            'success' => true,
-            'message' => 'Section ' . $status_text . ' avec succès',
-            'new_status' => $new_status
-        ];
-    } else {
-        $response = [
-            'success' => false,
-            'message' => 'Erreur lors de la mise à jour du statut'
-        ];
-    }
-    
-    echo json_encode($response);
 }
-}
+?>

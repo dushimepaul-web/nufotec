@@ -37,24 +37,6 @@ class MY_Controller extends MX_Controller
 
         // This function returns the main CodeIgniter object.
         // Normally, to call any of the available CodeIgniter object or pre defined library classes then you need to declare.
-
-
-  /*       $this->load->model('user_session_model');
-if (!$this->user_session_model->update_session_activity()) {
-    // Récupérer le rôle avant destruction
-    $role_slug = $this->session->userdata('role_slug');
-    // Détruire la session PHP
-    $this->session->sess_destroy();
-
-    // Rediriger selon le rôle
-    if ($role_slug === 'medecin' || $role_slug === 'admin') {
-        redirect('Admin');
-    } else {
-        redirect('Auth');
-    }
-}
-*/
-
         $CI =& get_instance();
 
         // Copyright year calculation for the footer

@@ -1230,12 +1230,11 @@ body {
         <div class="header-content">
             <div class="header-badge">
                 <i class="bi bi-camera-video-fill"></i>
-                Service disponible 24h/24
+                <?= t('service_available_24h') ?>
             </div>
-            <h1 class="header-title">Nos Médecins</h1>
+            <h1 class="header-title"><?= t('our_doctors') ?></h1>
             <p class="header-subtitle">
-                Consultez nos médecins spécialistes en ligne. 
-                Prenez rendez-vous facilement et rapidement.
+                <?= t('doctors_subtitle') ?>
             </p>
         </div>
     </div>
@@ -1247,11 +1246,11 @@ body {
         <div class="filters-container">
             <div class="filter-group">
                 <select class="filter-select" id="specialtyFilter">
-                    <option value="">Toutes les spécialités</option>
+                    <option value=""><?= t('all_specialties') ?></option>
                     <?php 
                     $specialites_uniques = [];
                     foreach ($medecins as $medecin) {
-                        $spec = $medecin['specialite'] ?? 'Généraliste';
+                        $spec = $medecin['specialite'] ?? t('general_practitioner');
                         if (!in_array($spec, $specialites_uniques)) {
                             $specialites_uniques[] = $spec;
                             echo '<option value="'.htmlspecialchars($spec).'">'.htmlspecialchars($spec).'</option>';
@@ -1270,11 +1269,11 @@ body {
     <div class="stats-bar">
         <div class="stat-item">
             <i class="bi bi-people-fill"></i>
-            <div><strong><?= count($medecins) ?></strong> médecins</div>
+            <div><strong><?= count($medecins) ?></strong> <?= t('doctors_count') ?></div>
         </div>
         <div class="stat-item">
             <i class="bi bi-circle-fill text-success"></i>
-            <div><strong><?= $online_count ?? 0 ?></strong> disponibles</div>
+            <div><strong><?= $online_count ?? 0 ?></strong> <?= t('available') ?></div>
         </div>
     </div>
 
@@ -1285,11 +1284,11 @@ body {
                 $is_online = !empty($medecin['est_disponible']);
                 $photo = !empty($medecin['photo']) ? base_url('attachments/Users/'.$medecin['photo']) : base_url('assets/images/default-doctor.png');
                 $nom_complet = htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''));
-                $specialite_nom = htmlspecialchars($medecin['specialite'] ?? 'Médecin Généraliste');
+                $specialite_nom = htmlspecialchars($medecin['specialite'] ?? t('general_practitioner'));
                 $note = number_format($medecin['note_moyenne'] ?? 0, 1);
                 $nb_avis = $medecin['nombre_avis'] ?? 0;
-                $experience = ($medecin['annees_experience'] ?? 0) . ' ans';
-                $langues = !empty($medecin['langues_parlees']) ? $medecin['langues_parlees'] : 'Français';
+                $experience = ($medecin['annees_experience'] ?? 0) . ' ' . t('years');
+                $langues = !empty($medecin['langues_parlees']) ? $medecin['langues_parlees'] : t('french');
                 
                 $prix_usd = $medecin['honoraires_consultation'] ?? 50;
                 $taux = $this->config->item('taux_devise');
@@ -1303,7 +1302,7 @@ body {
                 if (!empty($medecin['horaires'])) {
                     foreach ($medecin['horaires'] as $h) {
                         if ($h['est_actif'] == 1) {
-                            $jours_fr = ['monday'=>'Lundi','tuesday'=>'Mardi','wednesday'=>'Mercredi','thursday'=>'Jeudi','friday'=>'Vendredi','saturday'=>'Samedi','sunday'=>'Dimanche'];
+                            $jours_fr = ['monday'=>t('monday'),'tuesday'=>t('tuesday'),'wednesday'=>t('wednesday'),'thursday'=>t('thursday'),'friday'=>t('friday'),'saturday'=>t('saturday'),'sunday'=>t('sunday')];
                             $jour_fr = $jours_fr[strtolower($h['jour_semaine'])] ?? ucfirst($h['jour_semaine']);
                             $horaires_list[] = [
                                 'jour' => $jour_fr,
@@ -1314,13 +1313,13 @@ body {
                     }
                 }
 
-                $prochain_slot = 'Sur rendez-vous';
+                $prochain_slot = t('by_appointment');
                 if (!empty($horaires_list)) {
-                    $jours_fr_auj = ['Monday'=>'Lundi','Tuesday'=>'Mardi','Wednesday'=>'Mercredi','Thursday'=>'Jeudi','Friday'=>'Vendredi','Saturday'=>'Samedi','Sunday'=>'Dimanche'];
+                    $jours_fr_auj = ['Monday'=>t('monday'),'Tuesday'=>t('tuesday'),'Wednesday'=>t('wednesday'),'Thursday'=>t('thursday'),'Friday'=>t('friday'),'Saturday'=>t('saturday'),'Sunday'=>t('sunday')];
                     $aujourdhui = $jours_fr_auj[date('l')] ?? '';
                     foreach ($horaires_list as $h) {
                         if ($h['jour'] === $aujourdhui) {
-                            $prochain_slot = "Aujourd'hui à " . $h['debut'];
+                            $prochain_slot = t('today_at') . ' ' . $h['debut'];
                             break;
                         }
                     }
@@ -1348,20 +1347,20 @@ body {
                                         <i class="bi bi-star<?= $i <= round($note) ? '-fill' : '' ?>"></i>
                                     <?php endfor; ?>
                                 </span>
-                                <span class="rating-text">(<?= $nb_avis ?> avis)</span>
+                                <span class="rating-text">(<?= $nb_avis ?> <?= t('reviews') ?>)</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="doctor-body">
                         <ul class="info-list">
-                            <li><i class="bi bi-award"></i> Expérience <strong><?= $experience ?></strong></li>
-                            <li><i class="bi bi-globe"></i> Langues <strong><?= htmlspecialchars($langues) ?></strong></li>
+                            <li><i class="bi bi-award"></i> <?= t('experience') ?> <strong><?= $experience ?></strong></li>
+                            <li><i class="bi bi-globe"></i> <?= t('languages') ?> <strong><?= htmlspecialchars($langues) ?></strong></li>
                         </ul>
                         
                         <?php if (!empty($horaires_list)): ?>
                         <div class="horaires-preview">
-                            <h6><i class="bi bi-clock"></i> Horaires</h6>
+                            <h6><i class="bi bi-clock"></i> <?= t('schedule') ?></h6>
                             <div class="horaires-tags">
                                 <?php foreach(array_slice($horaires_list, 0, 3) as $h): ?>
                                     <span class="horaire-tag"><?= $h['jour'] ?> <?= $h['debut'] ?></span>
@@ -1376,44 +1375,42 @@ body {
 
                     <div class="doctor-footer">
                         <div class="price-block">
-    <div class="price-label">Consultation</div>
-    <div class="price-value">
-        <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
-    </div>
-    
-    <!-- Prix Burundi -->
-    <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
-        <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
-        <strong>Patients résidant au Burundi:<br> 40 000 Fbu </strong>
-    </div>
-    
-    
-    
-    <?php if($is_online): ?>
-    <div class="next-slot"><i class="bi bi-lightning-charge-fill"></i> <?= $prochain_slot ?></div>
-    <?php endif; ?>
-</div>
+                            <div class="price-label"><?= t('consultation_fee') ?></div>
+                            <div class="price-value">
+                                <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
+                            </div>
+                            
+                            <!-- Prix Burundi -->
+                            <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
+                                <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
+                                <strong><?= t('burundi_price') ?><br> 40 000 Fbu </strong>
+                            </div>
+                            
+                            <?php if($is_online): ?>
+                            <div class="next-slot"><i class="bi bi-lightning-charge-fill"></i> <?= $prochain_slot ?></div>
+                            <?php endif; ?>
+                        </div>
                         
                         <div class="doctor-actions">
                             <button class="btn-consult btn-consult-secondary" onclick="openDetailModal(<?= $medecin['id'] ?>)">
-                                <i class="bi bi-eye"></i> Détails
+                                <i class="bi bi-eye"></i> <?= t('details') ?>
                             </button>
                             <?php if($is_online): ?>
                                 <?php if($this->session->userdata('user_id')): ?>
-                                    <a href="<?= base_url('Consultations/PatientForm?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary">
-                                        <i class="bi bi-calendar-plus"></i> RDV
+                                    <a href="<?= base_url($lang . '/patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary">
+                                        <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
                                     </a>
                                 <?php else: ?>
-                                    <form method="POST" action="<?= base_url('Auth') ?>" class="d-inline">
+                                    <form method="POST" action="<?= base_url($lang . '/Auth') ?>" class="d-inline">
                                         <input type="hidden" name="selected_doctor_uuid" value="<?= $medecin['uuid'] ?>">
                                         <button type="submit" class="btn-consult btn-consult-primary">
-                                            <i class="bi bi-calendar-plus"></i> RDV
+                                            <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
                                         </button>
                                     </form>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <button class="btn-consult btn-consult-secondary" disabled>
-                                    <i class="bi bi-clock"></i> Indisponible
+                                    <i class="bi bi-clock"></i> <?= t('unavailable') ?>
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -1424,7 +1421,7 @@ body {
                 <div class="modal-overlay" id="detailModal<?= $medecin['id'] ?>">
                     <div class="modal-container">
                         <div class="modal-header">
-                            <h3><i class="bi bi-person-badge"></i> Profil du Médecin</h3>
+                            <h3><i class="bi bi-person-badge"></i> <?= t('doctor_profile') ?></h3>
                             <button class="modal-close" onclick="closeModal('detailModal<?= $medecin['id'] ?>')">
                                 <i class="bi bi-x-lg"></i>
                             </button>
@@ -1437,10 +1434,10 @@ body {
                                     <p class="text-muted"><?= $specialite_nom ?></p>
                                     <div>
                                         <?php if(!empty($medecin['est_verifie'])): ?>
-                                            <span class="badge-actif"><i class="bi bi-check-circle"></i> Vérifié</span>
+                                            <span class="badge-actif"><i class="bi bi-check-circle"></i> <?= t('verified') ?></span>
                                         <?php endif; ?>
                                         <span class="badge-<?= $is_online ? 'actif' : 'inactif' ?>">
-                                            <i class="bi bi-circle-fill"></i> <?= $is_online ? 'Disponible' : 'Indisponible' ?>
+                                            <i class="bi bi-circle-fill"></i> <?= $is_online ? t('available') : t('unavailable') ?>
                                         </span>
                                     </div>
                                 </div>
@@ -1449,20 +1446,20 @@ body {
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="detail-section">
-                                        <h4><i class="bi bi-info-circle"></i> Informations</h4>
+                                        <h4><i class="bi bi-info-circle"></i> <?= t('information') ?></h4>
                                         <table class="table">
-                                            <tr><td class="text-muted">Expérience</td><td class="fw-bold"><?= $experience ?></td></tr>
-                                            <tr><td class="text-muted">Langues</td><td class="fw-bold"><?= htmlspecialchars($langues) ?></td></tr>
-                                            <tr><td class="text-muted">Licence</td><td class="fw-bold"><?= htmlspecialchars($medecin['numero_licence'] ?? 'N/A') ?></td></tr>
+                                            <tr><td class="text-muted"><?= t('experience') ?></td><td class="fw-bold"><?= $experience ?></td></tr>
+                                            <tr><td class="text-muted"><?= t('languages') ?></td><td class="fw-bold"><?= htmlspecialchars($langues) ?></td></tr>
+                                            <tr><td class="text-muted"><?= t('license') ?></td><td class="fw-bold"><?= htmlspecialchars($medecin['numero_licence'] ?? 'N/A') ?></td></tr>
                                         </table>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="detail-section">
-                                        <h4><i class="bi bi-clock"></i> Horaires</h4>
+                                        <h4><i class="bi bi-clock"></i> <?= t('schedule') ?></h4>
                                         <?php if(!empty($horaires_list)): ?>
                                             <table class="horaires-table">
-                                                <thead><tr><th>Jour</th><th>Début</th><th>Fin</th></tr></thead>
+                                                <thead><tr><th><?= t('day') ?></th><th><?= t('start') ?></th><th><?= t('end') ?></th></tr></thead>
                                                 <tbody>
                                                     <?php foreach($horaires_list as $h): ?>
                                                     <tr><td><?= $h['jour'] ?></td><td><?= $h['debut'] ?></td><td><?= $h['fin'] ?></td></tr>
@@ -1470,41 +1467,40 @@ body {
                                                 </tbody>
                                             </table>
                                         <?php else: ?>
-                                            <div class="alert alert-info">Aucun horaire défini</div>
+                                            <div class="alert alert-info"><?= t('no_schedule') ?></div>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
 
-                           <div class="detail-section">
-    <h4><i class="bi bi-currency-exchange"></i> Tarifs</h4>
-    <div class="tarif-card">
-        <div class="price-main"><?= number_format($prix_usd, 2) ?> <small>USD/EUR</small></div>
-        
-        <div class="burundi-price" style="margin-top: 10px; padding: 12px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; color: #155724;">
-            <i class="bi bi-geo-alt-fill" style="color: #28a745;"></i>
-            <strong>Patients résidant au Burundi:<br> 40 000 Fbu</strong>
-        </div>
-    </div>
-</div>
+                            <div class="detail-section">
+                                <h4><i class="bi bi-currency-exchange"></i> <?= t('prices') ?></h4>
+                                <div class="tarif-card">
+                                    <div class="price-main"><?= number_format($prix_usd, 2) ?> <small>USD/EUR</small></div>
+                                    <div class="burundi-price" style="margin-top: 10px; padding: 12px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; color: #155724;">
+                                        <i class="bi bi-geo-alt-fill" style="color: #28a745;"></i>
+                                        <strong><?= t('burundi_price') ?><br> 40 000 Fbu</strong>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="text-center mt-4">
                                 <?php if($is_online): ?>
                                     <?php if($this->session->userdata('user_id')): ?>
-                                        <a href="<?= base_url('Consultations/PatientForm?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
-                                            <i class="bi bi-calendar-plus"></i> Prendre Rendez-vous (<?= number_format($prix_usd, 2) ?> USD)
+                                        <a href="<?= base_url($lang . '/patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
+                                            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
                                         </a>
                                     <?php else: ?>
-                                        <form method="POST" action="<?= base_url('Auth') ?>">
+                                        <form method="POST" action="<?= base_url($lang . '/Auth') ?>">
                                             <input type="hidden" name="selected_doctor_uuid" value="<?= $medecin['uuid'] ?>">
                                             <button type="submit" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
-                                                <i class="bi bi-calendar-plus"></i> Prendre Rendez-vous (<?= number_format($prix_usd, 2) ?> USD)
+                                                <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
                                             </button>
                                         </form>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <button class="btn-consult btn-consult-secondary" disabled style="padding: 14px 28px;">
-                                        <i class="bi bi-clock"></i> Médecin indisponible
+                                        <i class="bi bi-clock"></i> <?= t('doctor_unavailable') ?>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -1516,7 +1512,7 @@ body {
         <?php else: ?>
             <div class="text-center py-5">
                 <i class="bi bi-emoji-frown" style="font-size: 48px; color: #ccc;"></i>
-                <p class="mt-3 text-muted">Aucun médecin disponible pour le moment</p>
+                <p class="mt-3 text-muted"><?= t('no_doctors') ?></p>
             </div>
         <?php endif; ?>
     </div>
@@ -1526,25 +1522,20 @@ body {
 <section class="why-choose-section">
     <div class="container">
         <div class="why-grid">
-            <div class="why-item"><div class="why-icon"><i class="bi bi-clock-history"></i></div><h3 class="why-title">24h/24</h3><p class="why-text">Consultations à tout moment</p></div>
-            <div class="why-item"><div class="why-icon"><i class="bi bi-shield-check"></i></div><h3 class="why-title">Certifiés</h3><p class="why-text">Médecins qualifiés</p></div>
-            <div class="why-item"><div class="why-icon"><i class="bi bi-currency-exchange"></i></div><h3 class="why-title">Prix abordables</h3><p class="why-text">Tarifs adaptés</p></div>
-            <div class="why-item"><div class="why-icon"><i class="bi bi-lock"></i></div><h3 class="why-title">Confidentiel</h3><p class="why-text">Données protégées</p></div>
+            <div class="why-item"><div class="why-icon"><i class="bi bi-clock-history"></i></div><h3 class="why-title">24h/24</h3><p class="why-text"><?= t('why_24h') ?></p></div>
+            <div class="why-item"><div class="why-icon"><i class="bi bi-shield-check"></i></div><h3 class="why-title"><?= t('why_certified') ?></h3><p class="why-text"><?= t('why_certified_text') ?></p></div>
+            <div class="why-item"><div class="why-icon"><i class="bi bi-currency-exchange"></i></div><h3 class="why-title"><?= t('why_affordable') ?></h3><p class="why-text"><?= t('why_affordable_text') ?></p></div>
+            <div class="why-item"><div class="why-icon"><i class="bi bi-lock"></i></div><h3 class="why-title"><?= t('why_confidential') ?></h3><p class="why-text"><?= t('why_confidential_text') ?></p></div>
         </div>
     </div>
 </section>
 
-
-
 <?php 
-        // Vérifier si la variable $products existe et contient des données
-        if (!isset($products)) {
-            // Si les produits ne sont pas encore chargés, on les récupère
-            $products = $this->Model->read('advertise_product', null, 'id', 'DESC');
-        }
-        ?>
+if (!isset($products)) {
+    $products = $this->Model->get_products_translated($this->current_lang);
+}
+?>
 <?php include VIEWPATH.'sections/Products_Section.php'; ?>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -1581,5 +1572,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
 <?php include VIEWPATH.'includes/frontend/Footer.php'; ?>

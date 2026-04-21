@@ -27,17 +27,121 @@
 
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3">
-                <h5 class="mb-0 text-success"><i class="bx bx-plus me-2"></i>Nouvelle Section</h5>
+                <h5 class="mb-0 text-primary"><i class="bx bx-plus-circle me-2"></i>Ajouter une nouvelle section</h5>
             </div>
             <div class="card-body">
                 <form id="sectionForm" action="<?= base_url('Sections/Create') ?>" method="POST" enctype="multipart/form-data">
-                    <div class="row g-3">
+                    
+                    <!-- Onglets de langue -->
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#french" type="button" role="tab">
+                                <i class="bx bx-flag"></i> 🇫🇷 Français
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#english" type="button" role="tab">
+                                <i class="bx bx-flag"></i> 🇬🇧 English
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#swahili" type="button" role="tab">
+                                <i class="bx bx-flag"></i> 🇹🇿 Kiswahili
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- ==================== FRANÇAIS ==================== -->
+                        <div class="tab-pane fade show active" id="french" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Titre (FR) <span class="text-muted small">(optionnel)</span></label>
+                                    <input type="text" class="form-control" name="titre_section_fr" placeholder="Titre principal en français">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Sous-titre (FR) <span class="text-muted small">(optionnel)</span></label>
+                                    <input type="text" class="form-control" name="sous_titre_fr" placeholder="Sous-titre en français">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Contenu texte (FR)</label>
+                                    <textarea class="form-control tinymce-editor" id="contenu_texte_fr" name="contenu_texte_fr" rows="15"></textarea>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Texte du bouton (FR) <span class="text-muted small">(optionnel)</span></label>
+                                    <input type="text" class="form-control" name="bouton_texte_fr" placeholder="En savoir plus">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ==================== ENGLISH ==================== -->
+                        <div class="tab-pane fade" id="english" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Title (EN) <span class="text-muted small">(optional)</span></label>
+                                    <input type="text" class="form-control" name="titre_section_en" placeholder="Main title in English">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Subtitle (EN) <span class="text-muted small">(optional)</span></label>
+                                    <input type="text" class="form-control" name="sous_titre_en" placeholder="Subtitle in English">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Text content (EN)</label>
+                                    <textarea class="form-control tinymce-editor" id="contenu_texte_en" name="contenu_texte_en" rows="15"></textarea>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Button text (EN) <span class="text-muted small">(optional)</span></label>
+                                    <input type="text" class="form-control" name="bouton_texte_en" placeholder="Learn more">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ==================== KISWAHILI ==================== -->
+                        <div class="tab-pane fade" id="swahili" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Kichwa (SW) <span class="text-muted small">(siyo lazima)</span></label>
+                                    <input type="text" class="form-control" name="titre_section_sw" placeholder="Kichwa kikuu kwa Kiswahili">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Kichwa kidogo (SW) <span class="text-muted small">(siyo lazima)</span></label>
+                                    <input type="text" class="form-control" name="sous_titre_sw" placeholder="Kichwa kidogo kwa Kiswahili">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Maudhui (SW)</label>
+                                    <textarea class="form-control tinymce-editor" id="contenu_texte_sw" name="contenu_texte_sw" rows="15"></textarea>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Maandishi ya kitufe (SW) <span class="text-muted small">(siyo lazima)</span></label>
+                                    <input type="text" class="form-control" name="bouton_texte_sw" placeholder="Jifunze zaidi">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paramètres communs (non traduits) -->
+                    <div class="row g-3 mt-4 pt-3 border-top">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3"><i class="bx bx-cog"></i> Paramètres généraux</h6>
+                        </div>
+                        
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Page associée <span class="text-danger">*</span></label>
                             <select class="form-select" name="id_page" required>
-                                <option value="">Sélectionner une page...</option>
+                                <option value="">Sélectionner une page</option>
                                 <?php foreach ($pages as $page): ?>
-                                    <option value="<?= $page['id_page'] ?>"><?= htmlspecialchars($page['titre_page']) ?></option>
+                                    <option value="<?= $page['id_page'] ?>">
+                                        <?= htmlspecialchars($page['titre_page']) ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -45,9 +149,8 @@
                         <div class="col-md-3">
                             <label class="form-label fw-bold">Type de section <span class="text-danger">*</span></label>
                             <select class="form-select" name="type_section" required>
-                                <option value="">Sélectionner un type...</option>
+                                <option value="">Sélectionner un type</option>
                                 <?php 
-                                // Types de sections EXACTEMENT comme dans l'ENUM de votre table
                                 $types_sections = [
                                     'hero' => 'Hero (Bannière principale)',
                                     'texte' => 'Texte',
@@ -65,7 +168,9 @@
                                 ];
                                 
                                 foreach ($types_sections as $value => $label): ?>
-                                    <option value="<?= $value ?>" <?= $value == 'texte' ? 'selected' : '' ?>><?= $label ?></option>
+                                    <option value="<?= $value ?>">
+                                        <?= $label ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -73,27 +178,13 @@
                         <div class="col-md-3">
                             <label class="form-label fw-bold">Ordre <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" name="ordre" value="0" required min="0">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Titre de la section</label>
-                            <input type="text" class="form-control" name="titre_section" placeholder="Titre principal">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Sous-titre</label>
-                            <input type="text" class="form-control" name="sous_titre" placeholder="Sous-titre">
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Contenu texte</label>
-                            <textarea class="form-control" id="contenu_texte" name="contenu_texte" rows="15" placeholder="Contenu de la section..."></textarea>
+                            <small class="text-muted">0 = premier, 1 = deuxième, etc.</small>
                         </div>
 
                         <!-- ZONE D'UPLOAD SIMPLE -->
                         <div class="col-12 mt-3 p-3 border rounded bg-light">
                             <label class="form-label fw-bold text-primary">
-                                <i class="bx bx-image-add"></i> Insérer une image
+                                <i class="bx bx-image-add"></i> Insérer une image dans l'éditeur
                             </label>
                             <div class="row">
                                 <div class="col-md-8">
@@ -106,7 +197,7 @@
                                 </div>
                             </div>
                             <div class="form-text text-muted mt-2">
-                                L'image sera insérée à l'endroit où se trouve votre curseur dans l'éditeur.
+                                L'image sera insérée dans l'onglet actif de l'éditeur.
                             </div>
                             <div id="upload_message" class="mt-2"></div>
                         </div>
@@ -114,6 +205,7 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Image de section (fichier)</label>
                             <input type="file" class="form-control" name="image_file" accept="image/*">
+                            <small class="text-muted">Image principale de la section (si le type le permet)</small>
                         </div>
 
                         <div class="col-md-6">
@@ -124,19 +216,15 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Position image</label>
                             <div class="form-check form-switch mt-2">
-                                <input type="checkbox" class="form-check-input" name="image_droite" id="create_image_droite" value="1">
-                                <label class="form-check-label" for="create_image_droite">Image à droite (sinon gauche)</label>
+                                <input type="checkbox" class="form-check-input" name="image_droite" id="image_droite" value="1">
+                                <label class="form-check-label" for="image_droite">Image à droite (sinon gauche)</label>
                             </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Texte du bouton (CTA)</label>
-                            <input type="text" class="form-control" name="bouton_texte" placeholder="En savoir plus">
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Lien du bouton (CTA)</label>
                             <input type="text" class="form-control" name="bouton_lien" placeholder="/page-url">
+                            <small class="text-muted">Le lien est commun à toutes les langues</small>
                         </div>
 
                         <div class="col-md-6">
@@ -152,7 +240,7 @@
 
                     <div class="mt-4 text-end">
                         <a href="<?= base_url('Sections') ?>" class="btn btn-secondary me-2">Annuler</a>
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-primary">
                             <i class="bx bx-save me-2"></i>Créer la section
                         </button>
                     </div>
@@ -166,115 +254,115 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"></script>
 
 <script>
-tinymce.init({
-    selector: '#contenu_texte',
-    height: 500,
-    language: 'fr_FR',
-    
-    // TOUS LES PLUGINS NÉCESSAIRES
-    plugins: [
-        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-        'insertdatetime', 'media', 'table', 'help', 'wordcount'
-    ],
-    
-    // TOOLBAR COMPLÈTE
-    toolbar: [
-        'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor',
-        'alignleft aligncenter alignright alignjustify',
-        'bullist numlist outdent indent',
-        'table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
-        'link image media | code fullscreen help'
-    ].join(' | '),
-    
-    // MENU COMPLET
-    menubar: 'file edit view insert format tools table help',
-    
-    // CONFIGURATION DES TABLEAUX
-    table_appearance_options: true,
-    table_grid: true,
-    table_cell_advtab: true,
-    table_row_advtab: true,
-    table_advtab: true,
-    table_sizing_mode: 'relative',
-    table_default_attributes: {
-        class: 'table table-bordered'
-    },
-    table_default_styles: {
-        width: '100%',
-        borderCollapse: 'collapse'
-    },
-    
-    // CONFIGURATION UPLOAD IMAGES
-    images_upload_url: '<?= base_url("Sections/uploadImage") ?>',
-    automatic_uploads: true,
-    file_picker_types: 'image',
-    
-    // GESTIONNAIRE D'UPLOAD
-    images_upload_handler: function(blobInfo, progress) {
-        return new Promise(function(success, failure) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '<?= base_url("Sections/uploadImage") ?>');
-            
-            xhr.onload = function() {
-                if (xhr.status !== 200) {
-                    failure('Erreur HTTP: ' + xhr.status);
-                    return;
-                }
+// Initialiser TinyMCE pour chaque éditeur multilingue
+function initTinyMCE(selector) {
+    tinymce.init({
+        selector: selector,
+        height: 400,
+        language: 'fr_FR',
+        
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+        ],
+        
+        toolbar: [
+            'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor',
+            'alignleft aligncenter alignright alignjustify',
+            'bullist numlist outdent indent',
+            'table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+            'link image media | code fullscreen help'
+        ].join(' | '),
+        
+        menubar: 'file edit view insert format tools table help',
+        
+        table_appearance_options: true,
+        table_grid: true,
+        table_cell_advtab: true,
+        table_row_advtab: true,
+        table_advtab: true,
+        table_sizing_mode: 'relative',
+        table_default_attributes: {
+            class: 'table table-bordered'
+        },
+        table_default_styles: {
+            width: '100%',
+            borderCollapse: 'collapse'
+        },
+        
+        images_upload_url: '<?= base_url("Sections/uploadImage") ?>',
+        automatic_uploads: true,
+        file_picker_types: 'image',
+        
+        images_upload_handler: function(blobInfo, progress) {
+            return new Promise(function(success, failure) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '<?= base_url("Sections/uploadImage") ?>');
                 
-                try {
-                    var json = JSON.parse(xhr.responseText);
-                } catch (e) {
-                    failure('Réponse invalide: ' + xhr.responseText);
-                    return;
-                }
+                xhr.onload = function() {
+                    if (xhr.status !== 200) {
+                        failure('Erreur HTTP: ' + xhr.status);
+                        return;
+                    }
+                    
+                    try {
+                        var json = JSON.parse(xhr.responseText);
+                    } catch (e) {
+                        failure('Réponse invalide: ' + xhr.responseText);
+                        return;
+                    }
+                    
+                    if (!json || typeof json.uploaded !== 'number' || json.uploaded !== 1) {
+                        failure(json.error ? json.error.message : 'Erreur inconnue');
+                        return;
+                    }
+                    
+                    success(json.url);
+                };
                 
-                if (!json || typeof json.uploaded !== 'number' || json.uploaded !== 1) {
-                    failure(json.error ? json.error.message : 'Erreur inconnue');
-                    return;
-                }
+                xhr.onerror = function() {
+                    failure('Erreur réseau');
+                };
                 
-                success(json.url);
-            };
-            
-            xhr.onerror = function() {
-                failure('Erreur réseau');
-            };
-            
-            var formData = new FormData();
-            formData.append('upload', blobInfo.blob(), blobInfo.filename());
-            xhr.send(formData);
-        });
-    },
-    
-    // STYLE PAR DÉFAUT
-    content_style: `
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 1.6; }
-        table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-        table td, table th { border: 1px solid #dee2e6; padding: 8px; }
-        table th { background-color: #f8f9fa; font-weight: 600; }
-        .table-bordered { border: 1px solid #dee2e6; }
-        .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.05); }
-        img { max-width: 100%; height: auto; }
-    `,
-    
-    // OPTIONS ADDITIONNELLES
-    image_advtab: true,
-    image_caption: true,
-    image_title: true,
-    
-    // BRANDE
-    branding: false,
-    
-    // DÉBOGAGE
-    setup: function(editor) {
-        editor.on('init', function() {
-            console.log('✅ TinyMCE chargé avec succès !');
-        });
-    }
+                var formData = new FormData();
+                formData.append('upload', blobInfo.blob(), blobInfo.filename());
+                xhr.send(formData);
+            });
+        },
+        
+        content_style: `
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 1.6; }
+            table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+            table td, table th { border: 1px solid #dee2e6; padding: 8px; }
+            table th { background-color: #f8f9fa; font-weight: 600; }
+            .table-bordered { border: 1px solid #dee2e6; }
+            .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.05); }
+            img { max-width: 100%; height: auto; }
+        `,
+        
+        image_advtab: true,
+        image_caption: true,
+        image_title: true,
+        
+        branding: false,
+        
+        setup: function(editor) {
+            editor.on('init', function() {
+                console.log('✅ TinyMCE chargé pour: ' + selector);
+            });
+        }
+    });
+}
+
+// Initialiser TinyMCE pour les 3 éditeurs
+document.addEventListener('DOMContentLoaded', function() {
+    initTinyMCE('#contenu_texte_fr');
+    initTinyMCE('#contenu_texte_en');
+    initTinyMCE('#contenu_texte_sw');
 });
 
-// UPLOAD MANUEL
+// Upload manuel (insère dans l'onglet actif)
 document.addEventListener('DOMContentLoaded', function() {
     var uploadBtn = document.getElementById('upload_btn');
     if (uploadBtn) {
@@ -284,6 +372,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!fileInput.files.length) {
                 messageDiv.innerHTML = '<div class="alert alert-warning">⚠️ Sélectionnez une image</div>';
+                return;
+            }
+            
+            // Trouver l'onglet actif
+            var activeTab = document.querySelector('.tab-pane.active');
+            var activeEditorId = null;
+            
+            if (activeTab && activeTab.id) {
+                if (activeTab.id === 'french') activeEditorId = 'contenu_texte_fr';
+                else if (activeTab.id === 'english') activeEditorId = 'contenu_texte_en';
+                else if (activeTab.id === 'swahili') activeEditorId = 'contenu_texte_sw';
+            }
+            
+            if (!activeEditorId) {
+                messageDiv.innerHTML = '<div class="alert alert-warning">⚠️ Veuillez sélectionner un onglet d\'édition</div>';
                 return;
             }
             
@@ -302,12 +405,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (response.uploaded == 1) {
                             var imageUrl = response.url;
                             
-                            // Insérer l'image dans TinyMCE
-                            tinymce.activeEditor.insertContent(
-                                '<img src="' + imageUrl + '" class="img-fluid" style="max-width:100%; margin:10px 0;">'
-                            );
+                            // Insérer l'image dans l'éditeur actif
+                            if (tinymce.get(activeEditorId)) {
+                                tinymce.get(activeEditorId).insertContent(
+                                    '<img src="' + imageUrl + '" class="img-fluid" style="max-width:100%; margin:10px 0;" alt="Image">'
+                                );
+                            } else {
+                                // Fallback pour textarea normal
+                                var textarea = document.getElementById(activeEditorId);
+                                if (textarea) {
+                                    textarea.value += '<img src="' + imageUrl + '" class="img-fluid">';
+                                }
+                            }
                             
-                            messageDiv.innerHTML = '<div class="alert alert-success">✅ Image insérée avec succès !</div>';
+                            messageDiv.innerHTML = '<div class="alert alert-success">✅ Image insérée avec succès dans l\'onglet ' + activeTab.id + ' !</div>';
                             fileInput.value = '';
                             
                             setTimeout(function() {
@@ -331,20 +442,27 @@ document.addEventListener('DOMContentLoaded', function() {
             xhr.send(formData);
         });
     }
-    
-    // Gestionnaire de soumission de formulaire
-    var form = document.getElementById('sectionForm');
-    if (form) {
-        form.addEventListener('submit', function() {
-            // TinyMCE met automatiquement à jour le textarea
-            return true;
-        });
-    }
 });
 </script>
 
 <!-- Style -->
 <style>
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: 500;
+        padding: 10px 20px;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #667eea;
+    }
+    .nav-tabs .nav-link.active {
+        color: #667eea;
+        border-bottom: 2px solid #667eea;
+        background: transparent;
+    }
     .btn-primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
@@ -355,21 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
     .btn-primary:hover {
         transform: translateY(-1px);
         box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    .btn-success {
-        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-        border: none;
-        color: #1e7e34;
-        font-weight: 600;
-    }
-    .btn-success:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 5px 15px rgba(132, 250, 176, 0.4);
-    }
-    .btn-secondary {
-        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-        border: none;
-        color: white;
     }
     .alert {
         padding: 12px 20px;
@@ -397,10 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
         color: #721c24;
         border: none;
     }
-    .bg-light {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-    }
-    .form-control:focus {
+    .form-control:focus, .form-select:focus {
         border-color: #667eea;
         box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     }
@@ -410,6 +510,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     .card-header {
         border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .border-top {
+        border-top: 1px solid #dee2e6 !important;
     }
 </style>
 

@@ -1424,8 +1424,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
 
 
-
- <!-- Top Bar -->
+<!-- Top Bar -->
 <div class="top-bar" id="topBar">
     <div class="top-bar-content">
         <div class="top-bar-left">
@@ -1446,7 +1445,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             <div class="top-bar-divider"></div>
             <a href="#">
                 <i class="bi bi-clock-fill"></i>
-                <span><?= $this->Model->get_setting('horaires_travail', 'Dimanche - Vendredi: 8h00 - 17h00') ?></span>
+                <span><?= $this->Model->get_setting('horaires_travail', t('working_hours')) ?></span>
             </a>
         </div>
     </div>
@@ -1455,21 +1454,19 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 <!-- Main Header -->
 <header class="main-header" id="mainHeader">
     <div class="header-container">
-        <!-- Logo -->
-        <a href="<?= base_url('') ?>" class="brand">
+        <a href="<?= base_url($lang ?? 'fr') ?>" class="brand">
             <div class="brand-logo">
                 <img src="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('site_logo', 'logo.png')) ?>" alt="AGF Phytomed">
             </div>
             <div class="brand-info">
                 <h1><?= $this->Model->get_setting('site_name', 'AGF Phytomed') ?></h1>
-                <span><?= $this->Model->get_setting('span_site_name', 'Natural Health') ?></span> 
+                <span><?= $this->Model->get_setting('span_site_name', 'Natural Health') ?></span>
             </div>
         </a>
 
-        <!-- Search Desktop -->
         <div class="search-container" id="searchContainer">
             <div class="search-box">
-                <input type="text" id="searchInput" class="search-input" placeholder="Search products..." autocomplete="off">
+                <input type="text" id="searchInput" class="search-input" placeholder="<?= t('search') ?>" autocomplete="off">
                 <button class="search-btn" id="searchBtn">
                     <i class="bi bi-search"></i>
                 </button>
@@ -1477,14 +1474,11 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             <div class="search-results-dropdown" id="searchResults"></div>
         </div>
 
-        <!-- Actions -->
         <div class="header-actions">
-            <!-- Search Toggle Mobile -->
-            <button class="action-btn d-lg-none" id="searchToggle" title="Search">
+            <button class="action-btn d-lg-none" id="searchToggle" title="<?= t('search') ?>">
                 <i class="bi bi-search"></i>
             </button>
 
-            <!-- Account -->
             <?php
             $logged_in = $this->session->userdata('logged_in') === TRUE;
             $user_name = $this->session->userdata('username');
@@ -1497,47 +1491,46 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                     strtoupper(substr($user_name, 0, 2));
             }
             ?>
-            <a href="<?= $logged_in ? base_url('home-patient') : base_url('Auth') ?>" class="action-btn d-none d-lg-flex" title="<?= $logged_in ? 'My account' : 'Sign in' ?>">
-    <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
-    <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
-<?php elseif ($logged_in): ?>
-    <img src="<?= base_url('assets/img/default-avatar.png') ?>" alt="Avatar" class="avatar default-avatar">
-<?php else: ?>
-    <i class="bi bi-person-circle"></i>
-<?php endif; ?>
-    <span class="d-none d-lg-inline"><?= $logged_in ? 'My account' : 'Sign in' ?></span>
-</a>
+            <a href="<?= $logged_in ? base_url($lang . '/home-patient') : base_url($lang . '/Auth') ?>" class="action-btn d-none d-lg-flex" title="<?= $logged_in ? t('my_account') : t('sign_in') ?>">
+                <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
+                    <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar">
+                <?php elseif ($logged_in): ?>
+                    <img src="<?= base_url('assets/img/default-avatar.png') ?>" alt="Avatar" class="avatar default-avatar">
+                <?php else: ?>
+                    <i class="bi bi-person-circle"></i>
+                <?php endif; ?>
+                <span class="d-none d-lg-inline"><?= $logged_in ? t('my_account') : t('sign_in') ?></span>
+            </a>
 
             <div class="lang-selector d-none d-lg-block">
                 <?php 
-                $current_lang = $this->session->userdata('site_lang') ?: 'french';
-                $display = [
-                    'english' => ['flag' => 'us', 'label' => 'EN'],
-                    'french'  => ['flag' => 'fr', 'label' => 'FR'],
-                    'swahili' => ['flag' => 'tz', 'label' => 'SW']
+                $current_lang_code = $lang ?? 'fr';
+                $languages = [
+                    'fr' => ['flag' => 'fr', 'label' => 'FR', 'name' => 'Français'],
+                    'en' => ['flag' => 'us', 'label' => 'EN', 'name' => 'English'],
+                    'ar' => ['flag' => 'sa', 'label' => 'AR', 'name' => 'العربية'],
+                    'sw' => ['flag' => 'tz', 'label' => 'SW', 'name' => 'Kiswahili']
                 ];
                 ?>
-                <button class="lang-btn" aria-label="Change language">
-                    <img src="https://flagcdn.com/w20/<?= $display[$current_lang]['flag'] ?>.png" alt="<?= $display[$current_lang]['label'] ?>">
-                    <span><?= $display[$current_lang]['label'] ?></span>
+                <button class="lang-btn" aria-label="<?= t('language') ?>">
+                    <img src="https://flagcdn.com/w20/<?= $languages[$current_lang_code]['flag'] ?>.png" 
+                         alt="<?= $languages[$current_lang_code]['label'] ?>">
+                    <span><?= $languages[$current_lang_code]['label'] ?></span>
                     <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
                 </button>
                 <div class="lang-dropdown">
-                    <a href="<?= base_url('Language/switch_lang/english') ?>" class="lang-option">
-                        <img src="https://flagcdn.com/w20/us.png" alt="EN"> <span>English</span>
-                    </a>
-                    <a href="<?= base_url('Language/switch_lang/french') ?>" class="lang-option">
-                        <img src="https://flagcdn.com/w20/fr.png" alt="FR"> <span>French</span>
-                    </a>
-                    <a href="<?= base_url('Language/switch_lang/swahili') ?>" class="lang-option">
-                        <img src="https://flagcdn.com/w20/tz.png" alt="SW"> <span>Swahili</span>
-                    </a>
+                    <?php foreach($languages as $code => $lang_info): ?>
+                        <a href="<?= base_url($code . '/' . $this->uri->segment(2)) ?>" 
+                           class="lang-option <?= $code == $current_lang_code ? 'active' : '' ?>">
+                            <img src="https://flagcdn.com/w20/<?= $lang_info['flag'] ?>.png" 
+                                 alt="<?= $lang_info['label'] ?>">
+                            <span><?= $lang_info['name'] ?></span>
+                        </a>
+                    <?php endforeach; ?>
                 </div>
             </div>
-            <div id="google_translate_element" style="display:none"></div>
 
-            <!-- Mobile Menu -->
-            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="<?= t('menu') ?>">
                 <i class="bi bi-list"></i>
             </button>
         </div>
@@ -1548,108 +1541,99 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 <nav class="main-nav" id="mainNav">
     <div class="nav-container">
         <ul class="nav-menu">
-            <!-- Home -->
             <li class="nav-item">
-                <a href="<?= base_url('') ?>" class="nav-link">
+                <a href="<?= base_url($lang ?? 'fr') ?>" class="nav-link">
                     <i class="bi bi-house-door d-lg-none"></i>
-                    <span>Home</span>
+                    <span><?= t('home') ?></span>
                 </a>
             </li>
 
-            <!-- About Mega Menu -->
             <li class="nav-item mega-menu">
                 <a href="#" class="nav-link">
-                    <span>About</span>
+                    <span><?= t('about') ?></span>
                     <i class="bi bi-chevron-down"></i>
                 </a>
                 <div class="mega-dropdown">
                     <div class="mega-grid">
                         <div class="mega-column">
-                            <h3><i class="bi bi-building"></i> Corporate</h3>
+                            <h3><i class="bi bi-building"></i> <?= t('corporate') ?></h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('Profile-Entreprise') ?>"><i class="bi bi-chevron-right"></i> Corporate Profile</a></li>
-                                <li><a href="<?= base_url('background-strategic-rationale') ?>"><i class="bi bi-chevron-right"></i> Background & Strategy</a></li>
-                                <li><a href="<?= base_url('corporate-structure-governance') ?>"><i class="bi bi-chevron-right"></i> Governance</a></li>
-                                <li><a href="<?= base_url('vision-mission') ?>"><i class="bi bi-chevron-right"></i> Vision & Mission</a></li>
+                                <li><a href="<?= base_url($lang . '/Profile-Entreprise') ?>"><i class="bi bi-chevron-right"></i> <?= t('corporate_profile') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/background-strategic-rationale') ?>"><i class="bi bi-chevron-right"></i> <?= t('background_strategy') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/corporate-structure-governance') ?>"><i class="bi bi-chevron-right"></i> <?= t('governance') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/vision-mission') ?>"><i class="bi bi-chevron-right"></i> <?= t('vision_mission') ?></a></li>
                             </ul>
                         </div>
                         <div class="mega-column">
-                            <h3><i class="bi bi-leaf"></i> Sustainability</h3>
+                            <h3><i class="bi bi-leaf"></i> <?= t('sustainability') ?></h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('Frontend/Esg_Sustainability') ?>"><i class="bi bi-chevron-right"></i> ESG & Sustainability</a></li>
-                                <li><a href="<?= base_url('risk-analysis') ?>"><i class="bi bi-chevron-right"></i> Risk Analysis</a></li>
-                                <li><a href="<?= base_url('Frontend/Research_Innovation') ?>"><i class="bi bi-chevron-right"></i> Research & Innovation</a></li>
-                                <li><a href="<?= base_url('market-outlook') ?>"><i class="bi bi-chevron-right"></i> Market Outlook</a></li>
-                                <li><a href="<?= base_url('digital-growth') ?>"><i class="bi bi-chevron-right"></i> Digital Growth</a></li>
+                                <li><a href="<?= base_url($lang . '/esg_Sustainability') ?>"><i class="bi bi-chevron-right"></i> <?= t('esg_sustainability') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/risk-analysis') ?>"><i class="bi bi-chevron-right"></i> <?= t('risk_analysis') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/Research_Innovation') ?>"><i class="bi bi-chevron-right"></i> <?= t('research_innovation') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/market-outlook') ?>"><i class="bi bi-chevron-right"></i> <?= t('market_outlook') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/digital-growth') ?>"><i class="bi bi-chevron-right"></i> <?= t('digital_growth') ?></a></li>
                             </ul>
                         </div>
                         <div class="mega-column">
-                            <h3><i class="bi bi-gear-wide-connected"></i> Facilities</h3>
+                            <h3><i class="bi bi-gear-wide-connected"></i> <?= t('facilities') ?></h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('nufotec-phytomed-facility') ?>"><i class="bi bi-chevron-right"></i> NUFOTEC PHYTOMED Facility</a></li>
-                                <li><a href="<?= base_url('manufacturing-facility') ?>"><i class="bi bi-chevron-right"></i> Manufacturing Facility</a></li>
+                                <li><a href="<?= base_url($lang . '/nufotec-phytomed-facility') ?>"><i class="bi bi-chevron-right"></i> <?= t('nufotec_facility') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/manufacturing-facility') ?>"><i class="bi bi-chevron-right"></i> <?= t('manufacturing_facility') ?></a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </li>
 
-            <!-- Shop -->
             <li class="nav-item">
-                <a href="<?= base_url('Products') ?>" class="nav-link">
-                    <span>Shop</span>
+                <a href="<?= base_url($lang . '/Products') ?>" class="nav-link">
+                    <span><?= t('shop') ?></span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="<?= base_url('Medicins') ?>" class="nav-link">
-                    <span>Teleconsultation</span>
+                <a href="<?= base_url($lang . '/Medicins') ?>" class="nav-link">
+                    <span><?= t('teleconsultation') ?></span>
                 </a>
             </li>
 
-           
-
-            <!-- Investment Mega Menu -->
             <li class="nav-item mega-menu">
                 <a href="#" class="nav-link">
-                    <span>Investment</span>
+                    <span><?= t('investment') ?></span>
                     <i class="bi bi-chevron-down"></i>
                 </a>
                 <div class="mega-dropdown">
                     <div class="mega-grid">
                         <div class="mega-column">
-                            <h3><i class="bi bi-handshake"></i> Partnerships</h3>
-
+                            <h3><i class="bi bi-handshake"></i> <?= t('partnerships') ?></h3>
                             <ul class="mega-list">
-                                 <li><a href="<?= base_url('investment-projection') ?>"><i class="bi bi-chevron-right"></i> Investment Projection</a></li>
-                                <li><a href="<?= base_url('investor-commitment') ?>"><i class="bi bi-chevron-right"></i> Investor Commitment</a></li>
-                                <li><a href="<?= base_url('strategic-partnerships') ?>"><i class="bi bi-chevron-right"></i> Strategic Partnerships</a></li>
+                                <li><a href="<?= base_url($lang . '/investment-projection') ?>"><i class="bi bi-chevron-right"></i> <?= t('investment_projection') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/investor-commitment') ?>"><i class="bi bi-chevron-right"></i> <?= t('investor_commitment') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/strategic-partnerships') ?>"><i class="bi bi-chevron-right"></i> <?= t('strategic_partnerships') ?></a></li>
                             </ul>
                         </div>
                         <div class="mega-column">
-                            <h3><i class="bi bi-bank"></i> Relations</h3>
+                            <h3><i class="bi bi-bank"></i> <?= t('relations') ?></h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('broker-commission') ?>"><i class="bi bi-chevron-right"></i> Broker Commission</a></li>
-                                <li><a href="<?= base_url('Brokers-form') ?>"><i class="bi bi-chevron-right"></i> Become a Broker <span class="badge-pro">Pro</span></a></li>
-                                <li><a href="<?= base_url('Investors-form') ?>"><i class="bi bi-chevron-right"></i> Become a Partner <span class="badge-pro">Pro</span></a></li>
+                                <li><a href="<?= base_url($lang . '/broker-commission') ?>"><i class="bi bi-chevron-right"></i> <?= t('broker_commission') ?></a></li>
+                                <li><a href="<?= base_url($lang . '/Brokers-form') ?>"><i class="bi bi-chevron-right"></i> <?= t('become_broker') ?> <span class="badge-pro">Pro</span></a></li>
+                                <li><a href="<?= base_url($lang . '/Investors-form') ?>"><i class="bi bi-chevron-right"></i> <?= t('become_partner') ?> <span class="badge-pro">Pro</span></a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </li>
 
-             <!-- Contact direct link -->
             <li class="nav-item">
-                <a href="<?= base_url('media') ?>" class="nav-link">
-                    <span>Media</span>
+                <a href="<?= base_url($lang . '/media') ?>" class="nav-link">
+                    <span><?= t('media') ?></span>
                 </a>
             </li>
-
         </ul>
 
         <div class="nav-cta">
-            <a href="<?= base_url('Home/Contact') ?>" class="btn-nav-primary">
+            <a href="<?= base_url($lang . '/Home/Contact') ?>" class="btn-nav-primary">
                 <i class="bi bi-headset"></i>
-                <span>Contact</span>
+                <span><?= t('contact') ?></span>
             </a>
         </div>
     </div>
@@ -1671,114 +1655,106 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 </div>
             <?php endif; ?>
             <div class="mobile-user-details">
-                <h4><?= $logged_in ? $user_name : 'Guest' ?></h4>
-                <p><?= $logged_in ? 'Connected' : 'Sign in to access your account' ?></p>
+                <h4><?= $logged_in ? $user_name : t('guest') ?></h4>
+                <p><?= $logged_in ? t('connected') : t('sign_in_message') ?></p>
             </div>
         </div>
     </div>
 
     <div class="mobile-nav-content">
         <div class="mobile-nav-section">
-            <div class="mobile-nav-title">Main Menu</div>
+            <div class="mobile-nav-title"><?= t('main_menu') ?></div>
             <ul class="mobile-nav-list">
-                <!-- Home -->
                 <li class="mobile-nav-item">
-                    <a href="<?= base_url('') ?>" class="mobile-nav-link">
+                    <a href="<?= base_url($lang ?? 'fr') ?>" class="mobile-nav-link">
                         <i class="bi bi-house-door"></i>
-                        <span>Home</span>
+                        <span><?= t('home') ?></span>
                     </a>
                 </li>
-                
-                <!-- About with submenu -->
                 <li class="mobile-nav-item">
                     <button class="mobile-nav-link has-submenu" data-submenu="about">
                         <i class="bi bi-building"></i>
-                        <span>About</span>
+                        <span><?= t('about') ?></span>
                         <i class="bi bi-chevron-right chevron"></i>
                     </button>
                     <div class="mobile-submenu" id="submenu-about">
-                        <a href="<?= base_url('Profile-Entreprise') ?>" class="mobile-submenu-item">Corporate Profile</a>
-                        <a href="<?= base_url('background-strategic-rationale') ?>" class="mobile-submenu-item">Background & Strategy</a>
-                        <a href="<?= base_url('corporate-structure-governance') ?>" class="mobile-submenu-item">Governance</a>
-                        <a href="<?= base_url('vision-mission') ?>" class="mobile-submenu-item">Vision & Mission</a>
-                        <a href="<?= base_url('Frontend/Esg_Sustainability') ?>" class="mobile-submenu-item">ESG & Sustainability</a>
-                        <a href="<?= base_url('risk-analysis') ?>" class="mobile-submenu-item">Risk Analysis</a>
-                        <a href="<?= base_url('Frontend/Research_Innovation') ?>" class="mobile-submenu-item">Research & Innovation</a>
-                        <a href="<?= base_url('nufotec-phytomed-facility') ?>" class="mobile-submenu-item">NUFOTEC-PHYTOMED Facility</a>
-                        <a href="<?= base_url('digital-growth') ?>" class="mobile-submenu-item">Digital Growth</a>
-                        <a href="<?= base_url('market-outlook') ?>" class="mobile-submenu-item">Market Outlook</a>
+                        <a href="<?= base_url($lang . '/Profile-Entreprise') ?>" class="mobile-submenu-item"><?= t('corporate_profile') ?></a>
+                        <a href="<?= base_url($lang . '/background-strategic-rationale') ?>" class="mobile-submenu-item"><?= t('background_strategy') ?></a>
+                        <a href="<?= base_url($lang . '/corporate-structure-governance') ?>" class="mobile-submenu-item"><?= t('governance') ?></a>
+                        <a href="<?= base_url($lang . '/vision-mission') ?>" class="mobile-submenu-item"><?= t('vision_mission') ?></a>
+                        <a href="<?= base_url($lang . '/Esg_Sustainability') ?>" class="mobile-submenu-item"><?= t('esg_sustainability') ?></a>
+                        <a href="<?= base_url($lang . '/risk-analysis') ?>" class="mobile-submenu-item"><?= t('risk_analysis') ?></a>
+                        <a href="<?= base_url($lang . '/Research_Innovation') ?>" class="mobile-submenu-item"><?= t('research_innovation') ?></a>
+                        <a href="<?= base_url($lang . '/nufotec-phytomed-facility') ?>" class="mobile-submenu-item"><?= t('nufotec_facility') ?></a>
+                        <a href="<?= base_url($lang . '/digital-growth') ?>" class="mobile-submenu-item"><?= t('digital_growth') ?></a>
+                        <a href="<?= base_url($lang . '/market-outlook') ?>" class="mobile-submenu-item"><?= t('market_outlook') ?></a>
                     </div>
                 </li>
-
                 <li class="mobile-nav-item">
-                    <a href="<?= base_url('Medicins') ?>" class="mobile-nav-link">
+                    <a href="<?= base_url($lang . '/Medicins') ?>" class="mobile-nav-link">
                         <i class="bi bi-camera-video"></i>
-                        <span>Teleconsultation</span>
+                        <span><?= t('teleconsultation') ?></span>
                     </a>
                 </li>
-
-                <!-- Investment with submenu -->
                 <li class="mobile-nav-item">
                     <button class="mobile-nav-link has-submenu" data-submenu="investment">
                         <i class="bi bi-graph-up-arrow"></i>
-                        <span>Investment</span>
+                        <span><?= t('investment') ?></span>
                         <i class="bi bi-chevron-right chevron"></i>
                     </button>
                     <div class="mobile-submenu" id="submenu-investment">
-                        <a href="<?= base_url('investment-projection') ?>" class="mobile-submenu-item">Investment Projection</a>
-                        <a href="<?= base_url('investor-commitment') ?>" class="mobile-submenu-item">Investor Commitment</a>
-                        <a href="<?= base_url('strategic-partnerships') ?>" class="mobile-submenu-item">Strategic Partnerships</a>
-                        <a href="<?= base_url('broker-commission') ?>" class="mobile-submenu-item">Broker Commission</a>
-                        <a href="<?= base_url('Brokers-form') ?>" class="mobile-submenu-item">Become a Broker</a>
-                        <a href="<?= base_url('Investors-form') ?>" class="mobile-submenu-item">Become a Partner</a>
+                        <a href="<?= base_url($lang . '/investment-projection') ?>" class="mobile-submenu-item"><?= t('investment_projection') ?></a>
+                        <a href="<?= base_url($lang . '/investor-commitment') ?>" class="mobile-submenu-item"><?= t('investor_commitment') ?></a>
+                        <a href="<?= base_url($lang . '/strategic-partnerships') ?>" class="mobile-submenu-item"><?= t('strategic_partnerships') ?></a>
+                        <a href="<?= base_url($lang . '/broker-commission') ?>" class="mobile-submenu-item"><?= t('broker_commission') ?></a>
+                        <a href="<?= base_url($lang . '/Brokers-form') ?>" class="mobile-submenu-item"><?= t('become_broker') ?></a>
+                        <a href="<?= base_url($lang . '/Investors-form') ?>" class="mobile-submenu-item"><?= t('become_partner') ?></a>
                     </div>
                 </li>
-
-                
-
                 <li class="mobile-nav-item">
-                    <a href="<?= base_url('blog') ?>" class="mobile-nav-link">
+                    <a href="<?= base_url($lang . '/blog') ?>" class="mobile-nav-link">
                         <i class="bi bi-envelope"></i>
-                        <span>Actualites</span>
+                        <span><?= t('news') ?></span>
                     </a>
                 </li>
                 <li class="mobile-nav-item">
-                    <a href="<?= base_url('Home/Faq') ?>" class="mobile-nav-link">
-                        <i class="bi bi-envelope"></i>
-                        <span>Faq</span>
+                    <a href="<?= base_url($lang . '/Home/Faq') ?>" class="mobile-nav-link">
+                        <i class="bi bi-question-circle"></i>
+                        <span><?= t('faq') ?></span>
                     </a>
                 </li>
-
-                <!-- Contact direct -->
                 <li class="mobile-nav-item">
-                    <a href="<?= base_url('Home/Contact') ?>" class="mobile-nav-link">
+                    <a href="<?= base_url($lang . '/Home/Contact') ?>" class="mobile-nav-link">
                         <i class="bi bi-envelope"></i>
-                        <span>Contact</span>
+                        <span><?= t('contact') ?></span>
                     </a>
                 </li>
             </ul>
         </div>
 
         <div class="mobile-nav-section">
-            <div class="mobile-nav-title">Settings</div>
+            <div class="mobile-nav-title"><?= t('settings') ?></div>
             <ul class="mobile-nav-list">
                 <li class="mobile-nav-item">
                     <button class="mobile-nav-link has-submenu" data-submenu="lang">
                         <i class="bi bi-globe"></i>
-                        <span>Language</span>
-                        <span style="margin-left: auto; margin-right: 8px; font-size: 12px; color: var(--gray);"><?= ucfirst($current_lang) ?></span>
+                        <span><?= t('language') ?></span>
+                        <span style="margin-left: auto; margin-right: 8px; font-size: 12px; color: var(--gray);">
+                            <?= strtoupper($lang ?? 'fr') ?>
+                        </span>
                         <i class="bi bi-chevron-right chevron"></i>
                     </button>
                     <div class="mobile-submenu" id="submenu-lang">
-                        <a href="<?= base_url('Language/switch_lang/french') ?>" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
-                            <img src="https://flagcdn.com/w20/fr.png" alt="FR" style="width: 20px;"> French
-                        </a>
-                        <a href="<?= base_url('Language/switch_lang/english') ?>" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
-                            <img src="https://flagcdn.com/w20/us.png" alt="EN" style="width: 20px;"> English
-                        </a>
-                        <a href="<?= base_url('Language/switch_lang/swahili') ?>" class="mobile-submenu-item" style="display: flex; align-items: center; gap: 8px;">
-                            <img src="https://flagcdn.com/w20/tz.png" alt="SW" style="width: 20px;"> Swahili
-                        </a>
+                        <?php foreach($languages as $code => $lang_info): ?>
+                            <a href="<?= base_url($code . '/' . ($this->uri->segment(2) ?? '')) ?>" 
+                               class="mobile-submenu-item" 
+                               style="display: flex; align-items: center; gap: 8px;">
+                                <img src="https://flagcdn.com/w20/<?= $lang_info['flag'] ?>.png" 
+                                     alt="<?= $lang_info['label'] ?>" 
+                                     style="width: 20px;"> 
+                                <?= $lang_info['name'] ?>
+                            </a>
+                        <?php endforeach; ?>
                     </div>
                 </li>
             </ul>
@@ -1786,20 +1762,22 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     </div>
 
     <div class="mobile-nav-footer" style="margin-bottom: 30px;">
-        <a href="<?= base_url('Home/Contact') ?>" class="mobile-cta-btn">
-            <i class="bi bi-headset"></i> Contact Us
+        <a href="<?= base_url($lang . '/Home/Contact') ?>" class="mobile-cta-btn">
+            <i class="bi bi-headset"></i> <?= t('contact_us') ?>
         </a>
         <?php if (!$logged_in): ?>
-            <a href="<?= base_url('Auth') ?>" class="mobile-cta-btn secondary">
-                <i class="bi bi-box-arrow-in-right"></i> Sign In
+            <a href="<?= base_url($lang . '/Auth') ?>" class="mobile-cta-btn secondary">
+                <i class="bi bi-box-arrow-in-right"></i> <?= t('sign_in') ?>
             </a>
         <?php else: ?>
-            <a href="<?= base_url('Auth/logout') ?>" class="mobile-cta-btn secondary">
-                <i class="bi bi-box-arrow-right"></i> Sign Out
+            <a href="<?= base_url($lang . '/Auth/logout') ?>" class="mobile-cta-btn secondary">
+                <i class="bi bi-box-arrow-right"></i> <?= t('sign_out') ?>
             </a>
         <?php endif; ?>
     </div>
 </div>
+
+<!-- ... le reste de votre JS et footer ... -->
    
 
     <script>

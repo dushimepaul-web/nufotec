@@ -8,7 +8,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * https://github.com/Dushimepaul
  */
 
-class Admin extends Public_Controller {
+class Admin extends MY_Controller{
 
     public function __construct() {
         parent::__construct();

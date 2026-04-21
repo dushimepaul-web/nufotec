@@ -930,7 +930,7 @@ private function get_all_consultations($user_id) {
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
-            redirect('home-patient');
+            redirect($this->current_lang . '/home-patient');
             return;
         }
 
@@ -945,7 +945,7 @@ private function get_all_consultations($user_id) {
             
         if ($existing) {
             $this->session->set_flashdata('error', 'Cet email est déjà utilisé.');
-            redirect('home-patient');
+            redirect($this->current_lang . '/home-patient');
             return;
         }
 
@@ -964,7 +964,7 @@ private function get_all_consultations($user_id) {
             $photo = $this->upload_profile_photo($_FILES['photo']);
             if ($photo === false) {
                 $this->session->set_flashdata('error', 'Erreur upload photo. Formats: jpg, png, gif, webp');
-                redirect('home-patient');
+                redirect($this->current_lang . '/home-patient');
                 return;
             }
             
@@ -987,20 +987,20 @@ private function get_all_consultations($user_id) {
         if (!empty($current_password) && !empty($new_password)) {
             if ($new_password !== $this->input->post('confirm_password')) {
                 $this->session->set_flashdata('error', 'Les mots de passe ne correspondent pas.');
-                redirect('home-patient');
+                redirect($this->current_lang . '/home-patient');
                 return;
             }
 
             if (strlen($new_password) < 8) {
                 $this->session->set_flashdata('error', 'Mot de passe trop court (8 caractères min).');
-                redirect('home-patient');
+                redirect($this->current_lang . '/home-patient');
                 return;
             }
 
             $user = $this->db->select('password')->where('id', $user_id)->get('users')->row();
             if (!password_verify($current_password, $user->password)) {
                 $this->session->set_flashdata('error', 'Mot de passe actuel incorrect.');
-                redirect('home-patient');
+                redirect($this->current_lang . '/home-patient');
                 return;
             }
 
@@ -1017,7 +1017,7 @@ private function get_all_consultations($user_id) {
         ));
 
         $this->session->set_flashdata('success', 'Profil mis à jour avec succès.');
-        redirect('home-patient');
+        redirect($this->current_lang . '/home-patient');
     }
 
     /**

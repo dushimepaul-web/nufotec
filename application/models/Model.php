@@ -223,6 +223,61 @@ public function getActivePaymentMethods() {
 
 
 
+
+
+
+public function get_products_translated($lang, $limit = null, $offset = 0)
+{
+    $title_col = "title_{$lang} AS title";
+    $desc_col  = "description_{$lang} AS description";
+    
+    $this->db->select("id, main_image, slug, price, created_at, $title_col, $desc_col");
+    $this->db->where('is_active', 1);
+    $this->db->where('deleted_at IS NULL');
+    $this->db->order_by('id', 'DESC');
+    if ($limit) $this->db->limit($limit, $offset);
+    return $this->db->get('advertise_product')->result_array();
+}
+
+
+
+
+
+/**
+ * Récupérer les appels à l'action avec les champs traduits
+ * @param string $lang Code langue (fr, en, sw)
+ * @return array
+ */
+public function get_appels_action_translated($lang = null)
+{
+    if ($lang === null) {
+        $lang = $this->session->userdata('lang') ?? 'fr';
+    }
+    
+    $this->db->select("
+        id_cta,
+        titre_{$lang} AS titre,
+        sous_titre_{$lang} AS sous_titre,
+        bouton_texte_{$lang} AS bouton_texte,
+        bouton_lien,
+        type_public,
+        image_fond_url,
+        est_actif,
+        date_expiration,
+        ordre,
+        id_page_associee
+    ");
+    $this->db->where('est_actif', 1);
+    // Filtrer les dates expirées
+    $this->db->where('(date_expiration IS NULL OR date_expiration >= CURDATE())');
+    $this->db->order_by('ordre', 'ASC');
+    
+    return $this->db->get('appels_action')->result_array();
+}
+
+
+
+
     function readOne($table, $criteres) {
         $this->db->where($criteres);
         $query = $this->db->get($table);

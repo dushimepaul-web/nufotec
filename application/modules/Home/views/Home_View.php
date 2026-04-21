@@ -17,17 +17,18 @@
             </div>
         <?php endif; ?>
 
-        <h1>Bienvenue sur <?= htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8') ?></h1>
+        <h1><?= t('welcome_to') ?> <?= htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8') ?></h1>
 
-        <p>Votre plateforme de commerce en ligne rapide, fiable et sécurisée</p>
+        <p><?= t('hero_subtitle') ?></p>
         
         <div class="hero-buttons">
-            <a href="<?= base_url('Medicins') ?>" class="btn-primary">Être consulté</a>
-            <a href="<?= base_url('Products') ?>" class="btn-secondary">Acheter les produits</a>
+            <a href="<?= base_url($lang . '/Medicins') ?>" class="btn-primary"><?= t('get_consulted') ?></a>
+            <a href="<?= base_url($lang . '/Products') ?>" class="btn-secondary"><?= t('buy_products') ?></a>
         </div>
 
     </div>
 </section>
+
 <style type="text/css">
     /* HERO SECTION */
 .hero {
@@ -226,14 +227,14 @@ if (!function_exists('get_placeholder_image')) {
                                         
                                         <?php if ($is_long_content): ?>
                                         <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                            <span>Lire la suite</span>
+                                            <span><?= t('read_more') ?></span>
                                             <i class="bi bi-chevron-down"></i>
                                         </button>
                                         <?php endif; ?>
                                     </div>
                                     
                                     <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                        <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn btn-primary-custom mt-4">
+                                        <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
                                             <?= htmlspecialchars($section['bouton_texte']) ?> 
                                             <i class="bi bi-arrow-right"></i>
                                         </a>
@@ -284,13 +285,13 @@ if (!function_exists('get_placeholder_image')) {
                                             
                                             <?php if ($is_long_content): ?>
                                             <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span>Lire la suite</span>
+                                                <span><?= t('read_more') ?></span>
                                                 <i class="bi bi-chevron-down"></i>
                                             </button>
                                             <?php endif; ?>
                                             
                                             <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                                <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn btn-primary-custom mt-3">
+                                                <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
                                                     <?= htmlspecialchars($section['bouton_texte']) ?> 
                                                     <i class="bi bi-arrow-right"></i>
                                                 </a>
@@ -316,13 +317,13 @@ if (!function_exists('get_placeholder_image')) {
                                             
                                             <?php if ($is_long_content): ?>
                                             <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span>Lire la suite</span>
+                                                <span><?= t('read_more') ?></span>
                                                 <i class="bi bi-chevron-down"></i>
                                             </button>
                                             <?php endif; ?>
                                             
                                             <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                                <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn btn-primary-custom mt-3">
+                                                <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
                                                     <?= htmlspecialchars($section['bouton_texte']) ?> 
                                                     <i class="bi bi-arrow-right"></i>
                                                 </a>
@@ -369,14 +370,14 @@ if (!function_exists('get_placeholder_image')) {
                                             
                                             <?php if ($is_long_content): ?>
                                             <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span>Lire la suite</span>
+                                                <span><?= t('read_more') ?></span>
                                                 <i class="bi bi-chevron-down"></i>
                                             </button>
                                             <?php endif; ?>
                                         </div>
                                         
                                         <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                            <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn btn-primary-custom mt-4">
+                                            <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
                                                 <?= htmlspecialchars($section['bouton_texte']) ?> 
                                                 <i class="bi bi-arrow-right"></i>
                                             </a>
@@ -447,14 +448,14 @@ if (!function_exists('get_placeholder_image')) {
         <div class="children-section">
             <div class="container py-5 py-lg-6">
                 <div class="text-center mb-5" data-aos="fade-up">
-                    <span class="section-tag light">Explorer</span>
-                    <h2 class="section-title text-white">Pages Connexes</h2>
+                    <span class="section-tag light"><?= t('explore') ?></span>
+                    <h2 class="section-title text-white"><?= t('related_pages') ?></h2>
                 </div>
                 
                 <div class="row g-4">
                     <?php foreach ($children as $i => $child): ?>
                     <div class="col-6 col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="<?= $i * 100 ?>">
-                        <a href="<?= base_url('Home/PageDetail/' . $child['id_page'] . '_' . $child['slug']) ?>" class="child-card">
+                        <a href="<?= base_url($lang . '/Home/PageDetail/' . $child['id_page'] . '_' . $child['slug']) ?>" class="child-card">
                             <div class="child-card-inner">
                                 <?php if (!empty($child['icone_menu'])): ?>
                                 <div class="child-icon">
@@ -465,7 +466,7 @@ if (!function_exists('get_placeholder_image')) {
                                 <?php if (!empty($child['meta_description'])): ?>
                                 <p><?= htmlspecialchars(substr($child['meta_description'], 0, 80)) ?>...</p>
                                 <?php endif; ?>
-                                <span class="child-link">Découvrir <i class="bi bi-arrow-right"></i></span>
+                                <span class="child-link"><?= t('discover') ?> <i class="bi bi-arrow-right"></i></span>
                             </div>
                         </a>
                     </div>
@@ -478,7 +479,7 @@ if (!function_exists('get_placeholder_image')) {
         <?php if (empty($sections) && empty($children)): ?>
         <div class="empty-state">
             <i class="bi bi-inbox"></i>
-            <p>Aucun contenu disponible</p>
+            <p><?= t('no_content_available') ?></p>
         </div>
         <?php endif; ?>
         
@@ -1028,8 +1029,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <section class="stats-section" id="stats">
     <div class="container">
         <div class="text-center mb-5" data-aos="fade-up">
-            <span class="section-tag light">Nos Réalisations</span>
-            <h2 class="section-title text-white">Chiffres Clés</h2>
+            <span class="section-tag light"><?= t('our_achievements') ?></span>
+            <h2 class="section-title text-white"><?= t('key_figures') ?></h2>
         </div>
         
         <div class="row g-4">
@@ -1063,6 +1064,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </section>
+<?php endif; ?>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -1210,7 +1212,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .stat-label { font-size: 0.9rem; }
 }
 </style>
-<?php endif; ?>
+
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- APPELS À L'ACTION - GRILLE DYNAMIQUE -->
@@ -1219,8 +1221,8 @@ document.addEventListener("DOMContentLoaded", () => {
 <section class="cta-section" id="cta">
     <div class="container">
         <div class="text-center mb-5" data-aos="fade-up">
-            <span class="section-tag">Agissez Maintenant</span>
-            <h2 class="section-title">Nos Appels à l'Action</h2>
+            <span class="section-tag"><?= t('act_now') ?></span>
+            <h2 class="section-title"><?= t('our_cta') ?></h2>
         </div>
         
         <div class="cta-grid">
@@ -1247,7 +1249,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <p><?= htmlspecialchars($cta['sous_titre']) ?></p>
                     </div>
                     
-                    <a href="<?= htmlspecialchars($cta['bouton_lien']) ?>" class="cta-btn">
+                    <a href="<?= base_url($lang . '/' . ltrim($cta['bouton_lien'], '/')) ?>" class="cta-btn">
                         <?= htmlspecialchars($cta['bouton_texte']) ?>
                         <i class="bi bi-arrow-right-circle"></i>
                     </a>
@@ -1260,6 +1262,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
     </div>
 </section>
+<?php endif; ?>
 
 <style>
 .cta-section {
@@ -1406,7 +1409,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .cta-content h3 { font-size: 1.2rem; }
 }
 </style>
-<?php endif; ?>
 
 
 
@@ -1417,11 +1419,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // Vérifier si la variable $products existe et contient des données
         if (!isset($products)) {
             // Si les produits ne sont pas encore chargés, on les récupère
-            $products = $this->Model->read('advertise_product', null, 'id', 'DESC');
+            $products = $this->Model->get_products_translated($this->current_lang);
         }
         ?>
 <?php include VIEWPATH.'sections/Products_Section.php'; ?>
-
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- NEWSLETTER - FORMULAIRE INTERACTIF -->
@@ -1449,25 +1450,25 @@ document.addEventListener("DOMContentLoaded", () => {
             <!-- Formulaire -->
             <div class="col-lg-7" data-aos="fade-left">
                 <div class="newsletter-content">
-                    <span class="section-tag">Restez informé</span>
-                     <h2 class="section-title">Abonnez-vous à notre newsletter</h2>
-                     <p class="newsletter-desc">
-                       Recevez nos dernières actualités, offres exclusives et conseils santé directement dans votre boîte mail. Bénéficiez de 10% de réduction sur votre première commande !
-                      </p>
+                    <span class="section-tag"><?= t('stay_informed') ?></span>
+                    <h2 class="section-title"><?= t('subscribe_newsletter') ?></h2>
+                    <p class="newsletter-desc">
+                        <?= t('newsletter_desc') ?>
+                    </p>
 
-                    <form id="subscribeForm" method="POST" action="<?= base_url('Home/Abonner'); ?>" class="newsletter-form" novalidate>
+                    <form id="subscribeForm" method="POST" action="<?= base_url($lang . '/Home/Abonner'); ?>" class="newsletter-form" novalidate>
                         
                         <!-- Choix du type -->
                         <div class="subscription-toggle mb-4">
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="sub_type" id="type_email" value="email" checked>
                                 <label class="btn btn-toggle" for="type_email">
-                                    <i class="bi bi-envelope"></i> Email
+                                    <i class="bi bi-envelope"></i> <?= t('email') ?>
                                 </label>
 
                                 <input type="radio" class="btn-check" name="sub_type" id="type_phone" value="phone">
                                 <label class="btn btn-toggle" for="type_phone">
-                                    <i class="bi bi-phone"></i> Phone Number
+                                    <i class="bi bi-phone"></i> <?= t('phone_number') ?>
                                 </label>
                             </div>
                         </div>
@@ -1480,10 +1481,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                        name="email" 
                                        id="emailInput"
                                        class="form-control form-control-lg" 
-                                       placeholder="votre@email.com" 
+                                       placeholder="<?= t('your_email') ?>" 
                                        required>
                                 <div class="invalid-feedback">
-                                    <i class="bi bi-exclamation-circle"></i> Please enter a valid email address
+                                    <i class="bi bi-exclamation-circle"></i> <?= t('invalid_email') ?>
                                 </div>
                             </div>
                         </div>
@@ -1496,7 +1497,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <input type="text" 
                                                id="paysSearch" 
                                                class="form-control form-control-lg" 
-                                               placeholder="Pays" 
+                                               placeholder="<?= t('country') ?>" 
                                                autocomplete="off"
                                                disabled>
                                         <input type="hidden" name="pays_code" id="paysCode">
@@ -1530,10 +1531,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                                name="telephone" 
                                                id="phoneInput"
                                                class="form-control form-control-lg" 
-                                               placeholder="Numéro de téléphone"
+                                               placeholder="<?= t('phone_number_placeholder') ?>"
                                                disabled>
                                         <div class="invalid-feedback">
-                                            <i class="bi bi-exclamation-circle"></i> Numéro invalide
+                                            <i class="bi bi-exclamation-circle"></i> <?= t('invalid_phone') ?>
                                         </div>
                                     </div>
                                 </div>
@@ -1542,17 +1543,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         <!-- Bouton Submit -->
                         <button type="submit" id="submitBtn" class="btn btn-submit btn-lg w-100 mt-4">
-                            <span class="btn-text">S'abonner Maintenant</span>
+                            <span class="btn-text"><?= t('subscribe_now') ?></span>
                             <span class="btn-loading d-none">
-                                <i class="bi bi-arrow-repeat spin"></i> Envoi...
+                                <i class="bi bi-arrow-repeat spin"></i> <?= t('sending') ?>
                             </span>
                             <span class="btn-success d-none">
-                                <i class="bi bi-check-lg"></i> Inscrit !
+                                <i class="bi bi-check-lg"></i> <?= t('subscribed') ?>
                             </span>
                         </button>
 
                         <p class="privacy-note mt-3">
-                            <i class="bi bi-shield-check"></i> Vos données sont sécurisées. Désinscription possible à tout moment.
+                            <i class="bi bi-shield-check"></i> <?= t('privacy_note') ?>
                         </p>
                     </form>
                 </div>

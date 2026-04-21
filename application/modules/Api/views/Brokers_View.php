@@ -1050,7 +1050,6 @@ foreach ($textes as $texte):
     <section class="section-texte <?= $texte['custom_class'] ?? '' ?>" style="background: <?= $bg_color ?>;">
         <div class="container">
             <?php if ($layout === 'with-image-left' && $has_image): ?>
-                <!-- Layout image à gauche, texte dans carte à droite -->
                 <div class="row align-items-center g-5">
                     <div class="col-lg-6">
                         <div class="image-wrapper">
@@ -1078,7 +1077,6 @@ foreach ($textes as $texte):
                 </div>
 
             <?php elseif ($layout === 'with-image-right' && $has_image): ?>
-                <!-- Layout image à droite, texte dans carte à gauche -->
                 <div class="row align-items-center g-5">
                     <div class="col-lg-6">
                         <div class="card-custom <?= $text_align ?>">
@@ -1106,7 +1104,6 @@ foreach ($textes as $texte):
                 </div>
 
             <?php else: ?>
-                <!-- Layout simple : carte centrée -->
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
                         <div class="card-custom <?= $text_align ?>">
@@ -1143,27 +1140,27 @@ foreach ($textes as $texte):
 <div class="main-container">
     <div class="form-card">
 
-        <!-- Progress Steps -->
+        <!-- Progress Steps (Traduits) -->
         <div class="progress-steps">
             <div class="step active" data-step="1" onclick="goToStep(1)">
                 <div class="step-number">1</div>
-                <div class="step-text">Identité</div>
+                <div class="step-text"><?= t('step_identity') ?></div>
             </div>
             <div class="step" data-step="2" onclick="goToStep(2)">
                 <div class="step-number">2</div>
-                <div class="step-text">Localisation</div>
+                <div class="step-text"><?= t('step_location') ?></div>
             </div>
             <div class="step" data-step="3" onclick="goToStep(3)">
                 <div class="step-number">3</div>
-                <div class="step-text">Régulation</div>
+                <div class="step-text"><?= t('step_regulation') ?></div>
             </div>
             <div class="step" data-step="4" onclick="goToStep(4)">
                 <div class="step-number">4</div>
-                <div class="step-text">Capacités</div>
+                <div class="step-text"><?= t('step_capacities') ?></div>
             </div>
             <div class="step" data-step="5" onclick="goToStep(5)">
                 <div class="step-number">5</div>
-                <div class="step-text">Finalisation</div>
+                <div class="step-text"><?= t('step_finalization') ?></div>
             </div>
         </div>
 
@@ -1175,16 +1172,16 @@ foreach ($textes as $texte):
             <div class="form-section active" id="step-1">
                 <h2 class="section-title">
                     <i class="fas fa-user-circle"></i>
-                    Informations d'identité
+                    <?= t('identity_info_title') ?>
                 </h2>
-                <p class="section-subtitle">Commençons par les informations de base</p>
+                <p class="section-subtitle"><?= t('identity_info_subtitle') ?></p>
 
                 <div class="row g-4">
                     <div class="col-md-6">
                         <label class="form-label">
                             <i class="fas fa-user"></i>
-                            Nom complet <span class="text-danger">*</span>
-                            <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" title="Votre nom tel qu'il apparaît sur vos documents officiels"></i>
+                            <?= t('full_name') ?> <span class="text-danger">*</span>
+                            <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" title="<?= t('full_name_tooltip') ?>"></i>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
@@ -1192,7 +1189,7 @@ foreach ($textes as $texte):
                                    class="form-control"
                                    name="full_name"
                                    id="full_name"
-                                   placeholder="Jean Dupont"
+                                   placeholder="<?= t('full_name_placeholder') ?>"
                                    required
                                    maxlength="150">
                         </div>
@@ -1203,7 +1200,7 @@ foreach ($textes as $texte):
                     <div class="col-md-6">
                         <label class="form-label">
                             <i class="fas fa-building"></i>
-                            Nom de la société <span class="text-danger">*</span>
+                            <?= t('firm_name') ?> <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-building"></i></span>
@@ -1211,7 +1208,7 @@ foreach ($textes as $texte):
                                    class="form-control"
                                    name="firm_name"
                                    id="firm_name"
-                                   placeholder="Raison sociale"
+                                   placeholder="<?= t('firm_name_placeholder') ?>"
                                    required
                                    maxlength="200">
                         </div>
@@ -1222,7 +1219,7 @@ foreach ($textes as $texte):
                     <div class="col-md-6">
                         <label class="form-label">
                             <i class="fas fa-briefcase"></i>
-                            Juridiction d'incorporation
+                            <?= t('jurisdiction_incorporation') ?>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-gavel"></i></span>
@@ -1230,7 +1227,7 @@ foreach ($textes as $texte):
                                    class="form-control"
                                    name="jurisdiction_of_incorporation"
                                    id="jurisdiction_of_incorporation"
-                                   placeholder="Pays d'incorporation"
+                                   placeholder="<?= t('jurisdiction_placeholder') ?>"
                                    maxlength="150">
                         </div>
                         <div class="invalid-feedback" id="jurisdiction_of_incorporation-error"></div>
@@ -1240,7 +1237,7 @@ foreach ($textes as $texte):
                     <div class="col-md-6">
                         <label class="form-label">
                             <i class="fas fa-hashtag"></i>
-                            Numéro d'enregistrement
+                            <?= t('registration_number') ?>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
@@ -1248,7 +1245,7 @@ foreach ($textes as $texte):
                                    class="form-control"
                                    name="registration_number"
                                    id="registration_number"
-                                   placeholder="Numéro d'immatriculation"
+                                   placeholder="<?= t('registration_placeholder') ?>"
                                    maxlength="100">
                         </div>
                         <div class="invalid-feedback" id="registration_number-error"></div>
@@ -1258,7 +1255,7 @@ foreach ($textes as $texte):
                     <div class="col-md-6">
                         <label class="form-label">
                             <i class="fas fa-envelope"></i>
-                            Email professionnel <span class="text-danger">*</span>
+                            <?= t('professional_email') ?> <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-envelope"></i></span>
@@ -1266,7 +1263,7 @@ foreach ($textes as $texte):
                                    class="form-control"
                                    name="email"
                                    id="email"
-                                   placeholder="exemple@domaine.com"
+                                   placeholder="<?= t('email_placeholder') ?>"
                                    required
                                    maxlength="150">
                         </div>
@@ -1276,7 +1273,7 @@ foreach ($textes as $texte):
                     <div class="col-md-3">
                         <label class="form-label">
                             <i class="fas fa-phone"></i>
-                            Téléphone
+                            <?= t('phone_label') ?>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-phone"></i></span>
@@ -1294,7 +1291,7 @@ foreach ($textes as $texte):
                     <div class="col-md-3">
                         <label class="form-label">
                             <i class="fab fa-whatsapp"></i>
-                            WhatsApp
+                            <?= t('whatsapp_label') ?>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fab fa-whatsapp" style="color: #25D366;"></i></span>
@@ -1312,7 +1309,7 @@ foreach ($textes as $texte):
                     <div class="col-12">
                         <label class="form-label">
                             <i class="fas fa-globe"></i>
-                            Site web
+                            <?= t('website_label') ?>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-globe"></i></span>
@@ -1330,7 +1327,7 @@ foreach ($textes as $texte):
 
                 <div class="d-flex justify-content-end mt-5">
                     <button type="button" class="btn btn-nav btn-next" onclick="validateStep(1, 2)">
-                        Continuer <i class="fas fa-arrow-right"></i>
+                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -1339,16 +1336,15 @@ foreach ($textes as $texte):
             <div class="form-section" id="step-2">
                 <h2 class="section-title">
                     <i class="fas fa-map-marked-alt" style="color: var(--info);"></i>
-                    Localisation
+                    <?= t('location_title') ?>
                 </h2>
-                <p class="section-subtitle">Où est basée votre entreprise ?</p>
+                <p class="section-subtitle"><?= t('location_subtitle') ?></p>
 
                 <div class="row g-4">
-                    <!-- Pays -->
                     <div class="col-md-12">
                         <label class="form-label">
                             <i class="fas fa-map-marker-alt"></i>
-                            Pays <span class="text-danger">*</span>
+                            <?= t('country_label') ?> <span class="text-danger">*</span>
                         </label>
                         <div class="country-search-container">
                             <div class="input-group">
@@ -1356,7 +1352,7 @@ foreach ($textes as $texte):
                                 <input type="text"
                                        class="form-control country-search"
                                        id="pays_search"
-                                       placeholder="Rechercher un pays..."
+                                       placeholder="<?= t('country_search_placeholder') ?>"
                                        data-target="pays"
                                        autocomplete="off"
                                        required>
@@ -1375,17 +1371,16 @@ foreach ($textes as $texte):
                     </div>
                 </div>
 
-                <!-- Carte interactive -->
                 <div class="map-container">
                     <div id="map"></div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-5">
                     <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(1)">
-                        <i class="fas fa-arrow-left"></i> Retour
+                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
                     </button>
                     <button type="button" class="btn btn-nav btn-next" onclick="validateStep(2, 3)">
-                        Continuer <i class="fas fa-arrow-right"></i>
+                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -1394,36 +1389,36 @@ foreach ($textes as $texte):
             <div class="form-section" id="step-3">
                 <h2 class="section-title">
                     <i class="fas fa-shield-alt" style="color: var(--violet);"></i>
-                    Régulation & Conformité
+                    <?= t('regulation_title') ?>
                 </h2>
-                <p class="section-subtitle">Informations réglementaires</p>
+                <p class="section-subtitle"><?= t('regulation_subtitle') ?></p>
 
                 <div class="info-box">
                     <i class="fas fa-info-circle"></i>
                     <div>
-                        <strong>Important :</strong> Ces informations nous permettent de vérifier votre statut professionnel.
+                        <strong><?= t('important_label') ?> :</strong> <?= t('regulation_info_text') ?>
                     </div>
                 </div>
 
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label">Statut régulatoire</label>
+                        <label class="form-label"><?= t('regulatory_status_label') ?></label>
                         <select name="regulatory_status" class="form-select" id="regulatory_status">
-                            <option value="">Sélectionner...</option>
-                            <option value="Licensed">Licensed (Agréé)</option>
-                            <option value="Exempt">Exempt (Exempté)</option>
-                            <option value="Unlicensed">Unlicensed (Non agréé)</option>
+                            <option value=""><?= t('select_option') ?></option>
+                            <option value="Licensed"><?= t('status_licensed') ?></option>
+                            <option value="Exempt"><?= t('status_exempt') ?></option>
+                            <option value="Unlicensed"><?= t('status_unlicensed') ?></option>
                         </select>
                         <div class="invalid-feedback" id="regulatory_status-error"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Autorité de régulation</label>
+                        <label class="form-label"><?= t('regulatory_authority_label') ?></label>
                         <input type="text"
                                class="form-control"
                                name="regulatory_authority"
                                id="regulatory_authority"
-                               placeholder="Ex: SEC, FCA, AMF, BRVM..."
+                               placeholder="<?= t('regulatory_authority_placeholder') ?>"
                                maxlength="150">
                         <div class="invalid-feedback" id="regulatory_authority-error"></div>
                         <div class="char-counter" id="regulatory_authority-count">0/150</div>
@@ -1432,10 +1427,10 @@ foreach ($textes as $texte):
 
                 <div class="d-flex justify-content-between mt-5">
                     <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(2)">
-                        <i class="fas fa-arrow-left"></i> Retour
+                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
                     </button>
                     <button type="button" class="btn btn-nav btn-next" onclick="validateStep(3, 4)">
-                        Continuer <i class="fas fa-arrow-right"></i>
+                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -1444,25 +1439,25 @@ foreach ($textes as $texte):
             <div class="form-section" id="step-4">
                 <h2 class="section-title">
                     <i class="fas fa-briefcase" style="color: var(--warning);"></i>
-                    Capacités Professionnelles
+                    <?= t('capacities_title') ?>
                 </h2>
-                <p class="section-subtitle">Décrivez votre expertise</p>
+                <p class="section-subtitle"><?= t('capacities_subtitle') ?></p>
 
                 <div class="mb-4">
                     <label class="form-label d-block mb-3">
                         <i class="fas fa-check-circle"></i>
-                        Vos capacités <span class="text-danger">*</span>
+                        <?= t('your_capacities_label') ?> <span class="text-danger">*</span>
                     </label>
                     <div class="checkbox-grid" id="capacityGroup">
                         <?php
                         $capacities = [
-                            'capacity_investment_broker' => ['label' => 'Investment Broker', 'icon' => 'fa-chart-line', 'color' => '#0B4F2E', 'desc' => 'Courtage en investissement'],
-                            'capacity_placement_agent' => ['label' => 'Placement Agent', 'icon' => 'fa-handshake', 'color' => '#FF6B35', 'desc' => 'Agent de placement'],
-                            'capacity_corporate_finance_advisor' => ['label' => 'Corporate Finance Advisor', 'icon' => 'fa-user-tie', 'color' => '#3498DB', 'desc' => 'Conseiller en finance d\'entreprise'],
-                            'capacity_fund_manager' => ['label' => 'Fund Manager', 'icon' => 'fa-university', 'color' => '#9B59B6', 'desc' => 'Gestionnaire de fonds'],
-                            'capacity_family_office_rep' => ['label' => 'Family Office Rep', 'icon' => 'fa-home', 'color' => '#FFD700', 'desc' => 'Représentant Family Office'],
-                            'capacity_esg_advisor' => ['label' => 'ESG Advisor', 'icon' => 'fa-leaf', 'color' => '#27ae60', 'desc' => 'Conseiller ESG'],
-                            'capacity_independent_introducer' => ['label' => 'Independent Introducer', 'icon' => 'fa-user', 'color' => '#94a3b8', 'desc' => 'Introducing Broker Indépendant']
+                            'capacity_investment_broker' => ['label' => t('cap_investment_broker'), 'icon' => 'fa-chart-line', 'color' => '#0B4F2E', 'desc' => t('cap_investment_broker_desc')],
+                            'capacity_placement_agent' => ['label' => t('cap_placement_agent'), 'icon' => 'fa-handshake', 'color' => '#FF6B35', 'desc' => t('cap_placement_agent_desc')],
+                            'capacity_corporate_finance_advisor' => ['label' => t('cap_corporate_finance'), 'icon' => 'fa-user-tie', 'color' => '#3498DB', 'desc' => t('cap_corporate_finance_desc')],
+                            'capacity_fund_manager' => ['label' => t('cap_fund_manager'), 'icon' => 'fa-university', 'color' => '#9B59B6', 'desc' => t('cap_fund_manager_desc')],
+                            'capacity_family_office_rep' => ['label' => t('cap_family_office'), 'icon' => 'fa-home', 'color' => '#FFD700', 'desc' => t('cap_family_office_desc')],
+                            'capacity_esg_advisor' => ['label' => t('cap_esg_advisor'), 'icon' => 'fa-leaf', 'color' => '#27ae60', 'desc' => t('cap_esg_advisor_desc')],
+                            'capacity_independent_introducer' => ['label' => t('cap_independent_introducer'), 'icon' => 'fa-user', 'color' => '#94a3b8', 'desc' => t('cap_independent_introducer_desc')]
                         ];
                         foreach ($capacities as $key => $cap):
                         ?>
@@ -1476,16 +1471,16 @@ foreach ($textes as $texte):
                         </div>
                         <?php endforeach; ?>
                     </div>
-                    <div class="invalid-feedback capacity-error" style="display: none;">Veuillez sélectionner au moins une capacité</div>
+                    <div class="invalid-feedback capacity-error" style="display: none;"><?= t('capacity_error') ?></div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label">Autre capacité (précisez)</label>
+                    <label class="form-label"><?= t('other_capacity_label') ?></label>
                     <input type="text"
                            class="form-control"
                            name="capacity_other"
                            id="capacity_other"
-                           placeholder="Ex: Consultant spécialisé..."
+                           placeholder="<?= t('other_capacity_placeholder') ?>"
                            maxlength="255">
                     <div class="char-counter" id="capacity_other-count">0/255</div>
                 </div>
@@ -1493,18 +1488,18 @@ foreach ($textes as $texte):
                 <div class="mb-4">
                     <label class="form-label d-block mb-3">
                         <i class="fas fa-users"></i>
-                        Types d'investisseurs que vous représentez
+                        <?= t('investor_types_label') ?>
                     </label>
                     <div class="checkbox-grid">
                         <?php
                         $investors = [
-                            'investor_private_equity' => ['label' => 'Private Equity', 'icon' => 'fa-building', 'color' => '#e74c3c'],
-                            'investor_venture_capital' => ['label' => 'Venture Capital', 'icon' => 'fa-rocket', 'color' => '#9b59b6'],
-                            'investor_esg_impact' => ['label' => 'ESG / Impact', 'icon' => 'fa-leaf', 'color' => '#27ae60'],
-                            'investor_dfi' => ['label' => 'DFIs', 'icon' => 'fa-globe', 'color' => '#3498db'],
-                            'investor_institutional' => ['label' => 'Institutionnels', 'icon' => 'fa-landmark', 'color' => '#f39c12'],
-                            'investor_hnwi' => ['label' => 'HNWI', 'icon' => 'fa-gem', 'color' => '#1abc9c'],
-                            'investor_sovereign' => ['label' => 'Souverains', 'icon' => 'fa-crown', 'color' => '#e67e22']
+                            'investor_private_equity' => ['label' => t('investor_pe'), 'icon' => 'fa-building', 'color' => '#e74c3c'],
+                            'investor_venture_capital' => ['label' => t('investor_vc'), 'icon' => 'fa-rocket', 'color' => '#9b59b6'],
+                            'investor_esg_impact' => ['label' => t('investor_esg'), 'icon' => 'fa-leaf', 'color' => '#27ae60'],
+                            'investor_dfi' => ['label' => t('investor_dfi'), 'icon' => 'fa-globe', 'color' => '#3498db'],
+                            'investor_institutional' => ['label' => t('investor_institutional'), 'icon' => 'fa-landmark', 'color' => '#f39c12'],
+                            'investor_hnwi' => ['label' => t('investor_hnwi'), 'icon' => 'fa-gem', 'color' => '#1abc9c'],
+                            'investor_sovereign' => ['label' => t('investor_sovereign'), 'icon' => 'fa-crown', 'color' => '#e67e22']
                         ];
                         foreach ($investors as $key => $inv):
                         ?>
@@ -1521,33 +1516,33 @@ foreach ($textes as $texte):
 
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label">Ticket moyen typique</label>
+                        <label class="form-label"><?= t('typical_ticket_label') ?></label>
                         <input type="text"
                                class="form-control"
                                name="typical_ticket_size"
                                id="typical_ticket_size"
-                               placeholder="Ex: $1M - $5M"
+                               placeholder="<?= t('typical_ticket_placeholder') ?>"
                                maxlength="150">
                         <div class="char-counter" id="typical_ticket_size-count">0/150</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Couverture géographique</label>
+                        <label class="form-label"><?= t('geographic_coverage_label') ?></label>
                         <input type="text"
                                class="form-control"
                                name="geographic_coverage"
                                id="geographic_coverage"
-                               placeholder="Ex: Afrique de l'Ouest, Panafricain"
+                               placeholder="<?= t('geographic_coverage_placeholder') ?>"
                                maxlength="65535">
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-5">
                     <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(3)">
-                        <i class="fas fa-arrow-left"></i> Retour
+                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
                     </button>
                     <button type="button" class="btn btn-nav btn-next" onclick="validateStep(4, 5)">
-                        Continuer <i class="fas fa-arrow-right"></i>
+                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -1556,36 +1551,35 @@ foreach ($textes as $texte):
             <div class="form-section" id="step-5">
                 <h2 class="section-title">
                     <i class="fas fa-check-circle" style="color: var(--accent);"></i>
-                    Finalisation
+                    <?= t('finalization_title') ?>
                 </h2>
-                <p class="section-subtitle">Vérifiez vos informations avant soumission</p>
+                <p class="section-subtitle"><?= t('finalization_subtitle') ?></p>
 
-                <!-- Résumé -->
                 <div id="summary" class="mb-4"></div>
 
                 <div class="row g-4 mb-4">
                     <div class="col-md-6">
-                        <label class="form-label">Modèle d'engagement</label>
+                        <label class="form-label"><?= t('engagement_model_label') ?></label>
                         <select name="engagement_model" class="form-select" id="engagement_model">
-                            <option value="">Sélectionner...</option>
-                            <option value="Success Commission">Success Commission</option>
-                            <option value="Retainer + Success Fee">Retainer + Success Fee</option>
-                            <option value="Referral Arrangement">Referral Arrangement</option>
-                            <option value="To be negotiated">To be negotiated</option>
+                            <option value=""><?= t('select_option') ?></option>
+                            <option value="Success Commission"><?= t('engagement_success_commission') ?></option>
+                            <option value="Retainer + Success Fee"><?= t('engagement_retainer_fee') ?></option>
+                            <option value="Referral Arrangement"><?= t('engagement_referral') ?></option>
+                            <option value="To be negotiated"><?= t('engagement_negotiated') ?></option>
                         </select>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Type de mandat</label>
+                        <label class="form-label"><?= t('mandate_type_label') ?></label>
                         <div class="checkbox-grid" style="grid-template-columns: repeat(2, 1fr);">
                             <?php
                             $mandates = [
-                                'mandate_equity' => 'Equity',
-                                'mandate_structured_debt' => 'Structured Debt',
-                                'mandate_blended_finance' => 'Blended Finance',
-                                'mandate_grant' => 'Grant',
-                                'mandate_strategic_partnership' => 'Strategic Partnership',
-                                'mandate_full_program' => 'Full Program'
+                                'mandate_equity' => t('mandate_equity'),
+                                'mandate_structured_debt' => t('mandate_structured_debt'),
+                                'mandate_blended_finance' => t('mandate_blended_finance'),
+                                'mandate_grant' => t('mandate_grant'),
+                                'mandate_strategic_partnership' => t('mandate_strategic_partnership'),
+                                'mandate_full_program' => t('mandate_full_program')
                             ];
                             foreach ($mandates as $key => $label):
                             ?>
@@ -1598,16 +1592,15 @@ foreach ($textes as $texte):
                     </div>
                 </div>
 
-                <!-- Déclarations de conformité -->
                 <div class="mb-4 p-3 border rounded-3 bg-white">
                     <h6 class="mb-3" style="color: var(--primary);">
-                        <i class="fas fa-shield-alt me-2"></i>Déclarations de conformité
+                        <i class="fas fa-shield-alt me-2"></i><?= t('compliance_declarations') ?>
                     </h6>
 
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="confirm_authorized" id="confirm_authorized" value="1" required>
                         <label class="form-check-label" for="confirm_authorized">
-                            <strong>Je suis autorisé à représenter cette entreprise</strong>
+                            <strong><?= t('confirm_authorized_text') ?></strong>
                         </label>
                         <div class="invalid-feedback" id="confirm_authorized-error"></div>
                     </div>
@@ -1615,7 +1608,7 @@ foreach ($textes as $texte):
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="confirm_aml_kyc" id="confirm_aml_kyc" value="1" required>
                         <label class="form-check-label" for="confirm_aml_kyc">
-                            <strong>Je confirme que ma structure respecte les normes AML/KYC</strong>
+                            <strong><?= t('confirm_aml_kyc_text') ?></strong>
                         </label>
                         <div class="invalid-feedback" id="confirm_aml_kyc-error"></div>
                     </div>
@@ -1623,7 +1616,7 @@ foreach ($textes as $texte):
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="acknowledge_no_exclusivity" id="acknowledge_no_exclusivity" value="1" required>
                         <label class="form-check-label" for="acknowledge_no_exclusivity">
-                            <strong>Je reconnais que ce partenariat n'est pas exclusif</strong>
+                            <strong><?= t('acknowledge_no_exclusivity_text') ?></strong>
                         </label>
                         <div class="invalid-feedback" id="acknowledge_no_exclusivity-error"></div>
                     </div>
@@ -1631,7 +1624,7 @@ foreach ($textes as $texte):
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="understand_formal_mandate_required" id="understand_formal_mandate_required" value="1" required>
                         <label class="form-check-label" for="understand_formal_mandate_required">
-                            <strong>Je comprends qu'un mandat formel est requis pour toute transaction</strong>
+                            <strong><?= t('understand_formal_mandate_text') ?></strong>
                         </label>
                         <div class="invalid-feedback" id="understand_formal_mandate_required-error"></div>
                     </div>
@@ -1639,11 +1632,11 @@ foreach ($textes as $texte):
 
                 <div class="d-flex justify-content-between mt-5">
                     <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(4)">
-                        <i class="fas fa-arrow-left"></i> Retour
+                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
                     </button>
                     <button type="submit" class="btn btn-nav btn-submit" id="submitBtn">
                         <span class="btn-text">
-                            <i class="fas fa-paper-plane me-2"></i>Soumettre ma candidature
+                            <i class="fas fa-paper-plane me-2"></i><?= t('submit_application') ?>
                         </span>
                     </button>
                 </div>
@@ -1652,12 +1645,11 @@ foreach ($textes as $texte):
         </form>
     </div>
 
-    <!-- Lien statut -->
     <div class="status-link">
         <p class="text-muted">
-            Déjà inscrit ?
-            <a href="<?= base_url('brokers/status') ?>">
-                Vérifier mon statut <i class="fas fa-arrow-right ms-1"></i>
+            <?= t('already_registered') ?>
+            <a href="<?= base_url($lang . '/brokers/status') ?>">
+                <?= t('check_status') ?> <i class="fas fa-arrow-right ms-1"></i>
             </a>
         </p>
     </div>
@@ -1668,24 +1660,21 @@ foreach ($textes as $texte):
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Conditions d'utilisation</h5>
+                <h5 class="modal-title"><?= t('terms_title') ?></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <h6>1. Acceptation des conditions</h6>
-                <p>En soumettant ce formulaire, vous acceptez que vos données personnelles soient collectées et traitées dans le cadre de votre demande de partenariat avec African Green Farmers.</p>
-
-                <h6>2. Exactitude des informations</h6>
-                <p>Vous certifiez que toutes les informations fournies sont exactes, complètes et à jour. Toute fausse déclaration peut entraîner le rejet de votre candidature.</p>
-
-                <h6>3. Utilisation des données</h6>
-                <p>Vos données seront utilisées uniquement pour évaluer votre profil de partenaire potentiel et pour communiquer avec vous concernant cette demande.</p>
-
-                <h6>4. Confidentialité</h6>
-                <p>African Green Farmers s'engage à traiter vos informations de manière confidentielle et sécurisée, conformément à notre politique de confidentialité.</p>
+                <h6><?= t('terms_acceptance_title') ?></h6>
+                <p><?= t('terms_acceptance_text') ?></p>
+                <h6><?= t('terms_accuracy_title') ?></h6>
+                <p><?= t('terms_accuracy_text') ?></p>
+                <h6><?= t('terms_data_use_title') ?></h6>
+                <p><?= t('terms_data_use_text') ?></p>
+                <h6><?= t('terms_confidentiality_title') ?></h6>
+                <p><?= t('terms_confidentiality_text') ?></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">J'ai compris</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal"><?= t('understand_btn') ?></button>
             </div>
         </div>
     </div>
@@ -1697,36 +1686,52 @@ foreach ($textes as $texte):
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-check-circle me-2"></i>Candidature envoyée !
+                    <i class="fas fa-check-circle me-2"></i><?= t('application_sent') ?>
                 </h5>
             </div>
             <div class="modal-body">
                 <div class="success-animation">
                     <i class="fas fa-handshake"></i>
                 </div>
-                <h3>Merci <span id="successName">!</span></h3>
-                <p class="text-muted">Votre candidature a bien été enregistrée. Notre équipe vous répondra dans les 5 jours ouvrés.</p>
+                <h3><?= t('thank_you') ?> <span id="successName">!</span></h3>
+                <p class="text-muted"><?= t('success_message_text') ?></p>
                 <button type="button" class="btn btn-primary mt-3" onclick="closeSuccessModal()" style="background: var(--primary); border: none; padding: 0.75rem 2rem; border-radius: 12px;">
-                    Fermer
+                    <?= t('close_btn') ?>
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+    // ==================== TRADUCTIONS JAVASCRIPT ====================
+    const translations = {
+        required_field: '<?= t('required_field_error') ?>',
+        min_chars: '<?= t('min_chars_error') ?>',
+        max_chars: '<?= t('max_chars_error') ?>',
+        invalid_format: '<?= t('invalid_format_error') ?>',
+        invalid_email: '<?= t('invalid_email_error') ?>',
+        invalid_url: '<?= t('invalid_url_error') ?>',
+        select_country: '<?= t('select_country_error') ?>',
+        select_capacity: '<?= t('capacity_error') ?>',
+        validation_error: '<?= t('validation_error_message') ?>',
+        success: '<?= t('success_label') ?>',
+        error: '<?= t('error_label') ?>',
+        network_error: '<?= t('network_error') ?>'
+    };
+
+    function t(key) {
+        return translations[key] || key;
+    }
+
     // ==================== VARIABLES GLOBALES ====================
     let currentStep = 1;
     const totalSteps = 5;
     let map, marker;
     const countries = <?= json_encode($pays) ?>;
-
-    // Coordonnées du siège (Abidjan, Cocody)
     const headquarters = { lat: 5.345317, lng: -4.008429 };
 
     // ==================== INITIALISATION ====================
@@ -1746,12 +1751,10 @@ foreach ($textes as $texte):
     // ==================== INITIALISATION DE LA CARTE ====================
     function initMap() {
         map = L.map('map').setView([headquarters.lat, headquarters.lng], 13);
-
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Marqueur personnalisé
         const customIcon = L.divIcon({
             className: 'custom-marker',
             html: '<i class="fas fa-map-marker-alt" style="color: #0B4F2E; font-size: 30px;"></i>',
@@ -1761,15 +1764,9 @@ foreach ($textes as $texte):
 
         marker = L.marker([headquarters.lat, headquarters.lng], { icon: customIcon })
             .addTo(map)
-            .bindPopup(`
-                <b>African Green Farmers</b><br>
-                Siège social<br>
-                Rue des Jardins, Cocody<br>
-                Abidjan, Côte d'Ivoire
-            `)
+            .bindPopup(`<b>African Green Farmers</b><br><?= t('headquarters_address') ?>`)
             .openPopup();
 
-        // Cercle autour du siège
         L.circle([headquarters.lat, headquarters.lng], {
             color: '#0B4F2E',
             fillColor: '#0B4F2E',
@@ -1781,12 +1778,9 @@ foreach ($textes as $texte):
     // ==================== RECHERCHE DE PAYS ====================
     function initCountrySearch() {
         const searches = document.querySelectorAll('.country-search');
-
         searches.forEach(search => {
             const target = search.dataset.target;
             const dropdown = document.getElementById(`${target}_dropdown`);
-
-            // Remplir le dropdown
             dropdown.innerHTML = countries.map(country => `
                 <div class="country-option"
                      data-id="${country.id}"
@@ -1797,12 +1791,10 @@ foreach ($textes as $texte):
                 </div>
             `).join('');
 
-            // Recherche en temps réel
             search.addEventListener('input', function() {
                 const query = this.value.toLowerCase();
                 const options = dropdown.querySelectorAll('.country-option');
                 let hasResults = false;
-
                 options.forEach(opt => {
                     const name = opt.dataset.name.toLowerCase();
                     if (name.includes(query) || query === '') {
@@ -1812,22 +1804,15 @@ foreach ($textes as $texte):
                         opt.style.display = 'none';
                     }
                 });
-
                 dropdown.classList.toggle('show', hasResults && this.value.length > 0);
             });
 
-            // Focus
             search.addEventListener('focus', function() {
-                if (this.value.length > 0) {
-                    dropdown.classList.add('show');
-                }
+                if (this.value.length > 0) dropdown.classList.add('show');
             });
 
-            // Clic extérieur
             document.addEventListener('click', function(e) {
-                if (!e.target.closest('.country-search-container')) {
-                    dropdown.classList.remove('show');
-                }
+                if (!e.target.closest('.country-search-container')) dropdown.classList.remove('show');
             });
         });
     }
@@ -1835,13 +1820,9 @@ foreach ($textes as $texte):
     window.selectCountry = function(type, id, name) {
         document.getElementById(`${type}_search`).value = name;
         document.getElementById(`${type}_id`).value = id;
-
         document.getElementById(`${type}_name`).textContent = name;
         document.getElementById(`${type}_selected`).style.display = 'inline-flex';
-
         document.getElementById(`${type}_dropdown`).classList.remove('show');
-
-        // Valider le champ
         document.getElementById(`${type}_search`).classList.remove('is-invalid');
         document.getElementById(`${type}-error`).style.display = 'none';
     };
@@ -1855,12 +1836,7 @@ foreach ($textes as $texte):
 
     // ==================== COMPTEURS DE CARACTÈRES ====================
     function initCharCounters() {
-        const fields = [
-            'full_name', 'firm_name', 'jurisdiction_of_incorporation', 'registration_number',
-            'mobile_phone', 'whatsapp', 'corporate_website', 'regulatory_authority',
-            'capacity_other', 'typical_ticket_size', 'geographic_coverage'
-        ];
-
+        const fields = ['full_name', 'firm_name', 'jurisdiction_of_incorporation', 'registration_number', 'mobile_phone', 'whatsapp', 'corporate_website', 'regulatory_authority', 'capacity_other', 'typical_ticket_size', 'geographic_coverage'];
         fields.forEach(id => {
             const field = document.getElementById(id);
             if (field) {
@@ -1877,7 +1853,6 @@ foreach ($textes as $texte):
         const count = field.value.length;
         const max = field.maxLength;
         counter.textContent = `${count}/${max}`;
-
         counter.classList.toggle('warning', count > max * 0.8);
         counter.classList.toggle('danger', count >= max);
     }
@@ -1887,23 +1862,11 @@ foreach ($textes as $texte):
         const checkbox = card.querySelector('input[type="checkbox"]');
         checkbox.checked = !checkbox.checked;
         card.classList.toggle('selected', checkbox.checked);
-
-        if (group === 'capacity') {
-            checkCapacityValidation();
-        }
+        if (group === 'capacity') checkCapacityValidation();
     };
 
     function checkCapacityValidation() {
-        const capacityFields = [
-            'capacity_investment_broker',
-            'capacity_placement_agent',
-            'capacity_corporate_finance_advisor',
-            'capacity_fund_manager',
-            'capacity_family_office_rep',
-            'capacity_esg_advisor',
-            'capacity_independent_introducer'
-        ];
-
+        const capacityFields = ['capacity_investment_broker', 'capacity_placement_agent', 'capacity_corporate_finance_advisor', 'capacity_fund_manager', 'capacity_family_office_rep', 'capacity_esg_advisor', 'capacity_independent_introducer'];
         let hasCapacity = false;
         for (let field of capacityFields) {
             if (document.querySelector(`input[name="${field}"]`)?.checked) {
@@ -1911,10 +1874,7 @@ foreach ($textes as $texte):
                 break;
             }
         }
-
-        if (hasCapacity) {
-            document.querySelector('.capacity-error').style.display = 'none';
-        }
+        if (hasCapacity) document.querySelector('.capacity-error').style.display = 'none';
     }
 
     // ==================== VALIDATION ====================
@@ -1934,59 +1894,41 @@ foreach ($textes as $texte):
     function validateField(fieldId) {
         const field = document.getElementById(fieldId);
         if (!field) return true;
-
         const value = field.value.trim();
         const rules = validationRules[fieldId];
-
         field.classList.remove('is-valid', 'is-invalid');
-
         if (!rules) return true;
-
-        // Required
         if (rules.required && !value) {
-            showFieldError(field, fieldId + '-error', 'Ce champ est requis');
+            showFieldError(field, fieldId + '-error', t('required_field'));
             return false;
         }
-
         if (value) {
-            // Min length
             if (rules.min && value.length < rules.min) {
-                showFieldError(field, fieldId + '-error', `Minimum ${rules.min} caractères`);
+                showFieldError(field, fieldId + '-error', t('min_chars').replace('{min}', rules.min));
                 return false;
             }
-
-            // Max length
             if (rules.max && value.length > rules.max) {
-                showFieldError(field, fieldId + '-error', `Maximum ${rules.max} caractères`);
+                showFieldError(field, fieldId + '-error', t('max_chars').replace('{max}', rules.max));
                 return false;
             }
-
-            // Pattern
             if (rules.pattern && !rules.pattern.test(value)) {
-                showFieldError(field, fieldId + '-error', 'Format invalide');
+                showFieldError(field, fieldId + '-error', t('invalid_format'));
                 return false;
             }
-
-            // Email
             if (rules.type === 'email') {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(value)) {
-                    showFieldError(field, fieldId + '-error', 'Email invalide');
+                    showFieldError(field, fieldId + '-error', t('invalid_email'));
                     return false;
                 }
             }
-
-            // URL
             if (rules.type === 'url') {
-                try {
-                    new URL(value);
-                } catch {
-                    showFieldError(field, fieldId + '-error', 'URL invalide');
+                try { new URL(value); } catch {
+                    showFieldError(field, fieldId + '-error', t('invalid_url'));
                     return false;
                 }
             }
         }
-
         field.classList.add('is-valid');
         hideFieldError(field, fieldId + '-error');
         return true;
@@ -1995,10 +1937,7 @@ foreach ($textes as $texte):
     function showFieldError(field, errorId, message) {
         field.classList.add('is-invalid');
         const errorEl = document.getElementById(errorId);
-        if (errorEl) {
-            errorEl.textContent = message;
-            errorEl.style.display = 'block';
-        }
+        if (errorEl) { errorEl.textContent = message; errorEl.style.display = 'block'; }
     }
 
     function hideFieldError(field, errorId) {
@@ -2011,11 +1950,7 @@ foreach ($textes as $texte):
             const field = document.getElementById(fieldId);
             if (field) {
                 field.addEventListener('blur', () => validateField(fieldId));
-                field.addEventListener('input', () => {
-                    if (field.classList.contains('is-invalid')) {
-                        validateField(fieldId);
-                    }
-                });
+                field.addEventListener('input', () => { if (field.classList.contains('is-invalid')) validateField(fieldId); });
             }
         });
     }
@@ -2023,31 +1958,19 @@ foreach ($textes as $texte):
     // ==================== VALIDATION DES ÉTAPES ====================
     window.validateStep = function(step, nextStep) {
         let isValid = true;
-
         switch(step) {
-            case 1:
-                isValid = validateStep1();
-                break;
-            case 2:
-                isValid = validateStep2();
-                break;
-            case 3:
-                isValid = validateStep3();
-                break;
-            case 4:
-                isValid = validateStep4();
-                break;
-            case 5:
-                isValid = validateStep5();
-                break;
+            case 1: isValid = validateStep1(); break;
+            case 2: isValid = validateStep2(); break;
+            case 3: isValid = validateStep3(); break;
+            case 4: isValid = validateStep4(); break;
+            case 5: isValid = validateStep5(); break;
         }
-
         if (isValid) {
             goToStep(nextStep);
         } else {
             document.getElementById(`step-${step}`).classList.add('shake');
             setTimeout(() => document.getElementById(`step-${step}`).classList.remove('shake'), 500);
-            showToast('error', 'Erreur de validation', 'Veuillez corriger les erreurs avant de continuer');
+            showToast('error', t('validation_error'), t('validation_error_message'));
         }
     };
 
@@ -2064,372 +1987,177 @@ foreach ($textes as $texte):
 
     function validateStep2() {
         let isValid = true;
-
         if (!document.getElementById('pays_id').value) {
             document.getElementById('pays_search').classList.add('is-invalid');
-            document.getElementById('pays-error').textContent = 'Veuillez sélectionner un pays';
+            document.getElementById('pays-error').textContent = t('select_country');
             document.getElementById('pays-error').style.display = 'block';
             isValid = false;
         }
-
         return isValid;
     }
 
-    function validateStep3() {
-        return true; // Pas de champs requis
-    }
+    function validateStep3() { return true; }
 
     function validateStep4() {
         let isValid = true;
-
-        const capacityFields = [
-            'capacity_investment_broker',
-            'capacity_placement_agent',
-            'capacity_corporate_finance_advisor',
-            'capacity_fund_manager',
-            'capacity_family_office_rep',
-            'capacity_esg_advisor',
-            'capacity_independent_introducer'
-        ];
-
+        const capacityFields = ['capacity_investment_broker', 'capacity_placement_agent', 'capacity_corporate_finance_advisor', 'capacity_fund_manager', 'capacity_family_office_rep', 'capacity_esg_advisor', 'capacity_independent_introducer'];
         let hasCapacity = false;
         for (let field of capacityFields) {
-            if (document.querySelector(`input[name="${field}"]`)?.checked) {
-                hasCapacity = true;
-                break;
-            }
+            if (document.querySelector(`input[name="${field}"]`)?.checked) { hasCapacity = true; break; }
         }
-
         if (!hasCapacity) {
             document.querySelector('.capacity-error').style.display = 'block';
             isValid = false;
         } else {
             document.querySelector('.capacity-error').style.display = 'none';
         }
-
         return isValid;
     }
 
     function validateStep5() {
         let isValid = true;
-
-        const confirmAuthorized = document.getElementById('confirm_authorized');
-        if (!confirmAuthorized.checked) {
-            confirmAuthorized.classList.add('is-invalid');
-            document.getElementById('confirm_authorized-error').style.display = 'block';
-            isValid = false;
+        const checks = ['confirm_authorized', 'confirm_aml_kyc', 'acknowledge_no_exclusivity', 'understand_formal_mandate_required'];
+        for (let check of checks) {
+            const el = document.getElementById(check);
+            if (!el.checked) {
+                el.classList.add('is-invalid');
+                document.getElementById(check + '-error').style.display = 'block';
+                isValid = false;
+            }
         }
-
-        const confirmAmlKyc = document.getElementById('confirm_aml_kyc');
-        if (!confirmAmlKyc.checked) {
-            confirmAmlKyc.classList.add('is-invalid');
-            document.getElementById('confirm_aml_kyc-error').style.display = 'block';
-            isValid = false;
-        }
-
-        const acknowledgeNoExclusivity = document.getElementById('acknowledge_no_exclusivity');
-        if (!acknowledgeNoExclusivity.checked) {
-            acknowledgeNoExclusivity.classList.add('is-invalid');
-            document.getElementById('acknowledge_no_exclusivity-error').style.display = 'block';
-            isValid = false;
-        }
-
-        const understandFormalMandate = document.getElementById('understand_formal_mandate_required');
-        if (!understandFormalMandate.checked) {
-            understandFormalMandate.classList.add('is-invalid');
-            document.getElementById('understand_formal_mandate_required-error').style.display = 'block';
-            isValid = false;
-        }
-
         return isValid;
     }
 
     // ==================== NAVIGATION ====================
     window.goToStep = function(step) {
         if (step < 1 || step > totalSteps) return;
-
-        // Mettre à jour les steps
-        document.querySelectorAll('.step').forEach(el => {
-            el.classList.remove('active', 'completed');
-        });
-
-        for (let i = 1; i < step; i++) {
-            document.querySelector(`.step[data-step="${i}"]`).classList.add('completed');
-        }
-
+        document.querySelectorAll('.step').forEach(el => el.classList.remove('active', 'completed'));
+        for (let i = 1; i < step; i++) document.querySelector(`.step[data-step="${i}"]`).classList.add('completed');
         document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
-
-        // Mettre à jour les sections
-        document.querySelectorAll('.form-section').forEach(el => {
-            el.classList.remove('active');
-        });
+        document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
         document.getElementById(`step-${step}`).classList.add('active');
-
         currentStep = step;
-
-        // Générer le résumé si on est à l'étape 5
-        if (step === 5) {
-            generateSummary();
-        }
-
-        // Scroll en haut
+        if (step === 5) generateSummary();
         document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
     };
 
     // ==================== GÉNÉRATION DU RÉSUMÉ ====================
     function generateSummary() {
         const summary = document.getElementById('summary');
-
-        const fullName = document.getElementById('full_name').value || 'Non renseigné';
-        const email = document.getElementById('email').value || 'Non renseigné';
-        const firmName = document.getElementById('firm_name').value || 'Non renseigné';
-
-        const paysName = document.getElementById('pays_name').textContent || 'Non sélectionné';
-
-        // Récupérer les capacités sélectionnées
+        const fullName = document.getElementById('full_name').value || '<?= t('not_provided') ?>';
+        const email = document.getElementById('email').value || '<?= t('not_provided') ?>';
+        const firmName = document.getElementById('firm_name').value || '<?= t('not_provided') ?>';
+        const paysName = document.getElementById('pays_name').textContent || '<?= t('not_selected') ?>';
         const capacities = [];
-        if (document.querySelector('input[name="capacity_investment_broker"]')?.checked) capacities.push('Investment Broker');
-        if (document.querySelector('input[name="capacity_placement_agent"]')?.checked) capacities.push('Placement Agent');
-        if (document.querySelector('input[name="capacity_corporate_finance_advisor"]')?.checked) capacities.push('Corporate Finance Advisor');
-        if (document.querySelector('input[name="capacity_fund_manager"]')?.checked) capacities.push('Fund Manager');
-        if (document.querySelector('input[name="capacity_family_office_rep"]')?.checked) capacities.push('Family Office Rep');
-        if (document.querySelector('input[name="capacity_esg_advisor"]')?.checked) capacities.push('ESG Advisor');
-        if (document.querySelector('input[name="capacity_independent_introducer"]')?.checked) capacities.push('Independent Introducer');
-
+        if (document.querySelector('input[name="capacity_investment_broker"]')?.checked) capacities.push('<?= t('cap_investment_broker') ?>');
+        if (document.querySelector('input[name="capacity_placement_agent"]')?.checked) capacities.push('<?= t('cap_placement_agent') ?>');
+        if (document.querySelector('input[name="capacity_corporate_finance_advisor"]')?.checked) capacities.push('<?= t('cap_corporate_finance') ?>');
+        if (document.querySelector('input[name="capacity_fund_manager"]')?.checked) capacities.push('<?= t('cap_fund_manager') ?>');
+        if (document.querySelector('input[name="capacity_family_office_rep"]')?.checked) capacities.push('<?= t('cap_family_office') ?>');
+        if (document.querySelector('input[name="capacity_esg_advisor"]')?.checked) capacities.push('<?= t('cap_esg_advisor') ?>');
+        if (document.querySelector('input[name="capacity_independent_introducer"]')?.checked) capacities.push('<?= t('cap_independent_introducer') ?>');
         const capacityOther = document.getElementById('capacity_other').value;
-        if (capacityOther) capacities.push('Autre: ' + capacityOther);
-
-        // Récupérer les investisseurs
-        const investors = [];
-        if (document.querySelector('input[name="investor_private_equity"]')?.checked) investors.push('Private Equity');
-        if (document.querySelector('input[name="investor_venture_capital"]')?.checked) investors.push('Venture Capital');
-        if (document.querySelector('input[name="investor_esg_impact"]')?.checked) investors.push('ESG/Impact');
-        if (document.querySelector('input[name="investor_dfi"]')?.checked) investors.push('DFIs');
-        if (document.querySelector('input[name="investor_institutional"]')?.checked) investors.push('Institutionnels');
-        if (document.querySelector('input[name="investor_hnwi"]')?.checked) investors.push('HNWI');
-        if (document.querySelector('input[name="investor_sovereign"]')?.checked) investors.push('Souverains');
-
-        const regulatoryStatus = document.getElementById('regulatory_status').value || 'Non spécifié';
-        const engagementModel = document.getElementById('engagement_model').value || 'Non spécifié';
-
+        if (capacityOther) capacities.push('<?= t('other_label') ?>: ' + capacityOther);
+        const regulatoryStatus = document.getElementById('regulatory_status').value || '<?= t('not_specified') ?>';
+        const engagementModel = document.getElementById('engagement_model').value || '<?= t('not_specified') ?>';
         let html = `
-            <div class="summary-section">
-                <h6><i class="fas fa-user-circle"></i> Identité</h6>
-                <div class="summary-item">
-                    <span class="summary-label">Nom complet</span>
-                    <span class="summary-value">${escapeHtml(fullName)}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Société</span>
-                    <span class="summary-value">${escapeHtml(firmName)}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Email</span>
-                    <span class="summary-value">${escapeHtml(email)}</span>
-                </div>
-            </div>
-
-            <div class="summary-section">
-                <h6><i class="fas fa-map-marked-alt"></i> Localisation</h6>
-                <div class="summary-item">
-                    <span class="summary-label">Pays</span>
-                    <span class="summary-value">${escapeHtml(paysName)}</span>
-                </div>
-            </div>
-
-            <div class="summary-section">
-                <h6><i class="fas fa-shield-alt"></i> Régulation</h6>
-                <div class="summary-item">
-                    <span class="summary-label">Statut</span>
-                    <span class="summary-value">${escapeHtml(regulatoryStatus)}</span>
-                </div>
-            </div>
-        `;
-
-        if (capacities.length > 0) {
-            html += `
-                <div class="summary-section">
-                    <h6><i class="fas fa-briefcase"></i> Capacités</h6>
-                    <div>
-                        ${capacities.map(cap => `<span class="badge-custom">${escapeHtml(cap)}</span>`).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        if (investors.length > 0) {
-            html += `
-                <div class="summary-section">
-                    <h6><i class="fas fa-users"></i> Investisseurs</h6>
-                    <div>
-                        ${investors.map(inv => `<span class="badge-custom">${escapeHtml(inv)}</span>`).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        html += `
-            <div class="summary-section">
-                <h6><i class="fas fa-handshake"></i> Engagement</h6>
-                <div class="summary-item">
-                    <span class="summary-label">Modèle</span>
-                    <span class="summary-value">${escapeHtml(engagementModel)}</span>
-                </div>
-            </div>
-        `;
-
+            <div class="summary-section"><h6><i class="fas fa-user-circle"></i> <?= t('identity_summary') ?></h6>
+            <div class="summary-item"><span class="summary-label"><?= t('full_name') ?></span><span class="summary-value">${escapeHtml(fullName)}</span></div>
+            <div class="summary-item"><span class="summary-label"><?= t('firm_name') ?></span><span class="summary-value">${escapeHtml(firmName)}</span></div>
+            <div class="summary-item"><span class="summary-label"><?= t('email') ?></span><span class="summary-value">${escapeHtml(email)}</span></div></div>
+            <div class="summary-section"><h6><i class="fas fa-map-marked-alt"></i> <?= t('location_summary') ?></h6>
+            <div class="summary-item"><span class="summary-label"><?= t('country_label') ?></span><span class="summary-value">${escapeHtml(paysName)}</span></div></div>
+            <div class="summary-section"><h6><i class="fas fa-shield-alt"></i> <?= t('regulation_summary') ?></h6>
+            <div class="summary-item"><span class="summary-label"><?= t('regulatory_status_label') ?></span><span class="summary-value">${escapeHtml(regulatoryStatus)}</span></div></div>`;
+        if (capacities.length > 0) html += `<div class="summary-section"><h6><i class="fas fa-briefcase"></i> <?= t('capacities_summary') ?></h6><div>${capacities.map(cap => `<span class="badge-custom">${escapeHtml(cap)}</span>`).join('')}</div></div>`;
+        html += `<div class="summary-section"><h6><i class="fas fa-handshake"></i> <?= t('engagement_summary') ?></h6>
+            <div class="summary-item"><span class="summary-label"><?= t('engagement_model_label') ?></span><span class="summary-value">${escapeHtml(engagementModel)}</span></div></div>`;
         summary.innerHTML = html;
     }
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
     // ==================== NOTIFICATIONS TOAST ====================
     function showToast(type, title, message, duration = 5000) {
         let container = document.getElementById('toastContainer');
-
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'toastContainer';
-            container.className = 'toast-container';
-            document.body.appendChild(container);
-        }
-
-        const toast = document.createElement('div');
-        toast.className = `toast-custom ${type}`;
-
-        const icons = {
-            success: 'fa-check-circle',
-            error: 'fa-exclamation-circle',
-            warning: 'fa-exclamation-triangle',
-            info: 'fa-info-circle'
-        };
-
-        const colors = {
-            success: '#27ae60',
-            error: '#E74C3C',
-            warning: '#FF6B35',
-            info: '#3498DB'
-        };
-
-        toast.innerHTML = `
-            <div class="toast-icon" style="background: ${colors[type]}20; color: ${colors[type]};">
-                <i class="fas ${icons[type] || icons.info}"></i>
-            </div>
-            <div class="toast-content">
-                <h4>${escapeHtml(title)}</h4>
-                <p>${escapeHtml(message)}</p>
-            </div>
-            <button class="toast-close" onclick="removeToast(this.parentElement)">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-
+        if (!container) { container = document.createElement('div'); container.id = 'toastContainer'; container.className = 'toast-container'; document.body.appendChild(container); }
+        const toast = document.createElement('div'); toast.className = `toast-custom ${type}`;
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const colors = { success: '#27ae60', error: '#E74C3C', warning: '#FF6B35', info: '#3498DB' };
+        toast.innerHTML = `<div class="toast-icon" style="background: ${colors[type]}20; color: ${colors[type]};"><i class="fas ${icons[type] || icons.info}"></i></div>
+            <div class="toast-content"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(message)}</p></div>
+            <button class="toast-close" onclick="removeToast(this.parentElement)"><i class="fas fa-times"></i></button>`;
         container.appendChild(toast);
-
-        const autoRemove = setTimeout(() => {
-            removeToast(toast);
-        }, duration);
-
-        toast.addEventListener('mouseenter', () => {
-            clearTimeout(autoRemove);
-        });
-
-        toast.addEventListener('mouseleave', () => {
-            setTimeout(() => removeToast(toast), 1000);
-        });
+        const autoRemove = setTimeout(() => removeToast(toast), duration);
+        toast.addEventListener('mouseenter', () => clearTimeout(autoRemove));
+        toast.addEventListener('mouseleave', () => setTimeout(() => removeToast(toast), 1000));
     }
 
-    function removeToast(toast) {
-        if (!toast || !toast.parentElement) return;
-        toast.classList.add('hiding');
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.remove();
-            }
-        }, 300);
-    }
+    function removeToast(toast) { if (!toast || !toast.parentElement) return; toast.classList.add('hiding'); setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300); }
 
-    // ==================== SOUMISSION DU FORMULAIRE ====================
+    // ==================== SOUMISSION (CORRIGÉE) ====================
     document.getElementById('brokerForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-
-        // Validation finale
-        if (!validateStep5()) {
-            showToast('error', 'Validation', 'Veuillez compléter toutes les déclarations de conformité');
-            return;
+        if (!validateStep5()) { 
+            showToast('error', t('validation_error'), t('validation_error_message')); 
+            return; 
         }
-
-        // Loading state
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.classList.add('loading');
+        
+        const submitBtn = document.getElementById('submitBtn'); 
+        submitBtn.classList.add('loading'); 
         submitBtn.disabled = true;
-
-        // Préparation des données
-        const formData = new FormData(this);
+        
+        const formData = new FormData(this); 
         const data = Object.fromEntries(formData.entries());
-
-        // URL de soumission
-        const submitUrl = '<?= base_url('Api/brokers/Save') ?>';
-
-        console.log('Envoi vers:', submitUrl);
-        console.log('Données:', data);
-
+        
+        // UTILISER LA ROUTE EXISTANTE : /{lang}/Brokers-form
+        const submitUrl = '<?= base_url($lang . '/Brokers-form') ?>';
+        
         try {
-            const response = await fetch(submitUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(data)
+            const response = await fetch(submitUrl, { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-Requested-With': 'XMLHttpRequest' 
+                }, 
+                body: JSON.stringify(data) 
             });
-
+            
             const result = await response.json();
-
+            
             if (result.success) {
-                // Afficher le modal de succès
                 document.getElementById('successName').textContent = data.full_name.split(' ')[0] + ' !';
-                const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                const modal = new bootstrap.Modal(document.getElementById('successModal')); 
                 modal.show();
-
-                // Reset formulaire
-                this.reset();
-                resetForm();
-
-                showToast('success', 'Succès !', result.message);
-
-                // Retour étape 1 après délai
-                setTimeout(() => {
-                    goToStep(1);
-                    modal.hide();
+                this.reset(); 
+                resetForm(); 
+                showToast('success', t('success_label'), result.message);
+                setTimeout(() => { 
+                    goToStep(1); 
+                    modal.hide(); 
                 }, 3000);
             } else {
                 if (result.errors) {
-                    Object.keys(result.errors).forEach(field => {
-                        const el = document.getElementById(field);
-                        if (el) {
-                            el.classList.add('is-invalid');
-                            const feedback = document.getElementById(field + '-error');
-                            if (feedback) {
-                                feedback.textContent = result.errors[field];
-                                feedback.style.display = 'block';
-                            }
-                        }
+                    Object.keys(result.errors).forEach(field => { 
+                        const el = document.getElementById(field); 
+                        if (el) { 
+                            el.classList.add('is-invalid'); 
+                            const feedback = document.getElementById(field + '-error'); 
+                            if (feedback) { 
+                                feedback.textContent = result.errors[field]; 
+                                feedback.style.display = 'block'; 
+                            } 
+                        } 
                     });
                 }
-                showToast('error', 'Erreur', result.message || 'Une erreur est survenue');
+                showToast('error', t('error_label'), result.message || '<?= t('error_occurred') ?>');
             }
-
-        } catch (error) {
-            console.error('Error:', error);
-            showToast('error', 'Erreur réseau', 'Impossible de contacter le serveur. Veuillez réessayer.');
-        } finally {
-            submitBtn.classList.remove('loading');
-            submitBtn.disabled = false;
+        } catch (error) { 
+            console.error('Error:', error); 
+            showToast('error', t('error_label'), t('network_error')); 
+        } finally { 
+            submitBtn.classList.remove('loading'); 
+            submitBtn.disabled = false; 
         }
     });
 
@@ -2437,22 +2165,18 @@ foreach ($textes as $texte):
         document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
         document.querySelectorAll('.is-valid').forEach(el => el.classList.remove('is-valid'));
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-
         clearCountry('pays');
-
-        document.querySelectorAll('.char-counter').forEach(el => {
-            const id = el.id.replace('-count', '');
-            const field = document.getElementById(id);
-            if (field && field.maxLength) {
-                el.textContent = `0/${field.maxLength}`;
-            }
+        document.querySelectorAll('.char-counter').forEach(el => { 
+            const id = el.id.replace('-count', ''); 
+            const field = document.getElementById(id); 
+            if (field && field.maxLength) el.textContent = `0/${field.maxLength}`; 
         });
     }
 
-    function closeSuccessModal() {
-        const modalEl = document.getElementById('successModal');
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        modal.hide();
+    function closeSuccessModal() { 
+        const modalEl = document.getElementById('successModal'); 
+        const modal = bootstrap.Modal.getInstance(modalEl); 
+        modal.hide(); 
     }
 </script>
 

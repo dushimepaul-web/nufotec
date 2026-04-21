@@ -372,7 +372,7 @@
                         <?php endif; ?>
                     </button>
 
-                    <a href="<?= base_url('Medicins') ?>" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                    <a href="<?= base_url($lang.'/Medicins') ?>" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
                         <i class="fas fa-plus"></i>
                         <span>Nouvelle Consultation</span>
                     </a>
@@ -840,7 +840,7 @@
                                     <p class="text-sm text-slate-600 mt-1">Gérez vos informations personnelles</p>
                                 </div>
                                 
-                                <form action="<?= base_url('Dashboard/PatientDashboard/update_profile') ?>" method="POST" enctype="multipart/form-data" class="p-4 lg:p-6 space-y-6">
+                                <form action="<?= base_url($lang.'/Dashboard/PatientDashboard/update_profile') ?>" method="POST" enctype="multipart/form-data" class="p-4 lg:p-6 space-y-6">
                                     <!-- Photo de profil -->
                                     <div class="flex flex-col sm:flex-row items-center gap-6">
                                         <div class="relative">

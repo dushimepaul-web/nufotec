@@ -1242,14 +1242,13 @@ textarea.form-control {
 }
 </style>
 
-
-<a href="#main-content" class="skip-link"><i class="bi bi-skip-forward"></i> Passer au contenu principal</a>
+<a href="#main-content" class="skip-link"><i class="bi bi-skip-forward"></i> <?= t('skip_to_content') ?></a>
 
 <!-- SECTION HERO -->
 <section class="consultation-hero">
     <div class="container">
-        <h1 id="hero-title"><i class="bi bi-heart-pulse"></i> Consultation en ligne</h1>
-        <p id="hero-subtitle"><i class="bi bi-shield-check"></i> Prenez rendez-vous facilement avec nos médecins phytothérapeutes</p>
+        <h1 id="hero-title"><i class="bi bi-heart-pulse"></i> <?= t('online_consultation') ?></h1>
+        <p id="hero-subtitle"><i class="bi bi-shield-check"></i> <?= t('hero_subtitle') ?></p>
     </div>
 </section>
 
@@ -1258,7 +1257,7 @@ textarea.form-control {
     <div class="row">
         <!-- Colonne principale -->
         <div class="col-lg-8">
-            <!-- Barre de progression (4 étapes seulement maintenant) -->
+            <!-- Barre de progression (4 étapes) -->
             <div class="consultation-progress" 
                  role="progressbar" 
                  aria-valuenow="25" 
@@ -1278,7 +1277,7 @@ textarea.form-control {
             <!-- Carte formulaire -->
             <div class="consultation-card">
                 <form id="consultationForm" 
-                      action="<?= base_url('Consultations/PatientForm/create') ?>" 
+                      action="<?= base_url($lang . '/patient-form/create') ?>" 
                       method="POST" 
                       enctype="multipart/form-data" 
                       novalidate>
@@ -1303,15 +1302,15 @@ textarea.form-control {
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-person-badge"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-person"></i> Informations personnelles</h2>
-                                <p><i class="bi bi-lock"></i> Vos données sont confidentielles</p>
+                                <h2><i class="bi bi-person"></i> <?= t('personal_info_title') ?></h2>
+                                <p><i class="bi bi-lock"></i> <?= t('personal_info_subtitle') ?></p>
                             </div>
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group full-width">
                                 <label class="form-label" for="full_name">
-                                    <i class="bi bi-person"></i> Nom complet <span class="required">*</span>
+                                    <i class="bi bi-person"></i> <?= t('full_name') ?> <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-person input-icon"></i>
@@ -1319,19 +1318,19 @@ textarea.form-control {
                                            class="form-control" 
                                            name="full_name" 
                                            id="full_name"
-                                           placeholder="ex: Jean Dupont"
+                                           placeholder="<?= t('full_name_placeholder') ?>"
                                            required
                                            minlength="3"
                                            maxlength="100"
                                            value="<?= htmlspecialchars($this->session->userdata('fullname') ?: $this->session->userdata('fu') ?: '', ENT_QUOTES, 'UTF-8') ?>"
                                            <?= ($this->session->userdata('fullname') || $this->session->userdata('fu')) ? 'readonly' : '' ?>>
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Veuillez saisir votre nom complet (minimum 3 caractères)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> <?= t('full_name_error') ?></div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="age">
-                                    <i class="bi bi-calendar"></i> Âge <span class="required">*</span>
+                                    <i class="bi bi-calendar"></i> <?= t('age') ?> <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-calendar input-icon"></i>
@@ -1339,36 +1338,36 @@ textarea.form-control {
                                            class="form-control" 
                                            name="age" 
                                            id="age"
-                                           placeholder="ex: 35"
+                                           placeholder="<?= t('age_placeholder') ?>"
                                            required
                                            min="1"
                                            max="120"
                                            value="<?= set_value('age'); ?>">
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Âge invalide (1-120 ans)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> <?= t('age_error') ?></div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">
-                                    <i class="bi bi-globe"></i> Pays de résidence <span class="required">*</span>
+                                    <i class="bi bi-globe"></i> <?= t('country') ?> <span class="required">*</span>
                                 </label>
                                 <div class="autocomplete-container" style="position: relative;">
                                     <i class="bi bi-globe input-icon"></i>
                                     <input type="text" 
                                            class="form-control"  
                                            id="country_search" 
-                                           placeholder="Rechercher un pays..." 
+                                           placeholder="<?= t('country_placeholder') ?>" 
                                            autocomplete="off"
                                            required>
                                     <input type="hidden" name="country" id="selected_country" value="<?= set_value('country'); ?>">
                                     <div id="autocomplete_list" class="autocomplete-results"></div>
-                                    <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Veuillez sélectionner un pays</div>
+                                    <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> <?= t('country_error') ?></div>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="weight">
-                                    <i class="bi bi-speedometer"></i> Poids (kg) <span class="required">*</span>
+                                    <i class="bi bi-speedometer"></i> <?= t('weight') ?> <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-speedometer input-icon"></i>
@@ -1376,19 +1375,19 @@ textarea.form-control {
                                            class="form-control" 
                                            name="weight" 
                                            id="weight"
-                                           placeholder="ex: 70"
+                                           placeholder="<?= t('weight_placeholder') ?>"
                                            required
                                            min="1"
                                            max="300"
                                            step="0.1"
                                            value="<?= set_value('weight'); ?>">
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Poids invalide (1-300 kg)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> <?= t('weight_error') ?></div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="height">
-                                    <i class="bi bi-rulers"></i> Taille (cm) <span class="required">*</span>
+                                    <i class="bi bi-rulers"></i> <?= t('height') ?> <span class="required">*</span>
                                 </label>
                                 <div style="position: relative;">
                                     <i class="bi bi-rulers input-icon"></i>
@@ -1396,19 +1395,19 @@ textarea.form-control {
                                            class="form-control" 
                                            name="height" 
                                            id="height"
-                                           placeholder="ex: 175"
+                                           placeholder="<?= t('height_placeholder') ?>"
                                            required
                                            min="50"
                                            max="250"
                                            value="<?= set_value('height'); ?>">
                                 </div>
-                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Taille invalide (50-250 cm)</div>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> <?= t('height_error') ?></div>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" disabled><i class="bi bi-arrow-left"></i> Précédent</button>
-                            <button type="button" class="btn-next" onclick="nextStep(1)">Suivant <i class="bi bi-arrow-right"></i></button>
+                            <button type="button" class="btn-prev" disabled><i class="bi bi-arrow-left"></i> <?= t('previous') ?></button>
+                            <button type="button" class="btn-next" onclick="nextStep(1)"><?= t('next') ?> <i class="bi bi-arrow-right"></i></button>
                         </div>
                     </div>
 
@@ -1417,14 +1416,14 @@ textarea.form-control {
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-hospital"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-activity"></i> Description des symptômes</h2>
-                                <p><i class="bi bi-pencil-square"></i> Soyez le plus précis possible</p>
+                                <h2><i class="bi bi-activity"></i> <?= t('symptoms_title') ?></h2>
+                                <p><i class="bi bi-pencil-square"></i> <?= t('symptoms_subtitle') ?></p>
                             </div>
                         </div>
 
                         <div class="form-group full-width" style="margin-bottom: 20px;">
                             <label class="form-label" for="symptoms">
-                                <i class="bi bi-chat-text"></i> Symptômes détaillés <span class="required">*</span>
+                                <i class="bi bi-chat-text"></i> <?= t('symptoms_detailed') ?> <span class="required">*</span>
                             </label>
                             <textarea class="form-control" 
                                       name="symptoms" 
@@ -1432,46 +1431,46 @@ textarea.form-control {
                                       rows="6"
                                       required
                                       minlength="20"
-                                      placeholder="ex: J'ai des maux de tête depuis 3 jours..."><?= set_value('symptoms'); ?></textarea>
-                            <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> Veuillez décrire vos symptômes (minimum 20 caractères)</div>
+                                      placeholder="<?= t('symptoms_placeholder') ?>"><?= set_value('symptoms'); ?></textarea>
+                            <div class="invalid-feedback"><i class="bi bi-exclamation-circle"></i> <?= t('symptoms_error') ?></div>
                         </div>
 
                         <div class="form-group full-width" style="margin-bottom: 20px;">
                             <label class="form-label" for="symptoms_duration">
-                                <i class="bi bi-clock-history"></i> Durée des symptômes
+                                <i class="bi bi-clock-history"></i> <?= t('symptoms_duration_label') ?>
                             </label>
                             <div style="position: relative;">
                                 <i class="bi bi-clock input-icon" style="top: 12px; transform: none;"></i>
                                 <select class="form-select" name="symptoms_duration" id="symptoms_duration" style="padding-left: 40px;">
-                                    <option value="">Sélectionner une durée</option>
-                                    <option value="24h" <?= set_select('symptoms_duration', '24h'); ?>>Moins de 24h</option>
-                                    <option value="2-3j" <?= set_select('symptoms_duration', '2-3j'); ?>>2-3 jours</option>
-                                    <option value="1sem" <?= set_select('symptoms_duration', '1sem'); ?>>Une semaine</option>
-                                    <option value="2sem" <?= set_select('symptoms_duration', '2sem'); ?>>2 semaines</option>
-                                    <option value="1mois" <?= set_select('symptoms_duration', '1mois'); ?>>1 mois ou plus</option>
+                                    <option value=""><?= t('select_duration') ?></option>
+                                    <option value="24h" <?= set_select('symptoms_duration', '24h'); ?>><?= t('duration_24h') ?></option>
+                                    <option value="2-3j" <?= set_select('symptoms_duration', '2-3j'); ?>><?= t('duration_2_3days') ?></option>
+                                    <option value="1sem" <?= set_select('symptoms_duration', '1sem'); ?>><?= t('duration_1week') ?></option>
+                                    <option value="2sem" <?= set_select('symptoms_duration', '2sem'); ?>><?= t('duration_2weeks') ?></option>
+                                    <option value="1mois" <?= set_select('symptoms_duration', '1mois'); ?>><?= t('duration_1month') ?></option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="form-group full-width" style="margin-bottom: 20px;">
                             <label class="form-label">
-                                <i class="bi bi-question-circle"></i> Avez-vous déjà consulté pour ce problème ?
+                                <i class="bi bi-question-circle"></i> <?= t('previous_consultation_label') ?>
                             </label>
                             <div class="radio-group">
                                 <label class="radio-option">
                                     <input type="radio" name="previous_consultation" value="yes" <?= set_radio('previous_consultation', 'yes'); ?>> 
-                                    <span><i class="bi bi-check-lg"></i> Oui</span>
+                                    <span><i class="bi bi-check-lg"></i> <?= t('yes') ?></span>
                                 </label>
                                 <label class="radio-option">
                                     <input type="radio" name="previous_consultation" value="no" <?= set_radio('previous_consultation', 'no', true); ?>> 
-                                    <span><i class="bi bi-x-lg"></i> Non</span>
+                                    <span><i class="bi bi-x-lg"></i> <?= t('no') ?></span>
                                 </label>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" onclick="prevStep(2)"><i class="bi bi-arrow-left"></i> Précédent</button>
-                            <button type="button" class="btn-next" onclick="nextStep(2)">Suivant <i class="bi bi-arrow-right"></i></button>
+                            <button type="button" class="btn-prev" onclick="prevStep(2)"><i class="bi bi-arrow-left"></i> <?= t('previous') ?></button>
+                            <button type="button" class="btn-next" onclick="nextStep(2)"><?= t('next') ?> <i class="bi bi-arrow-right"></i></button>
                         </div>
                     </div>
 
@@ -1480,8 +1479,8 @@ textarea.form-control {
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-file-earmark-medical"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-folder"></i> Documents médicaux</h2>
-                                <p><i class="bi bi-shield-lock"></i> Transfert sécurisé</p>
+                                <h2><i class="bi bi-folder"></i> <?= t('documents_title') ?></h2>
+                                <p><i class="bi bi-shield-lock"></i> <?= t('documents_subtitle') ?></p>
                             </div>
                         </div>
 
@@ -1489,15 +1488,15 @@ textarea.form-control {
                             <div class="upload-header">
                                 <div class="upload-icon"><i class="bi bi-file-earmark-text"></i></div>
                                 <div>
-                                    <h4><i class="bi bi-clipboard-data"></i> Analyses médicales</h4>
-                                    <p><i class="bi bi-info-circle"></i> Analyses, radiographies, comptes-rendus (optionnel)</p>
+                                    <h4><i class="bi bi-clipboard-data"></i> <?= t('medical_analysis') ?></h4>
+                                    <p><i class="bi bi-info-circle"></i> <?= t('medical_analysis_desc') ?></p>
                                 </div>
                             </div>
 
                             <div class="upload-box" tabindex="0">
                                 <i class="bi bi-cloud-arrow-up"></i>
-                                <span style="display: block; font-weight: 500; margin-bottom: 4px;">Cliquez pour télécharger</span>
-                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> PDF, JPG, PNG - 5 Mo max par fichier</small>
+                                <span style="display: block; font-weight: 500; margin-bottom: 4px;"><?= t('click_to_upload') ?></span>
+                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> <?= t('upload_format') ?></small>
                                 <input type="file" name="medical_docs[]" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="previewFiles(this, 'medical-preview')">
                             </div>
                             <div id="medical-preview" class="upload-preview"></div>
@@ -1507,95 +1506,93 @@ textarea.form-control {
                             <div class="upload-header">
                                 <div class="upload-icon"><i class="bi bi-capsule"></i></div>
                                 <div>
-                                    <h4><i class="bi bi-prescription"></i> Ordonnances précédentes</h4>
-                                    <p><i class="bi bi-info-circle"></i> Ordonnances antérieures (optionnel)</p>
+                                    <h4><i class="bi bi-prescription"></i> <?= t('previous_prescriptions') ?></h4>
+                                    <p><i class="bi bi-info-circle"></i> <?= t('previous_prescriptions_desc') ?></p>
                                 </div>
                             </div>
 
                             <div class="upload-box" tabindex="0">
                                 <i class="bi bi-cloud-arrow-up"></i>
-                                <span style="display: block; font-weight: 500; margin-bottom: 4px;">Cliquez pour télécharger</span>
-                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> PDF, JPG, PNG - 5 Mo max par fichier</small>
+                                <span style="display: block; font-weight: 500; margin-bottom: 4px;"><?= t('click_to_upload') ?></span>
+                                <small style="color: var(--text-muted); font-size: 0.6875rem;"><i class="bi bi-file-earmark"></i> <?= t('upload_format') ?></small>
                                 <input type="file" name="prescriptions[]" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="previewFiles(this, 'prescription-preview')">
                             </div>
                             <div id="prescription-preview" class="upload-preview"></div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" onclick="prevStep(3)"><i class="bi bi-arrow-left"></i> Précédent</button>
-                            <button type="button" class="btn-next" onclick="nextStep(3)">Suivant <i class="bi bi-arrow-right"></i></button>
+                            <button type="button" class="btn-prev" onclick="prevStep(3)"><i class="bi bi-arrow-left"></i> <?= t('previous') ?></button>
+                            <button type="button" class="btn-next" onclick="nextStep(3)"><?= t('next') ?> <i class="bi bi-arrow-right"></i></button>
                         </div>
                     </div>
 
-                    <!-- ÉTAPE 4: Confirmation (anciennement étape 5) -->
+                    <!-- ÉTAPE 4: Confirmation -->
                     <div class="step-content hidden" id="step4">
                         <div class="form-header">
                             <div class="header-icon"><i class="bi bi-check-circle"></i></div>
                             <div class="header-text">
-                                <h2><i class="bi bi-eye"></i> Récapitulatif</h2>
-                                <p><i class="bi bi-info-circle"></i> Vérifiez vos informations avant de confirmer</p>
+                                <h2><i class="bi bi-eye"></i> <?= t('summary_title') ?></h2>
+                                <p><i class="bi bi-info-circle"></i> <?= t('summary_subtitle') ?></p>
                             </div>
                         </div>
 
                         <div class="consultation-summary">
-                            <div class="summary-title"><i class="bi bi-person"></i> Informations personnelles</div>
+                            <div class="summary-title"><i class="bi bi-person"></i> <?= t('personal_info_title') ?></div>
                             <div class="summary-grid">
                                 <div class="summary-item">
-                                    <label><i class="bi bi-person"></i> Nom complet</label>
+                                    <label><i class="bi bi-person"></i> <?= t('full_name') ?></label>
                                     <div class="value" id="summary-name">-</div>
                                 </div>
                                 <div class="summary-item">
-                                    <label><i class="bi bi-calendar"></i> Âge</label>
+                                    <label><i class="bi bi-calendar"></i> <?= t('age') ?></label>
                                     <div class="value" id="summary-age">-</div>
                                 </div>
                                 <div class="summary-item">
-                                    <label><i class="bi bi-globe"></i> Pays</label>
+                                    <label><i class="bi bi-globe"></i> <?= t('country') ?></label>
                                     <div class="value" id="summary-country">-</div>
                                 </div>
                                 <div class="summary-item">
-                                    <label><i class="bi bi-rulers"></i> Poids / Taille</label>
+                                    <label><i class="bi bi-rulers"></i> <?= t('weight_height') ?></label>
                                     <div class="value" id="summary-size">-</div>
                                 </div>
                             </div>
 
-                            <div class="summary-title" style="margin-top: 20px;"><i class="bi bi-activity"></i> Symptômes</div>
+                            <div class="summary-title" style="margin-top: 20px;"><i class="bi bi-activity"></i> <?= t('symptoms_title') ?></div>
                             <div class="summary-item" style="margin-bottom: 15px;">
                                 <div class="value" id="summary-symptoms" style="white-space: pre-wrap;">-</div>
                             </div>
 
                             <div class="summary-total">
-    <span><i class="bi bi-cash-stack"></i> Total à payer</span>
-    <?php
-        $taux = $this->config->item('taux_devise');
-        $prix_usd = isset($medecin['honoraires_consultation']) ? (float)$medecin['honoraires_consultation'] : 50;
-        $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
-        $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
-    ?>
-    <span id="summary-total">
-        <div class="price-value">
-            <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
-        </div>
-        
-        <!-- Prix Burundi -->
-        <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
-            <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
-            <strong>Patients résidant au Burundi: 40 000Fbu</strong>
-        </div>
-    </span>
-</div>
+                                <span><i class="bi bi-cash-stack"></i> <?= t('total_to_pay') ?></span>
+                                <?php
+                                    $taux = $this->config->item('taux_devise');
+                                    $prix_usd = isset($medecin['honoraires_consultation']) ? (float)$medecin['honoraires_consultation'] : 50;
+                                    $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
+                                    $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
+                                ?>
+                                <span id="summary-total">
+                                    <div class="price-value">
+                                        <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
+                                    </div>
+                                    <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
+                                        <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
+                                        <strong><?= t('burundi_price') ?> 40 000 Fbu</strong>
+                                    </div>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="terms-checkbox">
                             <input type="checkbox" name="terms" id="terms" required>
                             <label for="terms">
-                                <i class="bi bi-file-text"></i> J'accepte les <a href="<?= base_url('conditions'); ?>" target="_blank"><i class="bi bi-link-45deg"></i> conditions générales de consultation</a> et la politique de confidentialité des données médicales.
+                                <i class="bi bi-file-text"></i> <?= t('terms_accept') ?> <a href="<?= base_url($lang . '/conditions'); ?>" target="_blank"><i class="bi bi-link-45deg"></i> <?= t('terms_link') ?></a> <?= t('terms_privacy') ?>
                             </label>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-prev" onclick="prevStep(4)"><i class="bi bi-arrow-left"></i> Précédent</button>
+                            <button type="button" class="btn-prev" onclick="prevStep(4)"><i class="bi bi-arrow-left"></i> <?= t('previous') ?></button>
                             <button type="submit" class="btn-submit" id="submitBtn">
-                                <i class="bi bi-check-lg"></i> Confirmer la consultation
+                                <i class="bi bi-check-lg"></i> <?= t('confirm_consultation') ?>
                             </button>
                         </div>
                     </div>
@@ -1603,7 +1600,7 @@ textarea.form-control {
             </div>
         </div>
 
-        <!-- Sidebar info (inchangée) -->
+        <!-- Sidebar info -->
         <div class="col-lg-4">
             <div class="info-panel">
                 <div id="doctor-card-container">
@@ -1619,39 +1616,37 @@ textarea.form-control {
                             <i class="bi bi-person-badge"></i><?= htmlspecialchars($medecin['prenom'] ?? '') . ' ' . htmlspecialchars($medecin['nom'] ?? '') ?>
                         </h4>
                         <p class="doctor-specialty">
-                            <i class="bi bi-star-fill" style="color: var(--accent);"></i> <?= htmlspecialchars($medecin['specialite'] ?? 'Médecin généraliste') ?>
+                            <i class="bi bi-star-fill" style="color: var(--accent);"></i> <?= htmlspecialchars($medecin['specialite'] ?? t('general_practitioner')) ?>
                         </p>
                         <div class="doctor-price">
-    <div class="price-value">
-        <?= number_format($prix_usd ?? 50, 2) ?> <span>USD/EUR</span>
-    </div>
-</div>
-
-<!-- Prix Burundi -->
-<div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
-    <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
-    <strong>Patients résidant au Burundi:<br> 40 000 Fbu </strong>
-</div>
+                            <div class="price-value">
+                                <?= number_format($prix_usd ?? 50, 2) ?> <span>USD/EUR</span>
+                            </div>
+                        </div>
+                        <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
+                            <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
+                            <strong><?= t('burundi_price') ?><br> 40 000 Fbu </strong>
+                        </div>
                         <a style="text-decoration: none;" href="javascript:void(0)" onclick="confirmChangeDoctor()" class="change-doctor-btn">
-                            <i class="bi bi-arrow-left"></i> Changer de médecin
+                            <i class="bi bi-arrow-left"></i> <?= t('change_doctor') ?>
                         </a>
                     </div>
                 </div>
 
-                <h3><i class="bi bi-question-circle"></i> Comment ça marche ?</h3>
+                <h3><i class="bi bi-question-circle"></i> <?= t('how_it_works') ?></h3>
                 <ul>
-                    <li><span>1</span> <i class="bi bi-pencil-square"></i> Remplissez le formulaire</li>
-                    <li><span>2</span> <i class="bi bi-chat-text"></i> Décrivez vos symptômes</li>
-                    <li><span>3</span> <i class="bi bi-upload"></i> Téléchargez vos documents</li>
-                    <li><span>4</span> <i class="bi bi-credit-card"></i> Effectuez le paiement</li>
-                    <li><span>5</span> <i class="bi bi-person-check"></i> Un médecin répondra sous 24h</li>
+                    <li><span>1</span> <i class="bi bi-pencil-square"></i> <?= t('step1_fill_form') ?></li>
+                    <li><span>2</span> <i class="bi bi-chat-text"></i> <?= t('step2_describe_symptoms') ?></li>
+                    <li><span>3</span> <i class="bi bi-upload"></i> <?= t('step3_upload_documents') ?></li>
+                    <li><span>4</span> <i class="bi bi-credit-card"></i> <?= t('step4_make_payment') ?></li>
+                    <li><span>5</span> <i class="bi bi-person-check"></i> <?= t('step5_doctor_response') ?></li>
                 </ul>
 
                 <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
 
                 <div style="margin-bottom: 15px;">
                     <strong style="font-weight: bold; display: block; margin-bottom: 5px;">
-                        <i class="bi bi-wallet2" style="margin-right: 5px;"></i> Modes de paiement acceptés :
+                        <i class="bi bi-wallet2" style="margin-right: 5px;"></i> <?= t('accepted_payment_methods') ?> :
                     </strong>
                     <?php foreach($mode_payements as $mode): ?>
                     <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 24px; align-items: center;">
@@ -1671,11 +1666,11 @@ textarea.form-control {
 
                 <div class="alert alert-info">
                     <i class="bi bi-shield-check"></i>
-                    <small>Paiement 100% sécurisé et crypté</small>
+                    <small><?= t('payment_secure') ?></small>
                 </div>
 
                 <div style="text-align: center; margin-top: 20px;">
-                    <small style="color: var(--text-muted);"><i class="bi bi-headset"></i> Besoin d'aide ?</small><br>
+                    <small style="color: var(--text-muted);"><i class="bi bi-headset"></i> <?= t('need_help') ?></small><br>
                     <a href="tel:+25779666439" style="color: var(--primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
                         <i class="bi bi-telephone"></i> <?= $this->Model->get_setting('contact_whatsapp', '+257 79 666 439') ?>
                     </a>
@@ -1689,39 +1684,36 @@ textarea.form-control {
 <div class="success-modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="success-content">
         <div><i class="bi bi-check-circle-fill"></i></div>
-        <h2 id="modalTitle"><i class="bi bi-emoji-smile"></i> Merci !</h2>
-        <p><i class="bi bi-envelope-check"></i> Votre demande de consultation a été soumise avec succès. Un médecin vous contactera dans les 24 heures.</p>
+        <h2 id="modalTitle"><i class="bi bi-emoji-smile"></i> <?= t('thank_you') ?></h2>
+        <p><i class="bi bi-envelope-check"></i> <?= t('success_message') ?></p>
         
         <div class="tracking-box">
-            <label><i class="bi bi-upc-scan"></i> Numéro de suivi</label>
+            <label><i class="bi bi-upc-scan"></i> <?= t('tracking_number') ?></label>
             <div class="number" id="trackingNumber"><i class="bi bi-hash"></i> -</div>
         </div>
         
-        <button class="btn" onclick="window.location.href='<?= base_url(); ?>'">
-            <i class="bi bi-house"></i> Retour à l'accueil
+        <button class="btn" onclick="window.location.href='<?= base_url($lang); ?>'">
+            <i class="bi bi-house"></i> <?= t('back_to_home') ?>
         </button>
     </div>
 </div>
 
 <?php 
-        // Vérifier si la variable $products existe et contient des données
-        if (!isset($products)) {
-            // Si les produits ne sont pas encore chargés, on les récupère
-            $products = $this->Model->read('advertise_product', null, 'id', 'DESC');
-        }
-        ?>
+if (!isset($products)) {
+    $products = $this->Model->get_products_translated($this->current_lang);
+}
+?>
 <?php include VIEWPATH.'sections/Products_Section.php'; ?>
 
 
 <script>
 // Mettre à jour le nombre total d'étapes
 const CONFIG = {
-    totalSteps: 4,  // Changé de 5 à 4
+    totalSteps: 4,
     currentStep: 1,
     formData: {}
 };
 
-// Mettre à jour la fonction getStepIcon
 function getStepIcon(step) {
     const icons = [
         '<i class="bi bi-person"></i>', 
@@ -1732,12 +1724,11 @@ function getStepIcon(step) {
     return icons[step - 1] || step;
 }
 
-// Le reste du script reste identique
 function confirmChangeDoctor() {
-    if (confirm('Êtes-vous sûr de vouloir changer de médecin ? Les informations saisies seront perdues.')) {
+    if (confirm('<?= t('confirm_change_doctor') ?>')) {
         var form = document.createElement('form');
         form.method = 'POST';
-        form.action = '<?= base_url('Swap-medecin') ?>';
+        form.action = '<?= base_url($lang . '/Swap-medecin') ?>';
         
         var csrfName = '<?= $this->security->get_csrf_token_name(); ?>';
         var csrfHash = '<?= $this->security->get_csrf_hash(); ?>';
@@ -1756,7 +1747,7 @@ function confirmChangeDoctor() {
 const countries = <?= json_encode($pays ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 const doctorData = {
     nom: '<?= htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''), ENT_QUOTES) ?>',
-    specialite: '<?= htmlspecialchars($medecin['specialite'] ?? 'Médecin généraliste', ENT_QUOTES) ?>',
+    specialite: '<?= htmlspecialchars($medecin['specialite'] ?? t('general_practitioner'), ENT_QUOTES) ?>',
     prix: '<?= htmlspecialchars($medecin['honoraires_consultation'] ?? 50, ENT_QUOTES) ?>',
     devise: '<?= htmlspecialchars($medecin['currency'] ?? 'USD', ENT_QUOTES) ?>',
     photo: '<?= base_url('attachments/Users/' . htmlspecialchars($medecin['photo'] ?? '', ENT_QUOTES)) ?>'
@@ -1768,7 +1759,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const heroTitle = document.querySelector('.consultation-hero h1');
     if (heroTitle) {
-        heroTitle.innerHTML = `<i class="bi bi-heart-pulse"></i> Consultation avec Dr. ${doctorData.nom}`;
+        heroTitle.innerHTML = `<i class="bi bi-heart-pulse"></i> <?= t('consultation_with') ?> ${doctorData.nom}`;
     }
 });
 
@@ -1887,7 +1878,7 @@ function updateProgress() {
 
 function nextStep(step) {
     if (!validateStep(step)) {
-        showNotification('Veuillez corriger les erreurs avant de continuer', 'error');
+        showNotification('<?= t('validation_error') ?>', 'error');
         return;
     }
     
@@ -1984,7 +1975,7 @@ function validateStep(step) {
             break;
             
         case 3:
-            // Validation des documents médicaux (optionnels, pas de validation stricte)
+            // Documents optionnels, pas de validation stricte
             break;
     }
     
@@ -2038,7 +2029,6 @@ function saveStepData(step) {
             CONFIG.formData.previous_consultation = document.querySelector('input[name="previous_consultation"]:checked')?.value || '';
             break;
         case 3:
-            // Documents optionnels
             break;
     }
     
@@ -2064,7 +2054,7 @@ function loadSavedData() {
 
 function updateSummary() {
     document.getElementById('summary-name').textContent = CONFIG.formData.full_name || '-';
-    document.getElementById('summary-age').textContent = CONFIG.formData.age ? CONFIG.formData.age + ' ans' : '-';
+    document.getElementById('summary-age').textContent = CONFIG.formData.age ? CONFIG.formData.age + ' <?= t('years_short') ?>' : '-';
     document.getElementById('summary-country').textContent = CONFIG.formData.country || '-';
     document.getElementById('summary-size').textContent = 
         (CONFIG.formData.weight || '?') + ' kg / ' + (CONFIG.formData.height || '?') + ' cm';
@@ -2084,7 +2074,7 @@ function previewFiles(input, previewId) {
     
     preview.style.display = 'block';
     preview.innerHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">' +
-        '<small style="font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 5px;"><i class="bi bi-check-circle"></i> ' + files.length + ' fichier(s) sélectionné(s) :</small>' +
+        '<small style="font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 5px;"><i class="bi bi-check-circle"></i> ' + files.length + ' <?= t('file_selected') ?> :</small>' +
         files.map(f => '<div style="font-size: 0.875rem; padding: 4px 0; display: flex; align-items: center; gap: 8px;"><i class="bi bi-file-earmark"></i> ' + escapeHtml(f.name) + ' (' + (f.size/1024).toFixed(1) + ' Ko)</div>').join('') +
         '</div>';
     
@@ -2102,7 +2092,7 @@ document.getElementById('consultationForm').addEventListener('submit', function(
     
     if (!terms.checked) {
         e.preventDefault();
-        showNotification('Veuillez accepter les conditions générales', 'error');
+        showNotification('<?= t('accept_terms_error') ?>', 'error');
         terms.focus();
         return false;
     }
@@ -2110,7 +2100,7 @@ document.getElementById('consultationForm').addEventListener('submit', function(
     const btn = document.getElementById('submitBtn');
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Envoi en cours...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> <?= t('sending') ?>';
     }
     
     sessionStorage.removeItem('consultation_form');
@@ -2119,7 +2109,7 @@ document.getElementById('consultationForm').addEventListener('submit', function(
 document.addEventListener('keydown', function(e) {
     const modal = document.getElementById('successModal');
     if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
-        window.location.href = '<?= base_url(); ?>';
+        window.location.href = '<?= base_url($lang); ?>';
     }
 });
 </script>

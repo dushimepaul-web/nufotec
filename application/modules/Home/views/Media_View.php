@@ -564,8 +564,8 @@
     <button class="back-btn" onclick="closeMobileSearch()">
         <i class="bi bi-arrow-left"></i>
     </button>
-    <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form">
-        <input type="text" name="q" class="search-input" placeholder="Rechercher" id="mobileSearchInput">
+    <form action="<?= base_url($lang . '/media/apiSearch') ?>" method="GET" class="search-form">
+        <input type="text" name="q" class="search-input" placeholder="<?= t('search_placeholder') ?>" id="mobileSearchInput">
         <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
     </form>
 </div>
@@ -573,25 +573,25 @@
 <nav class="navbar">
     <div class="container-fluid">
         <div class="logo-wrapper">
-    <button class="menu-icon d-md-none" onclick="toggleSidebar()">
-    <i class="bi bi-list"></i>
-</button>
-    <a class="navbar-brand" href="<?= base_url('media') ?>">
-        <?php 
-        $site_logo = $this->Model->get_setting('site_logo');
-        if (!empty($site_logo)): 
-        ?>
-            <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="Logo NUFOTEC" class="logo-img" height="40">
-        <?php endif; ?>
-        <span class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
-        <span class="brand-subname">FR</span>
-    </a>
-</div>
+            <button class="menu-icon d-md-none" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+            <a class="navbar-brand" href="<?= base_url($lang . '/media') ?>">
+                <?php 
+                $site_logo = $this->Model->get_setting('site_logo');
+                if (!empty($site_logo)): 
+                ?>
+                    <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="Logo NUFOTEC" class="logo-img" height="40">
+                <?php endif; ?>
+                <span class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
+                <span class="brand-subname"><?= strtoupper($lang) ?></span>
+            </a>
+        </div>
         
         <!-- Desktop Search -->
         <div class="search-container">
-            <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form">
-                <input type="text" name="q" class="search-input" placeholder="Rechercher" value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>">
+            <form action="<?= base_url($lang . '/media/apiSearch') ?>" method="GET" class="search-form">
+                <input type="text" name="q" class="search-input" placeholder="<?= t('search_placeholder') ?>" value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>">
                 <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
             </form>
         </div>
@@ -607,28 +607,33 @@
 
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-section">
-        <a href="<?= base_url('media') ?>" class="sidebar-item <?= !isset($current_type) && !isset($search_query) ? 'active' : '' ?>">
-            <i class="bi bi-house-fill"></i><span>Accueil</span>
+        <a href="<?= base_url($lang . '/media') ?>" class="sidebar-item <?= empty($current_type) && empty($search_query) ? 'active' : '' ?>">
+            <i class="bi bi-house-fill"></i><span><?= t('home') ?></span>
         </a>
     </div>
+
     <div class="sidebar-section">
-        <div class="sidebar-title">Catégories</div>
-        <a href="#" class="sidebar-item <?= ($current_type ?? '') === 'video' ? 'active' : '' ?>" onclick="filterMedia('video')">
-            <i class="bi bi-camera-video-fill"></i><span>Vidéos</span>
-        </a>
-        <a href="#" class="sidebar-item <?= ($current_type ?? '') === 'audio' ? 'active' : '' ?>" onclick="filterMedia('audio')">
-            <i class="bi bi-music-note-beamed"></i><span>Audio</span>
-        </a>
-        <a href="#" class="sidebar-item <?= ($current_type ?? '') === 'image' ? 'active' : '' ?>" onclick="filterMedia('image')">
-            <i class="bi bi-image-fill"></i><span>Images</span>
-        </a>
-        <a href="#" class="sidebar-item <?= ($current_type ?? '') === 'document' ? 'active' : '' ?>" onclick="filterMedia('document')">
-            <i class="bi bi-file-earmark-text-fill"></i><span>Documents</span>
-        </a>
+        <div class="sidebar-title"><?= t('categories') ?></div>
+        
+        <?php
+        $types = [
+            'video'    => ['icon' => 'camera-video-fill',   'label' => t('videos')],
+            'audio'    => ['icon' => 'music-note-beamed',   'label' => t('audio')],
+            'image'    => ['icon' => 'image-fill',          'label' => t('images')],
+            'document' => ['icon' => 'file-earmark-text-fill', 'label' => t('documents')]
+        ];
+        ?>
+
+        <?php foreach ($types as $type => $info): ?>
+            <a href="javascript:void(0)" class="sidebar-item <?= (!empty($current_type) && $current_type === $type) ? 'active' : '' ?>" onclick="filterMedia('<?= $type ?>')">
+                <i class="bi bi-<?= $info['icon'] ?>"></i><span><?= $info['label'] ?></span>
+            </a>
+        <?php endforeach; ?>
     </div>
+
     <div class="sidebar-section">
-        <a href="<?= base_url('') ?>" class="sidebar-item <?= !isset($current_type) && !isset($search_query) ? 'active' : '' ?>">
-            <i class="bi bi-door-closed"></i><span>Quiter</span>
+        <a href="<?= base_url($lang) ?>" class="sidebar-item">
+            <i class="bi bi-door-closed"></i><span><?= t('exit') ?></span>
         </a>
     </div>
 </aside>
@@ -636,23 +641,23 @@
 <main class="main-content">
     <?php if (!empty($search_query)): ?>
         <div class="search-header">
-            <h5>Résultats pour "<?= htmlspecialchars($search_query) ?>"</h5>
-            <small class="text-secondary"><?= (int)$results_count ?> vidéo(s)</small>
+            <h5><?= t('results_for') ?> "<?= htmlspecialchars($search_query) ?>"</h5>
+            <small class="text-secondary"><?= (int)$results_count ?> <?= t('videos_count') ?></small>
         </div>
     <?php endif; ?>
 
     <div class="media-grid">
         <?php if (!empty($medias)): ?>
             <?php foreach ($medias as $media): ?>
-                <?= createMediaCard($media) ?>
+                <?= createMediaCard($media, $lang) ?>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
 
     <div class="empty-state" style="display: <?= empty($medias) ? 'flex' : 'none' ?>; flex-direction: column; align-items: center;">
         <i class="bi bi-play-circle"></i>
-        <h5>Aucun média disponible</h5>
-        <small class="text-secondary">Revenez plus tard pour découvrir du nouveau contenu.</small>
+        <h5><?= t('no_media') ?></h5>
+        <small class="text-secondary"><?= t('no_media_subtitle') ?></small>
     </div>
 </main>
 
@@ -660,7 +665,7 @@
     <div class="player-info">
         <img src="" alt="" class="player-thumb" id="playerThumb">
         <div class="player-details">
-            <h4 id="playerTitle">Titre</h4>
+            <h4 id="playerTitle"><?= t('title') ?></h4>
         </div>
     </div>
     <div class="player-controls">
@@ -697,10 +702,9 @@
     }
 
     function openMedia(mediaSlug) {
-        window.location.href = '<?= base_url('media/detail/') ?>' + mediaSlug;
+        window.location.href = '<?= base_url($lang . '/media/detail/') ?>' + mediaSlug;
     }
 
-    // Mobile Search Functions
     function openMobileSearch() {
         document.getElementById('mobileSearchOverlay').classList.add('active');
         document.getElementById('mobileSearchInput').focus();
@@ -710,7 +714,6 @@
         document.getElementById('mobileSearchOverlay').classList.remove('active');
     }
 
-    // Close mobile search on escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeMobileSearch();
@@ -734,7 +737,7 @@
         const percent = (audioElement.currentTime / audioElement.duration) * 100;
         const fill = document.getElementById('progressFill');
         if (fill) fill.style.width = percent + '%';
-        document.getHeaderById('currentTime').textContent = formatTime(audioElement.currentTime);
+        document.getElementById('currentTime').textContent = formatTime(audioElement.currentTime);
     }
 
     function seekAudio(e) {
@@ -756,7 +759,7 @@
     }
 
     function filterMedia(type) {
-        window.location.href = type === 'all' ? '<?= base_url('media') ?>' : `<?= base_url('media/type/') ?>${type}`;
+        window.location.href = type === 'all' ? '<?= base_url($lang . '/media') ?>' : '<?= base_url($lang . '/media/type/') ?>' + type;
     }
 
     function toggleSidebar() {
@@ -777,7 +780,7 @@
 </html>
 
 <?php
-function createMediaCard($media) {
+function createMediaCard($media, $lang) {
     $type = $media['type'];
     $identifier = !empty($media['slug']) ? $media['slug'] : $media['id_media'];
     
@@ -817,8 +820,8 @@ function createMediaCard($media) {
     }
     
     $duration = $media['duration_formatted'] ?? '0:00';
-    $title = htmlspecialchars($media['titre'] ?? 'Sans titre');
-    $channel = htmlspecialchars($media['credits'] ?? $media['categorie'] ?? 'Chaîne inconnue');
+    $title = htmlspecialchars($media['titre'] ?? t('untitled'));
+    $channel = htmlspecialchars($media['credits'] ?? $media['categorie'] ?? t('unknown_channel'));
     $views = number_format($media['views_count'] ?? 0);
     
     return '
@@ -833,7 +836,7 @@ function createMediaCard($media) {
             </div>
             <div class="card-details">
                 <div class="card-title">' . $title . '</div>
-                <div class="card-meta">' . $channel . ' • ' . $views . ' vues</div>
+                <div class="card-meta">' . $channel . ' • ' . $views . ' ' . t('views') . '</div>
             </div>
         </div>
     </div>';

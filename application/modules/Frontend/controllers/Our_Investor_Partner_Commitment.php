@@ -1,4 +1,3 @@
-
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
@@ -11,13 +10,19 @@ class Our_Investor_Partner_Commitment extends Public_Controller {
     }
 
     /**
-     * Page dynamique universelle
+     * Page dynamique multilingue
+     * @param string|null $lang Code langue (fr, en, sw)
      */
-    public function index($slug = 'investor-commitment') {
-        // 1. Sécurisation et nettoyage du slug
-        $slug = url_title($slug, '-', TRUE);
+    public function index($lang = null) {
+        // Langue : paramètre ou celle de MY_Controller
+        if ($lang === null) {
+            $lang = $this->current_lang;
+        }
 
-        // 2. Récupération de la page parente
+        // Slug fixe pour cette page
+        $slug = 'investor-commitment';
+
+        // 1. Récupération de la page
         $page = $this->Model->readOne('pages', [
             'slug'        => $slug,
             'est_publiee' => 1
@@ -27,7 +32,12 @@ class Our_Investor_Partner_Commitment extends Public_Controller {
             show_404();
         }
 
-        // 3. Récupération de TOUTES les sections actives de cette page
+        // 2. Traduction des champs de la page
+        $page['titre_page']       = $page["titre_page_{$lang}"] ?? $page['titre_page_fr'] ?? $page['titre_page'];
+        $page['contenu_page']     = $page["contenu_page_{$lang}"] ?? $page['contenu_page_fr'] ?? '';
+        $page['meta_description'] = $page["meta_description_{$lang}"] ?? $page['meta_description_fr'] ?? '';
+
+        // 3. Récupération des sections actives
         $sections = $this->Model->read(
             'sections_contenu',
             ['id_page' => $page['id_page'], 'est_active' => 1],
@@ -35,86 +45,247 @@ class Our_Investor_Partner_Commitment extends Public_Controller {
             'ASC'
         );
 
-        // 4. Traitement des sections et agrégation des données extra
-        $extra_data = [];
-        foreach ($sections as &$section) {
-            // Décodage JSON unique
-            $section['options'] = !empty($section['options_json']) 
-                ? json_decode($section['options_json'], true) 
-                : [];
-            
-            if (!is_array($section['options'])) $section['options'] = [];
+        // 4. Traduction des sections et décodage JSON
+        foreach ($sections as &$sec) {
+            // Champs textuels traduits
+            $sec['titre_section'] = $sec["titre_section_{$lang}"] ?? $sec['titre_section_fr'] ?? $sec['titre_section'] ?? '';
+            $sec['sous_titre']    = $sec["sous_titre_{$lang}"]    ?? $sec['sous_titre_fr']    ?? $sec['sous_titre']    ?? '';
+            $sec['contenu_texte'] = $sec["contenu_texte_{$lang}"] ?? $sec['contenu_texte_fr'] ?? $sec['contenu_texte'] ?? '';
+            $sec['bouton_texte']  = $sec["bouton_texte_{$lang}"]  ?? $sec['bouton_texte_fr']  ?? $sec['bouton_texte']  ?? '';
 
-            // Chargement des données spécifiques au type de section (ex: équipe, produits)
-            // On fusionne sans écraser les données précédentes
-            $section_data = $this->load_section_data($section['type_section'], $section['options']);
+            // Décodage JSON des options
+            $sec['options'] = !empty($sec['options_json']) ? json_decode($sec['options_json'], true) : [];
+            if (!is_array($sec['options'])) $sec['options'] = [];
+
+            // Nettoyage des colonnes de traduction
+            unset($sec["titre_section_{$lang}"], $sec["sous_titre_{$lang}"], $sec["contenu_texte_{$lang}"], $sec["bouton_texte_{$lang}"]);
+        }
+
+        // 5. Chargement des données additionnelles selon les types de section
+        $extra_data = [];
+        foreach ($sections as $section) {
+            $section_data = $this->load_section_data($section['type_section'], $section['options'], $lang);
             $extra_data = array_merge($extra_data, $section_data);
         }
 
-         $data['appels_action'] = $this->Model->read('appels_action', NULL, 'ordre','ASC'
-                );
+        // 6. Récupération des appels à action (traduits)
+        $appels_action = $this->Model->read('appels_action', null, 'ordre', 'ASC');
+        foreach ($appels_action as &$action) {
+            $action['titre']        = $action["titre_{$lang}"] ?? $action['titre_fr'] ?? $action['titre'] ?? '';
+            $action['description']  = $action["description_{$lang}"] ?? $action['description_fr'] ?? $action['description'] ?? '';
+            $action['bouton_texte'] = $action["bouton_texte_{$lang}"] ?? $action['bouton_texte_fr'] ?? $action['bouton_texte'] ?? '';
+        }
+        $data['appels_action'] = $appels_action;
 
-        // 6. Sous-pages (pour navigation latérale ou menu enfant)
+        // 7. Sous-pages pour navigation latérale (traduites)
         $children = $this->Model->read('pages', 
             ['menu_parent_id' => $page['id_page'], 'est_publiee' => 1], 
             'menu_ordre', 'ASC'
         );
+        foreach ($children as &$child) {
+            $child['titre_page'] = $child["titre_page_{$lang}"] ?? $child['titre_page_fr'] ?? $child['titre_page'];
+        }
 
-        // 7. Assemblage final
+        // 8. Données SEO
+        $seo = $this->_prepare_seo_data($page, $lang);
+
+        // 9. Assemblage final
         $data = array_merge([
-            'page'             => $page,
-            'sections'         => $sections,
-            'children'         => $children ?: [],
-        ], $extra_data);
+            'page'     => $page,
+            'sections' => $sections,
+            'children' => $children ?: [],
+            'lang'     => $lang,
+        ], $extra_data, $seo);
 
+        // Note: Vue spécifique Our_Investor_Partner_Commitment
         $this->load->view('Our_Investor_Partner_Commitment', $data);
     }
 
     /**
-     * Centralisation des requêtes par type de section pour éviter la redondance
+     * Charge les données spécifiques selon le type de section
+     * @param string $type Type de section
+     * @param array $options Options JSON de la section
+     * @param string $lang Code langue
+     * @return array Données additionnelles
      */
-    private function load_section_data($type, $options = []) {
+    private function load_section_data($type, $options = [], $lang = null) {
         $data = [];
-        $limit = isset($options['limit']) ? (int)$options['limit'] : NULL;
+        $limit = isset($options['limit']) ? (int)$options['limit'] : null;
+
+        if ($lang === null) {
+            $lang = $this->current_lang;
+        }
 
         switch ($type) {
-            case 'team': case 'equipe':
-                $data['members'] = $this->Model->read('equipe', ['est_active' => 1], 'ordre', 'ASC');
+            case 'team':
+            case 'equipe':
+                $members = $this->Model->read('equipe', ['est_active' => 1], 'ordre', 'ASC');
+                foreach ($members as &$member) {
+                    $member['nom_complet'] = $member["nom_complet_{$lang}"] ?? $member['nom_complet_fr'] ?? $member['nom_complet'] ?? '';
+                    $member['poste']       = $member["poste_{$lang}"] ?? $member['poste_fr'] ?? $member['poste'] ?? '';
+                    $member['bio']         = $member["bio_{$lang}"] ?? $member['bio_fr'] ?? $member['bio'] ?? '';
+                }
+                $data['members'] = $members;
                 break;
-            case 'partenaires': case 'partners_logos':
-                $data['partners'] = $this->Model->read('partenaires', ['est_actif' => 1], 'ordre', 'ASC');
+
+            case 'partenaires':
+            case 'partners_logos':
+                $partners = $this->Model->read('partenaires', ['est_actif' => 1], 'ordre', 'ASC');
+                foreach ($partners as &$partner) {
+                    $partner['nom']        = $partner["nom_{$lang}"] ?? $partner['nom_fr'] ?? $partner['nom'] ?? '';
+                    $partner['description'] = $partner["description_{$lang}"] ?? $partner['description_fr'] ?? $partner['description'] ?? '';
+                }
+                $data['partners'] = $partners;
                 break;
-            case 'produits': case 'product_grid':
-                $data['products'] = $this->Model->read('produits', ['est_publie' => 1], 'ordre', 'ASC', $limit ?: 6);
+
+            case 'produits':
+            case 'product_grid':
+                $this->db->select('p.*, c.nom_categorie as categorie_nom');
+                $this->db->from('produits p');
+                $this->db->join('categories c', 'p.id_categorie = c.id_categorie', 'left');
+                $this->db->where('p.est_publie', 1);
+                $this->db->order_by('p.ordre', 'ASC');
+                if ($limit) $this->db->limit($limit);
+                $products = $this->db->get()->result_array();
+                foreach ($products as &$product) {
+                    $product['nom_produit']   = $product["nom_produit_{$lang}"] ?? $product['nom_produit_fr'] ?? $product['nom_produit'] ?? '';
+                    $product['description']   = $product["description_{$lang}"] ?? $product['description_fr'] ?? $product['description'] ?? '';
+                    $product['categorie_nom'] = $product["categorie_nom_{$lang}"] ?? $product['categorie_nom_fr'] ?? $product['categorie_nom'] ?? '';
+                }
+                $data['products'] = $products;
                 break;
-            case 'actualites_blog': case 'blog_posts':
-                $data['posts'] = $this->Model->read('actualites_blog', ['est_publie' => 1], 'date_publication', 'DESC', $limit ?: 3);
+
+            case 'actualites_blog':
+            case 'blog_posts':
+                $posts = $this->Model->read('actualites_blog', ['est_publie' => 1], 'date_publication', 'DESC', $limit ?: 3);
+                foreach ($posts as &$post) {
+                    $post['titre']         = $post["titre_{$lang}"] ?? $post['titre_fr'] ?? $post['titre'] ?? '';
+                    $post['contenu_court'] = $post["contenu_court_{$lang}"] ?? $post['contenu_court_fr'] ?? $post['contenu_court'] ?? '';
+                    $post['contenu']       = $post["contenu_{$lang}"] ?? $post['contenu_fr'] ?? $post['contenu'] ?? '';
+                }
+                $data['posts'] = $posts;
                 break;
-            case 'chiffres': case 'stats_counter':
-                $data['statistics'] = $this->Model->read('chiffres_cles', ['est_actif' => 1], 'ordre', 'ASC');
+
+            case 'chiffres':
+            case 'stats_counter':
+                $stats = $this->Model->read('chiffres_cles', ['est_actif' => 1], 'ordre', 'ASC');
+                foreach ($stats as &$stat) {
+                    $stat['titre']      = $stat["titre_{$lang}"] ?? $stat['titre_fr'] ?? $stat['titre'] ?? '';
+                    $stat['soustitre']  = $stat["soustitre_{$lang}"] ?? $stat['soustitre_fr'] ?? $stat['soustitre'] ?? '';
+                }
+                $data['statistics'] = $stats;
                 break;
+
             case 'faq':
-                $data['faqs'] = $this->Model->read('faq', ['est_active' => 1], 'ordre', 'ASC');
+                $faqs = $this->Model->read('faq', ['est_active' => 1], 'ordre', 'ASC');
+                foreach ($faqs as &$faq) {
+                    $faq['question'] = $faq["question_{$lang}"] ?? $faq['question_fr'] ?? $faq['question'] ?? '';
+                    $faq['reponse']  = $faq["reponse_{$lang}"] ?? $faq['reponse_fr'] ?? $faq['reponse'] ?? '';
+                }
+                $data['faqs'] = $faqs;
                 break;
-            case 'galerie_medias': case 'gallery':
-                $data['medias'] = $this->Model->read('galerie_medias', ['est_active' => 1], 'ordre', 'ASC');
+
+            case 'galerie_medias':
+            case 'gallery':
+                $medias = $this->Model->read('galerie_medias', ['est_active' => 1], 'ordre', 'ASC');
+                foreach ($medias as &$media) {
+                    $media['titre']       = $media["titre_{$lang}"] ?? $media['titre_fr'] ?? $media['titre'] ?? '';
+                    $media['description'] = $media["description_{$lang}"] ?? $media['description_fr'] ?? $media['description'] ?? '';
+                }
+                $data['medias'] = $medias;
                 break;
+
             case 'investment_cards':
-                $data['phases'] = $this->Model->read('investissement_phases', ['est_active' => 1], 'ordre', 'ASC');
+                $phases = $this->Model->read('investissement_phases', ['est_active' => 1], 'ordre', 'ASC');
+                foreach ($phases as &$phase) {
+                    $phase['titre']       = $phase["titre_{$lang}"] ?? $phase['titre_fr'] ?? $phase['titre'] ?? '';
+                    $phase['description'] = $phase["description_{$lang}"] ?? $phase['description_fr'] ?? $phase['description'] ?? '';
+                }
+                $data['phases'] = $phases;
                 break;
-            case 'etapes_projet': case 'workflow': case 'timeline':
-                $data['steps'] = $this->Model->read('etapes_projet', NULL, 'date_debut', 'ASC');
+
+            case 'etapes_projet':
+            case 'workflow':
+            case 'timeline':
+                $steps = $this->Model->read('etapes_projet', null, 'date_debut', 'ASC');
+                foreach ($steps as &$step) {
+                    $step['nom_etape']   = $step["nom_etape_{$lang}"] ?? $step['nom_etape_fr'] ?? $step['nom_etape'] ?? '';
+                    $step['description'] = $step["description_{$lang}"] ?? $step['description_fr'] ?? $step['description'] ?? '';
+                }
+                $data['steps'] = $steps;
                 break;
+
             case 'services':
-                $data['services'] = $this->Model->read('services', ['est_actif' => 1], 'ordre', 'ASC');
+                $services = $this->Model->read('services', ['est_actif' => 1], 'ordre', 'ASC');
+                foreach ($services as &$service) {
+                    $service['nom_service'] = $service["nom_service_{$lang}"] ?? $service['nom_service_fr'] ?? $service['nom_service'] ?? '';
+                    $service['description'] = $service["description_{$lang}"] ?? $service['description_fr'] ?? $service['description'] ?? '';
+                }
+                $data['services'] = $services;
                 break;
-            // Ajoutez d'autres types ici si nécessaire...
+
+            case 'engagements':
+            case 'commitments':
+                $commitments = $this->Model->read('engagements_investisseurs', ['est_actif' => 1], 'ordre', 'ASC');
+                foreach ($commitments as &$commit) {
+                    $commit['titre']       = $commit["titre_{$lang}"] ?? $commit['titre_fr'] ?? $commit['titre'] ?? '';
+                    $commit['description'] = $commit["description_{$lang}"] ?? $commit['description_fr'] ?? $commit['description'] ?? '';
+                }
+                $data['commitments'] = $commitments;
+                break;
+
+            case 'garanties':
+            case 'guarantees':
+                $guarantees = $this->Model->read('garanties_investisseurs', ['est_actif' => 1], 'ordre', 'ASC');
+                foreach ($guarantees as &$guarantee) {
+                    $guarantee['titre']       = $guarantee["titre_{$lang}"] ?? $guarantee['titre_fr'] ?? $guarantee['titre'] ?? '';
+                    $guarantee['description'] = $guarantee["description_{$lang}"] ?? $guarantee['description_fr'] ?? $guarantee['description'] ?? '';
+                }
+                $data['investor_guarantees'] = $guarantees;
+                break;
+
+            case 'tableau':
+            case 'html':
+            case 'texte':
+            case 'image_texte':
+            case 'liste':
+            case 'liste_card':
+            case 'grille':
+            case 'grille_card':
+            case 'timeline':
+                // Ces types n'ont pas de données additionnelles à charger
+                break;
         }
         return $data;
     }
 
     /**
-     * Alias de route
+     * Prépare les métadonnées SEO
+     * @param array $page Données de la page
+     * @param string $lang Code langue
+     * @return array Métadonnées SEO
+     */
+    private function _prepare_seo_data($page, $lang) {
+        $site_name = $this->Model->get_setting('site_name', 'AGF Phytomed');
+        $site_description = $this->Model->get_setting('site_description', 'Pionniers de la phytothérapie africaine');
+
+        $meta_title = (!empty($page['meta_title']) ? $page['meta_title'] : $page['titre_page']) . ' - ' . $site_name;
+        $meta_description = !empty($page['meta_description']) ? $page['meta_description'] : $site_description;
+
+        return [
+            'site_name'        => $site_name,
+            'site_description' => $site_description,
+            'meta_title'       => $meta_title,
+            'meta_description' => $meta_description,
+            'meta_keywords'    => $page['meta_keywords'] ?? '',
+            'og_image'         => !empty($page['image_social']) ? base_url($page['image_social']) : base_url('assets/images/og-default.jpg'),
+            'canonical_url'    => base_url($lang . '/' . ($page['slug'] ?? ''))
+        ];
+    }
+
+    /**
+     * Alias de route pour compatibilité
+     * @param string $slug Slug de la page
      */
     public function page($slug = 'investor-commitment') {
         $this->index($slug);

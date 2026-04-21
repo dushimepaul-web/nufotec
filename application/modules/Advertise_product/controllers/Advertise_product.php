@@ -17,12 +17,10 @@ class Advertise_product extends MY_Controller {
      */
     private function load_sendgrid_library()
     {
-        // Vérifier si déjà chargée
         if (isset($this->sendgrid_lib) && is_object($this->sendgrid_lib)) {
             return true;
         }
         
-        // Vérifier si le fichier existe
         $lib_path = APPPATH . 'libraries/Sendgrid_lib.php';
         if (!file_exists($lib_path)) {
             log_message('error', "Sendgrid_lib.php introuvable à: " . $lib_path);
@@ -30,10 +28,8 @@ class Advertise_product extends MY_Controller {
             return false;
         }
         
-        // Charger la librairie
         $this->load->library('Sendgrid_lib');
         
-        // Vérifier le chargement
         if (!isset($this->sendgrid_lib) || !is_object($this->sendgrid_lib)) {
             log_message('error', "Échec du chargement de Sendgrid_lib");
             $this->sendgrid_lib = null;
@@ -44,9 +40,6 @@ class Advertise_product extends MY_Controller {
         return true;
     }
     
-    /**
-     * Vérifie que sendgrid_lib est disponible avant d'envoyer des emails
-     */
     private function check_sendgrid_lib()
     {
         if (!isset($this->sendgrid_lib) || !is_object($this->sendgrid_lib)) {
@@ -133,9 +126,6 @@ class Advertise_product extends MY_Controller {
         return $slug;
     }
 
-    /**
-     * Envoi groupé d'emails avec vérification de la librairie
-     */
     private function sendEmails($emails, $subject, $message, $context = 'general')
     {
         $success_count = 0;
@@ -143,7 +133,6 @@ class Advertise_product extends MY_Controller {
         $max_emails = 50;
         $email_count = 0;
         
-        // Vérifier que sendgrid_lib est disponible
         if (!$this->check_sendgrid_lib()) {
             log_message('error', "sendgrid_lib non disponible - aucun email envoyé pour {$context}");
             return array('success' => 0, 'error' => count($emails));
@@ -170,9 +159,6 @@ class Advertise_product extends MY_Controller {
         return array('success' => $success_count, 'error' => $error_count);
     }
 
-    /**
-     * Récupération de tous les emails (utilisateurs + newsletter)
-     */
     private function getAllEmails()
     {
         $emails = array();
@@ -195,16 +181,14 @@ class Advertise_product extends MY_Controller {
         return $emails;
     }
 
-    // ================== NOTIFICATION NOUVEAU PRODUIT ==================
+    // ================== NOTIFICATION NOUVEAU PRODUIT (MULTILINGUE) ==================
     
     private function sendProductNotification($product, $action = 'create')
     {
-        // UNIQUEMENT pour les nouveaux produits
         if ($action !== 'create') {
             return ['success' => 0, 'error' => 0];
         }
 
-        // Vérification des champs requis
         $required_fields = array('id', 'title', 'price', 'description', 'main_image', 'slug');
         foreach ($required_fields as $field) {
             if (!isset($product[$field])) {
@@ -213,7 +197,6 @@ class Advertise_product extends MY_Controller {
             }
         }
 
-        // Récupération des emails
         $emails = $this->getAllEmails();
         
         if (empty($emails)) {
@@ -221,32 +204,109 @@ class Advertise_product extends MY_Controller {
             return array('success' => 0, 'error' => 0);
         }
         
-        // Préparation de l'URL de l'image
         $product_image_url = base_url('attachments/Products/' . $product['main_image']);
         if (!file_exists(FCPATH . 'attachments/Products/' . $product['main_image']) || $product['main_image'] === 'default-product.png') {
             $product_image_url = base_url('assets/images/default-product.jpg');
         }
         
-        // Préparation des variables
         $site_url = base_url();
         $product_url = base_url('product/' . $product['id'] . '_' . $product['slug']);
-        $product_title = htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8');
-        $price_value = floatval($product['price']);
-        $product_price = number_format($price_value, 0, ',', ' ') . ' FBu';
-        $product_description = nl2br(htmlspecialchars($product['description'], ENT_QUOTES, 'UTF-8'));
         
-        // Sujet de l'email
-        $subject = "🆕 NOUVEAU PRODUIT CHEZ NUFOTEC : " . $product_title;
+        // Version FR
+        $subject_fr = "🆕 NOUVEAU PRODUIT CHEZ NUFOTEC : " . htmlspecialchars($product['title_fr'] ?: $product['title']);
+        $message_fr = $this->buildProductNotificationTemplate(
+            htmlspecialchars($product['title_fr'] ?: $product['title']),
+            $this->formatPrice($product['price']),
+            nl2br(htmlspecialchars($product['description_fr'] ?: $product['description'])),
+            $product_image_url,
+            $product_url,
+            $subject_fr,
+            $site_url,
+            'fr'
+        );
         
-        // Template HTML
-        $message = $this->buildProductNotificationTemplate($product_title, $product_price, $product_description, $product_image_url, $product_url, $subject, $site_url);
+        // Version EN
+        $subject_en = "🆕 NEW PRODUCT AT NUFOTEC : " . htmlspecialchars($product['title_en'] ?: $product['title']);
+        $message_en = $this->buildProductNotificationTemplate(
+            htmlspecialchars($product['title_en'] ?: $product['title']),
+            $this->formatPrice($product['price'], 'en'),
+            nl2br(htmlspecialchars($product['description_en'] ?: $product['description'])),
+            $product_image_url,
+            $product_url,
+            $subject_en,
+            $site_url,
+            'en'
+        );
         
-        // Envoi des emails
-        return $this->sendEmails($emails, $subject, $message, 'new_product_' . $product['id']);
+        // Version SW
+        $subject_sw = "🆕 BIDHAA MPYA KATIKA NUFOTEC : " . htmlspecialchars($product['title_sw'] ?: $product['title']);
+        $message_sw = $this->buildProductNotificationTemplate(
+            htmlspecialchars($product['title_sw'] ?: $product['title']),
+            $this->formatPrice($product['price'], 'sw'),
+            nl2br(htmlspecialchars($product['description_sw'] ?: $product['description'])),
+            $product_image_url,
+            $product_url,
+            $subject_sw,
+            $site_url,
+            'sw'
+        );
+        
+        // Envoyer selon la langue préférée de l'utilisateur (à implémenter)
+        // Pour l'instant, on envoie en FR par défaut
+        return $this->sendEmails($emails, $subject_fr, $message_fr, 'new_product_' . $product['id']);
     }
 
-    private function buildProductNotificationTemplate($product_title, $product_price, $product_description, $product_image_url, $product_url, $subject, $site_url)
+    private function formatPrice($price, $lang = 'fr')
     {
+        $price_value = floatval($price);
+        
+        switch($lang) {
+            case 'en':
+                return number_format($price_value, 0, '.', ',') . ' FBu';
+            case 'sw':
+                return number_format($price_value, 0, '.', ',') . ' FBu';
+            default:
+                return number_format($price_value, 0, ',', ' ') . ' FBu';
+        }
+    }
+
+    private function buildProductNotificationTemplate($product_title, $product_price, $product_description, $product_image_url, $product_url, $subject, $site_url, $lang = 'fr')
+    {
+        $lang_texts = [
+            'fr' => [
+                'badge' => '🆕 NOUVEAU PRODUIT',
+                'subtitle' => 'NUFOTEC BURUNDI',
+                'price_label' => '💰 Prix :',
+                'description_label' => '📋 Description :',
+                'button' => '🔍 VOIR LES DÉTAILS',
+                'footer_text' => 'NUFOTEC BURUNDI - Votre partenaire santé naturelle',
+                'unsubscribe' => 'Se désabonner',
+                'copyright' => 'Tous droits réservés'
+            ],
+            'en' => [
+                'badge' => '🆕 NEW PRODUCT',
+                'subtitle' => 'NUFOTEC BURUNDI',
+                'price_label' => '💰 Price:',
+                'description_label' => '📋 Description:',
+                'button' => '🔍 VIEW DETAILS',
+                'footer_text' => 'NUFOTEC BURUNDI - Your natural health partner',
+                'unsubscribe' => 'Unsubscribe',
+                'copyright' => 'All rights reserved'
+            ],
+            'sw' => [
+                'badge' => '🆕 BIDHAA MPYA',
+                'subtitle' => 'NUFOTEC BURUNDI',
+                'price_label' => '💰 Bei:',
+                'description_label' => '📋 Maelezo:',
+                'button' => '🔍 TAZAMA MAELEZO',
+                'footer_text' => 'NUFOTEC BURUNDI - Mshirika wako wa afya asili',
+                'unsubscribe' => 'Jiondoe',
+                'copyright' => 'Haki zote zimehifadhiwa'
+            ]
+        ];
+        
+        $text = $lang_texts[$lang];
+        
         return '
         <!DOCTYPE html>
         <html>
@@ -263,8 +323,8 @@ class Advertise_product extends MY_Controller {
             <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 35px rgba(0,0,0,0.1);">
                 <div style="background: linear-gradient(135deg, #0f4c3a 0%, #1a6b52 100%); padding: 30px 20px; text-align: center;">
                     <div style="margin-bottom: 15px;"><span style="font-size: 48px;">🆕</span></div>
-                    <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 600;">NOUVEAU PRODUIT</h1>
-                    <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0; font-size: 14px;">NUFOTEC BURUNDI</p>
+                    <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 600;">' . $text['badge'] . '</h1>
+                    <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0; font-size: 14px;">' . $text['subtitle'] . '</p>
                 </div>
                 <div style="padding: 0;">
                     <img src="' . $product_image_url . '" alt="' . $product_title . '" style="width: 100%; height: auto; max-height: 350px; object-fit: cover;">
@@ -272,30 +332,30 @@ class Advertise_product extends MY_Controller {
                 <div style="padding: 25px 30px;">
                     <h2 style="color: #0f4c3a; font-size: 22px; margin: 0 0 15px 0; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 15px;">' . $product_title . '</h2>
                     <div style="background-color: #f8f9fa; border-radius: 12px; padding: 15px; margin: 15px 0;">
-                        <p style="margin: 0;"><strong style="color: #0f4c3a;">💰 Prix :</strong> <span style="color: #d4af37; font-size: 22px; font-weight: 700;">' . $product_price . '</span></p>
+                        <p style="margin: 0;"><strong style="color: #0f4c3a;">' . $text['price_label'] . '</strong> <span style="color: #d4af37; font-size: 22px; font-weight: 700;">' . $product_price . '</span></p>
                     </div>
                     <div style="margin: 20px 0;">
-                        <h3 style="color: #0f4c3a; font-size: 16px; margin: 0 0 10px 0;">📋 Description :</h3>
+                        <h3 style="color: #0f4c3a; font-size: 16px; margin: 0 0 10px 0;">' . $text['description_label'] . '</h3>
                         <div style="color: #555; line-height: 1.7; font-size: 14px; background-color: #fafafa; padding: 15px; border-radius: 10px;">' . $product_description . '</div>
                     </div>
                     <div style="text-align: center; margin: 30px 0 20px;">
-                        <a href="' . $product_url . '" style="display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%); color: #0f4c3a; padding: 14px 35px; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 16px;">🔍 VOIR LES DÉTAILS</a>
+                        <a href="' . $product_url . '" style="display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%); color: #0f4c3a; padding: 14px 35px; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 16px;">' . $text['button'] . '</a>
                     </div>
                     <hr style="margin: 25px 0 15px; border: none; border-top: 1px solid #e0e0e0;">
                     <div style="text-align: center;">
-                        <p style="color: #999; font-size: 12px;">NUFOTEC BURUNDI - Votre partenaire santé naturelle</p>
-                        <p style="color: #bbb; font-size: 10px;"><a href="' . $site_url . 'unsubscribe" style="color: #999; text-decoration: underline;">Se désabonner</a></p>
+                        <p style="color: #999; font-size: 12px;">' . $text['footer_text'] . '</p>
+                        <p style="color: #bbb; font-size: 10px;"><a href="' . $site_url . 'unsubscribe" style="color: #999; text-decoration: underline;">' . $text['unsubscribe'] . '</a></p>
                     </div>
                 </div>
                 <div style="background-color: #0a3326; padding: 15px; text-align: center;">
-                    <p style="color: rgba(212,175,55,0.7); font-size: 11px;">&copy; ' . date('Y') . ' NUFOTEC BURUNDI - Tous droits réservés</p>
+                    <p style="color: rgba(212,175,55,0.7); font-size: 11px;">&copy; ' . date('Y') . ' NUFOTEC BURUNDI - ' . $text['copyright'] . '</p>
                 </div>
             </div>
         </body>
         </html>';
     }
 
-    // ================== PROMOTION QUOTIDIENNE ==================
+    // ================== PROMOTION QUOTIDIENNE (MULTILINGUE) ==================
 
     public function promo()
     {
@@ -330,7 +390,6 @@ class Advertise_product extends MY_Controller {
 
     private function sendDailyPromoEmail()
     {
-        // Récupération des produits en vedette
         $featured_products = $this->Model->read('advertise_product', array('is_active' => 1, 'in_vedette' => 1), 'id', 'DESC', 5);
         
         if (empty($featured_products)) {
@@ -349,16 +408,36 @@ class Advertise_product extends MY_Controller {
             return array('success' => 0, 'error' => 0);
         }
         
-        $products_html = $this->buildPromoProductsHtml($featured_products);
-        $subject = "🔥 OFFRES DU JOUR NUFOTEC - Découvrez nos produits stars !";
-        $message = $this->buildDailyPromoTemplate($products_html, $subject);
+        // Version FR
+        $products_html_fr = $this->buildPromoProductsHtml($featured_products, 'fr');
+        $subject_fr = "🔥 OFFRES DU JOUR NUFOTEC - Découvrez nos produits stars !";
+        $message_fr = $this->buildDailyPromoTemplate($products_html_fr, $subject_fr, 'fr');
         
-        return $this->sendEmails($emails, $subject, $message, 'daily_promo');
+        // Version EN
+        $products_html_en = $this->buildPromoProductsHtml($featured_products, 'en');
+        $subject_en = "🔥 NUFOTEC DAILY OFFERS - Discover our star products!";
+        $message_en = $this->buildDailyPromoTemplate($products_html_en, $subject_en, 'en');
+        
+        // Version SW
+        $products_html_sw = $this->buildPromoProductsHtml($featured_products, 'sw');
+        $subject_sw = "🔥 OFA ZA LEO NUFOTEC - Gundua bidhaa zetu bora!";
+        $message_sw = $this->buildDailyPromoTemplate($products_html_sw, $subject_sw, 'sw');
+        
+        // Envoyer en FR par défaut
+        return $this->sendEmails($emails, $subject_fr, $message_fr, 'daily_promo');
     }
 
-    private function buildPromoProductsHtml($products)
+    private function buildPromoProductsHtml($products, $lang = 'fr')
     {
         $html = '';
+        
+        $lang_texts = [
+            'fr' => ['button' => 'Découvrir →'],
+            'en' => ['button' => 'Discover →'],
+            'sw' => ['button' => 'Gundua →']
+        ];
+        
+        $button_text = $lang_texts[$lang]['button'];
         
         foreach ($products as $product) {
             $product_image_url = base_url('attachments/Products/' . $product['main_image']);
@@ -367,9 +446,12 @@ class Advertise_product extends MY_Controller {
             }
             
             $product_url = base_url('product/' . $product['id'] . '_' . $product['slug']);
-            $product_title = htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8');
+            
+            $title_field = 'title_' . $lang;
+            $product_title = htmlspecialchars($product[$title_field] ?: $product['title'], ENT_QUOTES, 'UTF-8');
+            
             $price_value = floatval($product['price']);
-            $product_price = number_format($price_value, 0, ',', ' ') . ' FBu';
+            $product_price = $this->formatPrice($product['price'], $lang);
             
             $html .= '
             <div style="background: #ffffff; border-radius: 15px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
@@ -377,7 +459,7 @@ class Advertise_product extends MY_Controller {
                 <div style="padding: 20px;">
                     <h3 style="color: #0f4c3a; margin: 0 0 10px 0; font-size: 18px;">' . $product_title . '</h3>
                     <p style="color: #d4af37; font-size: 20px; font-weight: bold; margin: 0 0 15px 0;">' . $product_price . '</p>
-                    <a href="' . $product_url . '" style="display: inline-block; background: #0f4c3a; color: #ffffff; padding: 10px 25px; text-decoration: none; border-radius: 25px; font-size: 14px;">Découvrir →</a>
+                    <a href="' . $product_url . '" style="display: inline-block; background: #0f4c3a; color: #ffffff; padding: 10px 25px; text-decoration: none; border-radius: 25px; font-size: 14px;">' . $button_text . '</a>
                 </div>
             </div>';
         }
@@ -385,10 +467,42 @@ class Advertise_product extends MY_Controller {
         return $html;
     }
 
-    private function buildDailyPromoTemplate($products_html, $subject)
+    private function buildDailyPromoTemplate($products_html, $subject, $lang = 'fr')
     {
         $site_url = base_url();
         $current_date = date('d/m/Y');
+        
+        $lang_texts = [
+            'fr' => [
+                'badge' => '🔥 OFFRES DU JOUR',
+                'subtitle' => 'NUFOTEC BURUNDI',
+                'intro' => 'Découvrez notre sélection de produits naturels pour votre bien-être quotidien. 🌿',
+                'button' => '🛒 VOIR TOUS NOS PRODUITS',
+                'footer_text' => 'Votre partenaire santé naturelle',
+                'unsubscribe' => 'Se désabonner',
+                'copyright' => 'Tous droits réservés'
+            ],
+            'en' => [
+                'badge' => '🔥 DAILY OFFERS',
+                'subtitle' => 'NUFOTEC BURUNDI',
+                'intro' => 'Discover our selection of natural products for your daily well-being. 🌿',
+                'button' => '🛒 VIEW ALL PRODUCTS',
+                'footer_text' => 'Your natural health partner',
+                'unsubscribe' => 'Unsubscribe',
+                'copyright' => 'All rights reserved'
+            ],
+            'sw' => [
+                'badge' => '🔥 OFA ZA LEO',
+                'subtitle' => 'NUFOTEC BURUNDI',
+                'intro' => 'Gundua uteuzi wetu wa bidhaa asili kwa ustawi wako wa kila siku. 🌿',
+                'button' => '🛒 TAZAMA BIDHAA ZOTE',
+                'footer_text' => 'Mshirika wako wa afya asili',
+                'unsubscribe' => 'Jiondoe',
+                'copyright' => 'Haki zote zimehifadhiwa'
+            ]
+        ];
+        
+        $text = $lang_texts[$lang];
         
         return '
         <!DOCTYPE html>
@@ -405,35 +519,35 @@ class Advertise_product extends MY_Controller {
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 35px rgba(0,0,0,0.1);">
                 <div style="background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%); padding: 40px 20px; text-align: center;">
                     <span style="font-size: 50px;">🔥</span>
-                    <h1 style="color: #0f4c3a; margin: 15px 0 5px 0; font-size: 28px; font-weight: 700;">OFFRES DU JOUR</h1>
+                    <h1 style="color: #0f4c3a; margin: 15px 0 5px 0; font-size: 28px; font-weight: 700;">' . $text['badge'] . '</h1>
                     <p style="color: #0f4c3a; margin: 0; font-size: 16px;">' . $current_date . '</p>
-                    <p style="color: #ffffff; margin: 10px 0 0; font-size: 14px; background: #0f4c3a; display: inline-block; padding: 5px 15px; border-radius: 20px;">NUFOTEC BURUNDI</p>
+                    <p style="color: #ffffff; margin: 10px 0 0; font-size: 14px; background: #0f4c3a; display: inline-block; padding: 5px 15px; border-radius: 20px;">' . $text['subtitle'] . '</p>
                 </div>
                 <div style="padding: 30px; text-align: center; background: #f8f9fa;">
-                    <p style="color: #555; font-size: 16px;">Découvrez notre sélection de produits naturels pour votre bien-être quotidien. 🌿</p>
+                    <p style="color: #555; font-size: 16px;">' . $text['intro'] . '</p>
                 </div>
                 <div style="padding: 30px;">' . $products_html . '</div>
                 <div style="padding: 0 30px 30px; text-align: center;">
-                    <a href="' . $site_url . 'advertise-product" style="display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%); color: #0f4c3a; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 16px;">🛒 VOIR TOUS NOS PRODUITS</a>
+                    <a href="' . $site_url . 'advertise-product" style="display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%); color: #0f4c3a; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 16px;">' . $text['button'] . '</a>
                 </div>
                 <div style="background-color: #0f4c3a; padding: 30px; text-align: center;">
                     <p style="color: #d4af37; font-size: 14px; font-weight: 600;">NUFOTEC BURUNDI</p>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 12px;">Votre partenaire santé naturelle</p>
-                    <p style="color: rgba(255,255,255,0.5); font-size: 11px;"><a href="' . $site_url . 'unsubscribe" style="color: rgba(255,255,255,0.5);">Se désabonner</a></p>
-                    <p style="color: rgba(212,175,55,0.5); font-size: 10px;">&copy; ' . date('Y') . ' NUFOTEC BURUNDI</p>
+                    <p style="color: rgba(255,255,255,0.7); font-size: 12px;">' . $text['footer_text'] . '</p>
+                    <p style="color: rgba(255,255,255,0.5); font-size: 11px;"><a href="' . $site_url . 'unsubscribe" style="color: rgba(255,255,255,0.5);">' . $text['unsubscribe'] . '</a></p>
+                    <p style="color: rgba(212,175,55,0.5); font-size: 10px;">&copy; ' . date('Y') . ' NUFOTEC BURUNDI - ' . $text['copyright'] . '</p>
                 </div>
             </div>
         </body>
         </html>';
     }
 
-    // ================== CRUD PRODUITS ==================
+    // ================== CRUD PRODUITS (MULTILINGUE) ==================
 
     function Create()
     {
-        $this->form_validation->set_rules('title', 'Titre', 'required');
+        $this->form_validation->set_rules('title_fr', 'Titre (FR)', 'required');
         $this->form_validation->set_rules('price', 'Prix', 'required');
-        $this->form_validation->set_rules('description', 'Description', 'required');
+        $this->form_validation->set_rules('description_fr', 'Description (FR)', 'required');
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
@@ -441,9 +555,16 @@ class Advertise_product extends MY_Controller {
             return;
         }
 
-        $title = $this->input->post('title');
-        $slug = $this->generate_slug($title);
+        $title_fr = $this->input->post('title_fr');
+        $slug = $this->generate_slug($title_fr);
         $category_id = $this->input->post('category_id') ?: NULL;
+        
+        // Champs multilingues
+        $title_en = $this->input->post('title_en');
+        $title_sw = $this->input->post('title_sw');
+        $description_fr = $this->input->post('description_fr');
+        $description_en = $this->input->post('description_en');
+        $description_sw = $this->input->post('description_sw');
         
         $main_image = 'default-product.png';
         if (!empty($_FILES['main_image']['name'])) {
@@ -462,9 +583,15 @@ class Advertise_product extends MY_Controller {
         $data = array(
             'category_id' => $category_id,
             'main_image' => $main_image,
-            'title' => $title,
+            'title' => $title_fr,
+            'title_fr' => $title_fr,
+            'title_en' => $title_en,
+            'title_sw' => $title_sw,
             'slug' => $slug,
-            'description' => $this->input->post('description'),
+            'description' => $description_fr,
+            'description_fr' => $description_fr,
+            'description_en' => $description_en,
+            'description_sw' => $description_sw,
             'price' => $this->input->post('price'),
             'is_active' => 1,
             'in_vedette' => 0,
@@ -489,9 +616,9 @@ class Advertise_product extends MY_Controller {
     {
         $id = $this->input->post('id');
         
-        $this->form_validation->set_rules('title', 'Titre', 'required');
+        $this->form_validation->set_rules('title_fr', 'Titre (FR)', 'required');
         $this->form_validation->set_rules('price', 'Prix', 'required');
-        $this->form_validation->set_rules('description', 'Description', 'required');
+        $this->form_validation->set_rules('description_fr', 'Description (FR)', 'required');
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
@@ -499,17 +626,30 @@ class Advertise_product extends MY_Controller {
             return;
         }
 
-        $title = $this->input->post('title');
-        $slug = $this->generate_slug($title, $id);
+        $title_fr = $this->input->post('title_fr');
+        $slug = $this->generate_slug($title_fr, $id);
         $category_id = $this->input->post('category_id') ?: NULL;
         $is_active = $this->input->post('is_active') ? 1 : 0;
         $in_vedette = $this->input->post('in_vedette') ? 1 : 0;
+        
+        // Champs multilingues
+        $title_en = $this->input->post('title_en');
+        $title_sw = $this->input->post('title_sw');
+        $description_fr = $this->input->post('description_fr');
+        $description_en = $this->input->post('description_en');
+        $description_sw = $this->input->post('description_sw');
 
         $data = array(
             'category_id' => $category_id,
-            'title' => $title,
+            'title' => $title_fr,
+            'title_fr' => $title_fr,
+            'title_en' => $title_en,
+            'title_sw' => $title_sw,
             'slug' => $slug,
-            'description' => $this->input->post('description'),
+            'description' => $description_fr,
+            'description_fr' => $description_fr,
+            'description_en' => $description_en,
+            'description_sw' => $description_sw,
             'price' => $this->input->post('price'),
             'is_active' => $is_active,
             'in_vedette' => $in_vedette,
@@ -561,13 +701,12 @@ class Advertise_product extends MY_Controller {
         redirect(base_url('advertise-product'));
     }
 
-    public function upload_image($nom_file, $nom_champ)
+    public function upload_image($tmp_name, $filename)
     {
         $ref_folder = FCPATH . 'attachments/Products/';
         $code = date("YmdHis") . uniqid();
         $fichier = basename($code);
-        $file_extension = pathinfo($nom_champ, PATHINFO_EXTENSION);
-        $file_extension = strtolower($file_extension);
+        $file_extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp', 'svg');
 
         if (!in_array($file_extension, $valid_ext)) {
@@ -578,7 +717,8 @@ class Advertise_product extends MY_Controller {
             mkdir($ref_folder, 0777, TRUE);
         }
 
-        move_uploaded_file($nom_file, $ref_folder . $fichier . "." . $file_extension);
+        move_uploaded_file($tmp_name, $ref_folder . $fichier . "." . $file_extension);
         return $fichier . "." . $file_extension;
     }
 }
+?>
