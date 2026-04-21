@@ -1,35 +1,31 @@
 RewriteEngine On
+RewriteBase /
 
 # ============================================
-# WEBSOCKET PROXY - DOIT ÊTRE EN PREMIER
+# WEBSOCKET PROXY
 # ============================================
-# Détecter la mise à niveau WebSocket
 RewriteCond %{HTTP:Upgrade} =websocket [NC]
 RewriteCond %{HTTP:Connection} upgrade [NC]
 RewriteRule ^socket/(.*) ws://127.0.0.1:3002/socket/$1 [P,L]
 
-# ============================================
-# PROXY HTTP NORMAL
-# ============================================
 RewriteRule ^socket/(.*) http://127.0.0.1:3002/socket/$1 [P,L]
 
 # ============================================
-# RÈGLES POUR LES LANGUES (AJOUTÉ)
+# RÈGLES POUR LES LANGUES (CORRECTION POUR LITESPEED)
 # ============================================
-# Rediriger les URLs de langue vers index.php avec le bon paramétrage
-RewriteRule ^(fr|en|ar|sw)$ index.php?/$1 [L,QSA]
-RewriteRule ^(fr|en|ar|sw)/(.*)$ index.php?/$1/$2 [L,QSA]
+# Version LiteSpeed sans ? dans l'URL
+RewriteRule ^(fr|en|ar|sw)$ index.php/$1 [L,QSA]
+RewriteRule ^(fr|en|ar|sw)/(.*)$ index.php/$1/$2 [L,QSA]
 
 # ============================================
-# CODEIGNITER - VERSION POUR SERVEUR MUTUALISÉ
+# CODEIGNITER POUR LITESPEED
 # ============================================
-# Utilisation de ?/ au lieu de / pour les serveurs mutualisés
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
 
 # ============================================
-# EN-TÊTES POUR WEBSOCKET
+# EN-TÊTES
 # ============================================
 <IfModule mod_headers.c>
     Header set Access-Control-Allow-Origin "*"
