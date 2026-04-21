@@ -9,7 +9,7 @@ $route['translate_uri_dashes'] = FALSE;
 // ROUTES SANS LANGUE (API, BACKEND, WEBHOOKS)
 // ============================================
 
-// API / Ajax
+// API / Ajax (sans langue)
 $route['search/ajax_search'] = 'Home/search/ajax_search';
 $route['boutique/ajax_get_products'] = 'Home/Boutique/ajax_get_products';
 $route['panier/get_cart'] = 'Home/Panier/get_cart';
@@ -105,31 +105,32 @@ $route['social/ChangeStatus'] = 'Social/ChangeStatus';
 $route['chatbot/admin'] = 'chatbot/admin/index';
 $route['chatbot/admin/(:any)'] = 'chatbot/admin/$1';
 
-
-
-
 // ============================================
-// PREFIXE LANGUE (unique)
+// PREFIXE LANGUE
 // ============================================
 $lang_prefix = '(fr|en|ar|sw)';
 
 // ============================================
-// 1. ROUTES SPÉCIFIQUES (module Home)
+// 1. ROUTES SPÉCIFIQUES (doivent venir AVANT la route générique)
 // ============================================
+
+// Page d'accueil
 $route[$lang_prefix] = 'home/index';
-$route[$lang_prefix . '/Home/(:any)'] = 'home/$2';
-$route[$lang_prefix . '/search'] = 'search/index';
+
+// Module Blog & Actualités
 $route[$lang_prefix . '/blog'] = 'blog/index';
 $route[$lang_prefix . '/actualites'] = 'Home/Actualites/index';
 $route[$lang_prefix . '/actualite/(:any)'] = 'Home/Blog/article/$2';
 $route[$lang_prefix . '/blog/categorie/(:any)'] = 'Home/Blog/categorie/$2';
 $route[$lang_prefix . '/blog/recherche'] = 'Home/Blog/recherche';
-$route[$lang_prefix . '/question'] = 'Home/faq';
-$route[$lang_prefix . '/Home/Contact'] = 'Home/Contact';  // si besoin
 
-// ============================================
-// 2. ROUTES SPÉCIFIQUES (module Boutique / Commande) 
-// ============================================
+// Module FAQ
+$route[$lang_prefix . '/question'] = 'Home/faq';
+
+// Module Contact
+$route[$lang_prefix . '/Home/Contact'] = 'Home/Contact';
+
+// Module Boutique / Commande
 $route[$lang_prefix . '/boutique'] = 'Home/Boutique/index';
 $route[$lang_prefix . '/boutique/categorie/(:num)'] = 'Home/Boutique/categorie/$2';
 $route[$lang_prefix . '/boutique/categorie/(:num)/(:num)'] = 'Home/Boutique/categorie/$2/$3';
@@ -141,18 +142,25 @@ $route[$lang_prefix . '/commande/valider'] = 'Home/Commande/valider';
 $route[$lang_prefix . '/commande/confirmation/(:num)'] = 'Home/Commande/confirmation/$2';
 $route[$lang_prefix . '/commande/paiement/(:num)'] = 'Home/Commande/paiement/$2';
 
-// ============================================
-// 3. ROUTES SPÉCIFIQUES (module Products, Medicins, Auth, etc.)
-// ============================================
+// Module Products
 $route[$lang_prefix . '/Products'] = 'Products/index';
 $route[$lang_prefix . '/buyers/catalogue'] = 'Products/index';
 $route[$lang_prefix . '/Products/(:any)'] = 'Products/detail/$2';
 $route[$lang_prefix . '/product/(:any)'] = 'Products/detail/$2';
 $route[$lang_prefix . '/Product/(:any)'] = 'Products/detail/$2';
 
-
+// Module Medicins & Consultations
 $route[$lang_prefix . '/Medicins'] = 'Consultations/PatientForm/Medicin';
- 
+$route[$lang_prefix . '/patient-form'] = 'Consultations/PatientForm';
+$route[$lang_prefix . '/patient-form/create'] = 'Consultations/PatientForm/create';
+$route[$lang_prefix . '/consultation/payment/(:any)'] = 'Consultations/Payment/index/$2';
+$route[$lang_prefix . '/Swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
+$route[$lang_prefix . '/home-patient'] = 'Dashboard/PatientDashboard/index';
+$route[$lang_prefix . '/update-profile'] = 'Dashboard/PatientDashboard/update_home';
+$route[$lang_prefix . '/PatientForm'] = 'Consultations/PatientForm';
+$route[$lang_prefix . '/patient-fallowed'] = 'Consultations/Entente/confirme/';
+
+// Module Auth
 $route[$lang_prefix . '/Auth'] = 'Auth/index';
 $route[$lang_prefix . '/Auth/login'] = 'Auth/login';
 $route[$lang_prefix . '/Auth/logout'] = 'Auth/logout';
@@ -160,50 +168,8 @@ $route[$lang_prefix . '/Auth/register'] = 'Auth/register';
 $route[$lang_prefix . '/Auth/forgot_password'] = 'Auth/forgot_password';
 $route[$lang_prefix . '/Auth/google'] = 'Auth/google';
 $route[$lang_prefix . '/Auth/facebook'] = 'Auth/facebook';
-$route[$lang_prefix . '/advertise-product/view/(:any)'] = 'Advertise_product/productDetail/$2';
-$route[$lang_prefix . '/products/get_products_ajax'] = 'Products/get_products_ajax';
 
-$route[$lang_prefix . '/products/increment_price_request'] = 'Products/increment_price_request';
-$route[$lang_prefix . '/products/save_order_request'] = 'Products/save_order_request';
-
-// ============================================
-// 4. ROUTES SPÉCIFIQUES (module Consultations, Dashboard, Api)
-
-// ============================================
-// ROUTES POUR PATIENTFORM (AJOUTS NÉCESSAIRES)
-// ============================================
-
-// Soumission du formulaire (POST)
-$route[$lang_prefix . '/patient-form/create'] = 'Consultations/PatientForm/create';
-
-// Paiement d'une consultation (après création)
-$route[$lang_prefix . '/consultation/payment/(:any)'] = 'Consultations/Payment/index/$2';
-
-// API AJAX (sans préfixe langue – recommandé)
-$route['consultations/get_countries'] = 'Consultations/PatientForm/get_countries';
-// ============================================
-$route[$lang_prefix . '/Swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
-$route[$lang_prefix . '/patient-form'] = 'Consultations/PatientForm';
-$route[$lang_prefix . '/home-patient'] = 'Dashboard/PatientDashboard/index';
-$route[$lang_prefix . '/update-profile'] = 'Dashboard/PatientDashboard/update_home';
-$route[$lang_prefix . '/PatientForm'] = 'Consultations/PatientForm';
-$route[$lang_prefix . '/patient-fallowed'] = 'Consultations/Entente/confirme/';
-$route[$lang_prefix . '/Investors-form'] = 'Api/Investors'; 
-$route[$lang_prefix . '/Api/Brokers'] = 'Api/Brokers';  
-$route[$lang_prefix . '/Brokers-form'] = 'Api/Brokers';
-
-
-// API Investors
-$route['Api/investors/Save'] = 'Investors/Save';
-
-// Routes avec préfixe langue
-$route[$lang_prefix . '/Investors-form'] = 'Investors/index';
-
-$route[$lang_prefix . '/Consultations/Payment/index/(:any)'] = 'Consultations/Payment/index/$2';
-
-// ============================================
-// 5. ROUTES SPÉCIFIQUES (module Media)
-// ============================================
+// Module Media
 $route[$lang_prefix . '/media'] = 'Home/Media/index';
 $route[$lang_prefix . '/media/search'] = 'Home/Media/search';
 $route[$lang_prefix . '/media/search/(:any)'] = 'Home/Media/search/$2';
@@ -216,41 +182,35 @@ $route[$lang_prefix . '/media/player/(:any)'] = 'Home/Media/player/$2';
 $route[$lang_prefix . '/media/downloader'] = 'Home/Media/downloader';
 $route[$lang_prefix . '/media/downloader/(:any)'] = 'Home/Media/downloader/$2';
 
-$route[$lang_prefix . '/media/apiSearch'] = 'Home/Media/apiSearch';
-$route[$lang_prefix . '/media/apiTrackView'] = 'Home/Media/apiTrackView';
-$route[$lang_prefix . '/media/apiToggleLike'] = 'Home/Media/apiToggleLike';
-$route[$lang_prefix . '/media/apiToggleFavorite'] = 'Home/Media/apiToggleFavorite';
-$route[$lang_prefix . '/media/apiAddComment'] = 'Home/Media/apiAddComment';
-$route[$lang_prefix . '/media/apiGetComments/(:any)'] = 'Home/Media/apiGetComments/$2';
-// ... le reste
+// Pages d'investissement (Frontend)
+$route[$lang_prefix . '/Profile-Entreprise'] = 'Frontend/Profile_Entreprise/index';
+$route[$lang_prefix . '/background-strategic-rationale'] = 'Frontend/Background_Strategic_Rationale/index';
+$route[$lang_prefix . '/nufotec-phytomed-facility'] = 'Frontend/NUFOTEC_PHYTOMED_INDUSTRIES_Facility/index';
+$route[$lang_prefix . '/risk-analysis'] = 'Frontend/Risk_Analysis_Mitigation_Strategies/index';
+$route[$lang_prefix . '/strategic-partnerships'] = 'Frontend/Strategic_Partnerships/index';
+$route[$lang_prefix . '/broker-commission'] = 'Frontend/Commission_Fee_Payment_to_Brokers/index';
+$route[$lang_prefix . '/investor-commitment'] = 'Frontend/Our_Investor_Partner_Commitment/index';
+$route[$lang_prefix . '/investment-projection'] = 'Frontend/Phased_Investment_Projection/index';
+$route[$lang_prefix . '/market-outlook'] = 'Frontend/Market_Industry_Outlook/index';
+$route[$lang_prefix . '/digital-growth'] = 'Frontend/Market_Expansion_Platform/index';
+$route[$lang_prefix . '/vision-mission'] = 'Frontend/Vision_Mission/index';
+$route[$lang_prefix . '/corporate-structure-governance'] = 'Frontend/Corporate_Structure_Governance/index';
+$route[$lang_prefix . '/esg_Sustainability'] = 'Frontend/Esg_Sustainability/index';
+$route[$lang_prefix . '/Research_Innovation'] = 'Frontend/Research_Innovation/index';
+$route[$lang_prefix . '/manufacturing-facility'] = 'Frontend/Manufacturing_Facility/index';
 
-// ============================================
-// 6. ROUTES SPÉCIFIQUES (module Frontend – vos pages dynamiques)
-// ============================================
-$route[$lang_prefix . '/Profile-Entreprise'] = 'Frontend/Profile_Entreprise/index/$1';
-$route[$lang_prefix . '/background-strategic-rationale'] = 'Frontend/Background_Strategic_Rationale/index/$1';
-$route[$lang_prefix . '/nufotec-phytomed-facility'] = 'Frontend/NUFOTEC_PHYTOMED_INDUSTRIES_Facility/index/$1';
-$route[$lang_prefix . '/risk-analysis'] = 'Frontend/Risk_Analysis_Mitigation_Strategies/index/$1';
-$route[$lang_prefix . '/strategic-partnerships'] = 'Frontend/Strategic_Partnerships/index/$1';
-$route[$lang_prefix . '/broker-commission'] = 'Frontend/Commission_Fee_Payment_to_Brokers/index/$1';
-$route[$lang_prefix . '/investor-commitment'] = 'Frontend/Our_Investor_Partner_Commitment/index/$1';
-$route[$lang_prefix . '/investment-projection'] = 'Frontend/Phased_Investment_Projection/index/$1';
-$route[$lang_prefix . '/market-outlook'] = 'Frontend/Market_Industry_Outlook/index/$1';
-$route[$lang_prefix . '/digital-growth'] = 'Frontend/Market_Expansion_Platform/index/$1';
-$route[$lang_prefix . '/vision-mission'] = 'Frontend/Vision_Mission/index/$1';
-$route[$lang_prefix . '/corporate-structure-governance'] = 'Frontend/Corporate_Structure_Governance/index/$1';
-$route[$lang_prefix . '/esg_Sustainability'] = 'Frontend/Esg_Sustainability/index/$1';   
-$route[$lang_prefix . '/Research_Innovation'] = 'Frontend/Research_Innovation/index/$1';  
-$route[$lang_prefix . '/manufacturing-facility'] = 'Frontend/Manufacturing_Facility/index/$1';
+// Forms Investisseurs
+$route[$lang_prefix . '/Investors-form'] = 'Investors/index';
+$route[$lang_prefix . '/Brokers-form'] = 'Api/Brokers';
+$route['Api/investors/Save'] = 'Investors/Save';
 
-
-$route[$lang_prefix . '/Admin'] = 'Admin/index';   
+// Dashboard & Admin
+$route[$lang_prefix . '/Admin'] = 'Admin/index';
 $route[$lang_prefix . '/Admin/do_login'] = 'Admin/do_login';
+$route[$lang_prefix . '/Dashboard/PatientDashboard/update_profile'] = 'Dashboard/PatientDashboard/update_profile';
+
 // ============================================
-// 7. ROUTE GÉNÉRIQUE (pour les pages statiques de la table 'pages')
-//    ⚠️ Elle ne doit capturer que ce qui n'a pas matché au-dessus
+// 2. ROUTE GÉNÉRIQUE (pour les pages statiques)
+//    ⚠️ CELLE-CI DOIT ÊTRE LA DERNIÈRE
 // ============================================
 $route[$lang_prefix . '/(:any)'] = 'home/view/$2';
-
-
-$route[$lang_prefix . '/Dashboard/PatientDashboard/update_profile'] = 'Dashboard/PatientDashboard/update_profile';
