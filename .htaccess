@@ -14,11 +14,19 @@ RewriteRule ^socket/(.*) ws://127.0.0.1:3002/socket/$1 [P,L]
 RewriteRule ^socket/(.*) http://127.0.0.1:3002/socket/$1 [P,L]
 
 # ============================================
-# CODEIGNITER
+# RÈGLES POUR LES LANGUES (AJOUTÉ)
 # ============================================
+# Rediriger les URLs de langue vers index.php avec le bon paramétrage
+RewriteRule ^(fr|en|ar|sw)$ index.php?/$1 [L,QSA]
+RewriteRule ^(fr|en|ar|sw)/(.*)$ index.php?/$1/$2 [L,QSA]
+
+# ============================================
+# CODEIGNITER - VERSION POUR SERVEUR MUTUALISÉ
+# ============================================
+# Utilisation de ?/ au lieu de / pour les serveurs mutualisés
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php/$1 [L]
+RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
 
 # ============================================
 # EN-TÊTES POUR WEBSOCKET
