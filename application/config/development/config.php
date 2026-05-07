@@ -1,4 +1,3 @@
-```php
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
@@ -288,4 +287,3 @@ $config['taux_devise'] = array(
     'USD_TO_EUR' => 1,
     'USD_TO_BIF' => 3000
 );
-```
