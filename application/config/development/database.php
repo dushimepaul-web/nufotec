@@ -13,8 +13,8 @@ $query_builder = TRUE;
 if (
     isset($_SERVER['SERVER_NAME']) &&
     (
-        $_SERVER['SERVER_NAME'] == 'localhost' ||
-        $_SERVER['SERVER_NAME'] == '127.0.0.1'
+        $_SERVER['SERVER_NAME'] === 'localhost' ||
+        $_SERVER['SERVER_NAME'] === '127.0.0.1'
     )
 ) {
 
