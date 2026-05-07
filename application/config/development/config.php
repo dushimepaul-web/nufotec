@@ -14,11 +14,8 @@ if (
         $_SERVER['HTTP_HOST'] == '127.0.0.1'
     )
 ) {
-
     $config['base_url'] = 'http://localhost/nufotec/';
-
 } else {
-
     $config['base_url'] = 'http://102.134.102.35:9011/';
 }
 
@@ -142,18 +139,8 @@ $config['encryption_key'] = 'nufotec_secure_key_2026';
 */
 $config['sess_driver'] = 'files';
 $config['sess_cookie_name'] = 'ci_session';
-$config['sess_expiration'] = 7200';
-
-/*
-|--------------------------------------------------------------------------
-| IMPORTANT : SESSION PATH
-|--------------------------------------------------------------------------
-|
-| Ceci corrige votre erreur :
-| Session: Configured save path '' is not a directory
-|
-*/
-$config['sess_save_path'] = sys_get_temp_dir();
+$config['sess_expiration'] = 7200;
+$config['sess_save_path'] = '/tmp';
 
 $config['sess_match_ip'] = FALSE;
 $config['sess_time_to_update'] = 300;
@@ -257,7 +244,7 @@ $hook['post_controller_constructor'][] = array(
 | Whapi Configuration
 |--------------------------------------------------------------------------
 */
-$config['whapi_token'] = 'VOTRE_TOKEN_API_ICI';
+$config['whapi_token'] = '';
 $config['whapi_base_url'] = 'https://gate.whapi.cloud';
 
 /*
@@ -265,7 +252,7 @@ $config['whapi_base_url'] = 'https://gate.whapi.cloud';
 | Zapier Webhook
 |--------------------------------------------------------------------------
 */
-$config['zapier_webhook_url'] = 'https://hooks.zapier.com/hooks/catch/123456/abcde';
+$config['zapier_webhook_url'] = '';
 
 /*
 |--------------------------------------------------------------------------
