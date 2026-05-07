@@ -1,38 +1,28 @@
 RewriteEngine On
 
 # ============================================
-# WEBSOCKET PROXY - DOIT ÊTRE EN PREMIER
+# BASE URL
 # ============================================
-# Détecter la mise à niveau WebSocket
-RewriteCond %{HTTP:Upgrade} =websocket [NC]
-RewriteCond %{HTTP:Connection} upgrade [NC]
-RewriteRule ^socket/(.*) ws://127.0.0.1:3002/socket/$1 [P,L]
+RewriteBase /
 
 # ============================================
-# PROXY HTTP NORMAL
+# LANGUAGE ROUTES
 # ============================================
-RewriteRule ^socket/(.*) http://127.0.0.1:3002/socket/$1 [P,L]
+RewriteRule ^(fr|en|ar|sw)$ index.php/$1 [L,QSA]
+RewriteRule ^(fr|en|ar|sw)/(.*)$ index.php/$1/$2 [L,QSA]
 
 # ============================================
-# RÈGLES POUR LES LANGUES (AJOUTÉ)
+# CODEIGNITER ROUTES
 # ============================================
-# Rediriger les URLs de langue vers index.php avec le bon paramétrage
-RewriteRule ^(fr|en|ar|sw)$ index.php?/$1 [L,QSA]
-RewriteRule ^(fr|en|ar|sw)/(.*)$ index.php?/$1/$2 [L,QSA]
-
-# ============================================
-# CODEIGNITER - VERSION POUR SERVEUR MUTUALISÉ
-# ============================================
-# Utilisation de ?/ au lieu de / pour les serveurs mutualisés
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
 
 # ============================================
-# EN-TÊTES POUR WEBSOCKET
+# HEADERS
 # ============================================
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type, Upgrade, Connection"
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Upgrade, Connection"
 </IfModule>
