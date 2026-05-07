@@ -4,14 +4,15 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $active_group = 'default';
 $query_builder = TRUE;
 
-// Détection automatique de l'environnement
+// Détection automatique environnement
 if ($_SERVER['SERVER_NAME'] == 'localhost') {
-    // Configuration pour le serveur local
+
+    // Localhost Windows
     $db['default'] = array(
         'dsn'       => '',
         'hostname'  => 'localhost',
         'username'  => 'root',
-        'password'  => '',          // mot de passe local
+        'password'  => '',
         'database'  => 'nufotec_db',
         'dbdriver'  => 'mysqli',
         'dbprefix'  => '',
@@ -28,13 +29,15 @@ if ($_SERVER['SERVER_NAME'] == 'localhost') {
         'failover'  => array(),
         'save_queries' => TRUE
     );
+
 } else {
-    // Configuration pour le serveur distant
+
+    // VPS Docker
     $db['default'] = array(
         'dsn'       => '',
-        'hostname'  => 'localhost',
-        'username'  => 'nufotec_nufotec',
-        'password'  => 'Paul@2026', // mot de passe distant
+        'hostname'  => 'db',
+        'username'  => 'root',
+        'password'  => 'root123',
         'database'  => 'nufotec_db',
         'dbdriver'  => 'mysqli',
         'dbprefix'  => '',
@@ -51,4 +54,5 @@ if ($_SERVER['SERVER_NAME'] == 'localhost') {
         'failover'  => array(),
         'save_queries' => TRUE
     );
+
 }

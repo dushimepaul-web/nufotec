@@ -25,13 +25,22 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 */
 
 // Vérifier si on est en localhost
-if (isset($_SERVER['HTTP_HOST']) && ($_SERVER['HTTP_HOST'] == 'localhost' || $_SERVER['HTTP_HOST'] == '127.0.0.1')) {
-    $config['base_url'] = 'http://localhost/nufotec/';
-} else {
-    // Sinon, sur le serveur de production
-    $config['base_url'] = 'https://nufotec.com/';
-}
+if (
+    isset($_SERVER['HTTP_HOST']) &&
+    (
+        $_SERVER['HTTP_HOST'] == 'localhost' ||
+        $_SERVER['HTTP_HOST'] == '127.0.0.1'
+    )
+) {
 
+    $config['base_url'] = 'http://localhost/nufotec/';
+
+} else {
+
+    // VPS Docker actuel
+    $config['base_url'] = 'http://102.134.102.35:9011/';
+
+}
 /*
 |--------------------------------------------------------------------------
 | Index File
