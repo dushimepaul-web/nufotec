@@ -1,28 +1,4 @@
 RewriteEngine On
-
-# ============================================
-# BASE URL
-# ============================================
-RewriteBase /
-
-# ============================================
-# LANGUAGE ROUTES
-# ============================================
-RewriteRule ^(fr|en|ar|sw)$ index.php/$1 [L,QSA]
-RewriteRule ^(fr|en|ar|sw)/(.*)$ index.php/$1/$2 [L,QSA]
-
-# ============================================
-# CODEIGNITER ROUTES
-# ============================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php/$1 [L,QSA]
-
-# ============================================
-# HEADERS
-# ============================================
-<IfModule mod_headers.c>
-    Header always set Access-Control-Allow-Origin "*"
-    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Upgrade, Connection"
-</IfModule>
+RewriteRule ^(.*)$ index.php/$1 [L]
