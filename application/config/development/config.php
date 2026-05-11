@@ -29,7 +29,7 @@ if (isset($_SERVER['HTTP_HOST']) && ($_SERVER['HTTP_HOST'] == 'localhost' || $_S
     $config['base_url'] = 'http://localhost/nufotec/';
 } else {
     // Sinon, sur le serveur de production
-    $config['base_url'] = 'https://nufotec.com/';
+    $config['base_url'] = 'http://102.134.102.35:9011';
 }
 
 /*
