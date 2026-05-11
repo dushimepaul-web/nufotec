@@ -1,7 +1,12 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-$route['default_controller'] = 'Home';
+// ============================================
+// ROUTES AVEC PRÉFIXE LANGUE - VERSION CORRIGÉE
+// ============================================
+
+// Route par défaut (quand pas de langue dans l'URL)
+$route['default_controller'] = 'home/index';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
@@ -111,107 +116,103 @@ $route['chatbot/admin/(:any)'] = 'chatbot/admin/$1';
 
 
 
-
 // Page d'accueil
 $route['(fr|en|ar|sw)'] = 'home/index';
 
 // Blog & Actualités
 $route['(fr|en|ar|sw)/blog'] = 'blog/index';
-$route['(fr|en|ar|sw)/actualites'] = 'Home/Actualites/index';
-$route['(fr|en|ar|sw)/actualite/(:any)'] = 'Home/Blog/article/$2';
-$route['(fr|en|ar|sw)/blog/categorie/(:any)'] = 'Home/Blog/categorie/$2';
-$route['(fr|en|ar|sw)/blog/recherche'] = 'Home/Blog/recherche';
+$route['(fr|en|ar|sw)/actualites'] = 'home/actualites/index';
+$route['(fr|en|ar|sw)/actualite/(:any)'] = 'home/blog/article/$2';
+$route['(fr|en|ar|sw)/blog/categorie/(:any)'] = 'home/blog/categorie/$2';
+$route['(fr|en|ar|sw)/blog/recherche'] = 'home/blog/recherche';
 
 // FAQ & Contact
-$route['(fr|en|ar|sw)/question'] = 'Home/faq';
-$route['(fr|en|ar|sw)/Home/Contact'] = 'Home/Contact';
+$route['(fr|en|ar|sw)/question'] = 'home/faq';
+$route['(fr|en|ar|sw)/contact'] = 'home/contact';
 
 // Boutique & Panier
-$route['(fr|en|ar|sw)/boutique'] = 'Home/Boutique/index';
-$route['(fr|en|ar|sw)/boutique/categorie/(:num)'] = 'Home/Boutique/categorie/$2';
-$route['(fr|en|ar|sw)/boutique/categorie/(:num)/(:num)'] = 'Home/Boutique/categorie/$2/$3';
-$route['(fr|en|ar|sw)/boutique/detail/(:any)'] = 'Home/Boutique/detail/$2';
-$route['(fr|en|ar|sw)/boutique/recherche'] = 'Home/Boutique/recherche';
-$route['(fr|en|ar|sw)/panier'] = 'Home/Panier/index';
-$route['(fr|en|ar|sw)/Commande'] = 'Home/Commande/index';
-$route['(fr|en|ar|sw)/commande/valider'] = 'Home/Commande/valider';
-$route['(fr|en|ar|sw)/commande/confirmation/(:num)'] = 'Home/Commande/confirmation/$2';
-$route['(fr|en|ar|sw)/commande/paiement/(:num)'] = 'Home/Commande/paiement/$2';
+$route['(fr|en|ar|sw)/boutique'] = 'home/boutique/index';
+$route['(fr|en|ar|sw)/boutique/categorie/(:num)'] = 'home/boutique/categorie/$2';
+$route['(fr|en|ar|sw)/boutique/categorie/(:num)/(:num)'] = 'home/boutique/categorie/$2/$3';
+$route['(fr|en|ar|sw)/boutique/detail/(:any)'] = 'home/boutique/detail/$2';
+$route['(fr|en|ar|sw)/boutique/recherche'] = 'home/boutique/recherche';
+$route['(fr|en|ar|sw)/panier'] = 'home/panier/index';
+$route['(fr|en|ar|sw)/commande'] = 'home/commande/index';
+$route['(fr|en|ar|sw)/commande/valider'] = 'home/commande/valider';
+$route['(fr|en|ar|sw)/commande/confirmation/(:num)'] = 'home/commande/confirmation/$2';
+$route['(fr|en|ar|sw)/commande/paiement/(:num)'] = 'home/commande/paiement/$2';
 
 // Products
-$route['(fr|en|ar|sw)/Products'] = 'Products/index';
-$route['(fr|en|ar|sw)/buyers/catalogue'] = 'Products/index';
-$route['(fr|en|ar|sw)/Products/(:any)'] = 'Products/detail/$2';
-$route['(fr|en|ar|sw)/product/(:any)'] = 'Products/detail/$2';
-$route['(fr|en|ar|sw)/Product/(:any)'] = 'Products/detail/$2';
+$route['(fr|en|ar|sw)/products'] = 'products/index';
+$route['(fr|en|ar|sw)/buyers/catalogue'] = 'products/index';
+$route['(fr|en|ar|sw)/products/(:any)'] = 'products/detail/$2';
+$route['(fr|en|ar|sw)/product/(:any)'] = 'products/detail/$2';
 
-// Medicins & Consultations
-$route['(fr|en|ar|sw)/Medicins'] = 'Consultations/PatientForm/Medicin';
-$route['(fr|en|ar|sw)/patient-form'] = 'Consultations/PatientForm';
-$route['(fr|en|ar|sw)/patient-form/create'] = 'Consultations/PatientForm/create';
-$route['(fr|en|ar|sw)/consultation/payment/(:any)'] = 'Consultations/Payment/index/$2';
-$route['(fr|en|ar|sw)/Swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
-$route['(fr|en|ar|sw)/home-patient'] = 'Dashboard/PatientDashboard/index';
-$route['(fr|en|ar|sw)/update-profile'] = 'Dashboard/PatientDashboard/update_home';
-$route['(fr|en|ar|sw)/PatientForm'] = 'Consultations/PatientForm';
-$route['(fr|en|ar|sw)/patient-fallowed'] = 'Consultations/Entente/confirme';
+// Médecins & Consultations
+$route['(fr|en|ar|sw)/medicins'] = 'consultations/patientform/medicin';
+$route['(fr|en|ar|sw)/patient-form'] = 'consultations/patientform';
+$route['(fr|en|ar|sw)/patient-form/create'] = 'consultations/patientform/create';
+$route['(fr|en|ar|sw)/consultation/payment/(:any)'] = 'consultations/payment/index/$2';
+$route['(fr|en|ar|sw)/swap-medecin'] = 'consultations/patientform/changedoctor';
+$route['(fr|en|ar|sw)/home-patient'] = 'dashboard/patientdashboard/index';
+$route['(fr|en|ar|sw)/update-profile'] = 'dashboard/patientdashboard/update_home';
+$route['(fr|en|ar|sw)/patient-fallowed'] = 'consultations/entente/confirme';
 
-// Auth
-$route['(fr|en|ar|sw)/Auth'] = 'Auth/index';
-$route['(fr|en|ar|sw)/Auth/login'] = 'Auth/login';
-$route['(fr|en|ar|sw)/Auth/logout'] = 'Auth/logout';
-$route['(fr|en|ar|sw)/Auth/register'] = 'Auth/register';
-$route['(fr|en|ar|sw)/Auth/forgot_password'] = 'Auth/forgot_password';
-$route['(fr|en|ar|sw)/Auth/google'] = 'Auth/google';
-$route['(fr|en|ar|sw)/Auth/facebook'] = 'Auth/facebook';
+// Auth (authentification)
+$route['(fr|en|ar|sw)/auth'] = 'auth/index';
+$route['(fr|en|ar|sw)/auth/login'] = 'auth/login';
+$route['(fr|en|ar|sw)/auth/logout'] = 'auth/logout';
+$route['(fr|en|ar|sw)/auth/register'] = 'auth/register';
+$route['(fr|en|ar|sw)/auth/forgot_password'] = 'auth/forgot_password';
+$route['(fr|en|ar|sw)/auth/google'] = 'auth/google';
+$route['(fr|en|ar|sw)/auth/facebook'] = 'auth/facebook';
 
 // Media
-$route['(fr|en|ar|sw)/media'] = 'Home/Media/index';
-$route['(fr|en|ar|sw)/media/search'] = 'Home/Media/search';
-$route['(fr|en|ar|sw)/media/search/(:any)'] = 'Home/Media/search/$2';
-$route['(fr|en|ar|sw)/media/view/(:any)'] = 'Home/Media/view/$2';
-$route['(fr|en|ar|sw)/media/category/(:any)'] = 'Home/Media/category/$2';
-$route['(fr|en|ar|sw)/media/detail/(:any)'] = 'Home/Media/detail/$2';
-$route['(fr|en|ar|sw)/media/type/(:any)'] = 'Home/Media/type/$2';
-$route['(fr|en|ar|sw)/media/favorites'] = 'Home/Media/favorites';
-$route['(fr|en|ar|sw)/media/player/(:any)'] = 'Home/Media/player/$2';
-$route['(fr|en|ar|sw)/media/downloader'] = 'Home/Media/downloader';
-$route['(fr|en|ar|sw)/media/downloader/(:any)'] = 'Home/Media/downloader/$2';
+$route['(fr|en|ar|sw)/media'] = 'home/media/index';
+$route['(fr|en|ar|sw)/media/search'] = 'home/media/search';
+$route['(fr|en|ar|sw)/media/search/(:any)'] = 'home/media/search/$2';
+$route['(fr|en|ar|sw)/media/view/(:any)'] = 'home/media/view/$2';
+$route['(fr|en|ar|sw)/media/category/(:any)'] = 'home/media/category/$2';
+$route['(fr|en|ar|sw)/media/detail/(:any)'] = 'home/media/detail/$2';
+$route['(fr|en|ar|sw)/media/type/(:any)'] = 'home/media/type/$2';
+$route['(fr|en|ar|sw)/media/favorites'] = 'home/media/favorites';
+$route['(fr|en|ar|sw)/media/player/(:any)'] = 'home/media/player/$2';
+$route['(fr|en|ar|sw)/media/downloader'] = 'home/media/downloader';
+$route['(fr|en|ar|sw)/media/downloader/(:any)'] = 'home/media/downloader/$2';
 
-// Pages d'investissement
-$route['(fr|en|ar|sw)/Profile-Entreprise'] = 'Frontend/Profile_Entreprise/index';
-$route['(fr|en|ar|sw)/background-strategic-rationale'] = 'Frontend/Background_Strategic_Rationale/index';
-$route['(fr|en|ar|sw)/nufotec-phytomed-facility'] = 'Frontend/NUFOTEC_PHYTOMED_INDUSTRIES_Facility/index';
-$route['(fr|en|ar|sw)/risk-analysis'] = 'Frontend/Risk_Analysis_Mitigation_Strategies/index';
-$route['(fr|en|ar|sw)/strategic-partnerships'] = 'Frontend/Strategic_Partnerships/index';
-$route['(fr|en|ar|sw)/broker-commission'] = 'Frontend/Commission_Fee_Payment_to_Brokers/index';
-$route['(fr|en|ar|sw)/investor-commitment'] = 'Frontend/Our_Investor_Partner_Commitment/index';
-$route['(fr|en|ar|sw)/investment-projection'] = 'Frontend/Phased_Investment_Projection/index';
-$route['(fr|en|ar|sw)/market-outlook'] = 'Frontend/Market_Industry_Outlook/index';
-$route['(fr|en|ar|sw)/digital-growth'] = 'Frontend/Market_Expansion_Platform/index';
-$route['(fr|en|ar|sw)/vision-mission'] = 'Frontend/Vision_Mission/index';
-$route['(fr|en|ar|sw)/corporate-structure-governance'] = 'Frontend/Corporate_Structure_Governance/index';
-$route['(fr|en|ar|sw)/esg_Sustainability'] = 'Frontend/Esg_Sustainability/index';
-$route['(fr|en|ar|sw)/Research_Innovation'] = 'Frontend/Research_Innovation/index';
-$route['(fr|en|ar|sw)/manufacturing-facility'] = 'Frontend/Manufacturing_Facility/index';
+// Pages d'investissement (Frontend)
+$route['(fr|en|ar|sw)/profile-entreprise'] = 'frontend/profile_entreprise/index';
+$route['(fr|en|ar|sw)/background-strategic-rationale'] = 'frontend/background_strategic_rationale/index';
+$route['(fr|en|ar|sw)/nufotec-phytomed-facility'] = 'frontend/nufotec_phytomed_industries_facility/index';
+$route['(fr|en|ar|sw)/risk-analysis'] = 'frontend/risk_analysis_mitigation_strategies/index';
+$route['(fr|en|ar|sw)/strategic-partnerships'] = 'frontend/strategic_partnerships/index';
+$route['(fr|en|ar|sw)/broker-commission'] = 'frontend/commission_fee_payment_to_brokers/index';
+$route['(fr|en|ar|sw)/investor-commitment'] = 'frontend/our_investor_partner_commitment/index';
+$route['(fr|en|ar|sw)/investment-projection'] = 'frontend/phased_investment_projection/index';
+$route['(fr|en|ar|sw)/market-outlook'] = 'frontend/market_industry_outlook/index';
+$route['(fr|en|ar|sw)/digital-growth'] = 'frontend/market_expansion_platform/index';
+$route['(fr|en|ar|sw)/vision-mission'] = 'frontend/vision_mission/index';
+$route['(fr|en|ar|sw)/corporate-structure-governance'] = 'frontend/corporate_structure_governance/index';
+$route['(fr|en|ar|sw)/esg_sustainability'] = 'frontend/esg_sustainability/index';
+$route['(fr|en|ar|sw)/research_innovation'] = 'frontend/research_innovation/index';
+$route['(fr|en|ar|sw)/manufacturing-facility'] = 'frontend/manufacturing_facility/index';
 
 // Investisseurs
-$route['(fr|en|ar|sw)/Investors-form'] = 'Investors/index';
-$route['(fr|en|ar|sw)/Brokers-form'] = 'Api/Brokers';
+$route['(fr|en|ar|sw)/investors-form'] = 'investors/index';
+$route['(fr|en|ar|sw)/brokers-form'] = 'api/brokers';
 
 // Admin & Dashboard
-$route['(fr|en|ar|sw)/Admin'] = 'Admin/index';
-$route['(fr|en|ar|sw)/Admin/do_login'] = 'Admin/do_login';
-$route['(fr|en|ar|sw)/Dashboard/PatientDashboard/update_profile'] = 'Dashboard/PatientDashboard/update_profile';
+$route['(fr|en|ar|sw)/admin'] = 'admin/index';
+$route['(fr|en|ar|sw)/admin/do_login'] = 'admin/do_login';
+$route['(fr|en|ar|sw)/dashboard/patientdashboard/update_profile'] = 'dashboard/patientdashboard/update_profile';
 
 // Advertise product
-$route['(fr|en|ar|sw)/advertise-product/view/(:any)'] = 'Advertise_product/productDetail/$2';
-$route['(fr|en|ar|sw)/products/get_products_ajax'] = 'Products/get_products_ajax';
-$route['(fr|en|ar|sw)/products/increment_price_request'] = 'Products/increment_price_request';
-$route['(fr|en|ar|sw)/products/save_order_request'] = 'Products/save_order_request';
+$route['(fr|en|ar|sw)/advertise-product/view/(:any)'] = 'advertise_product/productdetail/$2';
+$route['(fr|en|ar|sw)/products/get_products_ajax'] = 'products/get_products_ajax';
+$route['(fr|en|ar|sw)/products/increment_price_request'] = 'products/increment_price_request';
+$route['(fr|en|ar|sw)/products/save_order_request'] = 'products/save_order_request';
 
 // ============================================
-// ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (À GARDER EN DERNIER)
+// ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (DERNIÈRE)
 // ============================================
 $route['(fr|en|ar|sw)/(:any)'] = 'home/view/$2';
-
