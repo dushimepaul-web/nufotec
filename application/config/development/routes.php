@@ -105,9 +105,12 @@ $route['social/ChangeStatus'] = 'Social/ChangeStatus';
 $route['chatbot/admin'] = 'chatbot/admin/index';
 $route['chatbot/admin/(:any)'] = 'chatbot/admin/$1';
 
-// ============================================
-// ROUTES AVEC PRÉFIXE LANGUE - CORRECTION
-// ============================================
+
+
+
+
+
+
 
 // Page d'accueil
 $route['(fr|en|ar|sw)'] = 'home/index';
@@ -208,6 +211,7 @@ $route['(fr|en|ar|sw)/products/increment_price_request'] = 'Products/increment_p
 $route['(fr|en|ar|sw)/products/save_order_request'] = 'Products/save_order_request';
 
 // ============================================
-// ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (DERNIÈRE)
+// ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (À GARDER EN DERNIER)
 // ============================================
 $route['(fr|en|ar|sw)/(:any)'] = 'home/view/$2';
+
