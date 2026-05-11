@@ -1,0 +1,14 @@
+{
+    "upload_id": "audio_69baeee6c6abb_773928f1cc6b2b32",
+    "file_name": "AMASANGANYA Y'IMITSI Y MUBWONKO.mp3",
+    "file_size": 8448749,
+    "file_hash": null,
+    "chunk_size": 2097152,
+    "total_chunks": 5,
+    "uploaded_chunks": [],
+    "failed_chunks": [],
+    "created_at": 1773858534,
+    "last_activity": 1773858534,
+    "status": "active",
+    "type": "audio"
+}

@@ -1,0 +1,33 @@
+{
+    "job_id": "job_whapi_1774823763923_k4fi6owzq",
+    "groupes_ids": [
+        "120363359137432565@g.us"
+    ],
+    "message": "",
+    "type_envoi": "audio",
+    "delai": 1000,
+    "file_info": {
+        "name": "note_vocale_1774823760773.ogg",
+        "path": "\/home\/nufotec\/public_html\/uploads\/jobs\/whapi_1774823763923_k4fi6owzq_note_vocale_1774823760773.ogg",
+        "size": 69437,
+        "type": "audio\/ogg;codecs=opus"
+    },
+    "status": "completed",
+    "progress": 100,
+    "current_group": null,
+    "result": {
+        "total": 1,
+        "reussis": 0,
+        "echoues": 1,
+        "details": [
+            {
+                "destinataire_id": "120363359137432565@g.us",
+                "statut": "\u00e9chec",
+                "erreur": "Impossible de convertir l'audio en MP3. FFmpeg est-il install\u00e9?",
+                "index": 1
+            }
+        ]
+    },
+    "created_at": "2026-03-30 00:36:05",
+    "updated_at": "2026-03-30 00:36:05"
+}

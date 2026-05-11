@@ -1,0 +1,14 @@
+{
+    "upload_id": "audio_69baed728e07d_de6b4346a5d2f3c7",
+    "file_name": "AMAFYIGO.mp3",
+    "file_size": 20323492,
+    "file_hash": null,
+    "chunk_size": 2097152,
+    "total_chunks": 10,
+    "uploaded_chunks": [],
+    "failed_chunks": [],
+    "created_at": 1773858162,
+    "last_activity": 1773858162,
+    "status": "active",
+    "type": "audio"
+}

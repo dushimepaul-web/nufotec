@@ -1,0 +1,14 @@
+{
+    "upload_id": "audio_69baf2eac75ce_ec808fa7cde2727e",
+    "file_name": "AVORTEMENT.mp3",
+    "file_size": 79163977,
+    "file_hash": null,
+    "chunk_size": 2097152,
+    "total_chunks": 38,
+    "uploaded_chunks": [],
+    "failed_chunks": [],
+    "created_at": 1773859562,
+    "last_activity": 1773859562,
+    "status": "active",
+    "type": "audio"
+}

@@ -1,0 +1,33 @@
+{
+    "job_id": "job_whapi_1774822652966_8ktih5ea7",
+    "groupes_ids": [
+        "120363359137432565@g.us"
+    ],
+    "message": "",
+    "type_envoi": "video",
+    "delai": 1000,
+    "file_info": {
+        "name": "WhatsApp Video 2026-03-29 at 21.10.52.mp4",
+        "path": "\/home\/nufotec\/public_html\/uploads\/jobs\/whapi_1774822652966_8ktih5ea7_WhatsApp_Video_2026-03-29_at_21.10.52.mp4",
+        "size": 23644467,
+        "type": "video\/mp4"
+    },
+    "status": "completed",
+    "progress": 100,
+    "current_group": null,
+    "result": {
+        "total": 1,
+        "reussis": 0,
+        "echoues": 1,
+        "details": [
+            {
+                "destinataire_id": "120363359137432565@g.us",
+                "statut": "\u00e9chec",
+                "erreur": "Fichier trop gros m\u00eame apr\u00e8s compression",
+                "index": 1
+            }
+        ]
+    },
+    "created_at": "2026-03-30 00:19:00",
+    "updated_at": "2026-03-30 00:19:00"
+}

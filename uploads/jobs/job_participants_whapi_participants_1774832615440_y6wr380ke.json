@@ -1,0 +1,42 @@
+{
+    "job_id": "job_participants_whapi_participants_1774832615440_y6wr380ke",
+    "phones": [
+        "25776512998",
+        "25776096597"
+    ],
+    "message": "",
+    "type_envoi": "image",
+    "is_voice": false,
+    "delai": 1000,
+    "file_info": {
+        "name": "WhatsApp Image 2026-03-26 at 01.45.30.jpeg",
+        "path": "\/home\/nufotec\/public_html\/uploads\/jobs\/whapi_participants_1774832615440_y6wr380ke_WhatsApp_Image_2026-03-26_at_01.45.30.jpeg",
+        "size": 56290,
+        "type": "image\/jpeg",
+        "is_ogg_opus": false
+    },
+    "status": "completed",
+    "progress": 100,
+    "current_phone": null,
+    "result": {
+        "total": 2,
+        "reussis": 0,
+        "echoues": 2,
+        "details": [
+            {
+                "destinataire_id": "25776512998",
+                "statut": "\u00e9chec",
+                "erreur": "{\"code\":402,\"message\":\"trial version limit exceeded\"}",
+                "index": 1
+            },
+            {
+                "destinataire_id": "25776096597",
+                "statut": "\u00e9chec",
+                "erreur": "{\"code\":402,\"message\":\"trial version limit exceeded\"}",
+                "index": 2
+            }
+        ]
+    },
+    "created_at": "2026-03-30 03:03:36",
+    "updated_at": "2026-03-30 03:03:51"
+}
