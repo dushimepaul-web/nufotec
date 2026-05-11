@@ -34,7 +34,7 @@ if ($_SERVER['SERVER_NAME'] == 'localhost') {
         'dsn'       => '',
 'hostname'  => 'localhost',
 'username'  => 'nufotec_nufotec',
-'password'  => '123456',
+'password'  => 'root123',
 'database'  => 'nufotec_db',
 'dbdriver'  => 'mysqli',
 'dbprefix'  => '',
