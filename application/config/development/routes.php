@@ -6,7 +6,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 // ============================================
 
 // Route par défaut (quand pas de langue dans l'URL)
-$route['default_controller'] = 'home/index';
+$route['default_controller'] = 'Home/index';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
