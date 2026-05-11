@@ -233,6 +233,12 @@ $route['products/get_products_ajax'] = 'Products/get_products_ajax';
 $route['products/increment_price_request'] = 'Products/increment_price_request';
 $route['products/save_order_request'] = 'Products/save_order_request';
 
+
+
+// Changement de langue (sans préfixe)
+$route['switch_lang/(fr|en|sw)'] = 'Home/Home/switch_lang/$1';
+
+
 // ============================================
 // ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (DOIT ÊTRE LA DERNIÈRE)
 // ============================================

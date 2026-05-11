@@ -111,10 +111,12 @@ class Public_Controller extends MX_Controller
     }
 
     /**
-     * SWITCH LANG - CHANGEMENT DE LANGUE SANS PREFIXE
+     * SWITCH LANG - Change la langue sans perdre la page courante
+     * Utilisable depuis n'importe quelle page (Home, Medicins, Boutique, etc.)
      */
     public function switch_lang($new_lang)
     {
+        // Vérifier que la langue est valide
         if (!in_array($new_lang, $this->available_langs)) {
             $new_lang = 'fr';
         }
@@ -123,18 +125,29 @@ class Public_Controller extends MX_Controller
         $this->session->set_userdata('lang', $new_lang);
         $this->current_lang = $new_lang;
 
-        // Rediriger vers la MÊME page (sans préfixe)
+        // Récupérer l'URI actuelle
         $current_uri = $this->uri->uri_string();
         
-        // Enlever l'ancien préfixe langue s'il existe (pour compatibilité)
+        // Enlever 'switch_lang' et la langue de l'URI si présents
         $segments = explode('/', $current_uri);
-        if (in_array($segments[0], $this->available_langs)) {
+        
+        // Si on est sur une URL de type switch_lang/xx, on l'enlève
+        if (isset($segments[0]) && $segments[0] === 'switch_lang') {
+            array_shift($segments); // Enlever 'switch_lang'
+            if (isset($segments[0]) && in_array($segments[0], $this->available_langs)) {
+                array_shift($segments); // Enlever la langue
+            }
+        }
+        
+        // Enlever l'ancien préfixe langue s'il existe (pour compatibilité)
+        if (isset($segments[0]) && in_array($segments[0], $this->available_langs)) {
             array_shift($segments);
         }
         
+        // Reconstruire l'URI
         $new_uri = implode('/', array_filter($segments));
         
-        // Redirection vers la même page sans préfixe
+        // Rediriger vers la même page (sans préfixe langue)
         if (empty($new_uri)) {
             redirect(base_url());
         } else {

@@ -183,6 +183,24 @@ class Home extends Public_Controller
         return $this->lang->line($key);
     }
 
+
+
+
+    /**
+ * Changer de langue sans préfixe dans l'URL
+ */
+public function switch_lang($lang = 'fr')
+{
+    // Vérifier que la langue est valide
+    if (in_array($lang, $this->available_langs)) {
+        $this->session->set_userdata('lang', $lang);
+        $this->current_lang = $lang;
+    }
+    
+    // Rediriger vers la page d'accueil
+    redirect(base_url());
+}
+
     // --------------------------------------------------------------------
     // Méthodes à conserver (Abonner, unsubscribe, etc.)
     // Elles n'ont pas besoin de modifications pour la traduction des sections
