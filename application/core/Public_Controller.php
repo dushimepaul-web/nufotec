@@ -33,38 +33,33 @@ class Public_Controller extends MX_Controller
     }
 
     /**
-     * LANGUAGE SYSTEM STABLE (NO LOOP / NO 404)
+     * LANGUAGE SYSTEM - SANS PREFIXE DANS L'URL
+     * Version modifiée : pas de redirection, pas de /fr dans l'URL
      */
     private function _setup_language()
     {
-        $uri_lang = $this->uri->segment(1);
         $session_lang = $this->session->userdata('lang');
-
-        // 1. Si aucune langue dans l'URL
-        if (empty($uri_lang)) {
-
-            $lang = in_array($session_lang, $this->available_langs)
-                ? $session_lang
-                : 'fr';
-
-            redirect($lang);
-        }
-
-        // 2. Si langue valide dans URL
+        $uri_lang = $this->uri->segment(1);
+        
+        // Vérifier si l'URL contient déjà un préfixe langue (pour compatibilité)
         if (in_array($uri_lang, $this->available_langs)) {
-
+            // Si oui, on garde cette langue mais on ne l'affiche pas dans l'URL
             $this->current_lang = $uri_lang;
             $this->session->set_userdata('lang', $uri_lang);
-
             return;
         }
-
-        // 3. Langue invalide → fallback
-        $lang = in_array($session_lang, $this->available_langs)
-            ? $session_lang
-            : 'fr';
-
-        redirect($lang);
+        
+        // Pas de préfixe dans l'URL : on utilise la session ou la détection auto
+        if (in_array($session_lang, $this->available_langs)) {
+            $this->current_lang = $session_lang;
+        } else {
+            // Détection auto depuis le navigateur
+            $browser_lang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'fr', 0, 2);
+            $this->current_lang = in_array($browser_lang, $this->available_langs) ? $browser_lang : 'fr';
+            $this->session->set_userdata('lang', $this->current_lang);
+        }
+        
+        // PAS DE REDIRECTION - l'URL reste sans préfixe
     }
 
     /**
@@ -116,7 +111,7 @@ class Public_Controller extends MX_Controller
     }
 
     /**
-     * SWITCH LANG
+     * SWITCH LANG - CHANGEMENT DE LANGUE SANS PREFIXE
      */
     public function switch_lang($new_lang)
     {
@@ -124,18 +119,27 @@ class Public_Controller extends MX_Controller
             $new_lang = 'fr';
         }
 
+        // Changer la langue en session
         $this->session->set_userdata('lang', $new_lang);
+        $this->current_lang = $new_lang;
 
+        // Rediriger vers la MÊME page (sans préfixe)
         $current_uri = $this->uri->uri_string();
+        
+        // Enlever l'ancien préfixe langue s'il existe (pour compatibilité)
         $segments = explode('/', $current_uri);
-
         if (in_array($segments[0], $this->available_langs)) {
             array_shift($segments);
         }
-
+        
         $new_uri = implode('/', array_filter($segments));
-
-        redirect(empty($new_uri) ? $new_lang : $new_lang . '/' . $new_uri);
+        
+        // Redirection vers la même page sans préfixe
+        if (empty($new_uri)) {
+            redirect(base_url());
+        } else {
+            redirect(base_url($new_uri));
+        }
     }
 
     /**
