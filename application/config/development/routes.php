@@ -6,7 +6,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 // ============================================
 
 // Route par défaut (quand pas de langue dans l'URL)
-$route['default_controller'] = 'Home/index';
+$route['default_controller'] = 'home/home/index';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
@@ -117,7 +117,7 @@ $route['chatbot/admin/(:any)'] = 'chatbot/admin/$1';
 
 
 // Page d'accueil
-$route['(fr|en|ar|sw)'] = 'home/index';
+$route['(fr|en|ar|sw)'] = 'home/home/index';
 
 // Blog & Actualités
 $route['(fr|en|ar|sw)/blog'] = 'blog/index';
@@ -215,4 +215,4 @@ $route['(fr|en|ar|sw)/products/save_order_request'] = 'products/save_order_reque
 // ============================================
 // ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (DERNIÈRE)
 // ============================================
-$route['(fr|en|ar|sw)/(:any)'] = 'home/view/$2';
+$route['(fr|en|ar|sw)/(:any)'] = 'home/home/view/$2';
