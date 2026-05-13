@@ -352,6 +352,43 @@ include VIEWPATH.'includes/frontend/Header.php';
     box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
 }
 
+/* ============================================
+   FIX TOAST - AU-DESSUS DU MODAL BACKDROP
+   ============================================ */
+
+/* Bootstrap modal backdrop = z-index 1040, modal = 1055 */
+/* Le toast doit être au-dessus: z-index 1060 minimum */
+
+.toast-container-custom {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 9999 !important;
+    pointer-events: none;
+}
+
+.toast-container-custom .toast {
+    pointer-events: auto;
+    z-index: 9999 !important;
+}
+
+/* S'assurer que le toast est au-dessus de tout */
+#priceToast {
+    z-index: 9999 !important;
+}
+
+#priceToast .toast-header,
+#priceToast .toast-body {
+    position: relative;
+    z-index: 10000;
+}
+
+#priceToast button,
+#priceToast a {
+    position: relative;
+    z-index: 10001;
+}
+
 /* Responsive */
 @media (max-width: 991px) {
     .product-detail-title { font-size: 2rem; }
@@ -367,7 +404,7 @@ include VIEWPATH.'includes/frontend/Header.php';
     .product-detail-title { font-size: 1.6rem; }
     .price-large { font-size: 1.6rem; }
     .product-detail-page { padding-top: 10px; }
-    
+
     .btn-whatsapp, .btn-outline-share { 
         padding: 12px 16px; 
         font-size: 0.9rem;
@@ -484,7 +521,7 @@ include VIEWPATH.'includes/frontend/Header.php';
 
 
         <?php if (!empty($product)): ?>
-        
+
         <div class="row g-4 g-lg-5">
             <div class="col-lg-6">
                 <div class="product-detail-image-wrapper">
@@ -495,13 +532,13 @@ include VIEWPATH.'includes/frontend/Header.php';
                              style="cursor: zoom-in; max-height: 500px; object-fit: contain; background: var(--light);"
                              alt="<?= htmlspecialchars($product['title']) ?>"
                              onerror="this.src='<?= base_url('assets/fro.png') ?>'">
-                        
+
                         <?php if (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days')): ?>
                         <div class="product-badge-detail">
                             <span class="badge">✨ <?= t('badge_new') ?></span>
                         </div>
                         <?php endif; ?>
-                        
+
                         <button class="btn zoom-detail-btn" id="zoomDetailBtn">
                             <i class="bx bx-search-alt"></i> <?= t('zoom') ?>
                         </button>
@@ -514,11 +551,11 @@ include VIEWPATH.'includes/frontend/Header.php';
                     <h1 class="product-detail-title mb-3">
                         <?= htmlspecialchars($product['title']) ?>
                     </h1>
-                    
+
                     <div class="product-detail-price mb-4">
                         <span class="price-large"><?= htmlspecialchars($product['price']) ?></span>
                     </div>
-                    
+
                     <div class="product-detail-description mb-4">
                         <h5 class="fw-semibold mb-3" style="color: var(--primary);">
                             <i class="bx bx-info-circle me-2"></i><?= t('description_label') ?>
@@ -527,7 +564,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                             <?= nl2br(htmlspecialchars($product['description'] ?? t('no_description_available'))) ?>
                         </p>
                     </div>
-                    
+
                     <div class="product-cta mt-4">
                         <div class="d-flex gap-3 flex-wrap">
                             <button class="btn btn-whatsapp flex-grow-1" id="openOrderModalBtn" 
@@ -537,7 +574,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                                     data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
                                 <i class="bx bxl-whatsapp"></i> <?= t('order_on_whatsapp') ?>
                             </button>
-                            
+
                             <button class="btn btn-outline-share flex-grow-1" id="openShareModalBtn"
                                     data-title="<?= htmlspecialchars($product['title']) ?>"
                                     data-url="<?= base_url($lang . '/Product/'.($product['slug'] ?? $product['id'])) ?>"
@@ -547,7 +584,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="product-meta mt-4">
                         <div class="row g-3">
                             <div class="col-6">
@@ -573,7 +610,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                 </div>
             </div>
         </div>
-        
+
         <!-- Produits similaires -->
         <?php if (!empty($similar_products)): ?>
         <div class="similar-products">
@@ -604,7 +641,7 @@ include VIEWPATH.'includes/frontend/Header.php';
             </div>
         </div>
         <?php endif; ?>
-        
+
         <?php else: ?>
         <div class="text-center py-5">
             <div class="mb-4">
@@ -620,7 +657,9 @@ include VIEWPATH.'includes/frontend/Header.php';
     </div>
 </div>
 
-<!-- MODAL DE COMMANDE -->
+<!-- ============================================
+     MODAL DE COMMANDE
+     ============================================ -->
 <div class="modal fade" id="orderInfoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
@@ -642,7 +681,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                         </div>
                     </div>
                 </div>
-                
+
                 <form id="orderForm">
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -663,7 +702,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                             <small class="text-muted"><?= t('whatsapp_contact_note') ?></small>
                         </div>
                     </div>
-                    
+
                     <div class="row g-3 mt-1">
                         <div class="col-md-6">
                             <label class="form-label fw-bold"><?= t('country') ?> <span class="text-danger">*</span></label>
@@ -682,7 +721,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="mt-3">
                         <label class="form-label fw-bold"><?= t('full_address') ?> <span class="text-danger">*</span></label>
                         <div class="input-group">
@@ -705,7 +744,9 @@ include VIEWPATH.'includes/frontend/Header.php';
     </div>
 </div>
 
-<!-- MODAL DE PARTAGE -->
+<!-- ============================================
+     MODAL DE PARTAGE
+     ============================================ -->
 <div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -722,7 +763,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                     <h6 id="shareProductTitle" class="mb-1 fw-bold" style="color: var(--primary); font-size: 1.1rem;"></h6>
                     <p id="shareProductPrice" class="text-accent fw-bold mb-0 fs-5"></p>
                 </div>
-                
+
                 <div class="share-buttons mb-4">
                     <div class="row g-3">
                         <div class="col-6">
@@ -767,9 +808,9 @@ include VIEWPATH.'includes/frontend/Header.php';
                         </div>
                     </div>
                 </div>
-                
+
                 <hr class="my-4">
-                
+
                 <div class="share-link">
                     <label class="form-label fw-bold mb-2">
                         <i class="bx bx-link me-1"></i><?= t('product_link') ?>
@@ -781,7 +822,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="mt-3 p-3 bg-light rounded" style="border-left: 4px solid var(--accent, #d4af37);">
                     <div class="d-flex align-items-start gap-3">
                         <div class="flex-shrink-0">
@@ -817,7 +858,9 @@ include VIEWPATH.'includes/frontend/Header.php';
     </div>
 </div>
 
-<!-- MODAL ZOOM -->
+<!-- ============================================
+     MODAL ZOOM
+     ============================================ -->
 <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-dark border-0">
@@ -831,25 +874,29 @@ include VIEWPATH.'includes/frontend/Header.php';
     </div>
 </div>
 
-<!-- TOAST PRIX RÉEL -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+<!-- ============================================
+     TOAST PRIX RÉEL - DÉPLACÉ APRÈS LES MODALS
+     z-index: 9999 pour être AU-DESSUS du backdrop
+     ============================================ -->
+<div class="toast-container-custom">
     <div id="priceToast" class="toast align-items-center text-white bg-dark border-warning shadow-lg" 
          role="alert" 
          aria-live="assertive" 
          aria-atomic="true"
          data-bs-delay="10000"> 
-        
+
         <div class="toast-header bg-dark text-white border-bottom border-warning">
             <i class="bx bx-info-circle me-2 text-warning fs-5"></i>
             <strong class="me-auto"><?= t('important_info') ?></strong>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
         </div>
-        
+
         <div class="toast-body">
             <p class="mb-2">
                 ⚠️ <?= t('price_request_message') ?>
             </p>
             <div class="d-flex gap-2 flex-wrap">
+                <?php if (!empty($product)): ?>
                 <button type="button" 
                         id="priceRequestWhatsAppBtn"
                         data-product-id="<?= $product['id'] ?>"
@@ -858,6 +905,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                         class="btn btn-sm btn-success">
                     <i class="bx bxl-whatsapp me-1"></i> WhatsApp
                 </button>
+                <?php endif; ?>
                 <button type="button" class="btn btn-sm btn-warning ms-auto" data-bs-dismiss="toast">
                     <i class="bx bx-x"></i> <?= t('close') ?>
                 </button>
@@ -866,13 +914,6 @@ include VIEWPATH.'includes/frontend/Header.php';
     </div>
 </div>
 
-<script>
-// ... tout le script reste identique, mais les chaînes en dur dans les alertes doivent aussi être traduites.
-// Pour ne pas surcharger, nous ne modifions pas le JS ici. Les clés JS devront être gérées via un fichier de langue JS ou en injectant des variables PHP.
-// Par souci de clarté, nous laissons le JS tel quel, mais vous pouvez remplacer les textes d'alertes par des appels à une fonction JS de traduction.
-</script>
-
-
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -880,19 +921,19 @@ include VIEWPATH.'includes/frontend/Header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     // ==========================================
     // DÉTECTION AUTO DE LA BONNE URL
     // ==========================================
-function getApiUrl() {
-    return '<?= base_url($lang . "/products/increment_price_request") ?>';
-}
-function getSaveOrderUrl() {
-    return '<?= base_url($lang . "/products/save_order_request") ?>';
-}
-    
+    function getApiUrl() {
+        return '<?= base_url($lang . "/products/increment_price_request") ?>';
+    }
+    function getSaveOrderUrl() {
+        return '<?= base_url($lang . "/products/save_order_request") ?>';
+    }
+
     // ==========================================
-    // TOAST PRIX
+    // TOAST PRIX - AFFICHAGE APRÈS 700ms
     // ==========================================
     const toastEl = document.getElementById('priceToast');
     if (toastEl) {
@@ -905,34 +946,34 @@ function getSaveOrderUrl() {
             toast.show();
         }, 700);
     }
-    
+
     // ==========================================
     // INCRÉMENTATION DU COMPTEUR VIA LE TOAST WHATSAPP
     // ==========================================
     const priceRequestBtn = document.getElementById('priceRequestWhatsAppBtn');
-    
+
     if (priceRequestBtn) {
         priceRequestBtn.addEventListener('click', async function(e) {
             e.preventDefault();
-            
+
             const productId = this.dataset.productId;
             const productTitle = this.dataset.productTitle;
             const productUrl = this.dataset.productUrl;
-            
+
             // Afficher loader
             const originalText = this.innerHTML;
             this.innerHTML = '<i class="bx bx-loader bx-spin me-1"></i> Chargement...';
             this.disabled = true;
-            
+
             // Construire message WhatsApp
             const message = `Bonjour, je souhaite connaître le prix actualisé de ${productTitle}.\n\nSource: www.nufotec.com\nProduit: ${productTitle}\nLien du produit: ${productUrl}`;
             const whatsappUrl = `https://wa.me/25779666439?text=${encodeURIComponent(message)}`;
-            
+
             try {
                 // Appel API pour incrémenter (en arrière-plan)
                 const formData = new URLSearchParams();
                 formData.append('product_id', productId);
-                
+
                 await fetch(getApiUrl(), {
                     method: 'POST',
                     headers: {
@@ -941,30 +982,29 @@ function getSaveOrderUrl() {
                     },
                     body: formData
                 });
-                // On ne vérifie même pas le résultat, on continue
             } catch (error) {
                 console.error('Erreur incrémentation:', error);
             }
-            
+
             // Fermer le toast
             const toast = bootstrap.Toast.getInstance(toastEl);
             if (toast) toast.hide();
-            
+
             // Restaurer le bouton
             this.innerHTML = originalText;
             this.disabled = false;
-            
-            // OUVRIR WHATSAPP DIRECTEMENT SANS ALERTE
+
+            // OUVRIR WHATSAPP
             window.open(whatsappUrl, '_blank');
         });
     }
-    
+
     // ==========================================
     // CONFIGURATION
     // ==========================================
     const WHATSAPP_NUMBER = "25779666439";
     const SITE_NAME = "NUFOTEC";
-    
+
     let currentProduct = {
         title: '',
         price: '',
@@ -972,16 +1012,16 @@ function getSaveOrderUrl() {
         image: '',
         url: ''
     };
-    
+
     // Initialisation des modals
     const orderModal = new bootstrap.Modal(document.getElementById('orderInfoModal'));
     const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-    
+
     // ==========================================
     // MODAL DE COMMANDE - OUVERTURE
     // ==========================================
     const openOrderBtn = document.getElementById('openOrderModalBtn');
-    
+
     if (openOrderBtn) {
         openOrderBtn.addEventListener('click', function() {
             currentProduct = {
@@ -991,28 +1031,28 @@ function getSaveOrderUrl() {
                 image: this.dataset.image || '',
                 url: window.location.href
             };
-            
+
             if (!currentProduct.id) {
                 Swal.fire('Erreur', 'Impossible de charger les informations', 'error');
                 return;
             }
-            
+
             document.getElementById('orderProductTitle').textContent = currentProduct.title;
             document.getElementById('orderProductPrice').textContent = currentProduct.price;
             document.getElementById('orderProductImage').src = currentProduct.image;
             document.getElementById('orderProductRef').textContent = 'Réf: #' + currentProduct.id;
             document.getElementById('orderForm').reset();
-            
+
             setTimeout(() => document.getElementById('customerName').focus(), 100);
             orderModal.show();
         });
     }
-    
+
     // ==========================================
-    // MODAL DE COMMANDE - ENVOI (SANS CONFIRMATION)
+    // MODAL DE COMMANDE - ENVOI
     // ==========================================
     const sendOrderBtn = document.getElementById('sendWhatsAppOrderBtn');
-    
+
     if (sendOrderBtn) {
         sendOrderBtn.addEventListener('click', async function() {
             const formData = {
@@ -1020,10 +1060,9 @@ function getSaveOrderUrl() {
                 phone: document.getElementById('customerPhone').value.trim(),
                 country: document.getElementById('customerCountry').value.trim(),
                 city: document.getElementById('customerCity').value.trim(),
-                address: document.getElementById('customerAddress').value.trim(),
-                notes: document.getElementById('customerNotes')?.value.trim() || ''
+                address: document.getElementById('customerAddress').value.trim()
             };
-            
+
             // Validation
             const requiredFields = {
                 name: 'Nom complet',
@@ -1032,7 +1071,7 @@ function getSaveOrderUrl() {
                 city: 'Ville',
                 address: 'Adresse de livraison'
             };
-            
+
             for (const [field, label] of Object.entries(requiredFields)) {
                 if (!formData[field]) {
                     Swal.fire({
@@ -1050,7 +1089,7 @@ function getSaveOrderUrl() {
                     return;
                 }
             }
-            
+
             // Construction du message WhatsApp
             const now = new Date();
             const dateStr = now.toLocaleString('fr-FR', {
@@ -1060,7 +1099,7 @@ function getSaveOrderUrl() {
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            
+
             const message = [
                 `🛒 *COMMANDE - ${SITE_NAME}*`,
                 ``,
@@ -1075,15 +1114,14 @@ function getSaveOrderUrl() {
                 `Pays: ${formData.country}`,
                 `Ville: ${formData.city}`,
                 `Adresse: ${formData.address}`,
-                formData.notes ? `Notes: ${formData.notes}` : '',
                 ``,
                 `📅 Date: ${dateStr}`,
                 `⏳ Statut: En attente de confirmation`
-            ].filter(Boolean).join('\n');
-            
+            ].join('\n');
+
             const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-            
-            // Enregistrer en arrière-plan (sans bloquer)
+
+            // Enregistrer en arrière-plan
             const postData = new URLSearchParams({
                 product_id: currentProduct.id,
                 customer_name: formData.name,
@@ -1091,12 +1129,10 @@ function getSaveOrderUrl() {
                 customer_country: formData.country,
                 customer_city: formData.city,
                 customer_address: formData.address,
-                customer_notes: formData.notes,
                 product_title: currentProduct.title,
                 product_price: currentProduct.price
             });
-            
-            // Envoi asynchrone silencieux
+
             fetch(getSaveOrderUrl(), {
                 method: 'POST',
                 headers: {
@@ -1105,39 +1141,39 @@ function getSaveOrderUrl() {
                 },
                 body: postData
             }).catch(error => console.error('Erreur sauvegarde:', error));
-            
+
             // Fermer le modal
             orderModal.hide();
-            
-            // OUVRIR WHATSAPP DIRECTEMENT SANS CONFIRMATION
+
+            // OUVRIR WHATSAPP
             window.open(whatsappUrl, '_blank');
         });
     }
-    
+
     // ==========================================
     // MODAL DE PARTAGE
     // ==========================================
     const openShareBtn = document.getElementById('openShareModalBtn');
-    
+
     if (openShareBtn) {
         openShareBtn.addEventListener('click', function() {
             const title = this.dataset.title || '';
             const url = this.dataset.url || window.location.href;
             const image = this.dataset.image || '';
             const price = this.dataset.price || '';
-            
+
             currentProduct = { title, url, image, price };
-            
+
             document.getElementById('shareProductTitle').textContent = title;
             document.getElementById('shareProductPrice').textContent = price;
             document.getElementById('shareProductImage').src = image;
             document.getElementById('shareLink').value = url;
-            
+
             const encodedUrl = encodeURIComponent(url);
             const encodedTitle = encodeURIComponent(`${title} - ${price} sur ${SITE_NAME}`);
             const encodedImage = encodeURIComponent(image);
             const encodedDesc = encodeURIComponent(`Découvrez ${title} sur ${SITE_NAME}`);
-            
+
             document.getElementById('shareWhatsapp').href = `https://wa.me/?text=${encodedTitle}%0A%0A${encodedUrl}`;
             document.getElementById('shareFacebook').href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`;
             document.getElementById('shareTwitter').href = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;
@@ -1145,11 +1181,11 @@ function getSaveOrderUrl() {
             document.getElementById('shareLinkedIn').href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
             document.getElementById('shareTelegram').href = `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`;
             document.getElementById('shareEmail').href = `mailto:?subject=${encodedTitle}&body=${encodedDesc}%0A%0A${encodedUrl}`;
-            
+
             shareModal.show();
         });
     }
-    
+
     // Partage natif
     const nativeShareBtn = document.getElementById('shareNativeBtn');
     if (nativeShareBtn) {
@@ -1171,7 +1207,7 @@ function getSaveOrderUrl() {
             }
         });
     }
-    
+
     // Copier lien
     const copyBtn = document.getElementById('copyLinkBtn');
     if (copyBtn) {
@@ -1185,7 +1221,7 @@ function getSaveOrderUrl() {
             }, 2000);
         });
     }
-    
+
     async function copyToClipboard(text) {
         try {
             await navigator.clipboard.writeText(text);
@@ -1198,23 +1234,23 @@ function getSaveOrderUrl() {
             document.body.removeChild(textarea);
         }
     }
-    
+
     // ZOOM IMAGE
     const mainImage = document.getElementById('mainProductImage');
     const zoomBtn = document.getElementById('zoomDetailBtn');
     const zoomImage = document.getElementById('zoomImage');
     const zoomModalEl = document.getElementById('zoomModal');
-    
+
     function openZoom() {
         if (mainImage && zoomImage && zoomModalEl) {
             zoomImage.src = mainImage.src;
             new bootstrap.Modal(zoomModalEl).show();
         }
     }
-    
+
     if (mainImage) mainImage.addEventListener('click', openZoom);
     if (zoomBtn) zoomBtn.addEventListener('click', openZoom);
-    
+
     // Animations
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -1224,15 +1260,16 @@ function getSaveOrderUrl() {
             }
         });
     }, { threshold: 0.1 });
-    
+
     document.querySelectorAll('.similar-product-card').forEach((card, index) => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
         card.style.transition = `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`;
         observer.observe(card);
     });
-    
+
     console.log('✅ Product Detail View initialized');
 });
 </script>
+
 <?php include VIEWPATH.'includes/frontend/Footer.php'; ?>

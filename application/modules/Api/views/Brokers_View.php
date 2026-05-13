@@ -15,7 +15,7 @@ if (!function_exists('fix_content_images')) {
     function fix_content_images($content) {
         if (empty($content)) return $content;
         return preg_replace_callback(
-            '/<img\s+[^>]*src=["\']([^"\']+)["\'][^>]*>/i',
+            '<img\s+[^>]*src=["\']([^"\']+)["\'][^>]*>/i',
             function($matches) {
                 $old_src = $matches[1];
                 $new_src = fix_image_path($old_src);
@@ -1648,7 +1648,7 @@ foreach ($textes as $texte):
     <div class="status-link">
         <p class="text-muted">
             <?= t('already_registered') ?>
-            <a href="<?= base_url($lang . '/brokers/status') ?>">
+            <a href="<?= base_url('brokers/status') ?>">
                 <?= t('check_status') ?> <i class="fas fa-arrow-right ms-1"></i>
             </a>
         </p>
@@ -2111,7 +2111,7 @@ foreach ($textes as $texte):
         const data = Object.fromEntries(formData.entries());
         
         // UTILISER LA ROUTE EXISTANTE : /{lang}/Brokers-form
-        const submitUrl = '<?= base_url($lang . '/Brokers-form') ?>';
+        const submitUrl = '<?= base_url('Brokers-form') ?>';
         
         try {
             const response = await fetch(submitUrl, { 

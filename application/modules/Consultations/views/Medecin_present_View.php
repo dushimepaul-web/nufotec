@@ -1397,11 +1397,11 @@ body {
                             </button>
                             <?php if($is_online): ?>
                                 <?php if($this->session->userdata('user_id')): ?>
-                                    <a href="<?= base_url($lang . '/patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary">
+                                    <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary">
                                         <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
                                     </a>
                                 <?php else: ?>
-                                    <form method="POST" action="<?= base_url($lang . '/Auth') ?>" class="d-inline">
+                                    <form method="POST" action="<?= base_url('Auth') ?>" class="d-inline">
                                         <input type="hidden" name="selected_doctor_uuid" value="<?= $medecin['uuid'] ?>">
                                         <button type="submit" class="btn-consult btn-consult-primary">
                                             <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
@@ -1487,11 +1487,11 @@ body {
                             <div class="text-center mt-4">
                                 <?php if($is_online): ?>
                                     <?php if($this->session->userdata('user_id')): ?>
-                                        <a href="<?= base_url($lang . '/patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
+                                        <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
                                             <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
                                         </a>
                                     <?php else: ?>
-                                        <form method="POST" action="<?= base_url($lang . '/Auth') ?>">
+                                        <form method="POST" action="<?= base_url('Auth') ?>">
                                             <input type="hidden" name="selected_doctor_uuid" value="<?= $medecin['uuid'] ?>">
                                             <button type="submit" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
                                                 <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)

@@ -6,11 +6,11 @@
         <!-- En-tête de section -->
         <div class="text-center mb-5">
             <h2 class="section-title position-relative d-inline-block">
-                <?= t('our_products') ?>
+                Nos Produits
                 <span class="section-title-border"></span>
             </h2>
             <p class="section-subtitle text-muted mt-3">
-                <?= t('products_subtitle') ?>
+                Découvrez notre sélection de produits naturels de qualité
             </p>
         </div>
 
@@ -22,14 +22,14 @@
                         $image_path = !empty($product['main_image']) 
                             ? base_url('attachments/Products/'.$product['main_image']) 
                             : base_url('attachments/Products/default-product.png');
-                        $product_url = base_url($lang . '/product/' . ($product['slug'] ?? $product['id']));
+                        $product_url = base_url('/product/' . ($product['slug'] ?? $product['id']));
                         $is_new = (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days'));
                 ?>
                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                     <div class="product-card card h-100 border-0 shadow-sm">
                         <?php if ($is_new): ?>
                         <div class="product-badge">
-                            <span class="badge">✨ <?= t('badge_new') ?></span>
+                            <span class="badge">✨ NOUVEAU</span>
                         </div>
                         <?php endif; ?>
                         
@@ -41,10 +41,10 @@
                                  onerror="this.src='<?= base_url('attachments/Products/default-product.png') ?>'">
                             <div class="product-overlay">
                                 <button class="btn zoom-btn" data-img="<?= $image_path ?>">
-                                    <i class="bx bx-search-alt"></i> <?= t('zoom') ?>
+                                    <i class="bx bx-search-alt"></i> Zoom
                                 </button>
                                 <button class="btn quick-view" data-id="<?= $product['id'] ?>">
-                                    <i class="bx bx-show"></i> <?= t('quick_view') ?>
+                                    <i class="bx bx-show"></i> Aperçu
                                 </button>
                             </div>
                         </div>
@@ -67,7 +67,7 @@
                             
                             <div class="product-actions mt-3">
                                 <a href="<?= $product_url ?>" class="btn btn-detail w-100">
-                                    <i class="bx bx-show-alt me-2"></i><?= t('view_details') ?>
+                                    <i class="bx bx-show-alt me-2"></i>Voir détails
                                 </a>
                             </div>
                         </div>
@@ -76,7 +76,7 @@
                 <?php endforeach; else: ?>
                 <div class="col-12 text-center py-5">
                     <i class="bx bx-package text-muted" style="font-size: 4rem; opacity: 0.5;"></i>
-                    <p class="mt-3 text-muted"><?= t('no_products') ?></p>
+                    <p class="mt-3 text-muted">Aucun produit disponible pour le moment</p>
                 </div>
                 <?php endif; ?>
             </div>
@@ -122,10 +122,10 @@
                         <hr>
                         <div class="mt-3">
                             <a href="#" id="quickViewDetailBtn" class="btn btn-detail w-100 mb-2">
-                                <i class="bx bx-show-alt me-2"></i><?= t('view_full_details') ?>
+                                <i class="bx bx-show-alt me-2"></i>Voir la fiche complète
                             </a>
                             <button class="btn btn-outline-share w-100" id="shareFromQuick">
-                                <i class="bx bx-share-alt me-2"></i><?= t('share_product') ?>
+                                <i class="bx bx-share-alt me-2"></i>Partager ce produit
                             </button>
                         </div>
                     </div>

@@ -1510,7 +1510,7 @@ foreach ($textes as $texte):
     <div class="status-link">
         <p class="text-muted">
             <?= t('already_registered') ?>
-            <a href="<?= base_url($lang . '/investors/status') ?>">
+            <a href="<?= base_url('investors/status') ?>">
                 <?= t('check_status') ?> <i class="fas fa-arrow-right ms-1"></i>
             </a>
         </p>

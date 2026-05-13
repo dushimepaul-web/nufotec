@@ -5,35 +5,30 @@ class Home extends Public_Controller
 {
     public function __construct()
     {
-        parent::__construct(); // MY_Controller gère déjà la langue
+        parent::__construct();
         $this->load->helper('text');
         $this->load->model('Model');
     }
 
     /**
-     * Page d'accueil dynamique (multilingue)
+     * Page d'accueil dynamique (français uniquement)
      */
     public function index()
     {
         $this->Model->log_visit();
-        $lang = $this->current_lang;
+
+        $data['show_translator'] = false;
 
         $page = $this->Model->readOne('pages', ['slug' => 'home', 'est_publiee' => 1]);
         if (!$page) show_404();
 
-        // Traduction des champs de la page
-        $page['titre_page']       = $page["titre_page_{$lang}"] ?? $page['titre_page_fr'] ?? $page['titre_page'];
-        $page['contenu_page']     = $page["contenu_page_{$lang}"] ?? $page['contenu_page_fr'] ?? '';
-        $page['meta_description'] = $page["meta_description_{$lang}"] ?? $page['meta_description_fr'] ?? '';
-
         $data['page'] = $page;
         $data['pays'] = $this->Model->read('pays', [], 'pays', 'ASC');
-        $data['lang'] = $lang;
 
         // Données spécifiques à la home
         $data['slides']   = $this->Model->read('hero_slides', ['is_active' => 1], 'slide_order', 'ASC');
         $data['chiffres'] = $this->Model->read('chiffres_cles', ['id_page_associee' => $page['id_page']], 'ordre', 'ASC');
-        $data['appels_action'] = $this->Model->get_appels_action_translated($lang);
+        $data['appels_action'] = $this->Model->get_appels_action_translated('fr');
 
         // Données communes (sections, enfants, etc.)
         $data = array_merge($data, $this->_get_page_data($page['id_page']));
@@ -47,25 +42,18 @@ class Home extends Public_Controller
     }
 
     /**
-     * Afficher une page dynamique par slug (multilingue)
+     * Afficher une page dynamique par slug (français uniquement)
      */
     public function view($slug = null)
     {
         if (!$slug) redirect('/');
 
         $slug = $this->security->xss_clean($slug);
-        if (in_array($slug, $this->available_langs)) redirect($slug);
 
         $page = $this->Model->readOne('pages', ['slug' => $slug, 'est_publiee' => 1]);
         if (!$page) show_404();
 
-        $lang = $this->current_lang;
-        $page['titre_page']       = $page["titre_page_{$lang}"] ?? $page['titre_page_fr'] ?? $page['titre_page'];
-        $page['contenu_page']     = $page["contenu_page_{$lang}"] ?? $page['contenu_page_fr'] ?? '';
-        $page['meta_description'] = $page["meta_description_{$lang}"] ?? $page['meta_description_fr'] ?? '';
-
         $data['page'] = $page;
-        $data['lang'] = $lang;
 
         // Données communes
         $data = array_merge($data, $this->_get_page_data($page['id_page']));
@@ -81,29 +69,14 @@ class Home extends Public_Controller
      */
     private function _get_page_data($page_id)
     {
-        $lang = $this->current_lang;
         $data = [];
 
-        // ----- 1. Sections de contenu (traduction complète) -----
+        // ----- 1. Sections de contenu (français uniquement) -----
         $sections = $this->Model->read('sections_contenu', ['id_page' => $page_id], 'ordre', 'ASC');
-
-        foreach ($sections as &$sec) {
-            // Traduction des champs textuels
-            $sec['titre_section']  = $sec["titre_section_{$lang}"]  ?? $sec['titre_section_fr']  ?? $sec['titre_section']  ?? '';
-            $sec['sous_titre']     = $sec["sous_titre_{$lang}"]     ?? $sec['sous_titre_fr']     ?? $sec['sous_titre']     ?? '';
-            $sec['contenu_texte']  = $sec["contenu_texte_{$lang}"]  ?? $sec['contenu_texte_fr']  ?? $sec['contenu_texte']  ?? '';
-            $sec['bouton_texte']   = $sec["bouton_texte_{$lang}"]   ?? $sec['bouton_texte_fr']   ?? $sec['bouton_texte']   ?? '';
-            
-            // Nettoyage : suppression des colonnes de traduction pour éviter les doublons
-            unset($sec["titre_section_{$lang}"], $sec["sous_titre_{$lang}"], $sec["contenu_texte_{$lang}"], $sec["bouton_texte_{$lang}"]);
-        }
         $data['sections'] = $sections;
 
         // ----- 2. Pages enfants (sous-pages) -----
         $children = $this->Model->read('pages', ['menu_parent_id' => $page_id, 'est_publiee' => 1], 'menu_ordre', 'ASC');
-        foreach ($children as &$child) {
-            $child['titre_page'] = $child["titre_page_{$lang}"] ?? $child['titre_page_fr'] ?? $child['titre_page'];
-        }
         $data['children'] = $children;
 
         // ----- 3. Pages sœurs (même parent) -----
@@ -111,9 +84,6 @@ class Home extends Public_Controller
         $parent_id = $parent['menu_parent_id'] ?? null;
         if ($parent_id) {
             $siblings = $this->Model->read('pages', ['menu_parent_id' => $parent_id, 'est_publiee' => 1, 'id_page !=' => $page_id], 'menu_ordre', 'ASC');
-            foreach ($siblings as &$sib) {
-                $sib['titre_page'] = $sib["titre_page_{$lang}"] ?? $sib['titre_page_fr'] ?? $sib['titre_page'];
-            }
             $data['siblings'] = $siblings;
         }
 
@@ -124,24 +94,22 @@ class Home extends Public_Controller
     }
 
     /**
-     * Construit le fil d'Ariane (multilingue)
+     * Construit le fil d'Ariane
      */
     private function _build_breadcrumb($page_id)
     {
-        $lang = $this->current_lang;
         $breadcrumb = [];
 
         while ($page_id) {
             $page = $this->Model->readOne('pages', ['id_page' => $page_id]);
             if (!$page) break;
 
-            $titre = $page["titre_page_{$lang}"] ?? $page['titre_page_fr'] ?? $page['titre_page'];
             $url = ($page['slug'] === 'home')
-                ? base_url($lang)
-                : base_url($lang . '/' . $page['slug']);
+                ? base_url()
+                : base_url($page['slug']);
 
             array_unshift($breadcrumb, [
-                'titre' => $titre,
+                'titre' => $page['titre_page'],
                 'slug'  => $page['slug'],
                 'url'   => $url
             ]);
@@ -157,7 +125,6 @@ class Home extends Public_Controller
      */
     private function _prepare_seo_data($page)
     {
-        $lang = $this->current_lang;
         $site_name = $this->Model->get_setting('site_name', 'AGF Phytomed');
         $site_description = $this->Model->get_setting('site_description', 'Pionniers de la phytothérapie africaine');
 
@@ -171,38 +138,16 @@ class Home extends Public_Controller
             'meta_description' => $meta_description,
             'meta_keywords'    => $page['meta_keywords'] ?? '',
             'og_image'         => !empty($page['image_social']) ? base_url($page['image_social']) : base_url('assets/images/og-default.jpg'),
-            'canonical_url'    => base_url($lang . '/' . ($page['slug'] ?? ''))
+            'canonical_url'    => base_url($page['slug'] ?? '')
         ];
     }
 
     /**
-     * Helper pour traduire les chaînes statiques (fichier de langue)
+     * Changer de langue - redirige simplement vers l'accueil (plus utilisé)
      */
-    public function t($key)
+    public function switch_lang($lang = 'fr')
     {
-        return $this->lang->line($key);
+        // Rediriger vers la page d'accueil
+        redirect(base_url());
     }
-
-
-
-
-    /**
- * Changer de langue sans préfixe dans l'URL
- */
-public function switch_lang($lang = 'fr')
-{
-    // Vérifier que la langue est valide
-    if (in_array($lang, $this->available_langs)) {
-        $this->session->set_userdata('lang', $lang);
-        $this->current_lang = $lang;
-    }
-    
-    // Rediriger vers la page d'accueil
-    redirect(base_url());
-}
-
-    // --------------------------------------------------------------------
-    // Méthodes à conserver (Abonner, unsubscribe, etc.)
-    // Elles n'ont pas besoin de modifications pour la traduction des sections
-    // --------------------------------------------------------------------
 }

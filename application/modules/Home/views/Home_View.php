@@ -17,13 +17,13 @@
             </div>
         <?php endif; ?>
 
-        <h1><?= t('welcome_to') ?> <?= htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8') ?></h1>
+        <h1>Bienvenue sur <?= htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8') ?></h1>
 
-        <p><?= t('hero_subtitle') ?></p>
+        <p>Votre plateforme de commerce en ligne rapide, fiable et sécurisée</p>
         
         <div class="hero-buttons">
-            <a href="<?= base_url($lang . '/Medicins') ?>" class="btn-primary"><?= t('get_consulted') ?></a>
-            <a href="<?= base_url($lang . '/Products') ?>" class="btn-secondary"><?= t('buy_products') ?></a>
+            <a href="<?= base_url('Medicins') ?>" class="btn-primary">Être consulté</a>
+            <a href="<?= base_url('Products') ?>" class="btn-secondary">Acheter les produits</a>
         </div>
 
     </div>
@@ -170,7 +170,7 @@ if (!function_exists('fix_image_path')) {
 if (!function_exists('clean_html_content')) {
     function clean_html_content($content) {
         if (empty($content)) return '';
-        $allowed_tags = '<p><br><strong><b><em><i><u><strike><span><div><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><a><img><table><thead><tbody><tfoot><tr><td><th><caption><pre><code><hr><figure><figcaption>';
+        $allowed_tags = '<p><br><strong><b><em><i><u><strike><span><div><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><a><img><td><thead><tbody><tfoot><tr><tr><th><caption><pre><code><hr><figure><figcaption>';
         $content = strip_tags($content, $allowed_tags);
         $content = preg_replace('/(<[^>]+)\s+on\w+\s*=\s*["\'][^"\']*["\']/i', '$1', $content);
         $content = preg_replace('/href\s*=\s*["\']javascript:[^"\']*["\']/i', 'href="#"', $content);
@@ -227,14 +227,14 @@ if (!function_exists('get_placeholder_image')) {
                                         
                                         <?php if ($is_long_content): ?>
                                         <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                            <span><?= t('read_more') ?></span>
+                                            <span>Lire la suite</span>
                                             <i class="bi bi-chevron-down"></i>
                                         </button>
                                         <?php endif; ?>
                                     </div>
                                     
                                     <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                        <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
+                                        <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
                                             <?= htmlspecialchars($section['bouton_texte']) ?> 
                                             <i class="bi bi-arrow-right"></i>
                                         </a>
@@ -285,13 +285,13 @@ if (!function_exists('get_placeholder_image')) {
                                             
                                             <?php if ($is_long_content): ?>
                                             <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span><?= t('read_more') ?></span>
+                                                <span>Lire la suite</span>
                                                 <i class="bi bi-chevron-down"></i>
                                             </button>
                                             <?php endif; ?>
                                             
                                             <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                                <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
+                                                <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
                                                     <?= htmlspecialchars($section['bouton_texte']) ?> 
                                                     <i class="bi bi-arrow-right"></i>
                                                 </a>
@@ -317,13 +317,13 @@ if (!function_exists('get_placeholder_image')) {
                                             
                                             <?php if ($is_long_content): ?>
                                             <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span><?= t('read_more') ?></span>
+                                                <span>Lire la suite</span>
                                                 <i class="bi bi-chevron-down"></i>
                                             </button>
                                             <?php endif; ?>
                                             
                                             <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                                <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
+                                                <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
                                                     <?= htmlspecialchars($section['bouton_texte']) ?> 
                                                     <i class="bi bi-arrow-right"></i>
                                                 </a>
@@ -370,14 +370,14 @@ if (!function_exists('get_placeholder_image')) {
                                             
                                             <?php if ($is_long_content): ?>
                                             <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span><?= t('read_more') ?></span>
+                                                <span>Lire la suite</span>
                                                 <i class="bi bi-chevron-down"></i>
                                             </button>
                                             <?php endif; ?>
                                         </div>
                                         
                                         <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                            <a href="<?= base_url($lang . '/' . ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
+                                            <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
                                                 <?= htmlspecialchars($section['bouton_texte']) ?> 
                                                 <i class="bi bi-arrow-right"></i>
                                             </a>
@@ -443,19 +443,29 @@ if (!function_exists('get_placeholder_image')) {
             <?php endforeach; ?>
         <?php endif; ?>
 
+
+
+
+
+
+
+
+
+
+
         <!-- Pages Enfants -->
         <?php if (!empty($children)): ?>
         <div class="children-section">
             <div class="container py-5 py-lg-6">
                 <div class="text-center mb-5" data-aos="fade-up">
-                    <span class="section-tag light"><?= t('explore') ?></span>
-                    <h2 class="section-title text-white"><?= t('related_pages') ?></h2>
+                    <span class="section-tag light">Explorer</span>
+                    <h2 class="section-title text-white">Pages Connexes</h2>
                 </div>
                 
                 <div class="row g-4">
                     <?php foreach ($children as $i => $child): ?>
                     <div class="col-6 col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="<?= $i * 100 ?>">
-                        <a href="<?= base_url($lang . '/Home/PageDetail/' . $child['id_page'] . '_' . $child['slug']) ?>" class="child-card">
+                        <a href="<?= base_url('Home/PageDetail/' . $child['id_page'] . '_' . $child['slug']) ?>" class="child-card">
                             <div class="child-card-inner">
                                 <?php if (!empty($child['icone_menu'])): ?>
                                 <div class="child-icon">
@@ -466,7 +476,7 @@ if (!function_exists('get_placeholder_image')) {
                                 <?php if (!empty($child['meta_description'])): ?>
                                 <p><?= htmlspecialchars(substr($child['meta_description'], 0, 80)) ?>...</p>
                                 <?php endif; ?>
-                                <span class="child-link"><?= t('discover') ?> <i class="bi bi-arrow-right"></i></span>
+                                <span class="child-link">Découvrir <i class="bi bi-arrow-right"></i></span>
                             </div>
                         </a>
                     </div>
@@ -479,7 +489,7 @@ if (!function_exists('get_placeholder_image')) {
         <?php if (empty($sections) && empty($children)): ?>
         <div class="empty-state">
             <i class="bi bi-inbox"></i>
-            <p><?= t('no_content_available') ?></p>
+            <p>Aucun contenu disponible</p>
         </div>
         <?php endif; ?>
         

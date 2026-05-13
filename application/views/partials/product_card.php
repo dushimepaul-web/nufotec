@@ -6,15 +6,15 @@ $has_discount = ($prod->prix_grossiste && $prod->prix_public > $prod->prix_gross
 <div class="product-card" data-id="<?php echo $prod->id_produit; ?>">
     <?php if ($prod->est_vedette): ?>
         <span class="product-badge">
-            <i class="bi bi-star-fill"></i> <?= t('badge_featured') ?>
+            <i class="bi bi-star-fill"></i> VEDETTE
         </span>
     <?php elseif ($is_new): ?>
         <span class="product-badge new">
-            <i class="bi bi-lightning-charge-fill"></i> <?= t('badge_new') ?>
+            <i class="bi bi-lightning-charge-fill"></i> NOUVEAU
         </span>
     <?php elseif ($has_discount): ?>
         <span class="product-badge sale">
-            <i class="bi bi-tag-fill"></i> <?= t('badge_sale') ?>
+            <i class="bi bi-tag-fill"></i> PROMO
         </span>
     <?php endif; ?>
 
@@ -32,7 +32,7 @@ $has_discount = ($prod->prix_grossiste && $prod->prix_public > $prod->prix_gross
             <?php endif; ?>
         </a>
         <a href="<?php echo base_url('boutique/detail/' . $prod->slug); ?>" class="product-quick-view">
-            <i class="bi bi-eye"></i> <?= t('view_details') ?>
+            <i class="bi bi-eye"></i> Voir détails
         </a>
     </div>
 
@@ -49,7 +49,7 @@ $has_discount = ($prod->prix_grossiste && $prod->prix_public > $prod->prix_gross
         </h3>
 
         <div class="product-description">
-            <?php echo $prod->description_courte ? character_limiter(strip_tags($prod->description_courte), 80) : t('default_description'); ?>
+            <?php echo $prod->description_courte ? character_limiter(strip_tags($prod->description_courte), 80) : 'Découvrez ce produit de qualité premium.'; ?>
         </div>
 
         <div class="product-favorites mb-2">
@@ -72,7 +72,7 @@ $has_discount = ($prod->prix_grossiste && $prod->prix_public > $prod->prix_gross
                 ?>
             </div>
             <span class="favorites-text">
-                <strong><?php echo $nbFavoris; ?></strong> <?= t('favorite_plural', ['count' => $nbFavoris]) ?>
+                <strong><?php echo $nbFavoris; ?></strong> <?php echo $nbFavoris <= 1 ? 'favori' : 'favoris'; ?>
             </span>
         </div>
 
@@ -90,13 +90,13 @@ $has_discount = ($prod->prix_grossiste && $prod->prix_public > $prod->prix_gross
                     <?php endif; ?>
                 <?php else: ?>
                     <span class="product-price" style="font-size: 16px;">
-                        <?= t('price_on_request') ?>
+                        Prix sur demande
                     </span>
                 <?php endif; ?>
             </div>
             <?php if ($prod->prix_public): ?>
                 <div class="price-note">
-                    <i class="bi bi-info-circle"></i> <?= t('price_note_public') ?>
+                    <i class="bi bi-info-circle"></i> Prix public TTC
                 </div>
             <?php endif; ?>
         </div>
@@ -104,11 +104,11 @@ $has_discount = ($prod->prix_grossiste && $prod->prix_public > $prod->prix_gross
         <div class="product-actions">
             <button class="btn-add-cart" onclick="addToCart(<?php echo $prod->id_produit; ?>, '<?php echo htmlspecialchars(addslashes($prod->nom_produit)); ?>', this)">
                 <i class="bi bi-cart-plus"></i>
-                <span><?= t('add_to_cart') ?></span>
+                <span>Ajouter</span>
             </button>
             <button class="btn-wishlist <?php echo (isset($prod->user_favori) && $prod->user_favori) ? 'active' : ''; ?>"
                     onclick="toggleWishlist(<?php echo $prod->id_produit; ?>, this)"
-                    title="<?= t('add_to_wishlist') ?>">
+                    title="Ajouter aux favoris">
                 <i class="bi <?php echo (isset($prod->user_favori) && $prod->user_favori) ? 'bi-heart-fill' : 'bi-heart'; ?>"></i>
             </button>
         </div>

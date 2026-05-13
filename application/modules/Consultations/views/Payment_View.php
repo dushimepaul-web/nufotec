@@ -801,7 +801,7 @@
 
                     <!-- Actions -->
                     <div class="payment-actions">
-                        <button type="button" class="btn-cancel" onclick="window.location.href='<?= base_url($lang . '/patient-form') ?>'">
+                        <button type="button" class="btn-cancel" onclick="window.location.href='<?= base_url('patient-form') ?>'">
                             <i class="bi bi-arrow-left"></i> <?= t('back') ?>
                         </button>
                         <button type="button" class="btn-pay" id="payButton" onclick="processPayment()" disabled>

@@ -1277,7 +1277,7 @@ textarea.form-control {
             <!-- Carte formulaire -->
             <div class="consultation-card">
                 <form id="consultationForm" 
-                      action="<?= base_url($lang . '/patient-form/create') ?>" 
+                      action="<?= base_url('patient-form/create') ?>" 
                       method="POST" 
                       enctype="multipart/form-data" 
                       novalidate>
@@ -1585,7 +1585,7 @@ textarea.form-control {
                         <div class="terms-checkbox">
                             <input type="checkbox" name="terms" id="terms" required>
                             <label for="terms">
-                                <i class="bi bi-file-text"></i> <?= t('terms_accept') ?> <a href="<?= base_url($lang . '/conditions'); ?>" target="_blank"><i class="bi bi-link-45deg"></i> <?= t('terms_link') ?></a> <?= t('terms_privacy') ?>
+                                <i class="bi bi-file-text"></i> <?= t('terms_accept') ?> <a href="<?= base_url('conditions'); ?>" target="_blank"><i class="bi bi-link-45deg"></i> <?= t('terms_link') ?></a> <?= t('terms_privacy') ?>
                             </label>
                         </div>
 
@@ -1728,7 +1728,7 @@ function confirmChangeDoctor() {
     if (confirm('<?= t('confirm_change_doctor') ?>')) {
         var form = document.createElement('form');
         form.method = 'POST';
-        form.action = '<?= base_url($lang . '/Swap-medecin') ?>';
+        form.action = '<?= base_url('Swap-medecin') ?>';
         
         var csrfName = '<?= $this->security->get_csrf_token_name(); ?>';
         var csrfHash = '<?= $this->security->get_csrf_hash(); ?>';

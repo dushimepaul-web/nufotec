@@ -648,7 +648,7 @@ $(document).ready(function() {
                         </div>
                         <div class="product-info">
                             <h3 class="product-title">
-                                <a href="<?= base_url($lang . '/product/') ?>${product.slug}">
+                                <a href="<?= base_url('/product/') ?>${product.slug}">
                                     ${escapeHtml(product.title)}
                                 </a>
                             </h3>
@@ -658,7 +658,7 @@ $(document).ready(function() {
                             <div class="product-price">
                                 ${escapeHtml(product.price)}
                             </div>
-                            <a href="<?= base_url($lang . '/product/') ?>${product.slug}" class="btn-detail">
+                            <a href="<?= base_url('/product/') ?>${product.slug}" class="btn-detail">
                                 <i class="fas fa-eye me-1"></i> Voir détails
                             </a>
                         </div>

@@ -503,7 +503,7 @@ $active_tab = isset($_GET['register']) ? 'register' : 'login';
                     <div class="alert-success"><?= htmlspecialchars($login_success) ?></div>
                 <?php endif; ?>
 
-                <form action="<?= base_url($lang . '/Auth/login') ?>" method="POST">
+                <form action="<?= base_url('Auth/login') ?>" method="POST">
                     <div class="form-group">
                         <label class="form-label">Adresse email</label>
                         <div class="input-box">
@@ -528,7 +528,7 @@ $active_tab = isset($_GET['register']) ? 'register' : 'login';
                             <input type="checkbox" name="remember" value="1" <?= isset($old_input['remember']) ? 'checked' : '' ?>>
                             <span>Se souvenir de moi</span>
                         </label>
-                        <a href="<?= base_url($lang . '/Auth/forgot_password') ?>" class="forgot-link">Mot de passe oublié ?</a>
+                        <a href="<?= base_url('Auth/forgot_password') ?>" class="forgot-link">Mot de passe oublié ?</a>
                     </div>
 
                     <button type="submit" class="btn-submit btn-submit-primary">Se connecter</button>
@@ -537,8 +537,8 @@ $active_tab = isset($_GET['register']) ? 'register' : 'login';
                 <!-- Divider et social buttons (inchangés) -->
                 <div class="divider"><span>Ou continuer avec</span></div>
                 <div class="social-buttons">
-                    <a href="<?= base_url($lang . '/Auth/google') ?>" class="social-btn">...</a>
-                    <a href="<?= base_url($lang . '/Auth/facebook') ?>" class="social-btn">...</a>
+                    <a href="<?= base_url('Auth/google') ?>" class="social-btn">...</a>
+                    <a href="<?= base_url('Auth/facebook') ?>" class="social-btn">...</a>
                 </div>
             </div>
 
@@ -556,7 +556,7 @@ $active_tab = isset($_GET['register']) ? 'register' : 'login';
                     <div class="alert-success"><?= htmlspecialchars($register_success) ?></div>
                 <?php endif; ?>
 
-                <form action="<?= base_url($lang . '/Auth/register') ?>" method="POST">
+                <form action="<?= base_url('Auth/register') ?>" method="POST">
                     <div class="form-group">
                         <label class="form-label">Nom & Prénom</label>
                         <div class="input-box">
@@ -620,8 +620,8 @@ $active_tab = isset($_GET['register']) ? 'register' : 'login';
 
                 <div class="divider"><span>Ou continuer avec</span></div>
                 <div class="social-buttons">
-                    <a href="<?= base_url($lang . '/Auth/google') ?>" class="social-btn">...</a>
-                    <a href="<?= base_url($lang . '/Auth/facebook') ?>" class="social-btn">...</a>
+                    <a href="<?= base_url('Auth/google') ?>" class="social-btn">...</a>
+                    <a href="<?= base_url('Auth/facebook') ?>" class="social-btn">...</a>
                 </div>
             </div>
         </div>
