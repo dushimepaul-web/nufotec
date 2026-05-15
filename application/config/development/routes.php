@@ -14,6 +14,9 @@ $route['translate_uri_dashes'] = FALSE;
 // ============================================
 $route['switch_lang/(fr|en|sw)'] = 'Home/Home/switch_lang/$1';
 
+
+$route['Admin'] = 'Admin/index';
+
 // ============================================
 // ROUTES DASHBOARD
 // ============================================
