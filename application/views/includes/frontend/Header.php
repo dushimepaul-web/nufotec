@@ -2395,8 +2395,16 @@ window.addEventListener('load', function() {
 });
 </script>
 
-<main style="padding: 50px;">
-    
+<main style="padding:50px;" class="responsive-main">
+
     <!-- Votre contenu principal ici -->
-    
+
 </main>
+
+<style>
+@media(max-width:768px){
+    .responsive-main{
+        padding:20px !important;
+    }
+}
+</style>
