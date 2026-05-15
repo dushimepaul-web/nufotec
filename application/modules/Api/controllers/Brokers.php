@@ -1,5 +1,5 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') OR exit('Accès direct interdit');
 
 /**
  * @author: Dushime Paul
@@ -7,7 +7,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Date: 27/02/2026
  */
 
-class Brokers extends Public_Controller
+class Courtiers extends Public_Controller
 {
     public function __construct()
     {
@@ -15,299 +15,299 @@ class Brokers extends Public_Controller
         $this->load->library('form_validation');
         $this->load->library('email');
         $this->load->database();
-        $this->load->model('Model');
+        $this->load->model('Modele');
         
         // Configuration CORS pour toutes les réponses
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
-        header('Content-Type: application/json');
+        header('Accès-Control-Autoriser-Origine: *');
+        header('Accès-Control-Autoriser-Méthodes: POST, GET, OPTIONS');
+        header('Accès-Control-Autoriser-En-têtes: Type-Contenu, X-Demandé-Avec');
+        header('Type-Contenu: application/json');
         
-        // Gérer les requêtes OPTIONS (preflight)
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        // Gérer les requêtes OPTIONS (vérification préalable)
+        if ($_SERVER['REQUEST_METHODE'] === 'OPTIONS') {
             http_response_code(200);
             exit();
         }
     }
 
     /**
-     * Méthode appelée par la route /{lang}/Brokers-form
+     * Méthode appelée par la route /{lang}/Courtiers-formulaire
      * Vérifie si c'est une requête AJAX POST ou une requête normale
      */
     public function index()
     {
         // Si c'est une requête POST (soumission du formulaire)
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->Save();
+        if ($_SERVER['REQUEST_METHODE'] === 'POST') {
+            $this->enregistrer();
             return;
         }
         
         // Sinon, afficher le formulaire (requête GET)
-        $this->show_form();
+        $this->afficher_formulaire();
     }
 
     /**
-     * Affiche le formulaire d'inscription des brokers (GET)
+     * Affiche le formulaire d'inscription des courtiers (GET)
      */
-    public function show_form()
+    public function afficher_formulaire()
     {
-        $sections = $this->get_sections('brokers-form'); 
+        $sections = $this->obtenir_sections('formulaire-courtiers'); 
         
-        $data = [
-            'title'  => 'Become Broker Partner',
-            'hero'   => $sections['hero'] ?? null,
-            'textes' => $sections['textes'] ?? [],
-            'page'   => $sections['page'] ?? null,
-            'pays'   => $this->Model->read('pays', [], 'pays', 'ASC'),
-            'lang'   => $this->input->get('lang') ?? 'fr'
+        $donnees = [
+            'titre'   => 'Devenir Partenaire Courtier',
+            'hero'    => $sections['hero'] ?? null,
+            'textes'  => $sections['textes'] ?? [],
+            'page'    => $sections['page'] ?? null,
+            'pays'    => $this->Modele->lire('pays', [], 'pays', 'ASC'),
+            'langue'  => $this->input->get('langue') ?? 'fr'
         ];
         
-        $this->load->view('Brokers_View', $data);
+        $this->load->view('Brokers_View', $donnees);
     }
 
     /**
-     * Endpoint API pour sauvegarder les données (POST)
+     * Point d'accès API pour enregistrer les données (POST)
      */
-    public function Save() {
+    public function enregistrer() {
         // Récupérer les données
-        $input_data = $this->_get_input_data();
+        $donnees_entree = $this->_obtenir_donnees_entree();
         
-        if (empty($input_data)) {
-            $this->_json_response(false, 'Aucune donnée reçue');
+        if (empty($donnees_entree)) {
+            $this->_reponse_json(false, 'Aucune donnée reçue');
             return;
         }
 
         // Validation
-        $errors = $this->_validate_broker_data($input_data);
+        $erreurs = $this->_valider_donnees_courtier($donnees_entree);
         
-        if (!empty($errors)) {
-            $this->_json_response(false, 'Erreur de validation', ['errors' => $errors]);
+        if (!empty($erreurs)) {
+            $this->_reponse_json(false, 'Erreur de validation', ['erreurs' => $erreurs]);
             return;
         }
 
         // Préparation et insertion
-        $insert_data = $this->_prepare_broker_data($input_data);
+        $donnees_insertion = $this->_preparer_donnees_courtier($donnees_entree);
         
-        $inserted = $this->db->insert('brokers', $insert_data);
+        $insere = $this->db->insert('courtiers', $donnees_insertion);
         
-        if (!$inserted) {
-            $db_error = $this->db->error();
-            log_message('error', 'Erreur insertion broker: ' . print_r($db_error, true));
-            $this->_json_response(false, 'Erreur base de données: ' . $db_error['message']);
+        if (!$insere) {
+            $erreur_bd = $this->db->error();
+            log_message('error', 'Erreur insertion courtier : ' . print_r($erreur_bd, true));
+            $this->_reponse_json(false, 'Erreur base de données : ' . $erreur_bd['message']);
             return;
         }
 
-        $insert_id = $this->db->insert_id();
+        $id_insere = $this->db->insert_id();
 
-        // Envoi des emails (optionnel)
-        $email_sent = false;
+        // Envoi des courriels (optionnel)
+        $courriel_envoye = false;
         try {
-            $email_sent = $this->_send_notification_emails($insert_data);
+            $courriel_envoye = $this->_envoyer_courriels_notification($donnees_insertion);
         } catch (Exception $e) {
-            log_message('error', 'Exception email broker: ' . $e->getMessage());
+            log_message('error', 'Exception courriel courtier : ' . $e->getMessage());
         }
 
         // Succès
-        $this->_json_response(true, 'Votre inscription a été enregistrée avec succès', [
-            'email_sent' => $email_sent,
-            'id' => $insert_id
+        $this->_reponse_json(true, 'Votre inscription a été enregistrée avec succès', [
+            'courriel_envoye' => $courriel_envoye,
+            'id' => $id_insere
         ]);
     }
 
     /**
-     * Helper: Récupérer les données d'entrée (JSON ou POST)
+     * Fonction auxiliaire : Récupérer les données d'entrée (JSON ou POST)
      */
-    private function _get_input_data() {
-        $input_data = [];
-        $content_type = isset($_SERVER['CONTENT_TYPE']) ? strtolower($_SERVER['CONTENT_TYPE']) : '';
+    private function _obtenir_donnees_entree() {
+        $donnees_entree = [];
+        $type_contenu = isset($_SERVER['TYPE_CONTENU']) ? strtolower($_SERVER['TYPE_CONTENU']) : '';
         
-        if (strpos($content_type, 'application/json') !== false) {
-            $json_input = file_get_contents('php://input');
-            $input_data = json_decode($json_input, true);
+        if (strpos($type_contenu, 'application/json') !== false) {
+            $entree_json = file_get_contents('php://input');
+            $donnees_entree = json_decode($entree_json, true);
             
-            log_message('debug', 'JSON broker reçu: ' . $json_input);
+            log_message('debug', 'JSON courtier reçu : ' . $entree_json);
             
             if (json_last_error() !== JSON_ERROR_NONE) {
-                log_message('error', 'JSON invalide: ' . json_last_error_msg());
+                log_message('error', 'JSON invalide : ' . json_last_error_msg());
                 return null;
             }
         } else {
-            $input_data = $this->input->post();
-            log_message('debug', 'POST broker reçu: ' . print_r($input_data, true));
+            $donnees_entree = $this->input->post();
+            log_message('debug', 'POST courtier reçu : ' . print_r($donnees_entree, true));
         }
         
-        return $input_data;
+        return $donnees_entree;
     }
 
     /**
-     * Helper: Envoyer une réponse JSON et terminer
+     * Fonction auxiliaire : Envoyer une réponse JSON et terminer
      */
-    private function _json_response($success, $message, $extra = []) {
-        $response = array_merge([
-            'success' => $success,
+    private function _reponse_json($succes, $message, $supplementaire = []) {
+        $reponse = array_merge([
+            'succes' => $succes,
             'message' => $message
-        ], $extra);
+        ], $supplementaire);
         
-        echo json_encode($response);
+        echo json_encode($reponse);
         exit();
     }
 
     /**
-     * Validation des données broker
+     * Validation des données courtier
      */
-    private function _validate_broker_data($input_data) {
-        $errors = [];
+    private function _valider_donnees_courtier($donnees_entree) {
+        $erreurs = [];
         
         // Nom complet
-        if (empty($input_data['full_name'])) {
-            $errors['full_name'] = 'Le nom complet est requis';
-        } elseif (strlen($input_data['full_name']) > 150) {
-            $errors['full_name'] = 'Le nom ne doit pas dépasser 150 caractères';
+        if (empty($donnees_entree['nom_complet'])) {
+            $erreurs['nom_complet'] = 'Le nom complet est requis';
+        } elseif (strlen($donnees_entree['nom_complet']) > 150) {
+            $erreurs['nom_complet'] = 'Le nom ne doit pas dépasser 150 caractères';
         }
 
         // Nom de la société
-        if (empty($input_data['firm_name'])) {
-            $errors['firm_name'] = 'Le nom de la société est requis';
-        } elseif (strlen($input_data['firm_name']) > 200) {
-            $errors['firm_name'] = 'Le nom ne doit pas dépasser 200 caractères';
+        if (empty($donnees_entree['nom_societe'])) {
+            $erreurs['nom_societe'] = 'Le nom de la société est requis';
+        } elseif (strlen($donnees_entree['nom_societe']) > 200) {
+            $erreurs['nom_societe'] = 'Le nom ne doit pas dépasser 200 caractères';
         }
 
-        // Email
-        if (empty($input_data['email'])) {
-            $errors['email'] = 'L\'email est requis';
-        } elseif (!filter_var($input_data['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Format d\'email invalide';
-        } elseif (strlen($input_data['email']) > 150) {
-            $errors['email'] = 'L\'email ne doit pas dépasser 150 caractères';
+        // Courriel
+        if (empty($donnees_entree['courriel'])) {
+            $erreurs['courriel'] = 'Le courriel est requis';
+        } elseif (!filter_var($donnees_entree['courriel'], FILTER_VALIDATE_EMAIL)) {
+            $erreurs['courriel'] = 'Format de courriel invalide';
+        } elseif (strlen($donnees_entree['courriel']) > 150) {
+            $erreurs['courriel'] = 'Le courriel ne doit pas dépasser 150 caractères';
         } else {
-            $this->db->where('email', $input_data['email']);
-            if ($this->db->count_all_results('brokers') > 0) {
-                $errors['email'] = 'Cet email est déjà enregistré';
+            $this->db->where('courriel', $donnees_entree['courriel']);
+            if ($this->db->count_all_results('courtiers') > 0) {
+                $erreurs['courriel'] = 'Ce courriel est déjà enregistré';
             }
         }
 
         // Pays
-        if (empty($input_data['id_pays'])) {
-            $errors['id_pays'] = 'Le pays est requis';
+        if (empty($donnees_entree['id_pays'])) {
+            $erreurs['id_pays'] = 'Le pays est requis';
         } else {
-            $this->db->where('id', $input_data['id_pays']);
+            $this->db->where('id', $donnees_entree['id_pays']);
             if ($this->db->count_all_results('pays') === 0) {
-                $errors['id_pays'] = 'Pays invalide';
+                $erreurs['id_pays'] = 'Pays invalide';
             }
         }
 
         // Capacité (au moins une)
-        $capacity_fields = [
-            'capacity_investment_broker', 'capacity_placement_agent',
-            'capacity_corporate_finance_advisor', 'capacity_fund_manager',
-            'capacity_family_office_rep', 'capacity_esg_advisor',
-            'capacity_independent_introducer'
+        $champs_capacite = [
+            'capacite_courtier_investissement', 'capacite_agent_placement',
+            'capacite_conseiller_finances_entreprise', 'capacite_gestionnaire_fonds',
+            'capacite_representant_family_office', 'capacite_conseiller_esg',
+            'capacite_introducteur_independant'
         ];
         
-        $has_capacity = false;
-        foreach ($capacity_fields as $field) {
-            if (!empty($input_data[$field]) && $input_data[$field] == 1) {
-                $has_capacity = true;
+        $a_capacite = false;
+        foreach ($champs_capacite as $champ) {
+            if (!empty($donnees_entree[$champ]) && $donnees_entree[$champ] == 1) {
+                $a_capacite = true;
                 break;
             }
         }
         
-        $capacity_other_filled = !empty($input_data['capacity_other']) && trim($input_data['capacity_other']) !== '';
+        $capacite_autre_remplie = !empty($donnees_entree['capacite_autre']) && trim($donnees_entree['capacite_autre']) !== '';
         
-        if (!$has_capacity && !$capacity_other_filled) {
-            $errors['capacity'] = 'Veuillez sélectionner au moins une capacité ou préciser "Autre"';
+        if (!$a_capacite && !$capacite_autre_remplie) {
+            $erreurs['capacite'] = 'Veuillez sélectionner au moins une capacité ou préciser "Autre"';
         }
 
-        // Compliance (toutes requises)
-        $compliance_fields = [
-            'confirm_authorized' => 'Vous devez confirmer être autorisé à représenter votre entreprise',
-            'confirm_aml_kyc' => 'Vous devez confirmer la conformité AML/KYC',
-            'acknowledge_no_exclusivity' => 'Vous devez reconnaître le caractère non exclusif',
-            'understand_formal_mandate_required' => 'Vous devez comprendre qu\'un mandat formel est requis'
+        // Conformité (toutes requises)
+        $champs_conformite = [
+            'confirme_autorise' => 'Vous devez confirmer être autorisé à représenter votre entreprise',
+            'confirme_aml_kyc' => 'Vous devez confirmer la conformité AML/KYC',
+            'reconnait_non_exclusivite' => 'Vous devez reconnaître le caractère non exclusif',
+            'comprend_mandat_formel_requis' => 'Vous devez comprendre qu\'un mandat formel est requis'
         ];
         
-        foreach ($compliance_fields as $field => $message) {
-            if (empty($input_data[$field]) || $input_data[$field] != 1) {
-                $errors[$field] = $message;
+        foreach ($champs_conformite as $champ => $message) {
+            if (empty($donnees_entree[$champ]) || $donnees_entree[$champ] != 1) {
+                $erreurs[$champ] = $message;
             }
         }
 
-        return $errors;
+        return $erreurs;
     }
 
     /**
      * Préparation des données pour insertion
      */
-    private function _prepare_broker_data($input_data) {
+    private function _preparer_donnees_courtier($donnees_entree) {
         return [
-            'full_name' => $input_data['full_name'],
-            'firm_name' => $input_data['firm_name'],
-            'jurisdiction_of_incorporation' => $input_data['jurisdiction_of_incorporation'] ?? null,
-            'registration_number' => $input_data['registration_number'] ?? null,
-            'regulatory_status' => $input_data['regulatory_status'] ?? null,
-            'regulatory_authority' => $input_data['regulatory_authority'] ?? null,
-            'id_pays' => $input_data['id_pays'],
-            'email' => $input_data['email'],
-            'mobile_phone' => $input_data['mobile_phone'] ?? null,
-            'whatsapp' => $input_data['whatsapp'] ?? null,
-            'corporate_website' => $input_data['corporate_website'] ?? null,
-            'capacity_investment_broker' => !empty($input_data['capacity_investment_broker']) ? 1 : 0,
-            'capacity_placement_agent' => !empty($input_data['capacity_placement_agent']) ? 1 : 0,
-            'capacity_corporate_finance_advisor' => !empty($input_data['capacity_corporate_finance_advisor']) ? 1 : 0,
-            'capacity_fund_manager' => !empty($input_data['capacity_fund_manager']) ? 1 : 0,
-            'capacity_family_office_rep' => !empty($input_data['capacity_family_office_rep']) ? 1 : 0,
-            'capacity_esg_advisor' => !empty($input_data['capacity_esg_advisor']) ? 1 : 0,
-            'capacity_independent_introducer' => !empty($input_data['capacity_independent_introducer']) ? 1 : 0,
-            'capacity_other' => $input_data['capacity_other'] ?? null,
-            'investor_private_equity' => !empty($input_data['investor_private_equity']) ? 1 : 0,
-            'investor_venture_capital' => !empty($input_data['investor_venture_capital']) ? 1 : 0,
-            'investor_esg_impact' => !empty($input_data['investor_esg_impact']) ? 1 : 0,
-            'investor_dfi' => !empty($input_data['investor_dfi']) ? 1 : 0,
-            'investor_institutional' => !empty($input_data['investor_institutional']) ? 1 : 0,
-            'investor_hnwi' => !empty($input_data['investor_hnwi']) ? 1 : 0,
-            'investor_sovereign' => !empty($input_data['investor_sovereign']) ? 1 : 0,
-            'typical_ticket_size' => $input_data['typical_ticket_size'] ?? null,
-            'geographic_coverage' => $input_data['geographic_coverage'] ?? null,
-            'mandate_equity' => !empty($input_data['mandate_equity']) ? 1 : 0,
-            'mandate_structured_debt' => !empty($input_data['mandate_structured_debt']) ? 1 : 0,
-            'mandate_blended_finance' => !empty($input_data['mandate_blended_finance']) ? 1 : 0,
-            'mandate_grant' => !empty($input_data['mandate_grant']) ? 1 : 0,
-            'mandate_strategic_partnership' => !empty($input_data['mandate_strategic_partnership']) ? 1 : 0,
-            'mandate_full_program' => !empty($input_data['mandate_full_program']) ? 1 : 0,
-            'engagement_model' => $input_data['engagement_model'] ?? null,
-            'confirm_authorized' => !empty($input_data['confirm_authorized']) ? 1 : 0,
-            'confirm_aml_kyc' => !empty($input_data['confirm_aml_kyc']) ? 1 : 0,
-            'acknowledge_no_exclusivity' => !empty($input_data['acknowledge_no_exclusivity']) ? 1 : 0,
-            'understand_formal_mandate_required' => !empty($input_data['understand_formal_mandate_required']) ? 1 : 0,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
+            'nom_complet' => $donnees_entree['nom_complet'],
+            'nom_societe' => $donnees_entree['nom_societe'],
+            'juridiction_incorporation' => $donnees_entree['juridiction_incorporation'] ?? null,
+            'numero_immatriculation' => $donnees_entree['numero_immatriculation'] ?? null,
+            'statut_reglementaire' => $donnees_entree['statut_reglementaire'] ?? null,
+            'autorite_reglementation' => $donnees_entree['autorite_reglementation'] ?? null,
+            'id_pays' => $donnees_entree['id_pays'],
+            'courriel' => $donnees_entree['courriel'],
+            'telephone_mobile' => $donnees_entree['telephone_mobile'] ?? null,
+            'whatsapp' => $donnees_entree['whatsapp'] ?? null,
+            'site_web_societe' => $donnees_entree['site_web_societe'] ?? null,
+            'capacite_courtier_investissement' => !empty($donnees_entree['capacite_courtier_investissement']) ? 1 : 0,
+            'capacite_agent_placement' => !empty($donnees_entree['capacite_agent_placement']) ? 1 : 0,
+            'capacite_conseiller_finances_entreprise' => !empty($donnees_entree['capacite_conseiller_finances_entreprise']) ? 1 : 0,
+            'capacite_gestionnaire_fonds' => !empty($donnees_entree['capacite_gestionnaire_fonds']) ? 1 : 0,
+            'capacite_representant_family_office' => !empty($donnees_entree['capacite_representant_family_office']) ? 1 : 0,
+            'capacite_conseiller_esg' => !empty($donnees_entree['capacite_conseiller_esg']) ? 1 : 0,
+            'capacite_introducteur_independant' => !empty($donnees_entree['capacite_introducteur_independant']) ? 1 : 0,
+            'capacite_autre' => $donnees_entree['capacite_autre'] ?? null,
+            'investisseur_capital_investissement' => !empty($donnees_entree['investisseur_capital_investissement']) ? 1 : 0,
+            'investisseur_capital_risque' => !empty($donnees_entree['investisseur_capital_risque']) ? 1 : 0,
+            'investisseur_esg_impact' => !empty($donnees_entree['investisseur_esg_impact']) ? 1 : 0,
+            'investisseur_financement_developpement' => !empty($donnees_entree['investisseur_financement_developpement']) ? 1 : 0,
+            'investisseur_institutionnel' => !empty($donnees_entree['investisseur_institutionnel']) ? 1 : 0,
+            'investisseur_grande_fortune' => !empty($donnees_entree['investisseur_grande_fortune']) ? 1 : 0,
+            'investisseur_souverain' => !empty($donnees_entree['investisseur_souverain']) ? 1 : 0,
+            'taille_billet_typique' => $donnees_entree['taille_billet_typique'] ?? null,
+            'couverture_geographique' => $donnees_entree['couverture_geographique'] ?? null,
+            'mandat_capitaux_propres' => !empty($donnees_entree['mandat_capitaux_propres']) ? 1 : 0,
+            'mandat_dette_structuree' => !empty($donnees_entree['mandat_dette_structuree']) ? 1 : 0,
+            'mandat_financement_mixte' => !empty($donnees_entree['mandat_financement_mixte']) ? 1 : 0,
+            'mandat_subvention' => !empty($donnees_entree['mandat_subvention']) ? 1 : 0,
+            'mandat_partenariat_strategique' => !empty($donnees_entree['mandat_partenariat_strategique']) ? 1 : 0,
+            'mandat_programme_complet' => !empty($donnees_entree['mandat_programme_complet']) ? 1 : 0,
+            'modele_engagement' => $donnees_entree['modele_engagement'] ?? null,
+            'confirme_autorise' => !empty($donnees_entree['confirme_autorise']) ? 1 : 0,
+            'confirme_aml_kyc' => !empty($donnees_entree['confirme_aml_kyc']) ? 1 : 0,
+            'reconnait_non_exclusivite' => !empty($donnees_entree['reconnait_non_exclusivite']) ? 1 : 0,
+            'comprend_mandat_formel_requis' => !empty($donnees_entree['comprend_mandat_formel_requis']) ? 1 : 0,
+            'cree_le' => date('Y-m-d H:i:s'),
+            'modifie_le' => date('Y-m-d H:i:s'),
         ];
     }
 
     /**
-     * Envoi des emails de notification
+     * Envoi des courriels de notification
      */
-    private function _send_notification_emails($data) {
-        // Implémentez votre logique d'envoi d'email ici
-        // Pour l'instant, retourne true
+    private function _envoyer_courriels_notification($donnees) {
+        // Implémentez votre logique d'envoi de courriel ici
+        // Pour l'instant, retourne vrai
         return true;
     }
 
     /**
-     * Récupération des sections CMS
+     * Récupération des sections du CMS
      */
-    private function get_sections($slug = 'brokers-form') {
-        $page = $this->Model->readOne('pages', [
-            'slug' => $slug,
+    private function obtenir_sections($alias = 'formulaire-courtiers') {
+        $page = $this->Modele->lireUn('pages', [
+            'alias' => $alias,
             'est_publiee' => 1
         ]);
 
         if (empty($page)) {
-            log_message('debug', 'Page "' . $slug . '" non trouvée');
+            log_message('debug', 'Page "' . $alias . '" non trouvée');
             return null;
         }
 
-        $hero = $this->Model->readOne('sections_contenu', [
+        $hero = $this->Modele->lireUn('sections_contenu', [
             'id_page'      => $page['id_page'],
             'type_section' => 'hero',
             'est_active'   => 1
@@ -317,7 +317,7 @@ class Brokers extends Public_Controller
             $hero['options'] = json_decode($hero['options_json'], true);
         }
 
-        $textes = $this->Model->read('sections_contenu', [
+        $textes = $this->Modele->lire('sections_contenu', [
             'id_page'      => $page['id_page'],
             'type_section' => 'texte',
             'est_active'   => 1

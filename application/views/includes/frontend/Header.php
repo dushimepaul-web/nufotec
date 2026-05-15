@@ -868,10 +868,6 @@ body {
     scrollbar-width: none;
     -ms-overflow-style: none;
     flex: 1;
-
-    position: relative;
-    z-index: 1000;
-    background: white;
 }
 
 .nav-menu::-webkit-scrollbar { display: none; }
@@ -1548,28 +1544,6 @@ body {
     visibility: hidden;
     transition: opacity 0.4s ease, visibility 0.4s ease;
 }
-
-/* Assurer que le contenu principal n'est pas caché sous l'en-tête */
-.main-content {
-    position: relative;
-    z-index: 1;
-    min-height: 100vh;
-}
-
-/* Ajustement pour desktop */
-@media (min-width: 993px) {
-    .main-content {
-        margin-top: 0;
-        padding-top: 0;
-    }
-}
-
-/* Ajustement pour mobile */
-@media (max-width: 992px) {
-    .main-content {
-        padding-bottom: var(--bottom-nav-height);
-    }
-}
 </style>
 </head>
 <body>
@@ -2109,13 +2083,6 @@ function googleTranslateElementInit() {
     </ul>
 </div>
 
-
-
-
-
-
-    <!-- VOTRE CONTENU PRINCIPAL COMMENCE ICI -->
-
 <script>
 // ============================================
 // GESTION DE LA BARRE DE RECHERCHE SUR MOBILE
@@ -2428,3 +2395,8 @@ window.addEventListener('load', function() {
 });
 </script>
 
+<main style="padding: 50px;">
+    
+    <!-- Votre contenu principal ici -->
+    
+</main>

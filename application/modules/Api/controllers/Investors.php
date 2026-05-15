@@ -1,5 +1,5 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') OR exit('Accès direct interdit');
 
 /**
  * @author: Dushime Paul
@@ -7,7 +7,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Date: 27/02/2026
  */
 
-class Investors extends Public_Controller
+class Investisseurs extends Public_Controller
 {
     public function __construct()
     {
@@ -16,268 +16,268 @@ class Investors extends Public_Controller
         $this->load->library('email');
         $this->load->database();
         
-        // Charger le modèle pour les settings si nécessaire
-        if (!isset($this->Model)) {
-            $this->load->model('Model');
+        // Charger le modèle si nécessaire
+        if (!isset($this->Modele)) {
+            $this->load->model('Modele');
         }
         
         // Configuration CORS pour toutes les réponses
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+        header('Accès-Control-Autoriser-Origine: *');
+        header('Accès-Control-Autoriser-Méthodes: POST, GET, OPTIONS');
+        header('Accès-Control-Autoriser-En-têtes: Type-Contenu, X-Demandé-Avec');
         
-        // Gérer les requêtes OPTIONS (preflight)
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        // Gérer les requêtes OPTIONS (vérification préalable)
+        if ($_SERVER['REQUEST_METHODE'] === 'OPTIONS') {
             http_response_code(200);
             exit();
         }
     }
 
     /**
-     * Méthode principale appelée par la route /{lang}/Investors-form
+     * Méthode principale appelée par la route /{lang}/Investisseurs-formulaire
      * GET: Affiche le formulaire
      * POST: Traite la soumission
      */
     public function index()
     {
         // Si c'est une requête POST, traiter l'envoi
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->Save();
+        if ($_SERVER['REQUEST_METHODE'] === 'POST') {
+            $this->enregistrer();
             return;
         }
         
         // Sinon, afficher le formulaire (GET)
-        $this->show_form();
+        $this->afficher_formulaire();
     }
 
     /**
      * Affiche le formulaire d'expression d'intérêt des investisseurs (GET)
      */
-    public function show_form()
+    public function afficher_formulaire()
     {   
         // Récupérer les sections hero et texte
-        $sections = $this->get_sections('investors-form'); 
+        $sections = $this->obtenir_sections('formulaire-investisseurs'); 
         
         // Préparer les données pour la vue
-        $data = [
-            'title'  => 'Devenir Investisseur Partenaire',
-            'hero'   => $sections['hero'] ?? null,
-            'textes' => $sections['textes'] ?? [],
-            'page'   => $sections['page'] ?? null,
-            'pays'   => $this->Model->read('pays', [], 'pays', 'ASC'),
-            'lang'   => $this->current_lang ?? 'fr'
+        $donnees = [
+            'titre'   => 'Devenir Investisseur Partenaire',
+            'hero'    => $sections['hero'] ?? null,
+            'textes'  => $sections['textes'] ?? [],
+            'page'    => $sections['page'] ?? null,
+            'pays'    => $this->Modele->lire('pays', [], 'pays', 'ASC'),
+            'langue'  => $this->current_lang ?? 'fr'
         ];
         
         // Charger la vue avec le formulaire
-        $this->load->view('Investors_View', $data);
+        $this->load->view('Investors_View', $donnees);
     }
 
     /**
-     * Endpoint API pour sauvegarder les données (POST)
+     * Point d'accès API pour enregistrer les données (POST)
      */
-    public function Save() {
-        // Définir le header JSON
-        header('Content-Type: application/json');
+    public function enregistrer() {
+        // Définir l'en-tête JSON
+        header('Type-Contenu: application/json');
 
         // Récupérer les données (JSON ou POST)
-        $input_data = $this->_get_input_data();
+        $donnees_entree = $this->_obtenir_donnees_entree();
         
-        log_message('debug', '=== SAVE INVESTOR START ===');
-        log_message('debug', 'Input data: ' . print_r($input_data, true));
+        log_message('debug', '=== DÉBUT ENREGISTREMENT INVESTISSEUR ===');
+        log_message('debug', 'Données entrée : ' . print_r($donnees_entree, true));
 
         // Vérifier si des données ont été reçues
-        if (empty($input_data)) {
-            $this->_json_response(false, 'Aucune donnée reçue');
+        if (empty($donnees_entree)) {
+            $this->_reponse_json(false, 'Aucune donnée reçue');
             return;
         }
 
         // ========== VALIDATION ==========
-        $errors = $this->_validate_data($input_data);
+        $erreurs = $this->_valider_donnees($donnees_entree);
         
-        if (!empty($errors)) {
-            $this->_json_response(false, 'Erreur de validation', ['errors' => $errors]);
+        if (!empty($erreurs)) {
+            $this->_reponse_json(false, 'Erreur de validation', ['erreurs' => $erreurs]);
             return;
         }
 
         // ========== PRÉPARATION DES DONNÉES ==========
-        $insert_data = $this->_prepare_insert_data($input_data);
+        $donnees_insertion = $this->_preparer_donnees_insertion($donnees_entree);
         
-        log_message('debug', 'Données préparées: ' . print_r($insert_data, true));
+        log_message('debug', 'Données préparées : ' . print_r($donnees_insertion, true));
 
         // ========== INSERTION ==========
-        $inserted = $this->db->insert('investors', $insert_data);
+        $insere = $this->db->insert('investisseurs', $donnees_insertion);
         
-        if (!$inserted) {
-            $db_error = $this->db->error();
-            log_message('error', 'Erreur DB: ' . print_r($db_error, true));
-            $this->_json_response(false, 'Erreur base de données: ' . $db_error['message']);
+        if (!$insere) {
+            $erreur_bd = $this->db->error();
+            log_message('error', 'Erreur BD : ' . print_r($erreur_bd, true));
+            $this->_reponse_json(false, 'Erreur base de données : ' . $erreur_bd['message']);
             return;
         }
 
-        $insert_id = $this->db->insert_id();
-        log_message('debug', 'Insertion OK, ID: ' . $insert_id);
+        $id_insere = $this->db->insert_id();
+        log_message('debug', 'Insertion OK, ID : ' . $id_insere);
 
-        // ========== ENVOI EMAILS ==========
-        $email_sent = false;
+        // ========== ENVOI DES COURRIELS ==========
+        $courriel_envoye = false;
         try {
-            $email_sent = $this->_send_notification_emails($insert_data, $insert_id);
+            $courriel_envoye = $this->_envoyer_courriels_notification($donnees_insertion, $id_insere);
         } catch (Exception $e) {
-            log_message('error', 'Exception email: ' . $e->getMessage());
-            // Continue même si l'email échoue
+            log_message('error', 'Exception courriel : ' . $e->getMessage());
+            // Continuer même si l'envoi échoue
         }
 
         // ========== SUCCÈS ==========
-        log_message('debug', '=== SAVE INVESTOR SUCCESS ===');
+        log_message('debug', '=== FIN ENREGISTREMENT INVESTISSEUR SUCCÈS ===');
         
-        $this->_json_response(true, 'Votre expression d\'intérêt a été enregistrée avec succès', [
-            'email_sent' => $email_sent,
-            'id' => $insert_id
+        $this->_reponse_json(true, 'Votre expression d\'intérêt a été enregistrée avec succès', [
+            'courriel_envoye' => $courriel_envoye,
+            'id' => $id_insere
         ]);
     }
 
     /**
-     * Helper pour récupérer les données d'entrée
+     * Fonction auxiliaire pour récupérer les données d'entrée
      */
-    private function _get_input_data() {
-        $input_data = [];
-        $content_type = isset($_SERVER['CONTENT_TYPE']) ? strtolower($_SERVER['CONTENT_TYPE']) : '';
+    private function _obtenir_donnees_entree() {
+        $donnees_entree = [];
+        $type_contenu = isset($_SERVER['TYPE_CONTENU']) ? strtolower($_SERVER['TYPE_CONTENU']) : '';
         
-        if (strpos($content_type, 'application/json') !== false) {
-            $json_input = file_get_contents('php://input');
-            $input_data = json_decode($json_input, true);
+        if (strpos($type_contenu, 'application/json') !== false) {
+            $entree_json = file_get_contents('php://input');
+            $donnees_entree = json_decode($entree_json, true);
             
             if (json_last_error() !== JSON_ERROR_NONE) {
-                log_message('error', 'JSON invalide: ' . json_last_error_msg());
+                log_message('error', 'JSON invalide : ' . json_last_error_msg());
                 return null;
             }
         } else {
-            $input_data = $this->input->post();
+            $donnees_entree = $this->input->post();
         }
         
-        return $input_data;
+        return $donnees_entree;
     }
 
     /**
-     * Helper pour envoyer une réponse JSON et arrêter l'exécution
+     * Fonction auxiliaire pour envoyer une réponse JSON et arrêter l'exécution
      */
-    private function _json_response($success, $message, $extra = []) {
-        $response = array_merge([
-            'success' => $success,
+    private function _reponse_json($succes, $message, $supplementaire = []) {
+        $reponse = array_merge([
+            'succes' => $succes,
             'message' => $message
-        ], $extra);
+        ], $supplementaire);
         
-        echo json_encode($response);
+        echo json_encode($reponse);
         exit();
     }
 
     /**
      * Validation des données
      */
-    private function _validate_data($input_data) {
-        $errors = [];
+    private function _valider_donnees($donnees_entree) {
+        $erreurs = [];
         
         // Nom complet
-        if (empty($input_data['full_name'])) {
-            $errors['full_name'] = 'Le nom complet est requis';
-        } elseif (strlen($input_data['full_name']) > 150) {
-            $errors['full_name'] = 'Le nom ne doit pas dépasser 150 caractères';
+        if (empty($donnees_entree['nom_complet'])) {
+            $erreurs['nom_complet'] = 'Le nom complet est requis';
+        } elseif (strlen($donnees_entree['nom_complet']) > 150) {
+            $erreurs['nom_complet'] = 'Le nom ne doit pas dépasser 150 caractères';
         }
 
-        // Email
-        if (empty($input_data['email'])) {
-            $errors['email'] = 'L\'email est requis';
-        } elseif (!filter_var($input_data['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Format d\'email invalide';
-        } elseif (strlen($input_data['email']) > 150) {
-            $errors['email'] = 'L\'email ne doit pas dépasser 150 caractères';
+        // Courriel
+        if (empty($donnees_entree['courriel'])) {
+            $erreurs['courriel'] = 'Le courriel est requis';
+        } elseif (!filter_var($donnees_entree['courriel'], FILTER_VALIDATE_EMAIL)) {
+            $erreurs['courriel'] = 'Format de courriel invalide';
+        } elseif (strlen($donnees_entree['courriel']) > 150) {
+            $erreurs['courriel'] = 'Le courriel ne doit pas dépasser 150 caractères';
         } else {
-            // Vérifier si l'email existe déjà
-            $this->db->where('email', $input_data['email']);
-            if ($this->db->count_all_results('investors') > 0) {
-                $errors['email'] = 'Cet email est déjà enregistré';
+            // Vérifier si le courriel existe déjà
+            $this->db->where('courriel', $donnees_entree['courriel']);
+            if ($this->db->count_all_results('investisseurs') > 0) {
+                $erreurs['courriel'] = 'Ce courriel est déjà enregistré';
             }
         }
 
         // Pays
-        if (empty($input_data['id_pays'])) {
-            $errors['id_pays'] = 'Le pays est requis';
+        if (empty($donnees_entree['id_pays'])) {
+            $erreurs['id_pays'] = 'Le pays est requis';
         } else {
-            $this->db->where('id', $input_data['id_pays']);
+            $this->db->where('id', $donnees_entree['id_pays']);
             if ($this->db->count_all_results('pays') === 0) {
-                $errors['id_pays'] = 'Pays invalide';
+                $erreurs['id_pays'] = 'Pays invalide';
             }
         }
 
         // Type d'intérêt (au moins un)
-        $interest_fields = [
-            'interest_equity', 'interest_debt', 'interest_blended_finance',
-            'interest_grant', 'interest_strategic_partnership',
-            'interest_technical_collaboration', 'interest_offtake_distribution'
+        $champs_interet = [
+            'interet_capitaux_propres', 'interet_dette', 'interet_financement_mixte',
+            'interet_subvention', 'interet_partenariat_strategique',
+            'interet_collaboration_technique', 'interet_achat_distribution'
         ];
         
-        $has_interest = false;
-        foreach ($interest_fields as $field) {
-            if (!empty($input_data[$field]) && $input_data[$field] == 1) {
-                $has_interest = true;
+        $a_interet = false;
+        foreach ($champs_interet as $champ) {
+            if (!empty($donnees_entree[$champ]) && $donnees_entree[$champ] == 1) {
+                $a_interet = true;
                 break;
             }
         }
         
-        $interest_other_filled = !empty($input_data['interest_other']) && trim($input_data['interest_other']) !== '';
+        $interet_autre_rempli = !empty($donnees_entree['interet_autre']) && trim($donnees_entree['interet_autre']) !== '';
         
-        if (!$has_interest && !$interest_other_filled) {
-            $errors['interest'] = 'Veuillez sélectionner au moins un type d\'intérêt ou préciser "Autre"';
+        if (!$a_interet && !$interet_autre_rempli) {
+            $erreurs['interet'] = 'Veuillez sélectionner au moins un type d\'intérêt ou préciser "Autre"';
         }
 
-        // Compliance
-        if (empty($input_data['agree_contact']) || $input_data['agree_contact'] != 1) {
-            $errors['agree_contact'] = 'Vous devez accepter d\'être contacté';
+        // Conformité
+        if (empty($donnees_entree['accepte_etre_contacte']) || $donnees_entree['accepte_etre_contacte'] != 1) {
+            $erreurs['accepte_etre_contacte'] = 'Vous devez accepter d\'être contacté';
         }
         
-        if (empty($input_data['non_binding_confirmation']) || $input_data['non_binding_confirmation'] != 1) {
-            $errors['non_binding_confirmation'] = 'Vous devez confirmer que cette expression d\'intérêt est non engageante';
+        if (empty($donnees_entree['confirmation_non_contraignante']) || $donnees_entree['confirmation_non_contraignante'] != 1) {
+            $erreurs['confirmation_non_contraignante'] = 'Vous devez confirmer que cette expression d\'intérêt est non engageante';
         }
 
-        return $errors;
+        return $erreurs;
     }
 
     /**
      * Préparation des données pour insertion
      */
-    private function _prepare_insert_data($input_data) {
+    private function _preparer_donnees_insertion($donnees_entree) {
         return [
-            'full_name' => $input_data['full_name'],
-            'organization' => $input_data['organization'] ?? null,
-            'position_title' => $input_data['position_title'] ?? null,
-            'id_pays' => $input_data['id_pays'],
-            'email' => $input_data['email'],
-            'phone' => $input_data['phone'] ?? null,
+            'nom_complet' => $donnees_entree['nom_complet'],
+            'organisation' => $donnees_entree['organisation'] ?? null,
+            'titre_poste' => $donnees_entree['titre_poste'] ?? null,
+            'id_pays' => $donnees_entree['id_pays'],
+            'courriel' => $donnees_entree['courriel'],
+            'telephone' => $donnees_entree['telephone'] ?? null,
 
-            'interest_equity' => !empty($input_data['interest_equity']) ? 1 : 0,
-            'interest_debt' => !empty($input_data['interest_debt']) ? 1 : 0,
-            'interest_blended_finance' => !empty($input_data['interest_blended_finance']) ? 1 : 0,
-            'interest_grant' => !empty($input_data['interest_grant']) ? 1 : 0,
-            'interest_strategic_partnership' => !empty($input_data['interest_strategic_partnership']) ? 1 : 0,
-            'interest_technical_collaboration' => !empty($input_data['interest_technical_collaboration']) ? 1 : 0,
-            'interest_offtake_distribution' => !empty($input_data['interest_offtake_distribution']) ? 1 : 0,
-            'interest_other' => $input_data['interest_other'] ?? null,
+            'interet_capitaux_propres' => !empty($donnees_entree['interet_capitaux_propres']) ? 1 : 0,
+            'interet_dette' => !empty($donnees_entree['interet_dette']) ? 1 : 0,
+            'interet_financement_mixte' => !empty($donnees_entree['interet_financement_mixte']) ? 1 : 0,
+            'interet_subvention' => !empty($donnees_entree['interet_subvention']) ? 1 : 0,
+            'interet_partenariat_strategique' => !empty($donnees_entree['interet_partenariat_strategique']) ? 1 : 0,
+            'interet_collaboration_technique' => !empty($donnees_entree['interet_collaboration_technique']) ? 1 : 0,
+            'interet_achat_distribution' => !empty($donnees_entree['interet_achat_distribution']) ? 1 : 0,
+            'interet_autre' => $donnees_entree['interet_autre'] ?? null,
 
-            'commitment_range' => $input_data['commitment_range'] ?? null,
+            'fourchette_engagement' => $donnees_entree['fourchette_engagement'] ?? null,
 
-            'focus_research_lab' => !empty($input_data['focus_research_lab']) ? 1 : 0,
-            'focus_gmp_facility' => !empty($input_data['focus_gmp_facility']) ? 1 : 0,
-            'focus_medicinal_plant' => !empty($input_data['focus_medicinal_plant']) ? 1 : 0,
-            'focus_commercialization' => !empty($input_data['focus_commercialization']) ? 1 : 0,
-            'focus_full_platform' => !empty($input_data['focus_full_platform']) ? 1 : 0,
+            'focus_laboratoire_recherche' => !empty($donnees_entree['focus_laboratoire_recherche']) ? 1 : 0,
+            'focus_installation_gmp' => !empty($donnees_entree['focus_installation_gmp']) ? 1 : 0,
+            'focus_plante_medicinale' => !empty($donnees_entree['focus_plante_medicinale']) ? 1 : 0,
+            'focus_commercialisation' => !empty($donnees_entree['focus_commercialisation']) ? 1 : 0,
+            'focus_plateforme_complete' => !empty($donnees_entree['focus_plateforme_complete']) ? 1 : 0,
 
-            'timeline' => $input_data['timeline'] ?? 'Exploratory',
-            'strategic_message' => $input_data['strategic_message'] ?? null,
+            'calendrier' => $donnees_entree['calendrier'] ?? 'Exploratoire',
+            'message_strategique' => $donnees_entree['message_strategique'] ?? null,
 
-            'agree_contact' => !empty($input_data['agree_contact']) ? 1 : 0,
-            'non_binding_confirmation' => !empty($input_data['non_binding_confirmation']) ? 1 : 0,
+            'accepte_etre_contacte' => !empty($donnees_entree['accepte_etre_contacte']) ? 1 : 0,
+            'confirmation_non_contraignante' => !empty($donnees_entree['confirmation_non_contraignante']) ? 1 : 0,
             
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
+            'cree_le' => date('Y-m-d H:i:s'),
+            'modifie_le' => date('Y-m-d H:i:s'),
         ];
     }
 
@@ -285,186 +285,186 @@ class Investors extends Public_Controller
      * Méthode de test simple
      */
     public function test() {
-        header('Content-Type: application/json');
+        header('Type-Contenu: application/json');
         echo json_encode([
-            'success' => true,
-            'message' => 'API Investors fonctionne',
-            'time' => date('Y-m-d H:i:s')
+            'succes' => true,
+            'message' => 'API Investisseurs fonctionne',
+            'heure' => date('Y-m-d H:i:s')
         ]);
     }
 
     /**
-     * Send notification emails to admin and investor using SendGrid
+     * Envoi des courriels de notification à l'administrateur et à l'investisseur avec SendGrid
      */
-    private function _send_notification_emails($data, $insert_id)
+    private function _envoyer_courriels_notification($donnees, $id_insere)
     {
         try {
             // Charger SendGrid
             $this->load->library('Sendgrid_lib');
 
-            // Get settings
-            $site_name  = $this->Model->get_setting('site_name', 'AGF Phytomed');
-            $admin_email = $this->Model->get_setting('admin_email', 'partnerships@agf-phytomed.com');
-            $whatsapp    = $this->Model->get_setting('site_phone', '68863945');
+            // Récupérer les paramètres
+            $nom_site   = $this->Modele->obtenir_parametre('site_name', 'AGF Phytomed');
+            $courriel_admin = $this->Modele->obtenir_parametre('admin_email', 'partnerships@agf-phytomed.com');
+            $whatsapp    = $this->Modele->obtenir_parametre('site_phone', '68863945');
 
-            // Get country name
-            $country_name = 'Unknown';
-            if (!empty($data['id_pays'])) {
-                $country = $this->db->get_where('pays', ['id' => $data['id_pays']])->row();
-                $country_name = $country ? ($country->pays ?? $country->name ?? 'Unknown') : 'Unknown';
+            // Récupérer le nom du pays
+            $nom_pays = 'Inconnu';
+            if (!empty($donnees['id_pays'])) {
+                $pays = $this->db->get_where('pays', ['id' => $donnees['id_pays']])->row();
+                $nom_pays = $pays ? ($pays->pays ?? $pays->name ?? 'Inconnu') : 'Inconnu';
             }
 
-            // Helper for boolean display
-            $format_bool = function($val) {
-                return $val ? 'Yes' : 'No';
+            // Fonction auxiliaire pour afficher les booléens
+            $formater_bool = function($valeur) {
+                return $valeur ? 'Oui' : 'Non';
             };
 
-            // Prepare interest types list
-            $interest_map = [
-                'interest_equity'                 => 'Equity',
-                'interest_debt'                   => 'Debt',
-                'interest_blended_finance'        => 'Blended Finance',
-                'interest_grant'                   => 'Grant',
-                'interest_strategic_partnership'   => 'Strategic Partnership',
-                'interest_technical_collaboration' => 'Technical Collaboration',
-                'interest_offtake_distribution'    => 'Offtake/Distribution'
+            // Préparer la liste des types d'intérêt
+            $carte_interets = [
+                'interet_capitaux_propres'     => 'Capitaux Propres',
+                'interet_dette'                 => 'Dette',
+                'interet_financement_mixte'     => 'Financement Mixte',
+                'interet_subvention'            => 'Subvention',
+                'interet_partenariat_strategique' => 'Partenariat Stratégique',
+                'interet_collaboration_technique' => 'Collaboration Technique',
+                'interet_achat_distribution'    => 'Achat/Distribution'
             ];
-            $interests = [];
-            foreach ($interest_map as $field => $label) {
-                if (!empty($data[$field])) $interests[] = $label;
+            $interets = [];
+            foreach ($carte_interets as $champ => $libelle) {
+                if (!empty($donnees[$champ])) $interets[] = $libelle;
             }
-            if (!empty($data['interest_other'])) {
-                $interests[] = 'Other: ' . $data['interest_other'];
+            if (!empty($donnees['interet_autre'])) {
+                $interets[] = 'Autre : ' . $donnees['interet_autre'];
             }
-            $interests_str = implode(', ', $interests) ?: 'None';
+            $liste_interets = implode(', ', $interets) ?: 'Aucun';
 
-            // Prepare focus areas list
-            $focus_map = [
-                'focus_research_lab'       => 'Research & Lab',
-                'focus_gmp_facility'       => 'GMP Facility',
-                'focus_medicinal_plant'    => 'Medicinal Plant',
-                'focus_commercialization'   => 'Commercialization',
-                'focus_full_platform'       => 'Full Platform'
+            // Préparer la liste des domaines d'attention
+            $carte_focus = [
+                'focus_laboratoire_recherche'  => 'Laboratoire de Recherche',
+                'focus_installation_gmp'        => 'Installation GMP',
+                'focus_plante_medicinale'       => 'Plante Médicinale',
+                'focus_commercialisation'       => 'Commercialisation',
+                'focus_plateforme_complete'     => 'Plateforme Complète'
             ];
-            $focus_areas = [];
-            foreach ($focus_map as $field => $label) {
-                if (!empty($data[$field])) $focus_areas[] = $label;
+            $domaines_focus = [];
+            foreach ($carte_focus as $champ => $libelle) {
+                if (!empty($donnees[$champ])) $domaines_focus[] = $libelle;
             }
-            $focus_str = implode(', ', $focus_areas) ?: 'None';
+            $liste_focus = implode(', ', $domaines_focus) ?: 'Aucun';
 
-            // ========== 1. EMAIL TO ADMIN ==========
-            $admin_subject = 'New Investor Expression of Interest #' . $insert_id;
-            $admin_message = "
+            // ========== 1. COURRIEL À L'ADMINISTRATEUR ==========
+            $sujet_admin = 'Nouvelle expression d\'intérêt d\'investisseur #' . $id_insere;
+            $message_admin = "
             <!DOCTYPE html>
             <html>
             <head><meta charset='UTF-8'></head>
             <body style='font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px;'>
                 <div style='max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden;'>
                     <div style='background: #0B4F2E; color: white; padding: 20px; text-align: center;'>
-                        <h2 style='margin:0;'>New Investor Application #{$insert_id}</h2>
+                        <h2 style='margin:0;'>Nouvelle candidature d'investisseur #{$id_insere}</h2>
                     </div>
                     <div style='padding: 25px;'>
-                        <p><strong>Submitted:</strong> " . date('Y-m-d H:i') . "</p>
-                        <p><strong>Name:</strong> {$data['full_name']}<br>
-                        <strong>Position:</strong> " . ($data['position_title'] ?? 'Not specified') . "<br>
-                        <strong>Organization:</strong> " . ($data['organization'] ?? 'Not specified') . "<br>
-                        <strong>Country:</strong> $country_name<br>
-                        <strong>Email:</strong> {$data['email']}<br>
-                        <strong>Phone:</strong> " . ($data['phone'] ?? 'Not specified') . "</p>
+                        <p><strong>Soumis le :</strong> " . date('Y-m-d H:i') . "</p>
+                        <p><strong>Nom :</strong> {$donnees['nom_complet']}<br>
+                        <strong>Poste :</strong> " . ($donnees['titre_poste'] ?? 'Non spécifié') . "<br>
+                        <strong>Organisation :</strong> " . ($donnees['organisation'] ?? 'Non spécifié') . "<br>
+                        <strong>Pays :</strong> $nom_pays<br>
+                        <strong>Courriel :</strong> {$donnees['courriel']}<br>
+                        <strong>Téléphone :</strong> " . ($donnees['telephone'] ?? 'Non spécifié') . "</p>
                         
-                        <p><strong>Interest types:</strong> $interests_str</p>
-                        <p><strong>Focus areas:</strong> $focus_str</p>
-                        <p><strong>Commitment range:</strong> " . ($data['commitment_range'] ?? 'Not specified') . "<br>
-                        <strong>Timeline:</strong> " . ($data['timeline'] ?? 'Not specified') . "</p>
+                        <p><strong>Types d'intérêt :</strong> $liste_interets</p>
+                        <p><strong>Domaines d'attention :</strong> $liste_focus</p>
+                        <p><strong>Fourchette d'engagement :</strong> " . ($donnees['fourchette_engagement'] ?? 'Non spécifié') . "<br>
+                        <strong>Calendrier :</strong> " . ($donnees['calendrier'] ?? 'Non spécifié') . "</p>
                         
-                        <p><strong>Strategic message:</strong> " . nl2br($data['strategic_message'] ?? 'None') . "</p>
+                        <p><strong>Message stratégique :</strong> " . nl2br($donnees['message_strategique'] ?? 'Aucun') . "</p>
                         
-                        <p><strong>Compliance:</strong><br>
-                        Accept contact: {$format_bool($data['agree_contact'])}<br>
-                        Non-binding confirmation: {$format_bool($data['non_binding_confirmation'])}</p>
+                        <p><strong>Conformité :</strong><br>
+                        Accepte d'être contacté : {$formater_bool($donnees['accepte_etre_contacte'])}<br>
+                        Confirmation non contraignante : {$formater_bool($donnees['confirmation_non_contraignante'])}</p>
                         
                         <p style='text-align: center; margin-top: 30px;'>
-                            <a href='" . base_url('Eoi_partners') . "' style='background: #0B4F2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;'>View in Dashboard</a>
+                            <a href='" . base_url('Eoi_partenaires') . "' style='background: #0B4F2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;'>Voir dans le tableau de bord</a>
                         </p>
                     </div>
                     <div style='background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px;'>
-                        Automated notification from $site_name.
+                        Notification automatique de $nom_site.
                     </div>
                 </div>
             </body>
             </html>";
 
-            $admin_result = $this->sendgrid_lib->send_email($admin_email, $admin_subject, $admin_message);
-            $admin_sent = ($admin_result['status'] == 202 || $admin_result['status'] == 200);
+            $resultat_admin = $this->sendgrid_lib->send_email($courriel_admin, $sujet_admin, $message_admin);
+            $admin_envoye = ($resultat_admin['status'] == 202 || $resultat_admin['status'] == 200);
             
-            if (!$admin_sent) {
-                log_message('error', 'SendGrid - Admin email failed: ' . json_encode($admin_result));
+            if (!$admin_envoye) {
+                log_message('error', 'SendGrid - Courriel admin échoué : ' . json_encode($resultat_admin));
             }
 
-            // ========== 2. WELCOME EMAIL TO INVESTOR ==========
-            $user_subject = 'Thank you for your interest in AGF Phytomed';
-            $user_message = "
+            // ========== 2. COURRIEL DE BIENVENUE À L'INVESTISSEUR ==========
+            $sujet_investisseur = 'Merci pour votre intérêt envers AGF Phytomed';
+            $message_investisseur = "
             <!DOCTYPE html>
             <html>
             <head><meta charset='UTF-8'></head>
             <body style='font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px;'>
                 <div style='max-width: 500px; margin: auto; background: white; border-radius: 8px; overflow: hidden;'>
                     <div style='background: #0B4F2E; color: white; padding: 30px; text-align: center;'>
-                        <h1 style='margin:0;'>Hello {$data['full_name']}!</h1>
+                        <h1 style='margin:0;'>Bonjour {$donnees['nom_complet']} !</h1>
                     </div>
                     <div style='padding: 30px;'>
-                        <p>We are grateful for you approaching African Green Farmers LTD.</p>
-                        <p>This is an automatic acknowledgement that we have received your expression of interest (reference #{$insert_id}).</p>
-                        <p>Kindly expect feedback from us within <strong>two (2) working days</strong>.</p>
-                        <p>In the unlikely event that you haven't heard from us within that period, please do not hesitate to call or send us a message via our WhatsApp number <strong>$whatsapp</strong> for a quicker reply.</p>
-                        <p>Best Regards,<br>
-                        <strong>Public Relation Officer</strong><br>
+                        <p>Nous vous remercions de votre approche auprès d'African Green Farmers LTD.</p>
+                        <p>Ceci est un accusé de réception automatique confirmant que nous avons bien reçu votre expression d'intérêt (référence #{$id_insere}).</p>
+                        <p>Veuillez recevoir notre retour sous <strong>deux (2) jours ouvrables</strong>.</p>
+                        <p>Si vous n'avez pas de nos nouvelles dans ce délai, n'hésitez pas à nous appeler ou à nous envoyer un message via notre numéro WhatsApp <strong>$whatsapp</strong> pour une réponse plus rapide.</p>
+                        <p>Cordialement,<br>
+                        <strong>Responsable Relations Publiques</strong><br>
                         African Green Farmers LTD<br>
                         Muyinga, Burundi<br>
                         $whatsapp<br>
-                        Email: <a href='mailto:partnerships@agf-phytomed.com'>partnerships@agf-phytomed.com</a></p>
+                        Courriel : <a href='mailto:partnerships@agf-phytomed.com'>partnerships@agf-phytomed.com</a></p>
                     </div>
                     <div style='background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px;'>
-                        © " . date('Y') . " AGF Phytomed. All rights reserved.
+                        © " . date('Y') . " AGF Phytomed. Tous droits réservés.
                     </div>
                 </div>
             </body>
             </html>";
 
-            $user_result = $this->sendgrid_lib->send_email($data['email'], $user_subject, $user_message);
-            $user_sent = ($user_result['status'] == 202 || $user_result['status'] == 200);
+            $resultat_investisseur = $this->sendgrid_lib->send_email($donnees['courriel'], $sujet_investisseur, $message_investisseur);
+            $investisseur_envoye = ($resultat_investisseur['status'] == 202 || $resultat_investisseur['status'] == 200);
             
-            if (!$user_sent) {
-                log_message('error', 'SendGrid - Investor email failed: ' . json_encode($user_result));
+            if (!$investisseur_envoye) {
+                log_message('error', 'SendGrid - Courriel investisseur échoué : ' . json_encode($resultat_investisseur));
             }
 
-            $both_sent = $admin_sent && $user_sent;
-            log_message('info', 'SendGrid emails sent: admin=' . ($admin_sent ? 'OK' : 'FAIL') . ', investor=' . ($user_sent ? 'OK' : 'FAIL'));
+            $les_deux_envoyes = $admin_envoye && $investisseur_envoye;
+            log_message('info', 'Courriels SendGrid envoyés : admin=' . ($admin_envoye ? 'OK' : 'ÉCHEC') . ', investisseur=' . ($investisseur_envoye ? 'OK' : 'ÉCHEC'));
             
-            return $both_sent;
+            return $les_deux_envoyes;
 
         } catch (Exception $e) {
-            log_message('error', 'SendGrid email exception: ' . $e->getMessage());
+            log_message('error', 'Exception courriel SendGrid : ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Récupération des sections CMS
+     * Récupération des sections du CMS
      */
-    private function get_sections($slug = 'investors-form') {
-        $page = $this->Model->readOne('pages', [
-            'slug' => $slug,
+    private function obtenir_sections($alias = 'formulaire-investisseurs') {
+        $page = $this->Modele->lireUn('pages', [
+            'alias' => $alias,
             'est_publiee' => 1
         ]);
 
         if (empty($page)) {
-            log_message('debug', 'Page "' . $slug . '" non trouvée');
+            log_message('debug', 'Page "' . $alias . '" non trouvée');
             return null;
         }
 
         // Récupérer la section hero
-        $hero = $this->Model->readOne('sections_contenu', [
+        $hero = $this->Modele->lireUn('sections_contenu', [
             'id_page'      => $page['id_page'],
             'type_section' => 'hero',
             'est_active'   => 1
@@ -475,7 +475,7 @@ class Investors extends Public_Controller
         }
 
         // Récupérer les sections texte
-        $textes = $this->Model->read('sections_contenu', [
+        $textes = $this->Modele->lire('sections_contenu', [
             'id_page'      => $page['id_page'],
             'type_section' => 'texte',
             'est_active'   => 1
@@ -486,7 +486,7 @@ class Investors extends Public_Controller
             $textes = [];
         }
 
-        // Parser les options JSON
+        // Analyser les options JSON
         foreach ($textes as &$texte) {
             if (!empty($texte['options_json'])) {
                 $texte['options'] = json_decode($texte['options_json'], true);

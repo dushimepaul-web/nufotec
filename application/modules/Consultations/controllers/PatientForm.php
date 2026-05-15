@@ -36,12 +36,7 @@ class PatientForm extends Public_Controller {
     {   
         // Check if user is logged in
         if (!$this->session->userdata('user_id')) {
-            redirect($this->current_lang . '/Auth');
-        }
-
-        // Automatic redirect if user tries to access the login page
-        if ($this->uri->segment(1) === 'Auth') {
-            redirect($this->current_lang . '/Dashboard/patient_dashboard');
+            redirect('Auth');
         }
 
         // ============================================
@@ -53,7 +48,7 @@ class PatientForm extends Public_Controller {
         
         if ($pending_consultation) {
             $this->session->set_flashdata('warning', 'Vous avez une consultation en attente de paiement. Veuillez finaliser votre paiement.');
-            redirect($this->current_lang . '/Consultations/Payment/index/' . $pending_consultation['numero_consultation']);
+            redirect('Consultations/Payment/index/' . $pending_consultation['numero_consultation']);
             return;
         }
 
@@ -65,19 +60,19 @@ class PatientForm extends Public_Controller {
             $medecin = $this->Model->getDoctorByUUID($doctor_uuid);
             if (!$medecin) {
                 $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
-                redirect($this->current_lang . '/Medicins');
+                redirect('Medicins');
             }
         } else {
             $doctor_data = $this->session->userdata('pending_doctor');
             if (!$doctor_data || $doctor_data['expires_at'] < time()) {
                 $this->session->unset_userdata('pending_doctor');
                 $this->session->set_flashdata('error', 'Please select a doctor.');
-                redirect($this->current_lang . '/Medicins');
+                redirect('Medicins');
             }
             $medecin = $this->Model->getDoctorByUUID($doctor_data['uuid']);
             if (!$medecin) {
                 $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
-                redirect($this->current_lang . '/Dashboard/patient_dashboard');
+                redirect('Dashboard/patient_dashboard');
             }
         }
 
@@ -112,7 +107,7 @@ class PatientForm extends Public_Controller {
             return;
         }
         $this->clearPatientData();
-        redirect($this->current_lang . '/Medicins');
+        redirect('Medicins');
     }
 
     private function clearPatientData()
@@ -147,13 +142,13 @@ class PatientForm extends Public_Controller {
     public function create()
     {    
         if ($this->input->server('REQUEST_METHOD') !== 'POST') {
-            redirect($this->current_lang . '/patient-form');
+            redirect('patient-form');
         }
 
         $patient_id = $this->session->userdata('user_id');
         if (!$patient_id) {
             $this->session->set_flashdata('error', 'Veuillez vous connecter pour soumettre une consultation.');
-            redirect($this->current_lang . '/Auth');
+            redirect('Auth');
         }
 
         $this->form_validation->set_rules('full_name', 'Nom complet', 'required|trim|min_length[3]|max_length[100]');
@@ -168,7 +163,7 @@ class PatientForm extends Public_Controller {
 
         if ($this->form_validation->run() === FALSE) {
             $this->session->set_flashdata('error', validation_errors('<div>', '</div>'));
-            redirect($this->current_lang . '/patient-form');
+            redirect('patient-form');
         }
 
         $doctor_id = $this->input->post('doctor_id', TRUE);
@@ -181,7 +176,7 @@ class PatientForm extends Public_Controller {
             $medecin = $this->Model->getDoctorByUUID($doctor_uuid);
             if (!$medecin) {
                 $this->session->set_flashdata('error', 'Le médecin sélectionné n\'est plus disponible.');
-                redirect($this->current_lang . '/Medicins');
+                redirect('Medicins');
             }
         }
 
@@ -250,7 +245,7 @@ class PatientForm extends Public_Controller {
             $all_files = array_merge($medical_docs, $prescriptions);
             $this->_cleanup_files($all_files);
             $this->session->set_flashdata('error', 'Erreur lors de l\'enregistrement de la consultation.');
-            redirect($this->current_lang . '/patient-form');
+            redirect('patient-form');
         }
 
         $this->session->unset_userdata('pending_doctor');
@@ -280,7 +275,7 @@ class PatientForm extends Public_Controller {
         $this->session->set_flashdata('success', 'Votre demande de consultation a été créée avec succès.');
         $this->session->set_flashdata('tracking_number', $numero_consultation);
         
-        redirect($this->current_lang . '/Consultations/Payment/index/' . $numero_consultation);
+        redirect('Consultations/Payment/index/' . $numero_consultation);
     }
 
     private function _upload_multiple_files_custom($field_name)
@@ -387,11 +382,7 @@ class PatientForm extends Public_Controller {
 
     public function Medicin()
     {    
-        $lang = $this->current_lang;
-        $specialite_col = "specialite_{$lang} AS specialite";
-        $diplomes_col   = "diplomes_{$lang} AS diplomes";
-        $langues_col    = "langues_parlees_{$lang} AS langues_parlees";
-
+        // Requête sans multilingue
         $this->db->select("
             medecins.id,
             medecins.uuid,
@@ -405,9 +396,9 @@ class PatientForm extends Public_Controller {
             medecins.nombre_avis,
             medecins.created_at,
             medecins.updated_at,
-            $specialite_col,
-            $diplomes_col,
-            $langues_col,
+            medecins.specialite_fr AS specialite,
+            medecins.diplomes_fr AS diplomes,
+            medecins.langues_parlees_fr AS langues_parlees,
             users.nom,
             users.prenom,
             users.email,
@@ -681,7 +672,7 @@ class PatientForm extends Public_Controller {
     }
 
     public function processConfirmation() {
-        // ... votre logique de traitement ...
+        // Votre logique de traitement
         $email_sent = $this->_send_consultation_emails($data);
         if (!$email_sent) {
             log_message('warning', 'Emails not sent for consultation: ' . $data['numero_consultation']);

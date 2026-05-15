@@ -373,18 +373,22 @@ $route['vision-mission'] = 'Frontend/Vision_Mission/index';
 $route['Vision-mission'] = 'Frontend/Vision_Mission/index';
 $route['corporate-structure-governance'] = 'Frontend/Corporate_Structure_Governance/index';
 $route['Corporate-structure-governance'] = 'Frontend/Corporate_Structure_Governance/index';
-$route['esg_sustainability'] = 'Frontend/Esg_Sustainability/index';
+$route['esg_Sustainability'] = 'Frontend/Esg_Sustainability/index';
 $route['Esg_sustainability'] = 'Frontend/Esg_Sustainability/index';
 $route['research_innovation'] = 'Frontend/Research_Innovation/index';
-$route['Research_innovation'] = 'Frontend/Research_Innovation/index';
-$route['manufacturing-facility'] = 'Frontend/Manufacturing_Facility/index';
+$route['Research_Innovation'] = 'Frontend/Research_Innovation/index';
+$route['manufacturing-facility'] = 'Frontend/Manufacturing_facility/index';
 $route['Manufacturing-facility'] = 'Frontend/Manufacturing_Facility/index';
 
-// Investisseurs
-$route['investors-form'] = 'Investors/index';
-$route['Investors-form'] = 'Investors/index';
-$route['brokers-form'] = 'Api/Brokers';
-$route['Brokers-form'] = 'Api/Brokers';
+
+// Routes pour les brokers
+$route['broker/inscription'] = 'Frontend/Broker/create';
+$route['broker/store'] = 'Frontend/Broker/store';
+$route['broker/liste'] = 'Frontend/Broker/index';
+$route['broker/show/(:num)'] = 'Frontend/Broker/show/$1';
+$route['broker/delete/(:num)'] = 'Frontend/Broker/delete/$1';
+$route['broker/export'] = 'Frontend/Broker/export';
+
 
 // Admin & Dashboard
 $route['admin'] = 'Admin/index';

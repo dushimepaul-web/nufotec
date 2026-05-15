@@ -9,6 +9,7 @@ class Payment extends MY_Controller {
         $this->load->helper('url');
         $this->load->library('session');
         $this->load->library('form_validation');
+        $this->load->library('email');
     }
 
     /**
@@ -186,7 +187,12 @@ class Payment extends MY_Controller {
         // Traitement du fichier (preuve de paiement)
         $payment_proof = '';
         if (!empty($_FILES['payment_proof']['name'])) {
-            $payment_proof = $this->_upload_payment_proof($_FILES['payment_proof']);
+            $upload_result = $this->_upload_payment_proof($_FILES['payment_proof']);
+            if ($upload_result === false) {
+                $this->json_response(false, 'Erreur lors du téléchargement de la preuve de paiement. Format accepté: JPG, PNG, PDF (max 5MB).');
+                return;
+            }
+            $payment_proof = $upload_result;
         }
 
         // Mettre à jour la consultation
@@ -201,9 +207,6 @@ class Payment extends MY_Controller {
         $updated = $this->Model->update('consultations', $update_data, ['id' => $consultation_id]);
 
         if (!$updated) {
-            if ($payment_proof && file_exists($payment_proof)) {
-                unlink($payment_proof);
-            }
             $this->json_response(false, 'Erreur lors de l\'enregistrement du paiement.');
             return;
         }
@@ -229,6 +232,7 @@ class Payment extends MY_Controller {
 
     /**
      * Upload de la preuve de paiement
+     * @return string|false Chemin du fichier ou false si erreur
      */
     private function _upload_payment_proof($file) {
         if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -240,13 +244,15 @@ class Payment extends MY_Controller {
         }
 
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-        $file_type = mime_content_type($file['tmp_name']);
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $file_type = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
         
         if (!in_array($file_type, $allowed_types)) {
             return false;
         }
 
-        $upload_dir = FCPATH . 'uploads/payments/';
+        $upload_dir = FCPATH . 'attachments/Payments/';
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0777, true);
         }
@@ -256,7 +262,7 @@ class Payment extends MY_Controller {
         $filepath = $upload_dir . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
-            return 'uploads/payments/' . $filename;
+            return 'attachments/Payments/' . $filename;
         }
 
         return false;
@@ -272,6 +278,8 @@ class Payment extends MY_Controller {
         if ($consultation['medecin_id']) {
             $medecin = $this->Model->getDoctorById($consultation['medecin_id']);
         }
+
+        $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
 
         $subject = 'Confirmation de paiement - Consultation N°' . $consultation['numero_consultation'];
 
@@ -311,24 +319,59 @@ class Payment extends MY_Controller {
                             <a href='" . base_url('Consultations/details/' . $consultation['id']) . "' class='button'>Voir les détails</a>
                         </p>
                         
-                        <p>Cordialement,<br>L'équipe NUFOTEC</p>
+                        <p>Cordialement,<br>L'équipe " . htmlspecialchars($site_name) . "</p>
                     </div>
                     <div class='footer'>
                         <p>Cet email est un message automatique, merci de ne pas y répondre.</p>
-                        <p>&copy; " . date('Y') . " NUFOTEC - Tous droits réservés.</p>
+                        <p>&copy; " . date('Y') . " " . htmlspecialchars($site_name) . " - Tous droits réservés.</p>
                     </div>
                 </div>
             </body>
             </html>
         ";
 
-        $this->load->library('email');
-        $this->email->from('noreply@nufotec.com', 'NUFOTEC');
+        $this->email->clear();
+        $this->email->from('noreply@nufotec.com', $site_name);
         $this->email->to($patient['email']);
         $this->email->subject($subject);
         $this->email->message($message);
         $this->email->set_mailtype('html');
-        $this->email->send();
+        
+        if (!$this->email->send()) {
+            log_message('error', 'Échec envoi email paiement: ' . $this->email->print_debugger());
+        }
+    }
+
+    /**
+     * Page de succès après paiement
+     * @param int $consultation_id ID de la consultation
+     */
+    public function success($consultation_id = null) {
+        if (!$consultation_id) {
+            redirect('Dashboard/patient_dashboard');
+            return;
+        }
+
+        $consultation = $this->Model->getConsultationById($consultation_id);
+        
+        if (!$consultation) {
+            show_404();
+            return;
+        }
+
+        // Vérifier que le patient est le propriétaire
+        if ($consultation['patient_id'] != $this->session->userdata('user_id')) {
+            show_404();
+            return;
+        }
+
+        $data = [
+            'title' => 'Paiement réussi - NUFOTEC',
+            'consultation' => $consultation,
+            'consultation_num' => $consultation['numero_consultation']
+        ];
+
+        $this->load->view('Payment_Success_View', $data);
     }
 
     /**
@@ -339,5 +382,51 @@ class Payment extends MY_Controller {
         $this->output
             ->set_content_type('application/json')
             ->set_output(json_encode($response));
+    }
+
+    /**
+     * Télécharger la preuve de paiement
+     * @param int $consultation_id ID de la consultation
+     */
+    public function download_proof($consultation_id = null) {
+        if (!$consultation_id) {
+            show_404();
+            return;
+        }
+
+        $consultation = $this->Model->getConsultationById($consultation_id);
+        
+        if (!$consultation) {
+            show_404();
+            return;
+        }
+
+        // Vérifier que le patient est le propriétaire
+        if ($consultation['patient_id'] != $this->session->userdata('user_id')) {
+            show_404();
+            return;
+        }
+
+        if (empty($consultation['preuve_paiement'])) {
+            show_404();
+            return;
+        }
+
+        $file_path = FCPATH . $consultation['preuve_paiement'];
+        
+        if (!file_exists($file_path)) {
+            show_404();
+            return;
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $file_path);
+        finfo_close($finfo);
+
+        header('Content-Type: ' . $mime_type);
+        header('Content-Disposition: attachment; filename="' . basename($consultation['preuve_paiement']) . '"');
+        header('Content-Length: ' . filesize($file_path));
+        readfile($file_path);
+        exit;
     }
 }

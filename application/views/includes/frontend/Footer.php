@@ -1,4 +1,3 @@
-
 <script>
     /**
      * LOADING SPINNER NUFOTEC
@@ -9,35 +8,21 @@
         
         var loader = document.getElementById("loadingSpinner");
         
-        if (!loader) return; // Sécurité : si le spinner n'existe pas, ne rien faire
+        if (!loader) return;
 
-        // Attendre que la page soit complètement chargée
         window.addEventListener("load", function() {
-            
-            // Délai de 1 seconde avant de masquer le spinner
             setTimeout(function() {
-                
-                // Ajouter la classe pour l'animation de disparition
                 loader.classList.add("loader-hidden");
-                
-                // Supprimer complètement le spinner après l'animation (0.4s)
                 setTimeout(function() {
                     loader.remove();
-                    
-                    // Libérer le scroll si bloqué
                     document.body.style.overflow = '';
-                    
-                }, 400); // Durée de la transition CSS
-                
-            }, 1000); // 1 seconde d'affichage
-            
+                }, 400);
+            }, 1000);
         });
         
-        // Sécurité : si le load event ne se déclenche pas (déjà chargé)
         if (document.readyState === 'complete') {
             window.dispatchEvent(new Event('load'));
         }
-        
     })();
 </script>
 
@@ -65,12 +50,12 @@
                             <?php endif; ?>
                             <div class="brand-info">
                                 <h3><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'), ENT_QUOTES, 'UTF-8') ?></h3>
-                                <span><?= htmlspecialchars($this->Model->get_setting('agf_slogan', t('slogan')), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span>Innovation & Technologie</span>
                             </div>
                         </div>
 
                         <p class="footer-desc">
-                            <?= htmlspecialchars($this->Model->get_setting('agf_description_courte', t('site_description')), ENT_QUOTES, 'UTF-8') ?>
+                            <?= htmlspecialchars($this->Model->get_setting('agf_description_courte', 'Plateforme de téléconsultation médicale et de produits phytomédicinaux'), ENT_QUOTES, 'UTF-8') ?>
                         </p>
 
                         <!-- Quick Contact -->
@@ -85,7 +70,7 @@
                             </a>
                             <a href="#" class="quick-contact-item" onclick="openMap(); return false;">
                                 <i class="bi bi-geo-alt-fill"></i>
-                                <span><?= htmlspecialchars($this->Model->get_setting('adresse_siege', t('address')), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span><?= htmlspecialchars($this->Model->get_setting('adresse_siege', 'Bujumbura, Burundi'), ENT_QUOTES, 'UTF-8') ?></span>
                             </a>
                         </div>
 
@@ -115,18 +100,18 @@
                     <!-- Column 2: Navigation -->
                     <div class="footer-col footer-col-nav">
                         <button class="footer-accordion-toggle d-lg-none" aria-expanded="false" aria-controls="footerNav1">
-                            <h4><?= t('navigation') ?></h4>
+                            <h4>Navigation</h4>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <h4 class="d-none d-lg-block"><?= t('navigation') ?></h4>
+                        <h4 class="d-none d-lg-block">Navigation</h4>
                         
                         <div class="footer-accordion-content" id="footerNav1">
                             <ul class="footer-links">
-                                <li><a href="<?= base_url($lang) ?>"><?= t('home') ?></a></li>
-                                <li><a href="<?= base_url($lang . '/a-propos') ?>"><?= t('about') ?></a></li>
-                                <li><a href="<?= base_url($lang . '/investissement') ?>"><?= t('investment') ?></a></li>
-                                <li><a href="<?= base_url($lang . '/Home/Media') ?>"><?= t('media') ?></a></li>
-                                <li><a href="<?= base_url($lang . '/Home/Contact') ?>"><?= t('contact') ?></a></li>
+                                <li><a href="<?= base_url() ?>">Accueil</a></li>
+                                <li><a href="<?= base_url('a-propos') ?>">À propos</a></li>
+                                <li><a href="<?= base_url('investissement') ?>">Investissement</a></li>
+                                <li><a href="<?= base_url('Home/Media') ?>">Médias</a></li>
+                                <li><a href="<?= base_url('Home/Contact') ?>">Contact</a></li>
                             </ul>
                         </div>
                     </div>
@@ -134,29 +119,29 @@
                     <!-- Column 3: Our Services -->
                     <div class="footer-col footer-col-services">
                         <button class="footer-accordion-toggle d-lg-none" aria-expanded="false" aria-controls="footerNav2">
-                            <h4><?= t('our_services') ?></h4>
+                            <h4>Nos services</h4>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <h4 class="d-none d-lg-block"><?= t('our_services') ?></h4>
+                        <h4 class="d-none d-lg-block">Nos services</h4>
                         
                         <div class="footer-accordion-content" id="footerNav2">
                             <ul class="footer-links">
                                 <li>
-                                    <a href="<?= base_url($lang . '/Medicins') ?>">
+                                    <a href="<?= base_url('Medicins') ?>">
                                         <i class="bi bi-heart-pulse"></i>
-                                        <?= t('medical_consultation') ?>
+                                        Consultation médicale
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="<?= base_url($lang . '/Products') ?>">
+                                    <a href="<?= base_url('Products') ?>">
                                         <i class="bi bi-shop"></i>
-                                        <?= t('sell_products') ?>
+                                        Vente de produits
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="<?= base_url($lang . '/Investors-form') ?>">
+                                    <a href="<?= base_url('Investors-form') ?>">
                                         <i class="bi bi-graph-up-arrow"></i>
-                                        <?= t('invest') ?>
+                                        Investir
                                     </a>
                                 </li>
                             </ul>
@@ -174,16 +159,16 @@
                     
                     <!-- Copyright -->
                     <div class="footer-copyright">
-                        <p>&copy; <?= date('Y') ?> <strong><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'), ENT_QUOTES, 'UTF-8') ?></strong>. <?= t('all_rights_reserved') ?></p>
+                        <p>&copy; <?= date('Y') ?> <strong><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC BURUNDI'), ENT_QUOTES, 'UTF-8') ?></strong>. Tous droits réservés.</p>
                     </div>
 
                     <!-- Legal Links -->
                     <div class="footer-legal">
-                        <p><?= t('designed_by') ?> Dushime Paul : dushimeyesupaulin@gmail.com</p>
+                        <p>Conçu par Dushime Paul : dushimeyesupaulin@gmail.com</p>
                     </div>
 
                     <!-- Back to Top -->
-                    <button class="back-to-top" onclick="scrollToTop()" aria-label="<?= t('back_to_top') ?>">
+                    <button class="back-to-top" onclick="scrollToTop()" aria-label="Retour en haut">
                         <i class="bi bi-arrow-up"></i>
                     </button>
 
@@ -194,58 +179,45 @@
     </div>
 </footer>
 
-<!-- Floating Cart Button - Caché sur mobile 
-<a href="" class="floating-cart d-none d-md-flex" id="floatingCart" title="Mon panier">
-    <div class="cart-icon-wrapper">
-        <i class="bi bi-cart-fill"></i>
-        <span class="cart-badge" id="cartBadge">0</span>
-    </div>
-    <span class="cart-text">Panier</span>
-</a>-->
-
 <!-- Mobile Sticky Footer (App Style) -->
 <div class="mobile-sticky-footer d-lg-none">
-    <a href="<?= base_url($lang) ?>" class="sticky-nav-item <?= (current_url() == base_url($lang)) ? 'active' : '' ?>">
+    <a href="<?= base_url() ?>" class="sticky-nav-item <?= (current_url() == base_url()) ? 'active' : '' ?>">
         <i class="bi bi-house-door-fill"></i>
-        <span><?= t('home') ?></span>
+        <span>Accueil</span>
     </a>
-    <a href="<?= base_url($lang . '/Products') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('Products') ?>" class="sticky-nav-item">
         <i class="bi bi-shop"></i>
-        <span><?= t('shop') ?></span>
+        <span>Boutique</span>
     </a>
-    <a href="<?= base_url($lang . '/Medicins') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('Medicins') ?>" class="sticky-nav-item">
         <i class="bi bi-camera-video"></i>
-        <span><?= t('teleconsultation') ?></span>
+        <span>Téléconsultation</span>
     </a>
-    <a href="<?= base_url($lang . '/Investors-form') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('Investors-form') ?>" class="sticky-nav-item">
         <i class="bi bi-graph-up-arrow"></i>
-        <span><?= t('invest') ?></span>
+        <span>Investir</span>
     </a>
-    <a href="<?= base_url($lang . '/media') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('media') ?>" class="sticky-nav-item">
         <i class="bi bi-collection"></i>
-        <span><?= t('media') ?></span>
+        <span>Médias</span>
     </a>
     
     <?php
-    // Récupération des données utilisateur (identique au header)
+    // Récupération des données utilisateur
     $logged_in = $this->session->userdata('logged_in') === TRUE;
-    $user_name = $this->session->userdata('username');
     $user_photo = $this->session->userdata('photo');
-    // Les initiales ne sont plus utilisées car on affiche une image par défaut
-    // $initials = '?'; // supprimé
     
-    $account_url = $logged_in ? base_url($lang . '/home-patient') : base_url($lang . '/Auth');
-    $account_label = $logged_in ? t('my_account') : t('sign_in');
+    $account_url = $logged_in ? base_url('home-patient') : base_url('Auth');
+    $account_label = $logged_in ? 'Mon compte' : 'Se connecter';
     ?>
     
-    <!-- Lien Compte (mobile) : style sticky-nav-item -->
+    <!-- Lien Compte (mobile) -->
     <a href="<?= $account_url ?>" class="sticky-nav-item" title="<?= $account_label ?>">
         <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
             <div class="sticky-avatar-mini">
                 <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar-img">
             </div>
         <?php elseif ($logged_in): ?>
-            <!-- Image par défaut (comme dans le header) -->
             <img src="<?= base_url('assets/img/default-avatar.png') ?>" alt="Avatar" class="avatar default-avatar">
         <?php else: ?>
             <i class="bi bi-person-circle"></i>
@@ -278,8 +250,6 @@
     margin-top: auto;
 }
 
-
-
 .sticky-avatar-mini,
 .avatar-placeholder-mini {
     width: 24px;
@@ -299,7 +269,6 @@
     border-radius: 50%;
     object-fit: cover;
 }
-
 
 /* Decorative top line */
 .site-footer::before {
@@ -573,80 +542,6 @@
 }
 
 /* ============================================
-   FLOATING CART BUTTON
-   ============================================ */
-.floating-cart {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: linear-gradient(135deg, var(--footer-accent), #f4d03f);
-    color: var(--footer-bg);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 20px;
-    border-radius: 50px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    z-index: 1040;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-}
-
-.floating-cart:hover {
-    transform: translateY(-5px) scale(1.05);
-    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
-    color: var(--footer-bg);
-}
-
-.cart-icon-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.floating-cart i {
-    font-size: 24px;
-}
-
-.cart-badge {
-    position: absolute;
-    top: -8px;
-    right: -12px;
-    background: #dc3545;
-    color: white;
-    font-size: 11px;
-    font-weight: bold;
-    min-width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 4px;
-    border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.cart-text {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-/* Animation pour l'ajout au panier */
-@keyframes cartBump {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-.cart-badge.bump {
-    animation: cartBump 0.3s ease-in-out;
-}
-
-/* ============================================
    MOBILE STICKY FOOTER
    ============================================ */
 .mobile-sticky-footer {
@@ -693,104 +588,6 @@
 }
 
 .sticky-nav-item.active i {
-    transform: scale(1.1);
-}
-
-.sticky-badge {
-    position: absolute;
-    top: 6px;
-    right: calc(50% - 20px);
-    background: #dc3545;
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid white;
-}
-
-/* ============================================
-   STICKY FOOTER ACCOUNT AVATAR
-   ============================================ */
-.sticky-nav-item.sticky-account {
-    position: relative;
-}
-
-/* Conteneur unifié pour l'icône/avatar */
-.sticky-icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    position: relative;
-}
-
-/* Style pour l'avatar */
-.sticky-avatar {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--primary-light);
-    border: 2px solid var(--footer-accent);
-    transition: all 0.3s ease;
-}
-
-.avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* Style pour le placeholder d'avatar (initiales) */
-.avatar-placeholder {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--footer-accent), #f4d03f);
-    color: var(--footer-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
-    border: 2px solid var(--footer-accent);
-    transition: all 0.3s ease;
-}
-
-/* Style pour les icônes */
-.sticky-icon-wrapper i {
-    font-size: 24px;
-    transition: all 0.3s ease;
-    line-height: 1;
-}
-
-/* Effets au survol */
-.sticky-nav-item.active .sticky-avatar,
-.sticky-nav-item:hover .sticky-avatar {
-    transform: scale(1.1);
-    border-color: var(--footer-accent);
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
-}
-
-.sticky-nav-item.active .avatar-placeholder,
-.sticky-nav-item:hover .avatar-placeholder {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
-}
-
-.sticky-nav-item.active .sticky-icon-wrapper i,
-.sticky-nav-item:hover .sticky-icon-wrapper i {
-    color: var(--footer-accent);
     transform: scale(1.1);
 }
 
@@ -884,7 +681,6 @@
         margin-right: auto;
     }
     
-    /* Accordions for tablet and mobile */
     .footer-col-nav,
     .footer-col-services {
         border-bottom: 1px solid var(--footer-border);
@@ -936,20 +732,6 @@
         color: var(--footer-bg);
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    
-    .floating-cart {
-        bottom: 80px;
-        right: 20px;
-        padding: 10px 16px;
-    }
-    
-    .floating-cart i {
-        font-size: 20px;
-    }
-    
-    .cart-text {
-        font-size: 12px;
-    }
 }
 
 @media (max-width: 576px) {
@@ -983,43 +765,6 @@
     .footer-legal p {
         font-size: 0.8rem;
     }
-    
-    .sticky-icon-wrapper {
-        width: 24px;
-        height: 24px;
-    }
-    
-    .sticky-icon-wrapper i {
-        font-size: 20px;
-    }
-    
-    .avatar-placeholder {
-        width: 24px;
-        height: 24px;
-        font-size: 10px;
-    }
-    
-    .floating-cart {
-        bottom: 70px;
-        right: 15px;
-        padding: 8px 14px;
-    }
-    
-    .floating-cart i {
-        font-size: 18px;
-    }
-    
-    .cart-text {
-        display: none;
-    }
-    
-    .cart-badge {
-        top: -6px;
-        right: -10px;
-        font-size: 10px;
-        min-width: 16px;
-        height: 16px;
-    }
 }
 
 /* Desktop - Navigation always visible */
@@ -1045,32 +790,6 @@
     }
 }
 
-/* Landscape mobile */
-@media (max-height: 500px) and (max-width: 992px) {
-    .mobile-sticky-footer {
-        display: none;
-    }
-    body {
-        padding-bottom: 0;
-    }
-    
-    .floating-cart {
-        bottom: 20px;
-    }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .mobile-sticky-footer {
-        background: #1a1a1a;
-        border-top-color: #333;
-    }
-    
-    .sticky-nav-item {
-        color: #a0a0a0;
-    }
-}
-
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
     .site-footer::before {
@@ -1089,13 +808,10 @@
 (function() {
     'use strict';
 
-    // Empêcher l'initialisation multiple
     if (window.footerScriptInitialized) return;
     window.footerScriptInitialized = true;
 
-    // ============================================
     // FOOTER ACCORDIONS
-    // ============================================
     var accordionToggles = document.querySelectorAll('.footer-accordion-toggle');
     for (var i = 0; i < accordionToggles.length; i++) {
         accordionToggles[i].addEventListener('click', function() {
@@ -1117,9 +833,7 @@
         });
     }
 
-    // ============================================
     // UTILITAIRES
-    // ============================================
     window.scrollToTop = function() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -1129,190 +843,9 @@
         window.open('https://maps.google.com/?q=' + encodeURIComponent(address), '_blank');
     };
 
-    // ============================================
     // CONFIG BASE URL
-    // ============================================
     if (typeof BASE_URL === 'undefined') {
         window.BASE_URL = '<?php echo rtrim(base_url(), '/'); ?>/';
     }
-
-    // ============================================
-    // PANIER (ANTI SPAM + SAFE)
-    // ============================================
-    var isFetchingCart = false;
-    var cartInterval = null;
-
-    function updateCartBadges() {
-        if (isFetchingCart) return;
-        isFetchingCart = true;
-
-        var cartBadge = document.getElementById('cart');
-        var cartBadgeFloating = document.getElementById('cartBadge');
-
-        if (!cartBadge && !cartBadgeFloating) {
-            isFetchingCart = false;
-            return;
-        }
-
-        fetch(BASE_URL + 'panier/get_cart', {
-            method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(function(response) {
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            return response.json();
-        })
-        .then(function(data) {
-            var count = data.nb_articles || 0;
-            
-            // Mettre à jour le badge du sticky footer
-            if (cartBadge) {
-                cartBadge.textContent = count;
-            }
-            
-            // Mettre à jour le badge flottant avec animation
-            if (cartBadgeFloating) {
-                var oldCount = parseInt(cartBadgeFloating.textContent) || 0;
-                cartBadgeFloating.textContent = count;
-                
-                if (count > oldCount) {
-                    cartBadgeFloating.classList.add('bump');
-                    setTimeout(function() {
-                        cartBadgeFloating.classList.remove('bump');
-                    }, 300);
-                }
-            }
-        })
-        .catch(function() {})
-        .finally(function() {
-            isFetchingCart = false;
-        });
-    }
-
-    // Fonction pour ajouter au panier
-    window.addToCart = function(productId, quantity) {
-        quantity = quantity || 1;
-        
-        fetch(BASE_URL + 'panier/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: 'product_id=' + productId + '&quantity=' + quantity
-        })
-        .then(function(response) {
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                updateCartBadges();
-                showNotification('Produit ajouté au panier !', 'success');
-            } else {
-                showNotification(data.message || 'Erreur lors de l\'ajout', 'error');
-            }
-        })
-        .catch(function() {
-            showNotification('Erreur lors de l\'ajout au panier', 'error');
-        });
-    };
-    
-    // Fonction pour afficher une notification
-    function showNotification(message, type) {
-        var notification = document.getElementById('cart-notification');
-        if (!notification) {
-            notification = document.createElement('div');
-            notification.id = 'cart-notification';
-            notification.className = 'cart-notification';
-            document.body.appendChild(notification);
-        }
-        
-        notification.textContent = message;
-        notification.className = 'cart-notification ' + type + ' show';
-        
-        setTimeout(function() {
-            notification.classList.remove('show');
-        }, 3000);
-    }
-
-    // Exposer globalement
-    window.updateCartBadge = updateCartBadges;
-
-    // ============================================
-    // INITIALISATION UNIQUE
-    // ============================================
-    function initCart() {
-        updateCartBadges();
-
-        // Empêcher plusieurs intervals
-        if (!cartInterval) {
-            cartInterval = setInterval(updateCartBadges, 5000);
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCart);
-    } else {
-        initCart();
-    }
-
 })();
 </script>
-
-<!-- Cart Notification Styles -->
-<style>
-.cart-notification {
-    position: fixed;
-    bottom: 100px;
-    right: 30px;
-    background: var(--footer-bg);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    z-index: 1050;
-    transform: translateX(400px);
-    transition: transform 0.3s ease;
-    font-size: 14px;
-    font-weight: 500;
-    border-left: 4px solid var(--footer-accent);
-}
-
-.cart-notification.show {
-    transform: translateX(0);
-}
-
-.cart-notification.success {
-    border-left-color: #28a745;
-    background: linear-gradient(135deg, var(--footer-bg), #0a3326);
-}
-
-.cart-notification.error {
-    border-left-color: #dc3545;
-    background: linear-gradient(135deg, #2c1a1a, #1a0f0f);
-}
-
-@media (max-width: 992px) {
-    .cart-notification {
-        bottom: 90px;
-        right: 20px;
-        padding: 10px 16px;
-        font-size: 12px;
-    }
-}
-
-@media (max-width: 576px) {
-    .cart-notification {
-        bottom: 80px;
-        right: 15px;
-        left: 15px;
-        transform: translateY(100px);
-        text-align: center;
-    }
-    
-    .cart-notification.show {
-        transform: translateY(0);
-    }
-}
-</style>

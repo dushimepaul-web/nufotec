@@ -619,8 +619,8 @@
 <!-- SECTION HERO -->
 <section class="payment-hero">
     <div class="container">
-        <h1><i class="bi bi-credit-card"></i> <?= t('secure_payment_title') ?></h1>
-        <p><?= t('secure_payment_subtitle') ?></p>
+        <h1><i class="bi bi-credit-card"></i> Paiement sécurisé</h1>
+        <p>Finalisez votre consultation en toute sécurité</p>
     </div>
 </section>
 
@@ -631,10 +631,10 @@
         <div class="payment-main">
             <div class="payment-card">
                 <div class="payment-header">
-                    <h2><i class="bi bi-receipt"></i> <?= t('payment_details') ?></h2>
+                    <h2><i class="bi bi-receipt"></i> Détails du paiement</h2>
                     <div class="tracking-badge">
                         <i class="bi bi-upc-scan"></i>
-                        <?= t('tracking_number_short') ?>: <?= htmlspecialchars($consultation['numero_consultation'] ?? 'N/A') ?>
+                        N° suivi: <?= htmlspecialchars($consultation['numero_consultation'] ?? 'N/A') ?>
                     </div>
                 </div>
 
@@ -653,54 +653,54 @@
 
                     <!-- Informations de la consultation -->
                     <div class="info-consultation">
-                        <h3><i class="bi bi-calendar-check"></i> <?= t('consultation_summary') ?></h3>
+                        <h3><i class="bi bi-calendar-check"></i> Récapitulatif de la consultation</h3>
                         <div class="info-grid">
                             <div class="info-item">
                                 <div class="info-icon"><i class="bi bi-person"></i></div>
                                 <div class="info-content">
-                                    <label><?= t('patient') ?></label>
-                                    <div class="value"><?= htmlspecialchars($patient_name ?? t('not_defined')) ?></div>
+                                    <label>Patient</label>
+                                    <div class="value"><?= htmlspecialchars($patient_name ?? 'Non défini') ?></div>
                                 </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-icon"><i class="bi bi-hospital"></i></div>
                                 <div class="info-content">
-                                    <label><?= t('doctor') ?></label>
+                                    <label>Médecin</label>
                                     <div class="value"><?= htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? '')) ?></div>
                                 </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-icon"><i class="bi bi-calendar"></i></div>
                                 <div class="info-content">
-                                    <label><?= t('age') ?></label>
-                                    <div class="value"><?= htmlspecialchars($patient_age ?? t('not_defined')) ?> <?= t('years_short') ?></div>
+                                    <label>Âge</label>
+                                    <div class="value"><?= htmlspecialchars($patient_age ?? 'Non défini') ?> ans</div>
                                 </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-icon"><i class="bi bi-globe"></i></div>
                                 <div class="info-content">
-                                    <label><?= t('country') ?></label>
-                                    <div class="value"><?= htmlspecialchars($patient_pays ?? t('not_defined')) ?></div>
+                                    <label>Pays</label>
+                                    <div class="value"><?= htmlspecialchars($patient_pays ?? 'Non défini') ?></div>
                                 </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-icon"><i class="bi bi-rulers"></i></div>
                                 <div class="info-content">
-                                    <label><?= t('weight_height') ?></label>
+                                    <label>Poids / Taille</label>
                                     <div class="value"><?= htmlspecialchars($patient_poids ?? '?') ?> kg / <?= htmlspecialchars($patient_taille ?? '?') ?> cm</div>
                                 </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-icon"><i class="bi bi-envelope"></i></div>
                                 <div class="info-content">
-                                    <label><?= t('email') ?></label>
-                                    <div class="value"><?= htmlspecialchars($patient_email ?? t('not_defined')) ?></div>
+                                    <label>Email</label>
+                                    <div class="value"><?= htmlspecialchars($patient_email ?? 'Non défini') ?></div>
                                 </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-icon"><i class="bi bi-clock-history"></i></div>
                                 <div class="info-content">
-                                    <label><?= t('creation_date') ?></label>
+                                    <label>Date de création</label>
                                     <div class="value"><?= date('d/m/Y H:i', strtotime($consultation['created_at'] ?? date('Y-m-d H:i:s'))) ?></div>
                                 </div>
                             </div>
@@ -710,28 +710,28 @@
                     <!-- Prix -->
                     <div class="price-section">
                         <div class="price-value">
-                            <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
+                            <?= number_format($prix_usd ?? 50, 2) ?> USD
                         </div>
-                        <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
-                            <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
-                            <strong><?= t('burundi_price') ?><br> 40 000 Fbu</strong>
+                        <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: rgba(255,255,255,0.2); border-radius: 8px; border-left: 4px solid var(--accent); font-size: 0.9rem;">
+                            <i class="bi bi-geo-alt-fill" style="color: var(--accent); margin-right: 6px;"></i>
+                            <strong>Prix Burundi : 40 000 FBu</strong>
                         </div>
                     </div>
 
                     <!-- Symptômes -->
                     <div class="symptoms-section">
-                        <h3><i class="bi bi-activity"></i> <?= t('described_symptoms') ?></h3>
+                        <h3><i class="bi bi-activity"></i> Symptômes décrits</h3>
                         <div class="symptoms-text">
-                            <?= nl2br(htmlspecialchars($consultation['symptomes'] ?? t('not_provided'))) ?>
+                            <?= nl2br(htmlspecialchars($consultation['symptomes'] ?? 'Non renseigné')) ?>
                         </div>
                         <?php if(!empty($consultation['duree_symptomes'])): ?>
                         <div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">
-                            <i class="bi bi-clock"></i> <?= t('duration') ?>: <?= htmlspecialchars($consultation['duree_symptomes']) ?>
+                            <i class="bi bi-clock"></i> Durée : <?= htmlspecialchars($consultation['duree_symptomes']) ?>
                         </div>
                         <?php endif; ?>
                         <?php if(!empty($consultation['consultation_precedente'])): ?>
                         <div style="margin-top: 5px; font-size: 0.85rem; color: var(--text-muted);">
-                            <i class="bi bi-question-circle"></i> <?= t('previous_consultation') ?>: <?= $consultation['consultation_precedente'] == 'yes' ? t('yes') : t('no') ?>
+                            <i class="bi bi-question-circle"></i> Consultation précédente : <?= $consultation['consultation_precedente'] == 'yes' ? 'Oui' : 'Non' ?>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -739,10 +739,10 @@
                     <!-- Documents -->
                     <?php if(!empty($examens_demandes) || !empty($ordonnances)): ?>
                     <div class="documents-section">
-                        <h3><i class="bi bi-folder"></i> <?= t('attached_documents') ?></h3>
+                        <h3><i class="bi bi-folder"></i> Documents joints</h3>
                         <?php if(!empty($examens_demandes)): ?>
                         <div style="margin-bottom: 15px;">
-                            <strong><i class="bi bi-file-earmark-text"></i> <?= t('medical_analysis') ?>:</strong>
+                            <strong><i class="bi bi-file-earmark-text"></i> Analyses médicales :</strong>
                             <div class="doc-list" style="margin-top: 8px;">
                                 <?php foreach($examens_demandes as $doc): ?>
                                 <span class="doc-badge"><i class="bi bi-file-earmark"></i> <?= basename($doc) ?></span>
@@ -752,7 +752,7 @@
                         <?php endif; ?>
                         <?php if(!empty($ordonnances)): ?>
                         <div>
-                            <strong><i class="bi bi-prescription"></i> <?= t('prescriptions') ?>:</strong>
+                            <strong><i class="bi bi-prescription"></i> Ordonnances :</strong>
                             <div class="doc-list" style="margin-top: 8px;">
                                 <?php foreach($ordonnances as $doc): ?>
                                 <span class="doc-badge"><i class="bi bi-file-earmark"></i> <?= basename($doc) ?></span>
@@ -765,7 +765,7 @@
 
                     <!-- Méthodes de paiement -->
                     <div class="payment-methods-section">
-                        <h3><i class="bi bi-wallet2"></i> <?= t('choose_payment_method') ?></h3>
+                        <h3><i class="bi bi-wallet2"></i> Choisissez votre moyen de paiement</h3>
                         <div class="payment-methods-grid" id="paymentMethodsGrid">
                             <?php foreach($mode_payements as $mode): ?>
                             <div class="payment-method-card" onclick="selectPaymentMethod('<?= htmlspecialchars($mode['description']) ?>', this, '<?= htmlspecialchars($mode['numero_compte'] ?? '') ?>', '<?= htmlspecialchars($mode['nom_compte'] ?? '') ?>')">
@@ -786,10 +786,10 @@
                                 <?php if(!empty($mode['numero_compte']) || !empty($mode['nom_compte'])): ?>
                                 <div class="payment-details">
                                     <?php if(!empty($mode['numero_compte'])): ?>
-                                    <p><i class="bi bi-hash"></i> <?= t('account') ?>: <?= htmlspecialchars($mode['numero_compte']) ?></p>
+                                    <p><i class="bi bi-hash"></i> Compte : <?= htmlspecialchars($mode['numero_compte']) ?></p>
                                     <?php endif; ?>
                                     <?php if(!empty($mode['nom_compte'])): ?>
-                                    <p><i class="bi bi-person-badge"></i> <?= t('account_holder') ?>: <?= htmlspecialchars($mode['nom_compte']) ?></p>
+                                    <p><i class="bi bi-person-badge"></i> Titulaire : <?= htmlspecialchars($mode['nom_compte']) ?></p>
                                     <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
@@ -802,10 +802,10 @@
                     <!-- Actions -->
                     <div class="payment-actions">
                         <button type="button" class="btn-cancel" onclick="window.location.href='<?= base_url('patient-form') ?>'">
-                            <i class="bi bi-arrow-left"></i> <?= t('back') ?>
+                            <i class="bi bi-arrow-left"></i> Retour
                         </button>
                         <button type="button" class="btn-pay" id="payButton" onclick="processPayment()" disabled>
-                            <i class="bi bi-whatsapp"></i> <?= t('pay') ?>
+                            <i class="bi bi-whatsapp"></i> Payer
                         </button>
                     </div>
                 </div>
@@ -815,46 +815,46 @@
         <!-- COLONNE LATÉRALE - PROCESSUS DE PAIEMENT -->
         <div class="payment-sidebar">
             <div class="process-card">
-                <h3><i class="bi bi-question-circle-fill"></i> <?= t('how_to_pay') ?></h3>
+                <h3><i class="bi bi-question-circle-fill"></i> Comment payer ?</h3>
                 
                 <div class="process-steps">
                     <div class="process-step">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <span class="step-title"><?= t('step1_title') ?></span>
-                            <span class="step-desc"><?= t('step1_desc') ?></span>
+                            <span class="step-title">Choisissez votre méthode</span>
+                            <span class="step-desc">Sélectionnez le moyen de paiement qui vous convient</span>
                         </div>
                     </div>
                     
                     <div class="process-step">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <span class="step-title"><?= t('step2_title') ?></span>
-                            <span class="step-desc"><?= t('step2_desc') ?></span>
+                            <span class="step-title">Effectuez le paiement</span>
+                            <span class="step-desc">Suivez les instructions du mode de paiement choisi</span>
                         </div>
                     </div>
                     
                     <div class="process-step">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <span class="step-title"><?= t('step3_title') ?></span>
-                            <span class="step-desc"><?= t('step3_desc') ?></span>
+                            <span class="step-title">Prenez une capture d'écran</span>
+                            <span class="step-desc">Conservez la preuve de votre transaction</span>
                         </div>
                     </div>
                     
                     <div class="process-step">
                         <div class="step-number">4</div>
                         <div class="step-content">
-                            <span class="step-title"><?= t('step4_title') ?></span>
-                            <span class="step-desc"><?= t('step4_desc') ?></span>
+                            <span class="step-title">Envoyez la preuve</span>
+                            <span class="step-desc">Transmettez-la sur WhatsApp au numéro ci-dessous</span>
                         </div>
                     </div>
                     
                     <div class="process-step">
                         <div class="step-number">5</div>
                         <div class="step-content">
-                            <span class="step-title"><?= t('step5_title') ?></span>
-                            <span class="step-desc"><?= t('step5_desc') ?></span>
+                            <span class="step-title">Confirmation</span>
+                            <span class="step-desc">Votre consultation sera confirmée sous 24h</span>
                         </div>
                     </div>
                 </div>
@@ -862,12 +862,12 @@
                 <div class="whatsapp-contact">
                     <i class="bi bi-whatsapp"></i>
                     <span class="number">+257 79 666 439</span>
-                    <small><?= t('whatsapp_number_desc') ?></small>
+                    <small>Contactez-nous sur WhatsApp</small>
                 </div>
                 
                 <div class="payment-note">
                     <i class="bi bi-info-circle"></i>
-                    <span><?= t('payment_note') ?></span>
+                    <span>Après paiement, envoyez la preuve sur WhatsApp pour activer votre consultation</span>
                 </div>
             </div>
         </div>
@@ -876,11 +876,10 @@
 
 <?php 
 if (!isset($products)) {
-    $products = $this->Model->get_products_translated($this->current_lang);
+    $products = array();
 }
 ?>
 <?php include VIEWPATH.'sections/Products_Section.php'; ?>
-
 
 <script>
 let selectedPaymentMethod = null;
@@ -962,64 +961,62 @@ function showToast(message, type = 'info') {
 
 function processPayment() {
     if (!selectedPaymentMethod) {
-        showToast('<?= t('select_payment_method_warning') ?>', 'warning');
+        showToast('Veuillez sélectionner un moyen de paiement', 'warning');
         return;
     }
     const payButton = document.getElementById('payButton');
     payButton.disabled = true;
-    payButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> <?= t('preparing') ?>...';
+    payButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Préparation...';
     
     const consultationData = {
         numero: '<?= htmlspecialchars($consultation['numero_consultation'] ?? 'N/A', ENT_QUOTES) ?>',
         medecin: '<?= htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''), ENT_QUOTES) ?>',
-        prix_usd: '<?= number_format($prix_usd, 2) ?>',
-        prix_bif: '<?= number_format($prix_bif, 0) ?>',
+        prix_usd: '<?= number_format($prix_usd ?? 50, 2) ?>',
+        prix_bif: '<?= number_format($prix_bif ?? 40000, 0) ?>',
         patient: '<?= htmlspecialchars($patient_name ?? $this->session->userdata('fullname') ?? '', ENT_QUOTES) ?>',
         email: '<?= htmlspecialchars($patient_email ?? $this->session->userdata('email') ?? '', ENT_QUOTES) ?>',
         date: '<?= date('d/m/Y H:i') ?>'
     };
     
-    let message = `*<?= t('whatsapp_message_header') ?>\n\n`;
+    let message = `*DEMANDE DE CONSULTATION - NUFOTEC*\n\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `*<?= t('patient_info_whatsapp') ?>\n`;
+    message += `*INFORMATIONS PATIENT*\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `• <?= t('name') ?> : ${consultationData.patient}\n`;
-    message += `• <?= t('email') ?> : ${consultationData.email}\n`;
-    message += `• <?= t('date') ?> : ${consultationData.date}\n\n`;
+    message += `• Nom : ${consultationData.patient}\n`;
+    message += `• Email : ${consultationData.email}\n`;
+    message += `• Date : ${consultationData.date}\n\n`;
     
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `*<?= t('consultation_details_whatsapp') ?>\n`;
+    message += `*DÉTAILS DE LA CONSULTATION*\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `• <?= t('tracking_number_short') ?> : ${consultationData.numero}\n`;
-    message += `• <?= t('doctor') ?> : ${consultationData.medecin}\n`;
-    message += `• <?= t('amount') ?> : ${consultationData.prix_usd} USD\n`;
-    message += `• <?= t('equivalent') ?> : ≈ ${consultationData.prix_bif} BIF\n\n`;
+    message += `• N° suivi : ${consultationData.numero}\n`;
+    message += `• Médecin : ${consultationData.medecin}\n`;
+    message += `• Montant : ${consultationData.prix_usd} USD\n`;
+    message += `• Équivalent : ≈ ${consultationData.prix_bif} BIF\n\n`;
     
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `*<?= t('payment_method_chosen') ?>\n`;
+    message += `*MOYEN DE PAIEMENT CHOISI*\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     message += `• ${selectedPaymentMethod}\n`;
     
     if (selectedPaymentDetails && selectedPaymentDetails.compte) {
-        message += `• <?= t('account_to_credit') ?> : ${selectedPaymentDetails.compte}\n`;
+        message += `• Compte à créditer : ${selectedPaymentDetails.compte}\n`;
     }
     if (selectedPaymentDetails && selectedPaymentDetails.titulaire) {
-        message += `• <?= t('account_holder') ?> : ${selectedPaymentDetails.titulaire}\n`;
+        message += `• Titulaire du compte : ${selectedPaymentDetails.titulaire}\n`;
     }
     
     message += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `*<?= t('appointment_request') ?>\n`;
+    message += `*DEMANDE DE RENDEZ-VOUS*\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `<?= t('appointment_message_start') ?> ${consultationData.medecin}.\n`;
-    message += `<?= t('payment_message') ?> ${selectedPaymentMethod}.\n\n`;
-    message += `📎 *<?= t('proof_of_payment') ?>* : <?= t('attach_proof_message') ?>\n\n`;
-    message += `<?= t('confirmation_request') ?>\n`;
+    message += `Je souhaite prendre un rendez-vous avec le Dr ${consultationData.medecin}.\n`;
+    message += `J'ai effectué le paiement via ${selectedPaymentMethod}.\n\n`;
+    message += `Merci de bien vouloir confirmer ma consultation.\n`;
     
-    message += `*<?= t('contact') ?>\n`;
-    message += `<?= t('phone') ?> : ${consultationData.patient} | <?= t('email') ?> : ${consultationData.email}\n\n`;
-    
+
+    message += `📎 *PREUVE DE PAIEMENT* : (joindre la capture d'écran ici)\n\n`;  
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `<?= t('whatsapp_footer') ?>\n`;
+    message += `Merci de confirmer dès réception du paiement.\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
     
     const encodedMessage = encodeURIComponent(message);
@@ -1027,8 +1024,9 @@ function processPayment() {
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
-    showToast('<?= t('whatsapp_opened') ?>', 'success');
+    showToast('WhatsApp ouvert ! Envoyez votre preuve de paiement', 'success');
     
+    // Enregistrement du paiement en base
     const formData = new FormData();
     formData.append('consultation_id', '<?= $consultation_id ?? $consultation['id'] ?? '' ?>');
     formData.append('payment_method', selectedPaymentMethod);
@@ -1051,7 +1049,7 @@ function processPayment() {
     
     setTimeout(() => {
         payButton.disabled = false;
-        payButton.innerHTML = '<i class="bi bi-whatsapp"></i> <?= t('pay') ?>';
+        payButton.innerHTML = '<i class="bi bi-whatsapp"></i> Payer';
     }, 5000);
 }
 

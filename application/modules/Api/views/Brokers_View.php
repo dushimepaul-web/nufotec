@@ -1,55 +1,55 @@
 <?php
 // Définition des fonctions manquantes (inchangé)
-if (!function_exists('fix_image_path')) {
-    function fix_image_path($path) {
-        if (empty($path)) return '';
-        if (preg_match('#^https?://#', $path)) {
-            return $path;
+if (!function_exists('fixer_chemin_image')) {
+    function fixer_chemin_image($chemin) {
+        if (empty($chemin)) return '';
+        if (preg_match('#^https?://#', $chemin)) {
+            return $chemin;
         }
         $CI =& get_instance();
-        return $CI->config->base_url($path);
+        return $CI->config->base_url($chemin);
     }
 }
 
-if (!function_exists('fix_content_images')) {
-    function fix_content_images($content) {
-        if (empty($content)) return $content;
+if (!function_exists('fixer_images_contenu')) {
+    function fixer_images_contenu($contenu) {
+        if (empty($contenu)) return $contenu;
         return preg_replace_callback(
             '<img\s+[^>]*src=["\']([^"\']+)["\'][^>]*>/i',
-            function($matches) {
-                $old_src = $matches[1];
-                $new_src = fix_image_path($old_src);
-                return str_replace($old_src, $new_src, $matches[0]);
+            function($correspondances) {
+                $ancien_src = $correspondances[1];
+                $nouveau_src = fixer_chemin_image($ancien_src);
+                return str_replace($ancien_src, $nouveau_src, $correspondances[0]);
             },
-            $content
+            $contenu
         );
     }
 }
 ?>
 
-<?php include VIEWPATH . 'includes/frontend/Header.php'; ?>
+<?php include VIEWPATH . 'includes/frontend/EnTete.php'; ?>
 
 <style>
     :root {
-        --primary: #0B4F2E;
-        --primary-light: #1B7B4B;
-        --primary-lighter: #e8f5e9;
+        --primaire: #0B4F2E;
+        --primaire-clair: #1B7B4B;
+        --primaire-plus-clair: #e8f5e9;
         --accent: #27ae60;
-        --warning: #FF6B35;
-        --error: #E74C3C;
+        --avertissement: #FF6B35;
+        --erreur: #E74C3C;
         --info: #3498DB;
-        --text-dark: #1a2e3f;
-        --text-muted: #64748b;
-        --text-light: #94a3b8;
-        --bg-light: #f8fafc;
-        --bg-warm: #faf9f7;
-        --border: #e2e8f0;
-        --shadow-sm: 0 4px 15px rgba(0,0,0,0.05);
-        --shadow-md: 0 10px 30px -10px rgba(0,0,0,0.1);
-        --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        --radius-sm: 12px;
-        --radius-md: 16px;
-        --radius-lg: 24px;
+        --texte-sombre: #1a2e3f;
+        --texte-fade: #64748b;
+        --texte-clair: #94a3b8;
+        --fond-clair: #f8fafc;
+        --fond-chaud: #faf9f7;
+        --bordure: #e2e8f0;
+        --ombre-legere: 0 4px 15px rgba(0,0,0,0.05);
+        --ombre-moyenne: 0 10px 30px -10px rgba(0,0,0,0.1);
+        --ombre-forte: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        --rayon-petit: 12px;
+        --rayon-moyen: 16px;
+        --rayon-grand: 24px;
     }
 
     /* ===== SECTION HERO ===== */
@@ -61,11 +61,11 @@ if (!function_exists('fix_content_images')) {
         justify-content: center;
         text-align: center;
         color: white;
-        background-color: #0f4c3a; /* fallback */
+        background-color: #0f4c3a;
         overflow: hidden;
         padding: 4rem 0;
     }
-    .hero-bg-image {
+    .hero-image-fond {
         position: absolute;
         top: 0;
         left: 0;
@@ -75,7 +75,7 @@ if (!function_exists('fix_content_images')) {
         background-position: center;
         z-index: 1;
     }
-    .hero-gradient-overlay {
+    .hero-degrade-superposition {
         position: absolute;
         top: 0;
         left: 0;
@@ -84,29 +84,29 @@ if (!function_exists('fix_content_images')) {
         background: linear-gradient(135deg, rgba(15,76,58,0.85) 0%, rgba(26,95,74,0.9) 100%);
         z-index: 2;
     }
-    .page-hero .container {
+    .page-hero .conteneur {
         position: relative;
         z-index: 3;
     }
-    .page-hero-title {
+    .page-hero-titre {
         font-size: clamp(2.5rem, 6vw, 4rem);
         font-weight: 700;
         margin-bottom: 1rem;
         text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
     }
-    .page-hero-title span {
+    .page-hero-titre span {
         display: block;
         font-size: 1.5rem;
         font-weight: 400;
         color: #d4af37;
     }
-    .page-hero-subtitle {
+    .page-hero-sous-titre {
         font-size: 1.25rem;
         max-width: 700px;
         margin: 1.5rem auto;
         opacity: 0.95;
     }
-    .cta-button {
+    .bouton-cta {
         display: inline-block;
         background: #d4af37;
         color: #0f4c3a;
@@ -118,7 +118,7 @@ if (!function_exists('fix_content_images')) {
         border: 2px solid #d4af37;
         box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
-    .cta-button:hover {
+    .bouton-cta:hover {
         background: transparent;
         color: #fff;
         border-color: #fff;
@@ -133,8 +133,7 @@ if (!function_exists('fix_content_images')) {
         background-color: #f9f9f9;
     }
 
-    /* Carte personnalisée */
-    .card-custom {
+    .carte-personnalisee {
         background: #ffffff;
         border-radius: 24px;
         box-shadow: 0 20px 40px -12px rgba(0,32,64,0.15);
@@ -146,12 +145,12 @@ if (!function_exists('fix_content_images')) {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         border: 1px solid rgba(0,0,0,0.03);
     }
-    .card-custom:hover {
+    .carte-personnalisee:hover {
         transform: translateY(-5px);
         box-shadow: 0 30px 50px -12px rgba(15,76,58,0.25);
     }
 
-    .section-tag {
+    .section-badge {
         display: inline-block;
         font-size: 0.9rem;
         font-weight: 600;
@@ -164,25 +163,25 @@ if (!function_exists('fix_content_images')) {
         margin-bottom: 1rem;
     }
 
-    .section-title {
+    .section-titre {
         font-size: clamp(1.8rem, 4vw, 2.5rem);
         font-weight: 700;
         color: #0f4c3a;
         margin-bottom: 1.2rem;
     }
 
-    .tinymce-content {
+    .contenu-tinymce {
         font-size: 1.1rem;
         color: #334155;
     }
-    .tinymce-content p:last-child {
+    .contenu-tinymce p:last-child {
         margin-bottom: 0;
     }
-    .tinymce-content.text-center {
+    .contenu-tinymce.texte-centre {
         text-align: center;
     }
 
-    .btn-primary-custom {
+    .bouton-primaire-personnalise {
         display: inline-block;
         background: #0f4c3a;
         color: white;
@@ -193,13 +192,12 @@ if (!function_exists('fix_content_images')) {
         border: 2px solid #0f4c3a;
         transition: all 0.3s;
     }
-    .btn-primary-custom:hover {
+    .bouton-primaire-personnalise:hover {
         background: transparent;
         color: #0f4c3a;
     }
 
-    /* Images dans les cartes */
-    .image-wrapper {
+    .contenant-image {
         border-radius: 24px;
         overflow: hidden;
         box-shadow: 0 20px 40px rgba(0,0,0,0.15);
@@ -208,17 +206,16 @@ if (!function_exists('fix_content_images')) {
         align-items: center;
         justify-content: center;
     }
-    .image-wrapper img {
+    .contenant-image img {
         width: 100%;
         height: auto;
         object-fit: cover;
         transition: transform 0.5s;
     }
-    .image-wrapper:hover img {
+    .contenant-image:hover img {
         transform: scale(1.05);
     }
 
-    /* Espacement responsive */
     .g-5 {
         --bs-gutter-y: 3rem;
     }
@@ -227,108 +224,107 @@ if (!function_exists('fix_content_images')) {
         .section-texte {
             padding: 3rem 0;
         }
-        .card-custom {
+        .carte-personnalisee {
             padding: 1.8rem;
         }
-        .page-hero-title {
+        .page-hero-titre {
             font-size: 2.2rem;
         }
     }
 
-    /* Layout principal */
-    .main-container {
+    .contenant-principal {
         max-width: 1400px;
         margin: 0 auto 3rem;
         padding: 0 1.5rem;
     }
 
-    .form-card {
+    .carte-formulaire {
         background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-lg);
+        border-radius: var(--rayon-grand);
+        box-shadow: var(--ombre-forte);
         overflow: hidden;
     }
 
-    /* Progress Steps */
-    .progress-steps {
+    /* Étapes de progression */
+    .etapes-progression {
         display: flex;
         justify-content: center;
         padding: 2rem;
-        background: var(--bg-warm);
-        border-bottom: 1px solid var(--border);
+        background: var(--fond-chaud);
+        border-bottom: 1px solid var(--bordure);
         gap: 1rem;
         flex-wrap: wrap;
     }
 
-    .step {
+    .etape {
         display: flex;
         align-items: center;
         padding: 0.5rem 1rem;
         border-radius: 50px;
         background: white;
-        border: 2px solid var(--border);
+        border: 2px solid var(--bordure);
         transition: all 0.3s ease;
         cursor: pointer;
     }
 
-    .step.active {
-        border-color: var(--primary);
-        background: linear-gradient(135deg, var(--primary-lighter) 0%, white 100%);
-        box-shadow: var(--shadow-sm);
+    .etape.active {
+        border-color: var(--primaire);
+        background: linear-gradient(135deg, var(--primaire-plus-clair) 0%, white 100%);
+        box-shadow: var(--ombre-legere);
     }
 
-    .step.completed {
+    .etape.completee {
         border-color: var(--accent);
         background: #dcfce7;
     }
 
-    .step-number {
+    .numero-etape {
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        background: var(--border);
+        background: var(--bordure);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
         margin-right: 0.75rem;
-        color: var(--text-muted);
+        color: var(--texte-fade);
     }
 
-    .step.active .step-number {
-        background: var(--primary);
+    .etape.active .numero-etape {
+        background: var(--primaire);
         color: white;
     }
 
-    .step.completed .step-number {
+    .etape.completee .numero-etape {
         background: var(--accent);
         color: white;
     }
 
-    .step.completed .step-number i {
+    .etape.completee .numero-etape i {
         font-size: 0.8rem;
     }
 
-    .step-text {
+    .texte-etape {
         font-weight: 500;
-        color: var(--text-muted);
+        color: var(--texte-fade);
     }
 
-    .step.active .step-text {
-        color: var(--primary);
+    .etape.active .texte-etape {
+        color: var(--primaire);
     }
 
-    .step.completed .step-text {
+    .etape.completee .texte-etape {
         color: var(--accent);
     }
 
-    /* Form Sections */
-    .form-section {
+    /* Sections formulaire */
+    .section-formulaire {
         padding: 2.5rem;
         display: none;
     }
 
-    .form-section.active {
+    .section-formulaire.active {
         display: block;
         animation: fadeIn 0.5s ease;
     }
@@ -338,123 +334,123 @@ if (!function_exists('fix_content_images')) {
         to { opacity: 1; transform: translateY(0); }
     }
 
-    .shake {
-        animation: shake 0.5s;
+    .secousse {
+        animation: secousse 0.5s;
     }
 
-    @keyframes shake {
+    @keyframes secousse {
         0%, 100% { transform: translateX(0); }
         25% { transform: translateX(-10px); }
         75% { transform: translateX(10px); }
     }
 
-    .section-title {
+    .titre-section {
         font-size: 1.5rem;
         font-weight: 600;
-        color: var(--primary);
+        color: var(--primaire);
         margin-bottom: 0.5rem;
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
 
-    .section-subtitle {
-        color: var(--text-muted);
+    .sous-titre-section {
+        color: var(--texte-fade);
         margin-bottom: 2rem;
         font-size: 0.95rem;
-        border-left: 3px solid var(--primary-light);
+        border-left: 3px solid var(--primaire-clair);
         padding-left: 1rem;
     }
 
-    /* Form Controls */
-    .form-label {
+    /* Contrôles formulaire */
+    .label-formulaire {
         font-weight: 500;
-        color: var(--text-dark);
+        color: var(--texte-sombre);
         margin-bottom: 0.5rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
 
-    .form-control, .form-select {
-        border: 2px solid var(--border);
-        border-radius: var(--radius-sm);
+    .controle-formulaire, .selection-formulaire {
+        border: 2px solid var(--bordure);
+        border-radius: var(--rayon-petit);
         padding: 0.875rem 1rem;
         font-size: 0.95rem;
         transition: all 0.3s ease;
-        background: var(--bg-light);
+        background: var(--fond-clair);
     }
 
-    .form-control:focus, .form-select:focus {
-        border-color: var(--primary);
+    .controle-formulaire:focus, .selection-formulaire:focus {
+        border-color: var(--primaire);
         box-shadow: 0 0 0 4px rgba(11, 79, 46, 0.1);
         background: white;
     }
 
-    .form-control.is-invalid, .form-select.is-invalid {
-        border-color: var(--error);
+    .controle-formulaire.invalide, .selection-formulaire.invalide {
+        border-color: var(--erreur);
         background-image: none;
     }
 
-    .form-control.is-valid, .form-select.is-valid {
+    .controle-formulaire.valide, .selection-formulaire.valide {
         border-color: var(--accent);
     }
 
-    .invalid-feedback {
-        color: var(--error);
+    .retour-invalide {
+        color: var(--erreur);
         font-size: 0.875rem;
         margin-top: 0.25rem;
         display: none;
     }
 
-    .form-control.is-invalid ~ .invalid-feedback {
+    .controle-formulaire.invalide ~ .retour-invalide {
         display: block;
     }
 
-    .input-group-text {
-        background: var(--bg-light);
-        border: 2px solid var(--border);
+    .groupe-saisie-texte {
+        background: var(--fond-clair);
+        border: 2px solid var(--bordure);
         border-right: none;
-        color: var(--text-muted);
-        border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+        color: var(--texte-fade);
+        border-radius: var(--rayon-petit) 0 0 var(--rayon-petit);
     }
 
-    .input-group .form-control {
+    .groupe-saisie .controle-formulaire {
         border-left: none;
-        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        border-radius: 0 var(--rayon-petit) var(--rayon-petit) 0;
     }
 
-    .input-group:focus-within .input-group-text {
-        border-color: var(--primary);
+    .groupe-saisie:focus-within .groupe-saisie-texte {
+        border-color: var(--primaire);
     }
 
-    /* Character Counter */
-    .char-counter {
+    /* Compteur caractères */
+    .compteur-caracteres {
         font-size: 0.75rem;
-        color: var(--text-muted);
+        color: var(--texte-fade);
         margin-top: 0.25rem;
         text-align: right;
     }
 
-    .char-counter.warning {
-        color: var(--warning);
+    .compteur-caracteres.avertissement {
+        color: var(--avertissement);
     }
 
-    .char-counter.danger {
-        color: var(--error);
+    .compteur-caracteres.danger {
+        color: var(--erreur);
     }
 
-    /* Checkbox Cards */
-    .checkbox-grid {
+    /* Cartes cases à cocher */
+    .grille-coches {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 1rem;
         margin: 1rem 0;
     }
 
-    .checkbox-card {
-        border: 2px solid var(--border);
-        border-radius: var(--radius-sm);
+    .carte-coche {
+        border: 2px solid var(--bordure);
+        border-radius: var(--rayon-petit);
         padding: 1rem;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -462,26 +458,26 @@ if (!function_exists('fix_content_images')) {
         background: white;
     }
 
-    .checkbox-card:hover {
-        border-color: var(--primary);
+    .carte-coche:hover {
+        border-color: var(--primaire);
         transform: translateY(-2px);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--ombre-legere);
     }
 
-    .checkbox-card.selected {
-        border-color: var(--primary);
-        background: var(--primary-lighter);
+    .carte-coche.selectionnee {
+        border-color: var(--primaire);
+        background: var(--primaire-plus-clair);
         box-shadow: 0 5px 15px rgba(11, 79, 46, 0.1);
     }
 
-    .checkbox-card input[type="checkbox"] {
+    .carte-coche input[type="checkbox"] {
         display: none;
     }
 
-    .checkbox-icon {
+    .icone-coche {
         width: 50px;
         height: 50px;
-        border-radius: var(--radius-sm);
+        border-radius: var(--rayon-petit);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -490,16 +486,16 @@ if (!function_exists('fix_content_images')) {
         transition: all 0.3s ease;
     }
 
-    .checkbox-card.selected .checkbox-icon {
+    .carte-coche.selectionnee .icone-coche {
         transform: scale(1.1);
     }
 
-    /* Country Search */
-    .country-search-container {
+    /* Recherche pays */
+    .contenant-recherche-pays {
         position: relative;
     }
 
-    .country-dropdown {
+    .liste-deroulante-pays {
         position: absolute;
         top: 100%;
         left: 0;
@@ -507,36 +503,36 @@ if (!function_exists('fix_content_images')) {
         max-height: 300px;
         overflow-y: auto;
         background: white;
-        border: 2px solid var(--border);
-        border-radius: var(--radius-sm);
-        box-shadow: var(--shadow-md);
+        border: 2px solid var(--bordure);
+        border-radius: var(--rayon-petit);
+        box-shadow: var(--ombre-moyenne);
         z-index: 1050;
         display: none;
     }
 
-    .country-dropdown.show {
+    .liste-deroulante-pays.afficher {
         display: block;
     }
 
-    .country-option {
+    .option-pays {
         padding: 0.75rem 1rem;
         cursor: pointer;
         transition: all 0.2s ease;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--bordure);
     }
 
-    .country-option:last-child {
+    .option-pays:last-child {
         border-bottom: none;
     }
 
-    .country-option:hover,
-    .country-option.active {
-        background: var(--primary-lighter);
+    .option-pays:hover,
+    .option-pays.active {
+        background: var(--primaire-plus-clair);
     }
 
-    .selected-country-badge {
-        background: var(--primary-lighter);
-        border: 1px solid var(--primary);
+    .badge-pays-selectionne {
+        background: var(--primaire-plus-clair);
+        border: 1px solid var(--primaire);
         border-radius: 50px;
         padding: 0.5rem 1rem;
         display: inline-flex;
@@ -546,11 +542,11 @@ if (!function_exists('fix_content_images')) {
         font-size: 0.9rem;
     }
 
-    /* Info Box */
-    .info-box {
+    /* Boîte info */
+    .boite-info {
         background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(52, 152, 219, 0.05) 100%);
         border-left: 4px solid var(--info);
-        border-radius: var(--radius-sm);
+        border-radius: var(--rayon-petit);
         padding: 1.5rem;
         margin-bottom: 2rem;
         display: flex;
@@ -558,21 +554,21 @@ if (!function_exists('fix_content_images')) {
         gap: 1rem;
     }
 
-    .info-box i {
+    .boite-info i {
         color: var(--info);
         font-size: 2rem;
     }
 
-    /* Summary Section */
-    .summary-section {
-        background: var(--bg-warm);
-        border-radius: var(--radius-sm);
+    /* Section résumé */
+    .section-resume {
+        background: var(--fond-chaud);
+        border-radius: var(--rayon-petit);
         padding: 1.5rem;
         margin-bottom: 1.5rem;
     }
 
-    .summary-section h6 {
-        color: var(--primary);
+    .section-resume h6 {
+        color: var(--primaire);
         font-weight: 600;
         margin-bottom: 1rem;
         display: flex;
@@ -580,31 +576,31 @@ if (!function_exists('fix_content_images')) {
         gap: 0.5rem;
     }
 
-    .summary-item {
+    .element-resume {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 0.75rem 0;
-        border-bottom: 1px dashed var(--border);
+        border-bottom: 1px dashed var(--bordure);
     }
 
-    .summary-item:last-child {
+    .element-resume:last-child {
         border-bottom: none;
     }
 
-    .summary-label {
-        color: var(--text-muted);
+    .label-resume {
+        color: var(--texte-fade);
         font-size: 0.9rem;
     }
 
-    .summary-value {
+    .valeur-resume {
         font-weight: 600;
-        color: var(--text-dark);
+        color: var(--texte-sombre);
     }
 
-    .badge-custom {
-        background: var(--primary-lighter);
-        color: var(--primary);
+    .badge-personnalise {
+        background: var(--primaire-plus-clair);
+        color: var(--primaire);
         padding: 0.35rem 0.75rem;
         border-radius: 50px;
         font-size: 0.85rem;
@@ -613,7 +609,7 @@ if (!function_exists('fix_content_images')) {
         margin: 0.25rem;
     }
 
-    /* Buttons */
+    /* Boutons */
     .btn-nav {
         padding: 1rem 2.5rem;
         border-radius: 50px;
@@ -625,30 +621,30 @@ if (!function_exists('fix_content_images')) {
         border: none;
     }
 
-    .btn-next {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    .btn-suivant {
+        background: linear-gradient(135deg, var(--primaire) 0%, var(--primaire-clair) 100%);
         color: white;
     }
 
-    .btn-next:hover:not(:disabled) {
+    .btn-suivant:hover:not(:disabled) {
         transform: translateX(5px);
         box-shadow: 0 10px 25px rgba(11, 79, 46, 0.3);
         color: white;
     }
 
-    .btn-prev {
+    .btn-precedent {
         background: white;
-        color: var(--text-muted);
-        border: 2px solid var(--border);
+        color: var(--texte-fade);
+        border: 2px solid var(--bordure);
     }
 
-    .btn-prev:hover {
-        border-color: var(--primary);
-        color: var(--primary);
+    .btn-precedent:hover {
+        border-color: var(--primaire);
+        color: var(--primaire);
     }
 
-    .btn-submit {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    .btn-soumettre {
+        background: linear-gradient(135deg, var(--primaire) 0%, var(--primaire-clair) 100%);
         color: white;
         border: none;
         padding: 1.25rem 3rem;
@@ -659,21 +655,21 @@ if (!function_exists('fix_content_images')) {
         overflow: hidden;
     }
 
-    .btn-submit:hover:not(:disabled) {
+    .btn-soumettre:hover:not(:disabled) {
         transform: translateY(-3px);
         box-shadow: 0 15px 35px rgba(11, 79, 46, 0.3);
     }
 
-    .btn-submit.loading {
+    .btn-soumettre.chargement {
         pointer-events: none;
         opacity: 0.8;
     }
 
-    .btn-submit.loading .btn-text {
+    .btn-soumettre.chargement .texte-bouton {
         visibility: hidden;
     }
 
-    .btn-submit.loading::after {
+    .btn-soumettre.chargement::after {
         content: '';
         position: absolute;
         width: 20px;
@@ -691,22 +687,22 @@ if (!function_exists('fix_content_images')) {
         to { transform: rotate(360deg); }
     }
 
-    /* Map Container */
-    .map-container {
+    /* Conteneur carte */
+    .contenant-carte {
         height: 400px;
-        border-radius: var(--radius-md);
+        border-radius: var(--rayon-moyen);
         overflow: hidden;
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--ombre-moyenne);
         margin: 2rem 0;
     }
 
-    #map {
+    #carte {
         width: 100%;
         height: 100%;
     }
 
-    /* Toast Notifications */
-    .toast-container {
+    /* Notifications Toast */
+    .conteneur-toast {
         position: fixed;
         bottom: 100px;
         left: 50%;
@@ -722,50 +718,50 @@ if (!function_exists('fix_content_images')) {
         width: auto;
     }
 
-    .toast-custom {
+    .toast-personnalise {
         background: white;
-        border-radius: var(--radius-md);
+        border-radius: var(--rayon-moyen);
         padding: 1.25rem;
-        box-shadow: var(--shadow-lg);
+        box-shadow: var(--ombre-forte);
         display: flex;
         align-items: center;
         gap: 1rem;
         width: 100%;
         transform: translateX(120%);
-        animation: slideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        animation: glisser 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
         border-left: 4px solid;
         pointer-events: all;
         position: relative;
     }
 
-    .toast-custom.success {
+    .toast-personnalise.succes {
         border-left-color: var(--accent);
     }
 
-    .toast-custom.error {
-        border-left-color: var(--error);
+    .toast-personnalise.erreur {
+        border-left-color: var(--erreur);
     }
 
-    .toast-custom.warning {
-        border-left-color: var(--warning);
+    .toast-personnalise.avertissement {
+        border-left-color: var(--avertissement);
     }
 
-    @keyframes slideIn {
+    @keyframes glisser {
         to { transform: translateX(0); }
     }
 
-    @keyframes slideOut {
+    @keyframes glisserSortie {
         to { transform: translateX(120%); opacity: 0; }
     }
 
-    .toast-custom.hiding {
-        animation: slideOut 0.5s ease forwards;
+    .toast-personnalise.disparait {
+        animation: glisserSortie 0.5s ease forwards;
     }
 
-    .toast-icon {
+    .icone-toast {
         width: 48px;
         height: 48px;
-        border-radius: var(--radius-sm);
+        border-radius: var(--rayon-petit);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -773,59 +769,58 @@ if (!function_exists('fix_content_images')) {
         flex-shrink: 0;
     }
 
-    .toast-custom.success .toast-icon {
+    .toast-personnalise.succes .icone-toast {
         background: #dcfce7;
         color: var(--accent);
     }
 
-    .toast-custom.error .toast-icon {
+    .toast-personnalise.erreur .icone-toast {
         background: #fee2e2;
-        color: var(--error);
+        color: var(--erreur);
     }
 
-    .toast-custom.warning .toast-icon {
+    .toast-personnalise.avertissement .icone-toast {
         background: #ffedd5;
-        color: var(--warning);
+        color: var(--avertissement);
     }
 
-    .toast-content {
+    .contenu-toast {
         flex: 1;
         min-width: 0;
     }
 
-    .toast-content h4 {
+    .contenu-toast h4 {
         font-size: 1rem;
         font-weight: 700;
         margin-bottom: 0.25rem;
-        color: var(--text-dark);
+        color: var(--texte-sombre);
     }
 
-    .toast-content p {
+    .contenu-toast p {
         margin: 0;
-        color: var(--text-muted);
+        color: var(--texte-fade);
         font-size: 0.9rem;
         word-wrap: break-word;
     }
 
-    .toast-close {
+    .fermer-toast {
         background: none;
         border: none;
-        color: var(--text-muted);
+        color: var(--texte-fade);
         cursor: pointer;
         padding: 0.5rem;
-        border-radius: var(--radius-sm);
+        border-radius: var(--rayon-petit);
         transition: all 0.3s;
         flex-shrink: 0;
     }
 
-    .toast-close:hover {
+    .fermer-toast:hover {
         background: #f1f5f9;
-        color: var(--text-dark);
+        color: var(--texte-sombre);
     }
 
-    /* Responsive toast */
     @media (max-width: 576px) {
-        .toast-container {
+        .conteneur-toast {
             top: 80px;
             right: 10px;
             left: 10px;
@@ -833,7 +828,7 @@ if (!function_exists('fix_content_images')) {
         }
     }
 
-    /* Navigation */
+    /* Barre de navigation */
     .navbar {
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(20px);
@@ -848,34 +843,34 @@ if (!function_exists('fix_content_images')) {
     .navbar-brand {
         font-weight: 700;
         font-size: 1.5rem;
-        color: var(--primary) !important;
+        color: var(--primaire) !important;
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
 
     .navbar-brand i {
-        background: linear-gradient(135deg, var(--primary), var(--accent));
+        background: linear-gradient(135deg, var(--primaire), var(--accent));
         color: white;
         width: 40px;
         height: 40px;
-        border-radius: var(--radius-sm);
+        border-radius: var(--rayon-petit);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 1.2rem;
     }
 
-    /* Header */
-    .page-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    /* En-tête */
+    .entete-page {
+        background: linear-gradient(135deg, var(--primaire) 0%, var(--primaire-clair) 100%);
         padding: 3rem 0;
         position: relative;
         overflow: hidden;
         margin-bottom: 2rem;
     }
 
-    .page-header::before {
+    .entete-page::before {
         content: '';
         position: absolute;
         top: -50%;
@@ -886,7 +881,7 @@ if (!function_exists('fix_content_images')) {
         border-radius: 50%;
     }
 
-    .page-header h1 {
+    .entete-page h1 {
         color: white;
         font-size: 2.5rem;
         font-weight: 700;
@@ -894,96 +889,84 @@ if (!function_exists('fix_content_images')) {
         position: relative;
     }
 
-    .page-header p {
+    .entete-page p {
         color: rgba(255,255,255,0.9);
         font-size: 1.1rem;
         max-width: 600px;
         position: relative;
     }
 
-    /* Tooltip */
-    .tooltip-icon {
+    /* Infobulle */
+    .icone-infobulle {
         color: var(--info);
         cursor: help;
         font-size: 0.9rem;
         margin-left: 0.25rem;
     }
 
-    /* Divider */
-    .divider {
+    /* Séparateur */
+    .separateur {
         display: flex;
         align-items: center;
         text-align: center;
-        color: var(--text-muted);
+        color: var(--texte-fade);
         margin: 2rem 0;
     }
 
-    .divider::before,
-    .divider::after {
+    .separateur::before,
+    .separateur::after {
         content: '';
         flex: 1;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--bordure);
     }
 
-    .divider span {
+    .separateur span {
         padding: 0 1rem;
     }
 
-    /* Status Link */
-    .status-link {
+    /* Lien statut */
+    .lien-statut {
         text-align: center;
         margin-top: 2rem;
     }
 
-    .status-link a {
-        color: var(--primary);
+    .lien-statut a {
+        color: var(--primaire);
         text-decoration: none;
         font-weight: 600;
         transition: all 0.3s;
     }
 
-    .status-link a:hover {
-        color: var(--primary-light);
+    .lien-statut a:hover {
+        color: var(--primaire-clair);
         text-decoration: underline;
-    }
-
-    /* Loading Skeleton */
-    .skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-    }
-
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
     }
 
     /* Responsive */
     @media (max-width: 768px) {
-        .page-header h1 {
+        .entete-page h1 {
             font-size: 2rem;
         }
-        .form-section {
+        .section-formulaire {
             padding: 1.5rem;
         }
-        .progress-steps {
+        .etapes-progression {
             padding: 1rem;
         }
-        .step-text {
+        .texte-etape {
             display: none;
         }
-        .toast-custom {
+        .toast-personnalise {
             min-width: auto;
             max-width: 90vw;
         }
-        .checkbox-grid {
+        .grille-coches {
             grid-template-columns: 1fr 1fr;
         }
     }
 
     @media (max-width: 576px) {
-        .checkbox-grid {
+        .grille-coches {
             grid-template-columns: 1fr;
         }
         .btn-nav {
@@ -992,8 +975,8 @@ if (!function_exists('fix_content_images')) {
     }
 </style>
 
-<!-- Toast Container -->
-<div id="toastContainer" class="toast-container"></div>
+<!-- Conteneur Toast -->
+<div id="conteneurToast" class="conteneur-toast"></div>
 
 <?php
 // ============================================
@@ -1001,29 +984,29 @@ if (!function_exists('fix_content_images')) {
 // ============================================
 if (!empty($hero)):
     $options = $hero['options'] ?? [];
-    $image_opacity = $options['image_opacity'] ?? '0.85';
-    $raw_content = $hero['contenu_texte'] ?? '';
+    $opacite_image = $options['opacite_image'] ?? '0.85';
+    $contenu_brut = $hero['contenu_texte'] ?? '';
 ?>
-    <section class="page-hero <?= $hero['custom_class'] ?? '' ?>">
-        <?php if (!empty($hero['image_url'])): ?>
-            <div class="hero-bg-image" style="background-image: url('<?= fix_image_path($hero['image_url']) ?>'); opacity: <?= $image_opacity ?>;"></div>
+    <section class="page-hero <?= $hero['classe_personnalisee'] ?? '' ?>">
+        <?php if (!empty($hero['url_image'])): ?>
+            <div class="hero-image-fond" style="background-image: url('<?= fixer_chemin_image($hero['url_image']) ?>'); opacity: <?= $opacite_image ?>;"></div>
         <?php endif; ?>
-        <div class="hero-gradient-overlay"></div>
-        <div class="container position-relative">
+        <div class="hero-degrade-superposition"></div>
+        <div class="conteneur position-relative">
             <div class="row justify-content-center">
                 <div class="col-lg-10">
-                    <h1 class="page-hero-title">
+                    <h1 class="page-hero-titre">
                         <?= $hero['titre_section'] ?? '' ?>
                         <?php if (!empty($hero['sous_titre'])): ?>
                             <span><?= $hero['sous_titre'] ?></span>
                         <?php endif; ?>
                     </h1>
-                    <?php if (!empty($raw_content)): ?>
-                        <p class="page-hero-subtitle"><?= strip_tags($raw_content) ?></p>
+                    <?php if (!empty($contenu_brut)): ?>
+                        <p class="page-hero-sous-titre"><?= strip_tags($contenu_brut) ?></p>
                     <?php endif; ?>
-                    <?php if (!empty($hero['bouton_texte'])): ?>
-                        <a href="<?= $hero['bouton_lien'] ?? '#' ?>" class="cta-button">
-                            <?= $hero['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
+                    <?php if (!empty($hero['texte_bouton'])): ?>
+                        <a href="<?= $hero['lien_bouton'] ?? '#' ?>" class="bouton-cta">
+                            <?= $hero['texte_bouton'] ?> <i class="bi bi-arrow-right"></i>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -1038,67 +1021,67 @@ if (!empty($hero)):
 // ============================================
 foreach ($textes as $texte):
     $options = $texte['options'] ?? [];
-    $layout = $options['layout'] ?? 'simple';
-    $has_image = !empty($texte['image_url']);
-    $image_url = $has_image ? fix_image_path($texte['image_url']) : null;
-    $text_align = $options['text_align'] ?? 'text-center';
-    $raw_content = $texte['contenu_texte'] ?? '';
-    $content_with_fixed_images = fix_content_images($raw_content);
-    $bg_color = $options['bg_color'] ?? 'transparent';
+    $disposition = $options['disposition'] ?? 'simple';
+    $a_image = !empty($texte['url_image']);
+    $url_image = $a_image ? fixer_chemin_image($texte['url_image']) : null;
+    $alignement_texte = $options['alignement_texte'] ?? 'text-center';
+    $contenu_brut = $texte['contenu_texte'] ?? '';
+    $contenu_images_fixees = fixer_images_contenu($contenu_brut);
+    $couleur_fond = $options['couleur_fond'] ?? 'transparent';
 ?>
 
-    <section class="section-texte <?= $texte['custom_class'] ?? '' ?>" style="background: <?= $bg_color ?>;">
-        <div class="container">
-            <?php if ($layout === 'with-image-left' && $has_image): ?>
+    <section class="section-texte <?= $texte['classe_personnalisee'] ?? '' ?>" style="background: <?= $couleur_fond ?>;">
+        <div class="conteneur">
+            <?php if ($disposition === 'avec-image-gauche' && $a_image): ?>
                 <div class="row align-items-center g-5">
                     <div class="col-lg-6">
-                        <div class="image-wrapper">
-                            <img src="<?= $image_url ?>" alt="<?= htmlspecialchars($texte['titre_section'] ?? 'Image') ?>" class="img-fluid">
+                        <div class="contenant-image">
+                            <img src="<?= $url_image ?>" alt="<?= htmlspecialchars($texte['titre_section'] ?? 'Image') ?>" class="img-fluid">
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="card-custom <?= $text_align ?>">
+                        <div class="carte-personnalisee <?= $alignement_texte ?>">
                             <?php if (!empty($texte['titre_section'])): ?>
-                                <span class="section-tag"><?= htmlspecialchars($texte['titre_section']) ?></span>
+                                <span class="section-badge"><?= htmlspecialchars($texte['titre_section']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($texte['sous_titre'])): ?>
-                                <h2 class="section-title"><?= htmlspecialchars($texte['sous_titre']) ?></h2>
+                                <h2 class="section-titre"><?= htmlspecialchars($texte['sous_titre']) ?></h2>
                             <?php endif; ?>
-                            <div class="tinymce-content">
-                                <?= $content_with_fixed_images ?>
+                            <div class="contenu-tinymce">
+                                <?= $contenu_images_fixees ?>
                             </div>
-                            <?php if (!empty($texte['bouton_texte']) && !empty($texte['bouton_lien'])): ?>
-                                <a href="<?= htmlspecialchars($texte['bouton_lien']) ?>" class="btn-primary-custom mt-4 align-self-center">
-                                    <?= htmlspecialchars($texte['bouton_texte']) ?> <i class="bi bi-arrow-right"></i>
+                            <?php if (!empty($texte['texte_bouton']) && !empty($texte['lien_bouton'])): ?>
+                                <a href="<?= htmlspecialchars($texte['lien_bouton']) ?>" class="bouton-primaire-personnalise mt-4 align-self-center">
+                                    <?= htmlspecialchars($texte['texte_bouton']) ?> <i class="bi bi-arrow-right"></i>
                                 </a>
                             <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-            <?php elseif ($layout === 'with-image-right' && $has_image): ?>
+            <?php elseif ($disposition === 'avec-image-droite' && $a_image): ?>
                 <div class="row align-items-center g-5">
                     <div class="col-lg-6">
-                        <div class="card-custom <?= $text_align ?>">
+                        <div class="carte-personnalisee <?= $alignement_texte ?>">
                             <?php if (!empty($texte['titre_section'])): ?>
-                                <span class="section-tag"><?= htmlspecialchars($texte['titre_section']) ?></span>
+                                <span class="section-badge"><?= htmlspecialchars($texte['titre_section']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($texte['sous_titre'])): ?>
-                                <h2 class="section-title"><?= htmlspecialchars($texte['sous_titre']) ?></h2>
+                                <h2 class="section-titre"><?= htmlspecialchars($texte['sous_titre']) ?></h2>
                             <?php endif; ?>
-                            <div class="tinymce-content">
-                                <?= $content_with_fixed_images ?>
+                            <div class="contenu-tinymce">
+                                <?= $contenu_images_fixees ?>
                             </div>
-                            <?php if (!empty($texte['bouton_texte']) && !empty($texte['bouton_lien'])): ?>
-                                <a href="<?= htmlspecialchars($texte['bouton_lien']) ?>" class="btn-primary-custom mt-4 align-self-center">
-                                    <?= htmlspecialchars($texte['bouton_texte']) ?> <i class="bi bi-arrow-right"></i>
+                            <?php if (!empty($texte['texte_bouton']) && !empty($texte['lien_bouton'])): ?>
+                                <a href="<?= htmlspecialchars($texte['lien_bouton']) ?>" class="bouton-primaire-personnalise mt-4 align-self-center">
+                                    <?= htmlspecialchars($texte['texte_bouton']) ?> <i class="bi bi-arrow-right"></i>
                                 </a>
                             <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="image-wrapper">
-                            <img src="<?= $image_url ?>" alt="<?= htmlspecialchars($texte['titre_section'] ?? 'Image') ?>" class="img-fluid">
+                        <div class="contenant-image">
+                            <img src="<?= $url_image ?>" alt="<?= htmlspecialchars($texte['titre_section'] ?? 'Image') ?>" class="img-fluid">
                         </div>
                     </div>
                 </div>
@@ -1106,24 +1089,24 @@ foreach ($textes as $texte):
             <?php else: ?>
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
-                        <div class="card-custom <?= $text_align ?>">
+                        <div class="carte-personnalisee <?= $alignement_texte ?>">
                             <?php if (!empty($texte['titre_section']) || !empty($texte['sous_titre'])): ?>
                                 <div class="mb-4">
                                     <?php if (!empty($texte['titre_section'])): ?>
-                                        <span class="section-tag"><?= htmlspecialchars($texte['titre_section']) ?></span>
+                                        <span class="section-badge"><?= htmlspecialchars($texte['titre_section']) ?></span>
                                     <?php endif; ?>
                                     <?php if (!empty($texte['sous_titre'])): ?>
-                                        <h2 class="section-title"><?= htmlspecialchars($texte['sous_titre']) ?></h2>
+                                        <h2 class="section-titre"><?= htmlspecialchars($texte['sous_titre']) ?></h2>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
-                            <div class="tinymce-content">
-                                <?= $content_with_fixed_images ?>
+                            <div class="contenu-tinymce">
+                                <?= $contenu_images_fixees ?>
                             </div>
-                            <?php if (!empty($texte['bouton_texte']) && !empty($texte['bouton_lien'])): ?>
+                            <?php if (!empty($texte['texte_bouton']) && !empty($texte['lien_bouton'])): ?>
                                 <div class="mt-5">
-                                    <a href="<?= htmlspecialchars($texte['bouton_lien']) ?>" class="btn-primary-custom">
-                                        <?= htmlspecialchars($texte['bouton_texte']) ?> <i class="bi bi-arrow-right"></i>
+                                    <a href="<?= htmlspecialchars($texte['lien_bouton']) ?>" class="bouton-primaire-personnalise">
+                                        <?= htmlspecialchars($texte['texte_bouton']) ?> <i class="bi bi-arrow-right"></i>
                                     </a>
                                 </div>
                             <?php endif; ?>
@@ -1136,377 +1119,377 @@ foreach ($textes as $texte):
 
 <?php endforeach; ?>
 
-<!-- Main Container -->
-<div class="main-container">
-    <div class="form-card">
+<!-- Conteneur principal -->
+<div class="contenant-principal">
+    <div class="carte-formulaire">
 
-        <!-- Progress Steps (Traduits) -->
-        <div class="progress-steps">
-            <div class="step active" data-step="1" onclick="goToStep(1)">
-                <div class="step-number">1</div>
-                <div class="step-text"><?= t('step_identity') ?></div>
+        <!-- Étapes de progression -->
+        <div class="etapes-progression">
+            <div class="etape active" data-etape="1" onclick="allerEtape(1)">
+                <div class="numero-etape">1</div>
+                <div class="texte-etape">Identité</div>
             </div>
-            <div class="step" data-step="2" onclick="goToStep(2)">
-                <div class="step-number">2</div>
-                <div class="step-text"><?= t('step_location') ?></div>
+            <div class="etape" data-etape="2" onclick="allerEtape(2)">
+                <div class="numero-etape">2</div>
+                <div class="texte-etape">Localisation</div>
             </div>
-            <div class="step" data-step="3" onclick="goToStep(3)">
-                <div class="step-number">3</div>
-                <div class="step-text"><?= t('step_regulation') ?></div>
+            <div class="etape" data-etape="3" onclick="allerEtape(3)">
+                <div class="numero-etape">3</div>
+                <div class="texte-etape">Régulation</div>
             </div>
-            <div class="step" data-step="4" onclick="goToStep(4)">
-                <div class="step-number">4</div>
-                <div class="step-text"><?= t('step_capacities') ?></div>
+            <div class="etape" data-etape="4" onclick="allerEtape(4)">
+                <div class="numero-etape">4</div>
+                <div class="texte-etape">Capacités</div>
             </div>
-            <div class="step" data-step="5" onclick="goToStep(5)">
-                <div class="step-number">5</div>
-                <div class="step-text"><?= t('step_finalization') ?></div>
+            <div class="etape" data-etape="5" onclick="allerEtape(5)">
+                <div class="numero-etape">5</div>
+                <div class="texte-etape">Finalisation</div>
             </div>
         </div>
 
         <!-- Formulaire -->
-        <form id="brokerForm" novalidate>
+        <form id="formulaireCourtier" novalidate>
             <input type="hidden" name="csrf_token" value="<?= $this->security->get_csrf_hash() ?>" id="csrfToken">
 
             <!-- Étape 1: Identité -->
-            <div class="form-section active" id="step-1">
-                <h2 class="section-title">
+            <div class="section-formulaire active" id="etape-1">
+                <h2 class="titre-section">
                     <i class="fas fa-user-circle"></i>
-                    <?= t('identity_info_title') ?>
+                    Informations d'identité
                 </h2>
-                <p class="section-subtitle"><?= t('identity_info_subtitle') ?></p>
+                <p class="sous-titre-section">Veuillez fournir vos informations personnelles et professionnelles</p>
 
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-user"></i>
-                            <?= t('full_name') ?> <span class="text-danger">*</span>
-                            <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" title="<?= t('full_name_tooltip') ?>"></i>
+                            Nom complet <span class="text-danger">*</span>
+                            <i class="fas fa-info-circle icone-infobulle" data-bs-toggle="tooltip" title="Votre nom et prénom tels qu'ils apparaissent sur vos documents officiels"></i>
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fas fa-user"></i></span>
                             <input type="text"
-                                   class="form-control"
-                                   name="full_name"
-                                   id="full_name"
-                                   placeholder="<?= t('full_name_placeholder') ?>"
+                                   class="controle-formulaire"
+                                   name="nom_complet"
+                                   id="nom_complet"
+                                   placeholder="Jean Dupont"
                                    required
                                    maxlength="150">
                         </div>
-                        <div class="invalid-feedback" id="full_name-error"></div>
-                        <div class="char-counter" id="full_name-count">0/150</div>
+                        <div class="retour-invalide" id="nom_complet-erreur"></div>
+                        <div class="compteur-caracteres" id="nom_complet-compteur">0/150</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-building"></i>
-                            <?= t('firm_name') ?> <span class="text-danger">*</span>
+                            Nom de la société <span class="text-danger">*</span>
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-building"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fas fa-building"></i></span>
                             <input type="text"
-                                   class="form-control"
-                                   name="firm_name"
-                                   id="firm_name"
-                                   placeholder="<?= t('firm_name_placeholder') ?>"
+                                   class="controle-formulaire"
+                                   name="nom_societe"
+                                   id="nom_societe"
+                                   placeholder="Votre Société SARL"
                                    required
                                    maxlength="200">
                         </div>
-                        <div class="invalid-feedback" id="firm_name-error"></div>
-                        <div class="char-counter" id="firm_name-count">0/200</div>
+                        <div class="retour-invalide" id="nom_societe-erreur"></div>
+                        <div class="compteur-caracteres" id="nom_societe-compteur">0/200</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-briefcase"></i>
-                            <?= t('jurisdiction_incorporation') ?>
+                            Juridiction d'incorporation
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-gavel"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fas fa-gavel"></i></span>
                             <input type="text"
-                                   class="form-control"
-                                   name="jurisdiction_of_incorporation"
-                                   id="jurisdiction_of_incorporation"
-                                   placeholder="<?= t('jurisdiction_placeholder') ?>"
+                                   class="controle-formulaire"
+                                   name="juridiction_incorporation"
+                                   id="juridiction_incorporation"
+                                   placeholder="France, Luxembourg, etc."
                                    maxlength="150">
                         </div>
-                        <div class="invalid-feedback" id="jurisdiction_of_incorporation-error"></div>
-                        <div class="char-counter" id="jurisdiction_of_incorporation-count">0/150</div>
+                        <div class="retour-invalide" id="juridiction_incorporation-erreur"></div>
+                        <div class="compteur-caracteres" id="juridiction_incorporation-compteur">0/150</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-hashtag"></i>
-                            <?= t('registration_number') ?>
+                            Numéro d'immatriculation
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fas fa-hashtag"></i></span>
                             <input type="text"
-                                   class="form-control"
-                                   name="registration_number"
-                                   id="registration_number"
-                                   placeholder="<?= t('registration_placeholder') ?>"
+                                   class="controle-formulaire"
+                                   name="numero_immatriculation"
+                                   id="numero_immatriculation"
+                                   placeholder="RCS Paris B 123 456 789"
                                    maxlength="100">
                         </div>
-                        <div class="invalid-feedback" id="registration_number-error"></div>
-                        <div class="char-counter" id="registration_number-count">0/100</div>
+                        <div class="retour-invalide" id="numero_immatriculation-erreur"></div>
+                        <div class="compteur-caracteres" id="numero_immatriculation-compteur">0/100</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-envelope"></i>
-                            <?= t('professional_email') ?> <span class="text-danger">*</span>
+                            Courriel professionnel <span class="text-danger">*</span>
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fas fa-envelope"></i></span>
                             <input type="email"
-                                   class="form-control"
-                                   name="email"
-                                   id="email"
-                                   placeholder="<?= t('email_placeholder') ?>"
+                                   class="controle-formulaire"
+                                   name="courriel"
+                                   id="courriel"
+                                   placeholder="contact@votresociete.com"
                                    required
                                    maxlength="150">
                         </div>
-                        <div class="invalid-feedback" id="email-error"></div>
+                        <div class="retour-invalide" id="courriel-erreur"></div>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-phone"></i>
-                            <?= t('phone_label') ?>
+                            Téléphone mobile
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fas fa-phone"></i></span>
                             <input type="tel"
-                                   class="form-control"
-                                   name="mobile_phone"
-                                   id="mobile_phone"
-                                   placeholder="+225 01 23 45 67 89"
+                                   class="controle-formulaire"
+                                   name="telephone_mobile"
+                                   id="telephone_mobile"
+                                   placeholder="+33 6 12 34 56 78"
                                    maxlength="50">
                         </div>
-                        <div class="invalid-feedback" id="mobile_phone-error"></div>
-                        <div class="char-counter" id="mobile_phone-count">0/50</div>
+                        <div class="retour-invalide" id="telephone_mobile-erreur"></div>
+                        <div class="compteur-caracteres" id="telephone_mobile-compteur">0/50</div>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fab fa-whatsapp"></i>
-                            <?= t('whatsapp_label') ?>
+                            WhatsApp
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fab fa-whatsapp" style="color: #25D366;"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fab fa-whatsapp" style="color: #25D366;"></i></span>
                             <input type="tel"
-                                   class="form-control"
+                                   class="controle-formulaire"
                                    name="whatsapp"
                                    id="whatsapp"
-                                   placeholder="+225 01 23 45 67 89"
+                                   placeholder="+33 6 12 34 56 78"
                                    maxlength="50">
                         </div>
-                        <div class="invalid-feedback" id="whatsapp-error"></div>
-                        <div class="char-counter" id="whatsapp-count">0/50</div>
+                        <div class="retour-invalide" id="whatsapp-erreur"></div>
+                        <div class="compteur-caracteres" id="whatsapp-compteur">0/50</div>
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-globe"></i>
-                            <?= t('website_label') ?>
+                            Site web de la société
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                        <div class="groupe-saisie">
+                            <span class="groupe-saisie-texte"><i class="fas fa-globe"></i></span>
                             <input type="url"
-                                   class="form-control"
-                                   name="corporate_website"
-                                   id="corporate_website"
-                                   placeholder="https://www.votresite.com"
+                                   class="controle-formulaire"
+                                   name="site_web_societe"
+                                   id="site_web_societe"
+                                   placeholder="https://www.votresociete.com"
                                    maxlength="200">
                         </div>
-                        <div class="invalid-feedback" id="corporate_website-error"></div>
-                        <div class="char-counter" id="corporate_website-count">0/200</div>
+                        <div class="retour-invalide" id="site_web_societe-erreur"></div>
+                        <div class="compteur-caracteres" id="site_web_societe-compteur">0/200</div>
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-end mt-5">
-                    <button type="button" class="btn btn-nav btn-next" onclick="validateStep(1, 2)">
-                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
+                    <button type="button" class="btn btn-nav btn-suivant" onclick="validerEtape(1, 2)">
+                        Continuer <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Étape 2: Localisation -->
-            <div class="form-section" id="step-2">
-                <h2 class="section-title">
+            <div class="section-formulaire" id="etape-2">
+                <h2 class="titre-section">
                     <i class="fas fa-map-marked-alt" style="color: var(--info);"></i>
-                    <?= t('location_title') ?>
+                    Localisation
                 </h2>
-                <p class="section-subtitle"><?= t('location_subtitle') ?></p>
+                <p class="sous-titre-section">Indiquez votre pays d'exercice</p>
 
                 <div class="row g-4">
                     <div class="col-md-12">
-                        <label class="form-label">
+                        <label class="label-formulaire">
                             <i class="fas fa-map-marker-alt"></i>
-                            <?= t('country_label') ?> <span class="text-danger">*</span>
+                            Pays <span class="text-danger">*</span>
                         </label>
-                        <div class="country-search-container">
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                        <div class="contenant-recherche-pays">
+                            <div class="groupe-saisie">
+                                <span class="groupe-saisie-texte"><i class="fas fa-map-marker-alt"></i></span>
                                 <input type="text"
-                                       class="form-control country-search"
-                                       id="pays_search"
-                                       placeholder="<?= t('country_search_placeholder') ?>"
-                                       data-target="pays"
+                                       class="controle-formulaire recherche-pays"
+                                       id="pays_recherche"
+                                       placeholder="Rechercher un pays..."
+                                       data-cible="pays"
                                        autocomplete="off"
                                        required>
                             </div>
-                            <div class="country-dropdown" id="pays_dropdown"></div>
+                            <div class="liste-deroulante-pays" id="pays_liste"></div>
                             <input type="hidden" name="id_pays" id="pays_id">
                         </div>
-                        <div class="invalid-feedback" id="pays-error"></div>
-                        <div id="pays_selected" class="selected-country-badge" style="display: none;">
+                        <div class="retour-invalide" id="pays-erreur"></div>
+                        <div id="pays_selectionne" class="badge-pays-selectionne" style="display: none;">
                             <i class="fas fa-check-circle" style="color: var(--accent);"></i>
-                            <span id="pays_name"></span>
-                            <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="clearCountry('pays')">
+                            <span id="pays_nom"></span>
+                            <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="effacerPays('pays')">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="map-container">
-                    <div id="map"></div>
+                <div class="contenant-carte">
+                    <div id="carte"></div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-5">
-                    <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(1)">
-                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
+                    <button type="button" class="btn btn-nav btn-precedent" onclick="allerEtape(1)">
+                        <i class="fas fa-arrow-left"></i> Précédent
                     </button>
-                    <button type="button" class="btn btn-nav btn-next" onclick="validateStep(2, 3)">
-                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
+                    <button type="button" class="btn btn-nav btn-suivant" onclick="validerEtape(2, 3)">
+                        Continuer <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Étape 3: Régulation -->
-            <div class="form-section" id="step-3">
-                <h2 class="section-title">
+            <div class="section-formulaire" id="etape-3">
+                <h2 class="titre-section">
                     <i class="fas fa-shield-alt" style="color: var(--violet);"></i>
-                    <?= t('regulation_title') ?>
+                    Informations réglementaires
                 </h2>
-                <p class="section-subtitle"><?= t('regulation_subtitle') ?></p>
+                <p class="sous-titre-section">Informations sur votre statut réglementaire</p>
 
-                <div class="info-box">
+                <div class="boite-info">
                     <i class="fas fa-info-circle"></i>
                     <div>
-                        <strong><?= t('important_label') ?> :</strong> <?= t('regulation_info_text') ?>
+                        <strong>Important :</strong> Ces informations nous aident à déterminer les exigences de conformité applicables à notre partenariat.
                     </div>
                 </div>
 
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label"><?= t('regulatory_status_label') ?></label>
-                        <select name="regulatory_status" class="form-select" id="regulatory_status">
-                            <option value=""><?= t('select_option') ?></option>
-                            <option value="Licensed"><?= t('status_licensed') ?></option>
-                            <option value="Exempt"><?= t('status_exempt') ?></option>
-                            <option value="Unlicensed"><?= t('status_unlicensed') ?></option>
+                        <label class="label-formulaire">Statut réglementaire</label>
+                        <select name="statut_reglementaire" class="selection-formulaire" id="statut_reglementaire">
+                            <option value="">Sélectionnez une option</option>
+                            <option value="Licenced">Agréé / Licencié</option>
+                            <option value="Exempt">Exempté</option>
+                            <option value="Unlicensed">Non agréé</option>
                         </select>
-                        <div class="invalid-feedback" id="regulatory_status-error"></div>
+                        <div class="retour-invalide" id="statut_reglementaire-erreur"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label"><?= t('regulatory_authority_label') ?></label>
+                        <label class="label-formulaire">Autorité de régulation</label>
                         <input type="text"
-                               class="form-control"
-                               name="regulatory_authority"
-                               id="regulatory_authority"
-                               placeholder="<?= t('regulatory_authority_placeholder') ?>"
+                               class="controle-formulaire"
+                               name="autorite_reglementation"
+                               id="autorite_reglementation"
+                               placeholder="AMF, FCA, SEC, etc."
                                maxlength="150">
-                        <div class="invalid-feedback" id="regulatory_authority-error"></div>
-                        <div class="char-counter" id="regulatory_authority-count">0/150</div>
+                        <div class="retour-invalide" id="autorite_reglementation-erreur"></div>
+                        <div class="compteur-caracteres" id="autorite_reglementation-compteur">0/150</div>
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-5">
-                    <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(2)">
-                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
+                    <button type="button" class="btn btn-nav btn-precedent" onclick="allerEtape(2)">
+                        <i class="fas fa-arrow-left"></i> Précédent
                     </button>
-                    <button type="button" class="btn btn-nav btn-next" onclick="validateStep(3, 4)">
-                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
+                    <button type="button" class="btn btn-nav btn-suivant" onclick="validerEtape(3, 4)">
+                        Continuer <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Étape 4: Capacités -->
-            <div class="form-section" id="step-4">
-                <h2 class="section-title">
-                    <i class="fas fa-briefcase" style="color: var(--warning);"></i>
-                    <?= t('capacities_title') ?>
+            <div class="section-formulaire" id="etape-4">
+                <h2 class="titre-section">
+                    <i class="fas fa-briefcase" style="color: var(--avertissement);"></i>
+                    Capacités et expertises
                 </h2>
-                <p class="section-subtitle"><?= t('capacities_subtitle') ?></p>
+                <p class="sous-titre-section">Décrivez vos domaines d'expertise et types d'investisseurs</p>
 
                 <div class="mb-4">
-                    <label class="form-label d-block mb-3">
+                    <label class="label-formulaire d-block mb-3">
                         <i class="fas fa-check-circle"></i>
-                        <?= t('your_capacities_label') ?> <span class="text-danger">*</span>
+                        Vos capacités <span class="text-danger">*</span>
                     </label>
-                    <div class="checkbox-grid" id="capacityGroup">
+                    <div class="grille-coches" id="groupeCapacite">
                         <?php
-                        $capacities = [
-                            'capacity_investment_broker' => ['label' => t('cap_investment_broker'), 'icon' => 'fa-chart-line', 'color' => '#0B4F2E', 'desc' => t('cap_investment_broker_desc')],
-                            'capacity_placement_agent' => ['label' => t('cap_placement_agent'), 'icon' => 'fa-handshake', 'color' => '#FF6B35', 'desc' => t('cap_placement_agent_desc')],
-                            'capacity_corporate_finance_advisor' => ['label' => t('cap_corporate_finance'), 'icon' => 'fa-user-tie', 'color' => '#3498DB', 'desc' => t('cap_corporate_finance_desc')],
-                            'capacity_fund_manager' => ['label' => t('cap_fund_manager'), 'icon' => 'fa-university', 'color' => '#9B59B6', 'desc' => t('cap_fund_manager_desc')],
-                            'capacity_family_office_rep' => ['label' => t('cap_family_office'), 'icon' => 'fa-home', 'color' => '#FFD700', 'desc' => t('cap_family_office_desc')],
-                            'capacity_esg_advisor' => ['label' => t('cap_esg_advisor'), 'icon' => 'fa-leaf', 'color' => '#27ae60', 'desc' => t('cap_esg_advisor_desc')],
-                            'capacity_independent_introducer' => ['label' => t('cap_independent_introducer'), 'icon' => 'fa-user', 'color' => '#94a3b8', 'desc' => t('cap_independent_introducer_desc')]
+                        $capacites = [
+                            'capacite_courtier_investissement' => ['label' => 'Courtier en investissement', 'icone' => 'fa-chart-line', 'couleur' => '#0B4F2E', 'desc' => 'Intermédiation et conseil en investissement'],
+                            'capacite_agent_placement' => ['label' => 'Agent de placement', 'icone' => 'fa-handshake', 'couleur' => '#FF6B35', 'desc' => 'Placement de fonds et titres'],
+                            'capacite_conseiller_finances_entreprise' => ['label' => 'Conseiller en finance d\'entreprise', 'icone' => 'fa-user-tie', 'couleur' => '#3498DB', 'desc' => 'Fusions-acquisitions, levée de fonds'],
+                            'capacite_gestionnaire_fonds' => ['label' => 'Gestionnaire de fonds', 'icone' => 'fa-university', 'couleur' => '#9B59B6', 'desc' => 'Gestion de portefeuilles et fonds'],
+                            'capacite_representant_family_office' => ['label' => 'Représentant family office', 'icone' => 'fa-home', 'couleur' => '#FFD700', 'desc' => 'Gestion de patrimoine familial'],
+                            'capacite_conseiller_esg' => ['label' => 'Conseiller ESG', 'icone' => 'fa-leaf', 'couleur' => '#27ae60', 'desc' => 'Investissement durable et responsable'],
+                            'capacite_introducteur_independant' => ['label' => 'Introducteur indépendant', 'icone' => 'fa-user', 'couleur' => '#94a3b8', 'desc' => 'Mise en relation d\'affaires']
                         ];
-                        foreach ($capacities as $key => $cap):
+                        foreach ($capacites as $cle => $cap):
                         ?>
-                        <div class="checkbox-card" onclick="toggleCheckbox(this, 'capacity')">
-                            <input type="checkbox" name="<?= $key ?>" value="1">
-                            <div class="checkbox-icon" style="background: <?= $cap['color'] ?>20; color: <?= $cap['color'] ?>;">
-                                <i class="fas <?= $cap['icon'] ?>"></i>
+                        <div class="carte-coche" onclick="basculerCoche(this, 'capacite')">
+                            <input type="checkbox" name="<?= $cle ?>" value="1">
+                            <div class="icone-coche" style="background: <?= $cap['couleur'] ?>20; color: <?= $cap['couleur'] ?>;">
+                                <i class="fas <?= $cap['icone'] ?>"></i>
                             </div>
                             <div class="fw-semibold"><?= htmlspecialchars($cap['label']) ?></div>
                             <small class="text-muted"><?= htmlspecialchars($cap['desc']) ?></small>
                         </div>
                         <?php endforeach; ?>
                     </div>
-                    <div class="invalid-feedback capacity-error" style="display: none;"><?= t('capacity_error') ?></div>
+                    <div class="retour-invalide erreur-capacite" style="display: none;">Veuillez sélectionner au moins une capacité</div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label"><?= t('other_capacity_label') ?></label>
+                    <label class="label-formulaire">Autre capacité (précisez)</label>
                     <input type="text"
-                           class="form-control"
-                           name="capacity_other"
-                           id="capacity_other"
-                           placeholder="<?= t('other_capacity_placeholder') ?>"
+                           class="controle-formulaire"
+                           name="capacite_autre"
+                           id="capacite_autre"
+                           placeholder="Décrivez toute autre capacité pertinente"
                            maxlength="255">
-                    <div class="char-counter" id="capacity_other-count">0/255</div>
+                    <div class="compteur-caracteres" id="capacite_autre-compteur">0/255</div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label d-block mb-3">
+                    <label class="label-formulaire d-block mb-3">
                         <i class="fas fa-users"></i>
-                        <?= t('investor_types_label') ?>
+                        Types d'investisseurs que vous représentez
                     </label>
-                    <div class="checkbox-grid">
+                    <div class="grille-coches">
                         <?php
-                        $investors = [
-                            'investor_private_equity' => ['label' => t('investor_pe'), 'icon' => 'fa-building', 'color' => '#e74c3c'],
-                            'investor_venture_capital' => ['label' => t('investor_vc'), 'icon' => 'fa-rocket', 'color' => '#9b59b6'],
-                            'investor_esg_impact' => ['label' => t('investor_esg'), 'icon' => 'fa-leaf', 'color' => '#27ae60'],
-                            'investor_dfi' => ['label' => t('investor_dfi'), 'icon' => 'fa-globe', 'color' => '#3498db'],
-                            'investor_institutional' => ['label' => t('investor_institutional'), 'icon' => 'fa-landmark', 'color' => '#f39c12'],
-                            'investor_hnwi' => ['label' => t('investor_hnwi'), 'icon' => 'fa-gem', 'color' => '#1abc9c'],
-                            'investor_sovereign' => ['label' => t('investor_sovereign'), 'icon' => 'fa-crown', 'color' => '#e67e22']
+                        $investisseurs = [
+                            'investisseur_capital_investissement' => ['label' => 'Capital investissement', 'icone' => 'fa-building', 'couleur' => '#e74c3c'],
+                            'investisseur_capital_risque' => ['label' => 'Capital risque', 'icone' => 'fa-rocket', 'couleur' => '#9b59b6'],
+                            'investisseur_esg_impact' => ['label' => 'ESG / Impact', 'icone' => 'fa-leaf', 'couleur' => '#27ae60'],
+                            'investisseur_financement_developpement' => ['label' => 'Financement du développement', 'icone' => 'fa-globe', 'couleur' => '#3498db'],
+                            'investisseur_institutionnel' => ['label' => 'Institutionnel', 'icone' => 'fa-landmark', 'couleur' => '#f39c12'],
+                            'investisseur_grande_fortune' => ['label' => 'Haute fortune (HNWI)', 'icone' => 'fa-gem', 'couleur' => '#1abc9c'],
+                            'investisseur_souverain' => ['label' => 'Souverain / Fonds d\'État', 'icone' => 'fa-crown', 'couleur' => '#e67e22']
                         ];
-                        foreach ($investors as $key => $inv):
+                        foreach ($investisseurs as $cle => $inv):
                         ?>
-                        <div class="checkbox-card" onclick="toggleCheckbox(this, 'investor')">
-                            <input type="checkbox" name="<?= $key ?>" value="1">
-                            <div class="checkbox-icon mx-auto" style="background: <?= $inv['color'] ?>20; color: <?= $inv['color'] ?>;">
-                                <i class="fas <?= $inv['icon'] ?>"></i>
+                        <div class="carte-coche" onclick="basculerCoche(this, 'investisseur')">
+                            <input type="checkbox" name="<?= $cle ?>" value="1">
+                            <div class="icone-coche mx-auto" style="background: <?= $inv['couleur'] ?>20; color: <?= $inv['couleur'] ?>;">
+                                <i class="fas <?= $inv['icone'] ?>"></i>
                             </div>
                             <div class="small fw-semibold"><?= htmlspecialchars($inv['label']) ?></div>
                         </div>
@@ -1516,75 +1499,75 @@ foreach ($textes as $texte):
 
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label"><?= t('typical_ticket_label') ?></label>
+                        <label class="label-formulaire">Taille de ticket typique</label>
                         <input type="text"
-                               class="form-control"
-                               name="typical_ticket_size"
-                               id="typical_ticket_size"
-                               placeholder="<?= t('typical_ticket_placeholder') ?>"
+                               class="controle-formulaire"
+                               name="taille_billet_typique"
+                               id="taille_billet_typique"
+                               placeholder="1M€ - 10M€"
                                maxlength="150">
-                        <div class="char-counter" id="typical_ticket_size-count">0/150</div>
+                        <div class="compteur-caracteres" id="taille_billet_typique-compteur">0/150</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label"><?= t('geographic_coverage_label') ?></label>
+                        <label class="label-formulaire">Couverture géographique</label>
                         <input type="text"
-                               class="form-control"
-                               name="geographic_coverage"
-                               id="geographic_coverage"
-                               placeholder="<?= t('geographic_coverage_placeholder') ?>"
+                               class="controle-formulaire"
+                               name="couverture_geographique"
+                               id="couverture_geographique"
+                               placeholder="Afrique de l'Ouest, Europe, etc."
                                maxlength="65535">
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-5">
-                    <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(3)">
-                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
+                    <button type="button" class="btn btn-nav btn-precedent" onclick="allerEtape(3)">
+                        <i class="fas fa-arrow-left"></i> Précédent
                     </button>
-                    <button type="button" class="btn btn-nav btn-next" onclick="validateStep(4, 5)">
-                        <?= t('continue_btn') ?> <i class="fas fa-arrow-right"></i>
+                    <button type="button" class="btn btn-nav btn-suivant" onclick="validerEtape(4, 5)">
+                        Continuer <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Étape 5: Finalisation -->
-            <div class="form-section" id="step-5">
-                <h2 class="section-title">
+            <div class="section-formulaire" id="etape-5">
+                <h2 class="titre-section">
                     <i class="fas fa-check-circle" style="color: var(--accent);"></i>
-                    <?= t('finalization_title') ?>
+                    Finalisation
                 </h2>
-                <p class="section-subtitle"><?= t('finalization_subtitle') ?></p>
+                <p class="sous-titre-section">Vérifiez vos informations et complétez votre candidature</p>
 
-                <div id="summary" class="mb-4"></div>
+                <div id="resume" class="mb-4"></div>
 
                 <div class="row g-4 mb-4">
                     <div class="col-md-6">
-                        <label class="form-label"><?= t('engagement_model_label') ?></label>
-                        <select name="engagement_model" class="form-select" id="engagement_model">
-                            <option value=""><?= t('select_option') ?></option>
-                            <option value="Success Commission"><?= t('engagement_success_commission') ?></option>
-                            <option value="Retainer + Success Fee"><?= t('engagement_retainer_fee') ?></option>
-                            <option value="Referral Arrangement"><?= t('engagement_referral') ?></option>
-                            <option value="To be negotiated"><?= t('engagement_negotiated') ?></option>
+                        <label class="label-formulaire">Modèle d'engagement préféré</label>
+                        <select name="modele_engagement" class="selection-formulaire" id="modele_engagement">
+                            <option value="">Sélectionnez une option</option>
+                            <option value="Success Commission">Commission sur succès</option>
+                            <option value="Retainer + Success Fee">Rétribution + Commission</option>
+                            <option value="Referral Arrangement">Accord de parrainage</option>
+                            <option value="To be negotiated">À négocier</option>
                         </select>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label"><?= t('mandate_type_label') ?></label>
-                        <div class="checkbox-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <label class="label-formulaire">Types de mandat recherchés</label>
+                        <div class="grille-coches" style="grid-template-columns: repeat(2, 1fr);">
                             <?php
-                            $mandates = [
-                                'mandate_equity' => t('mandate_equity'),
-                                'mandate_structured_debt' => t('mandate_structured_debt'),
-                                'mandate_blended_finance' => t('mandate_blended_finance'),
-                                'mandate_grant' => t('mandate_grant'),
-                                'mandate_strategic_partnership' => t('mandate_strategic_partnership'),
-                                'mandate_full_program' => t('mandate_full_program')
+                            $mandats = [
+                                'mandat_capitaux_propres' => 'Capitaux propres',
+                                'mandat_dette_structuree' => 'Dette structurée',
+                                'mandat_financement_mixte' => 'Financement mixte',
+                                'mandat_subvention' => 'Subvention',
+                                'mandat_partenariat_strategique' => 'Partenariat stratégique',
+                                'mandat_programme_complet' => 'Programme complet'
                             ];
-                            foreach ($mandates as $key => $label):
+                            foreach ($mandats as $cle => $label):
                             ?>
-                            <div class="checkbox-card" onclick="toggleCheckbox(this, 'mandate')" style="padding: 0.5rem;">
-                                <input type="checkbox" name="<?= $key ?>" value="1">
+                            <div class="carte-coche" onclick="basculerCoche(this, 'mandat')" style="padding: 0.5rem;">
+                                <input type="checkbox" name="<?= $cle ?>" value="1">
                                 <span class="small"><?= htmlspecialchars($label) ?></span>
                             </div>
                             <?php endforeach; ?>
@@ -1593,50 +1576,50 @@ foreach ($textes as $texte):
                 </div>
 
                 <div class="mb-4 p-3 border rounded-3 bg-white">
-                    <h6 class="mb-3" style="color: var(--primary);">
-                        <i class="fas fa-shield-alt me-2"></i><?= t('compliance_declarations') ?>
+                    <h6 class="mb-3" style="color: var(--primaire);">
+                        <i class="fas fa-shield-alt me-2"></i>Déclarations de conformité
                     </h6>
 
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="confirm_authorized" id="confirm_authorized" value="1" required>
-                        <label class="form-check-label" for="confirm_authorized">
-                            <strong><?= t('confirm_authorized_text') ?></strong>
+                        <input class="form-check-input" type="checkbox" name="confirme_autorise" id="confirme_autorise" value="1" required>
+                        <label class="form-check-label" for="confirme_autorise">
+                            <strong>Je confirme être autorisé à représenter mon entreprise</strong>
                         </label>
-                        <div class="invalid-feedback" id="confirm_authorized-error"></div>
+                        <div class="retour-invalide" id="confirme_autorise-erreur"></div>
                     </div>
 
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="confirm_aml_kyc" id="confirm_aml_kyc" value="1" required>
-                        <label class="form-check-label" for="confirm_aml_kyc">
-                            <strong><?= t('confirm_aml_kyc_text') ?></strong>
+                        <input class="form-check-input" type="checkbox" name="confirme_aml_kyc" id="confirme_aml_kyc" value="1" required>
+                        <label class="form-check-label" for="confirme_aml_kyc">
+                            <strong>Je confirme être conforme aux exigences AML/KYC</strong>
                         </label>
-                        <div class="invalid-feedback" id="confirm_aml_kyc-error"></div>
+                        <div class="retour-invalide" id="confirme_aml_kyc-erreur"></div>
                     </div>
 
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="acknowledge_no_exclusivity" id="acknowledge_no_exclusivity" value="1" required>
-                        <label class="form-check-label" for="acknowledge_no_exclusivity">
-                            <strong><?= t('acknowledge_no_exclusivity_text') ?></strong>
+                        <input class="form-check-input" type="checkbox" name="reconnait_non_exclusivite" id="reconnait_non_exclusivite" value="1" required>
+                        <label class="form-check-label" for="reconnait_non_exclusivite">
+                            <strong>Je reconnais le caractère non exclusif de ce partenariat</strong>
                         </label>
-                        <div class="invalid-feedback" id="acknowledge_no_exclusivity-error"></div>
+                        <div class="retour-invalide" id="reconnait_non_exclusivite-erreur"></div>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="understand_formal_mandate_required" id="understand_formal_mandate_required" value="1" required>
-                        <label class="form-check-label" for="understand_formal_mandate_required">
-                            <strong><?= t('understand_formal_mandate_text') ?></strong>
+                        <input class="form-check-input" type="checkbox" name="comprend_mandat_formel_requis" id="comprend_mandat_formel_requis" value="1" required>
+                        <label class="form-check-label" for="comprend_mandat_formel_requis">
+                            <strong>Je comprends qu'un mandat formel sera requis</strong>
                         </label>
-                        <div class="invalid-feedback" id="understand_formal_mandate_required-error"></div>
+                        <div class="retour-invalide" id="comprend_mandat_formel_requis-erreur"></div>
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-5">
-                    <button type="button" class="btn btn-nav btn-prev" onclick="goToStep(4)">
-                        <i class="fas fa-arrow-left"></i> <?= t('back_btn') ?>
+                    <button type="button" class="btn btn-nav btn-precedent" onclick="allerEtape(4)">
+                        <i class="fas fa-arrow-left"></i> Précédent
                     </button>
-                    <button type="submit" class="btn btn-nav btn-submit" id="submitBtn">
-                        <span class="btn-text">
-                            <i class="fas fa-paper-plane me-2"></i><?= t('submit_application') ?>
+                    <button type="submit" class="btn btn-nav btn-soumettre" id="boutonSoumettre">
+                        <span class="texte-bouton">
+                            <i class="fas fa-paper-plane me-2"></i>Soumettre ma candidature
                         </span>
                     </button>
                 </div>
@@ -1645,58 +1628,58 @@ foreach ($textes as $texte):
         </form>
     </div>
 
-    <div class="status-link">
+    <div class="lien-statut">
         <p class="text-muted">
-            <?= t('already_registered') ?>
-            <a href="<?= base_url('brokers/status') ?>">
-                <?= t('check_status') ?> <i class="fas fa-arrow-right ms-1"></i>
+            Déjà enregistré ?
+            <a href="<?= base_url('courtiers/statut') ?>">
+                Vérifier mon statut <i class="fas fa-arrow-right ms-1"></i>
             </a>
         </p>
     </div>
 </div>
 
 <!-- Modal Conditions -->
-<div class="modal fade" id="termsModal" tabindex="-1">
+<div class="modal fade" id="modalConditions" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><?= t('terms_title') ?></h5>
+                <h5 class="modal-title">Conditions d'enregistrement</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <h6><?= t('terms_acceptance_title') ?></h6>
-                <p><?= t('terms_acceptance_text') ?></p>
-                <h6><?= t('terms_accuracy_title') ?></h6>
-                <p><?= t('terms_accuracy_text') ?></p>
-                <h6><?= t('terms_data_use_title') ?></h6>
-                <p><?= t('terms_data_use_text') ?></p>
-                <h6><?= t('terms_confidentiality_title') ?></h6>
-                <p><?= t('terms_confidentiality_text') ?></p>
+                <h6>Acceptation des conditions</h6>
+                <p>En soumettant ce formulaire, j'accepte que les informations fournies soient utilisées pour évaluer ma candidature.</p>
+                <h6>Exactitude des informations</h6>
+                <p>Je certifie que toutes les informations fournies sont exactes et complètes à ma connaissance.</p>
+                <h6>Utilisation des données</h6>
+                <p>Mes données seront traitées conformément à la politique de confidentialité d'AGF Phytomed.</p>
+                <h6>Confidentialité</h6>
+                <p>Je comprends que les informations partagées seront traitées de manière confidentielle.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal"><?= t('understand_btn') ?></button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">J'ai compris</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Success -->
-<div class="modal fade modal-success" id="successModal" tabindex="-1" data-bs-backdrop="static">
+<!-- Modal Succès -->
+<div class="modal fade modal-succes" id="modalSucces" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-check-circle me-2"></i><?= t('application_sent') ?>
+                    <i class="fas fa-check-circle me-2"></i>Candidature envoyée
                 </h5>
             </div>
             <div class="modal-body">
                 <div class="success-animation">
                     <i class="fas fa-handshake"></i>
                 </div>
-                <h3><?= t('thank_you') ?> <span id="successName">!</span></h3>
-                <p class="text-muted"><?= t('success_message_text') ?></p>
-                <button type="button" class="btn btn-primary mt-3" onclick="closeSuccessModal()" style="background: var(--primary); border: none; padding: 0.75rem 2rem; border-radius: 12px;">
-                    <?= t('close_btn') ?>
+                <h3>Merci <span id="prenomSucces">!</span></h3>
+                <p class="text-muted">Nous avons bien reçu votre candidature. Notre équipe vous contactera dans les plus brefs délais.</p>
+                <button type="button" class="btn btn-primary mt-3" onclick="fermerModalSucces()" style="background: var(--primaire); border: none; padding: 0.75rem 2rem; border-radius: 12px;">
+                    Fermer
                 </button>
             </div>
         </div>
@@ -1707,477 +1690,456 @@ foreach ($textes as $texte):
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // ==================== TRADUCTIONS JAVASCRIPT ====================
-    const translations = {
-        required_field: '<?= t('required_field_error') ?>',
-        min_chars: '<?= t('min_chars_error') ?>',
-        max_chars: '<?= t('max_chars_error') ?>',
-        invalid_format: '<?= t('invalid_format_error') ?>',
-        invalid_email: '<?= t('invalid_email_error') ?>',
-        invalid_url: '<?= t('invalid_url_error') ?>',
-        select_country: '<?= t('select_country_error') ?>',
-        select_capacity: '<?= t('capacity_error') ?>',
-        validation_error: '<?= t('validation_error_message') ?>',
-        success: '<?= t('success_label') ?>',
-        error: '<?= t('error_label') ?>',
-        network_error: '<?= t('network_error') ?>'
-    };
-
-    function t(key) {
-        return translations[key] || key;
-    }
-
     // ==================== VARIABLES GLOBALES ====================
-    let currentStep = 1;
-    const totalSteps = 5;
-    let map, marker;
-    const countries = <?= json_encode($pays) ?>;
-    const headquarters = { lat: 5.345317, lng: -4.008429 };
+    let etapeCourante = 1;
+    const totalEtapes = 5;
+    let carte, marqueur;
+    const pays = <?= json_encode($pays) ?>;
+    const siegeSocial = { lat: 5.345317, lng: -4.008429 };
 
     // ==================== INITIALISATION ====================
     document.addEventListener('DOMContentLoaded', function() {
-        initTooltips();
-        initCountrySearch();
-        initMap();
-        initValidation();
-        initCharCounters();
+        initialiserInfobulles();
+        initialiserRecherchePays();
+        initialiserCarte();
+        initialiserValidation();
+        initialiserCompteurs();
     });
 
-    function initTooltips() {
-        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        tooltips.forEach(el => new bootstrap.Tooltip(el));
+    function initialiserInfobulles() {
+        const infobulles = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        infobulles.forEach(el => new bootstrap.Tooltip(el));
     }
 
     // ==================== INITIALISATION DE LA CARTE ====================
-    function initMap() {
-        map = L.map('map').setView([headquarters.lat, headquarters.lng], 13);
+    function initialiserCarte() {
+        carte = L.map('carte').setView([siegeSocial.lat, siegeSocial.lng], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+            attribution: '© OpenStreetMap contributeurs'
+        }).addTo(carte);
 
-        const customIcon = L.divIcon({
-            className: 'custom-marker',
+        const iconePersonnalisee = L.divIcon({
+            className: 'marqueur-personnalise',
             html: '<i class="fas fa-map-marker-alt" style="color: #0B4F2E; font-size: 30px;"></i>',
             iconSize: [30, 30],
             iconAnchor: [15, 30]
         });
 
-        marker = L.marker([headquarters.lat, headquarters.lng], { icon: customIcon })
-            .addTo(map)
-            .bindPopup(`<b>African Green Farmers</b><br><?= t('headquarters_address') ?>`)
+        marqueur = L.marker([siegeSocial.lat, siegeSocial.lng], { icon: iconePersonnalisee })
+            .addTo(carte)
+            .bindPopup(`<b>African Green Farmers</b><br>Muyinga, Burundi`)
             .openPopup();
 
-        L.circle([headquarters.lat, headquarters.lng], {
+        L.circle([siegeSocial.lat, siegeSocial.lng], {
             color: '#0B4F2E',
             fillColor: '#0B4F2E',
             fillOpacity: 0.1,
             radius: 500
-        }).addTo(map);
+        }).addTo(carte);
     }
 
     // ==================== RECHERCHE DE PAYS ====================
-    function initCountrySearch() {
-        const searches = document.querySelectorAll('.country-search');
-        searches.forEach(search => {
-            const target = search.dataset.target;
-            const dropdown = document.getElementById(`${target}_dropdown`);
-            dropdown.innerHTML = countries.map(country => `
-                <div class="country-option"
-                     data-id="${country.id}"
-                     data-name="${country.pays || country.name}"
-                     onclick="selectCountry('${target}', ${country.id}, '${country.pays || country.name}')">
+    function initialiserRecherchePays() {
+        const recherches = document.querySelectorAll('.recherche-pays');
+        recherches.forEach(recherche => {
+            const cible = recherche.dataset.cible;
+            const liste = document.getElementById(`${cible}_liste`);
+            liste.innerHTML = pays.map(pays => `
+                <div class="option-pays"
+                     data-id="${pays.id}"
+                     data-name="${pays.pays || pays.name}"
+                     onclick="selectionnerPays('${cible}', ${pays.id}, '${pays.pays || pays.name}')">
                     <i class="fas fa-map-marker-alt me-2" style="color: var(--info);"></i>
-                    ${country.pays || country.name}
+                    ${pays.pays || pays.name}
                 </div>
             `).join('');
 
-            search.addEventListener('input', function() {
-                const query = this.value.toLowerCase();
-                const options = dropdown.querySelectorAll('.country-option');
-                let hasResults = false;
+            recherche.addEventListener('input', function() {
+                const requete = this.value.toLowerCase();
+                const options = liste.querySelectorAll('.option-pays');
+                let aResultats = false;
                 options.forEach(opt => {
-                    const name = opt.dataset.name.toLowerCase();
-                    if (name.includes(query) || query === '') {
+                    const nom = opt.dataset.name.toLowerCase();
+                    if (nom.includes(requete) || requete === '') {
                         opt.style.display = 'block';
-                        hasResults = true;
+                        aResultats = true;
                     } else {
                         opt.style.display = 'none';
                     }
                 });
-                dropdown.classList.toggle('show', hasResults && this.value.length > 0);
+                liste.classList.toggle('afficher', aResultats && this.value.length > 0);
             });
 
-            search.addEventListener('focus', function() {
-                if (this.value.length > 0) dropdown.classList.add('show');
+            recherche.addEventListener('focus', function() {
+                if (this.value.length > 0) liste.classList.add('afficher');
             });
 
             document.addEventListener('click', function(e) {
-                if (!e.target.closest('.country-search-container')) dropdown.classList.remove('show');
+                if (!e.target.closest('.contenant-recherche-pays')) liste.classList.remove('afficher');
             });
         });
     }
 
-    window.selectCountry = function(type, id, name) {
-        document.getElementById(`${type}_search`).value = name;
+    window.selectionnerPays = function(type, id, nom) {
+        document.getElementById(`${type}_recherche`).value = nom;
         document.getElementById(`${type}_id`).value = id;
-        document.getElementById(`${type}_name`).textContent = name;
-        document.getElementById(`${type}_selected`).style.display = 'inline-flex';
-        document.getElementById(`${type}_dropdown`).classList.remove('show');
-        document.getElementById(`${type}_search`).classList.remove('is-invalid');
-        document.getElementById(`${type}-error`).style.display = 'none';
+        document.getElementById(`${type}_nom`).textContent = nom;
+        document.getElementById(`${type}_selectionne`).style.display = 'inline-flex';
+        document.getElementById(`${type}_liste`).classList.remove('afficher');
+        document.getElementById(`${type}_recherche`).classList.remove('invalide');
+        document.getElementById(`${type}-erreur`).style.display = 'none';
     };
 
-    window.clearCountry = function(type) {
-        document.getElementById(`${type}_search`).value = '';
+    window.effacerPays = function(type) {
+        document.getElementById(`${type}_recherche`).value = '';
         document.getElementById(`${type}_id`).value = '';
-        document.getElementById(`${type}_selected`).style.display = 'none';
-        document.getElementById(`${type}_search`).focus();
+        document.getElementById(`${type}_selectionne`).style.display = 'none';
+        document.getElementById(`${type}_recherche`).focus();
     };
 
     // ==================== COMPTEURS DE CARACTÈRES ====================
-    function initCharCounters() {
-        const fields = ['full_name', 'firm_name', 'jurisdiction_of_incorporation', 'registration_number', 'mobile_phone', 'whatsapp', 'corporate_website', 'regulatory_authority', 'capacity_other', 'typical_ticket_size', 'geographic_coverage'];
-        fields.forEach(id => {
-            const field = document.getElementById(id);
-            if (field) {
-                const counter = document.getElementById(id + '-count');
-                if (counter) {
-                    updateCharCount(field, counter);
-                    field.addEventListener('input', () => updateCharCount(field, counter));
+    function initialiserCompteurs() {
+        const champs = ['nom_complet', 'nom_societe', 'juridiction_incorporation', 'numero_immatriculation', 'telephone_mobile', 'whatsapp', 'site_web_societe', 'autorite_reglementation', 'capacite_autre', 'taille_billet_typique', 'couverture_geographique'];
+        champs.forEach(id => {
+            const champ = document.getElementById(id);
+            if (champ) {
+                const compteur = document.getElementById(id + '-compteur');
+                if (compteur) {
+                    mettreAJourCompteur(champ, compteur);
+                    champ.addEventListener('input', () => mettreAJourCompteur(champ, compteur));
                 }
             }
         });
     }
 
-    function updateCharCount(field, counter) {
-        const count = field.value.length;
-        const max = field.maxLength;
-        counter.textContent = `${count}/${max}`;
-        counter.classList.toggle('warning', count > max * 0.8);
-        counter.classList.toggle('danger', count >= max);
+    function mettreAJourCompteur(champ, compteur) {
+        const compte = champ.value.length;
+        const max = champ.maxLength;
+        compteur.textContent = `${compte}/${max}`;
+        compteur.classList.toggle('avertissement', compte > max * 0.8);
+        compteur.classList.toggle('danger', compte >= max);
     }
 
-    // ==================== CHECKBOX CARDS ====================
-    window.toggleCheckbox = function(card, group) {
-        const checkbox = card.querySelector('input[type="checkbox"]');
+    // ==================== CARTES CASES À COCHER ====================
+    window.basculerCoche = function(carte, groupe) {
+        const checkbox = carte.querySelector('input[type="checkbox"]');
         checkbox.checked = !checkbox.checked;
-        card.classList.toggle('selected', checkbox.checked);
-        if (group === 'capacity') checkCapacityValidation();
+        carte.classList.toggle('selectionnee', checkbox.checked);
+        if (groupe === 'capacite') verifierCapacite();
     };
 
-    function checkCapacityValidation() {
-        const capacityFields = ['capacity_investment_broker', 'capacity_placement_agent', 'capacity_corporate_finance_advisor', 'capacity_fund_manager', 'capacity_family_office_rep', 'capacity_esg_advisor', 'capacity_independent_introducer'];
-        let hasCapacity = false;
-        for (let field of capacityFields) {
-            if (document.querySelector(`input[name="${field}"]`)?.checked) {
-                hasCapacity = true;
+    function verifierCapacite() {
+        const champsCapacite = ['capacite_courtier_investissement', 'capacite_agent_placement', 'capacite_conseiller_finances_entreprise', 'capacite_gestionnaire_fonds', 'capacite_representant_family_office', 'capacite_conseiller_esg', 'capacite_introducteur_independant'];
+        let aCapacite = false;
+        for (let champ of champsCapacite) {
+            if (document.querySelector(`input[name="${champ}"]`)?.checked) {
+                aCapacite = true;
                 break;
             }
         }
-        if (hasCapacity) document.querySelector('.capacity-error').style.display = 'none';
+        if (aCapacite) document.querySelector('.erreur-capacite').style.display = 'none';
     }
 
     // ==================== VALIDATION ====================
-    const validationRules = {
-        full_name: { required: true, min: 3, max: 150 },
-        firm_name: { required: true, min: 2, max: 200 },
-        email: { required: true, type: 'email', max: 150 },
-        mobile_phone: { pattern: /^[0-9+\-\s]+$/, max: 50 },
+    const reglesValidation = {
+        nom_complet: { required: true, min: 3, max: 150 },
+        nom_societe: { required: true, min: 2, max: 200 },
+        courriel: { required: true, type: 'email', max: 150 },
+        telephone_mobile: { pattern: /^[0-9+\-\s]+$/, max: 50 },
         whatsapp: { pattern: /^[0-9+\-\s]+$/, max: 50 },
-        corporate_website: { type: 'url', max: 200 },
-        registration_number: { max: 100 },
-        regulatory_authority: { max: 150 },
-        jurisdiction_of_incorporation: { max: 150 },
-        typical_ticket_size: { max: 150 }
+        site_web_societe: { type: 'url', max: 200 },
+        numero_immatriculation: { max: 100 },
+        autorite_reglementation: { max: 150 },
+        juridiction_incorporation: { max: 150 },
+        taille_billet_typique: { max: 150 }
     };
 
-    function validateField(fieldId) {
-        const field = document.getElementById(fieldId);
-        if (!field) return true;
-        const value = field.value.trim();
-        const rules = validationRules[fieldId];
-        field.classList.remove('is-valid', 'is-invalid');
-        if (!rules) return true;
-        if (rules.required && !value) {
-            showFieldError(field, fieldId + '-error', t('required_field'));
+    function validerChamp(idChamp) {
+        const champ = document.getElementById(idChamp);
+        if (!champ) return true;
+        const valeur = champ.value.trim();
+        const regles = reglesValidation[idChamp];
+        champ.classList.remove('valide', 'invalide');
+        if (!regles) return true;
+        if (regles.required && !valeur) {
+            afficherErreurChamp(champ, idChamp + '-erreur', 'Ce champ est requis');
             return false;
         }
-        if (value) {
-            if (rules.min && value.length < rules.min) {
-                showFieldError(field, fieldId + '-error', t('min_chars').replace('{min}', rules.min));
+        if (valeur) {
+            if (regles.min && valeur.length < regles.min) {
+                afficherErreurChamp(champ, idChamp + '-erreur', `Minimum ${regles.min} caractères`);
                 return false;
             }
-            if (rules.max && value.length > rules.max) {
-                showFieldError(field, fieldId + '-error', t('max_chars').replace('{max}', rules.max));
+            if (regles.max && valeur.length > regles.max) {
+                afficherErreurChamp(champ, idChamp + '-erreur', `Maximum ${regles.max} caractères`);
                 return false;
             }
-            if (rules.pattern && !rules.pattern.test(value)) {
-                showFieldError(field, fieldId + '-error', t('invalid_format'));
+            if (regles.pattern && !regles.pattern.test(valeur)) {
+                afficherErreurChamp(champ, idChamp + '-erreur', 'Format invalide');
                 return false;
             }
-            if (rules.type === 'email') {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(value)) {
-                    showFieldError(field, fieldId + '-error', t('invalid_email'));
+            if (regles.type === 'email') {
+                const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!regexEmail.test(valeur)) {
+                    afficherErreurChamp(champ, idChamp + '-erreur', 'Courriel invalide');
                     return false;
                 }
             }
-            if (rules.type === 'url') {
-                try { new URL(value); } catch {
-                    showFieldError(field, fieldId + '-error', t('invalid_url'));
+            if (regles.type === 'url') {
+                try { new URL(valeur); } catch {
+                    afficherErreurChamp(champ, idChamp + '-erreur', 'URL invalide');
                     return false;
                 }
             }
         }
-        field.classList.add('is-valid');
-        hideFieldError(field, fieldId + '-error');
+        champ.classList.add('valide');
+        cacherErreurChamp(champ, idChamp + '-erreur');
         return true;
     }
 
-    function showFieldError(field, errorId, message) {
-        field.classList.add('is-invalid');
-        const errorEl = document.getElementById(errorId);
-        if (errorEl) { errorEl.textContent = message; errorEl.style.display = 'block'; }
+    function afficherErreurChamp(champ, idErreur, message) {
+        champ.classList.add('invalide');
+        const erreurEl = document.getElementById(idErreur);
+        if (erreurEl) { erreurEl.textContent = message; erreurEl.style.display = 'block'; }
     }
 
-    function hideFieldError(field, errorId) {
-        const errorEl = document.getElementById(errorId);
-        if (errorEl) errorEl.style.display = 'none';
+    function cacherErreurChamp(champ, idErreur) {
+        const erreurEl = document.getElementById(idErreur);
+        if (erreurEl) erreurEl.style.display = 'none';
     }
 
-    function initValidation() {
-        Object.keys(validationRules).forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.addEventListener('blur', () => validateField(fieldId));
-                field.addEventListener('input', () => { if (field.classList.contains('is-invalid')) validateField(fieldId); });
+    function initialiserValidation() {
+        Object.keys(reglesValidation).forEach(idChamp => {
+            const champ = document.getElementById(idChamp);
+            if (champ) {
+                champ.addEventListener('blur', () => validerChamp(idChamp));
+                champ.addEventListener('input', () => { if (champ.classList.contains('invalide')) validerChamp(idChamp); });
             }
         });
     }
 
     // ==================== VALIDATION DES ÉTAPES ====================
-    window.validateStep = function(step, nextStep) {
-        let isValid = true;
-        switch(step) {
-            case 1: isValid = validateStep1(); break;
-            case 2: isValid = validateStep2(); break;
-            case 3: isValid = validateStep3(); break;
-            case 4: isValid = validateStep4(); break;
-            case 5: isValid = validateStep5(); break;
+    window.validerEtape = function(etape, etapeSuivante) {
+        let estValide = true;
+        switch(etape) {
+            case 1: estValide = validerEtape1(); break;
+            case 2: estValide = validerEtape2(); break;
+            case 3: estValide = validerEtape3(); break;
+            case 4: estValide = validerEtape4(); break;
+            case 5: estValide = validerEtape5(); break;
         }
-        if (isValid) {
-            goToStep(nextStep);
+        if (estValide) {
+            allerEtape(etapeSuivante);
         } else {
-            document.getElementById(`step-${step}`).classList.add('shake');
-            setTimeout(() => document.getElementById(`step-${step}`).classList.remove('shake'), 500);
-            showToast('error', t('validation_error'), t('validation_error_message'));
+            document.getElementById(`etape-${etape}`).classList.add('secousse');
+            setTimeout(() => document.getElementById(`etape-${etape}`).classList.remove('secousse'), 500);
+            afficherToast('erreur', 'Erreur de validation', 'Veuillez corriger les erreurs avant de continuer');
         }
     };
 
-    function validateStep1() {
-        let isValid = true;
-        if (!validateField('full_name')) isValid = false;
-        if (!validateField('firm_name')) isValid = false;
-        if (!validateField('email')) isValid = false;
-        if (!validateField('mobile_phone')) isValid = false;
-        if (!validateField('whatsapp')) isValid = false;
-        if (!validateField('corporate_website')) isValid = false;
-        return isValid;
+    function validerEtape1() {
+        let estValide = true;
+        if (!validerChamp('nom_complet')) estValide = false;
+        if (!validerChamp('nom_societe')) estValide = false;
+        if (!validerChamp('courriel')) estValide = false;
+        if (!validerChamp('telephone_mobile')) estValide = false;
+        if (!validerChamp('whatsapp')) estValide = false;
+        if (!validerChamp('site_web_societe')) estValide = false;
+        return estValide;
     }
 
-    function validateStep2() {
-        let isValid = true;
+    function validerEtape2() {
+        let estValide = true;
         if (!document.getElementById('pays_id').value) {
-            document.getElementById('pays_search').classList.add('is-invalid');
-            document.getElementById('pays-error').textContent = t('select_country');
-            document.getElementById('pays-error').style.display = 'block';
-            isValid = false;
+            document.getElementById('pays_recherche').classList.add('invalide');
+            document.getElementById('pays-erreur').textContent = 'Veuillez sélectionner votre pays';
+            document.getElementById('pays-erreur').style.display = 'block';
+            estValide = false;
         }
-        return isValid;
+        return estValide;
     }
 
-    function validateStep3() { return true; }
+    function validerEtape3() { return true; }
 
-    function validateStep4() {
-        let isValid = true;
-        const capacityFields = ['capacity_investment_broker', 'capacity_placement_agent', 'capacity_corporate_finance_advisor', 'capacity_fund_manager', 'capacity_family_office_rep', 'capacity_esg_advisor', 'capacity_independent_introducer'];
-        let hasCapacity = false;
-        for (let field of capacityFields) {
-            if (document.querySelector(`input[name="${field}"]`)?.checked) { hasCapacity = true; break; }
+    function validerEtape4() {
+        let estValide = true;
+        const champsCapacite = ['capacite_courtier_investissement', 'capacite_agent_placement', 'capacite_conseiller_finances_entreprise', 'capacite_gestionnaire_fonds', 'capacite_representant_family_office', 'capacite_conseiller_esg', 'capacite_introducteur_independant'];
+        let aCapacite = false;
+        for (let champ of champsCapacite) {
+            if (document.querySelector(`input[name="${champ}"]`)?.checked) { aCapacite = true; break; }
         }
-        if (!hasCapacity) {
-            document.querySelector('.capacity-error').style.display = 'block';
-            isValid = false;
+        if (!aCapacite) {
+            document.querySelector('.erreur-capacite').style.display = 'block';
+            estValide = false;
         } else {
-            document.querySelector('.capacity-error').style.display = 'none';
+            document.querySelector('.erreur-capacite').style.display = 'none';
         }
-        return isValid;
+        return estValide;
     }
 
-    function validateStep5() {
-        let isValid = true;
-        const checks = ['confirm_authorized', 'confirm_aml_kyc', 'acknowledge_no_exclusivity', 'understand_formal_mandate_required'];
-        for (let check of checks) {
-            const el = document.getElementById(check);
+    function validerEtape5() {
+        let estValide = true;
+        const coches = ['confirme_autorise', 'confirme_aml_kyc', 'reconnait_non_exclusivite', 'comprend_mandat_formel_requis'];
+        for (let coche of coches) {
+            const el = document.getElementById(coche);
             if (!el.checked) {
-                el.classList.add('is-invalid');
-                document.getElementById(check + '-error').style.display = 'block';
-                isValid = false;
+                el.classList.add('invalide');
+                document.getElementById(coche + '-erreur').style.display = 'block';
+                estValide = false;
             }
         }
-        return isValid;
+        return estValide;
     }
 
     // ==================== NAVIGATION ====================
-    window.goToStep = function(step) {
-        if (step < 1 || step > totalSteps) return;
-        document.querySelectorAll('.step').forEach(el => el.classList.remove('active', 'completed'));
-        for (let i = 1; i < step; i++) document.querySelector(`.step[data-step="${i}"]`).classList.add('completed');
-        document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
-        document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
-        document.getElementById(`step-${step}`).classList.add('active');
-        currentStep = step;
-        if (step === 5) generateSummary();
-        document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+    window.allerEtape = function(etape) {
+        if (etape < 1 || etape > totalEtapes) return;
+        document.querySelectorAll('.etape').forEach(el => el.classList.remove('active', 'completee'));
+        for (let i = 1; i < etape; i++) document.querySelector(`.etape[data-etape="${i}"]`).classList.add('completee');
+        document.querySelector(`.etape[data-etape="${etape}"]`).classList.add('active');
+        document.querySelectorAll('.section-formulaire').forEach(el => el.classList.remove('active'));
+        document.getElementById(`etape-${etape}`).classList.add('active');
+        etapeCourante = etape;
+        if (etape === 5) genererResume();
+        document.querySelector('.carte-formulaire').scrollIntoView({ behavior: 'smooth' });
     };
 
     // ==================== GÉNÉRATION DU RÉSUMÉ ====================
-    function generateSummary() {
-        const summary = document.getElementById('summary');
-        const fullName = document.getElementById('full_name').value || '<?= t('not_provided') ?>';
-        const email = document.getElementById('email').value || '<?= t('not_provided') ?>';
-        const firmName = document.getElementById('firm_name').value || '<?= t('not_provided') ?>';
-        const paysName = document.getElementById('pays_name').textContent || '<?= t('not_selected') ?>';
-        const capacities = [];
-        if (document.querySelector('input[name="capacity_investment_broker"]')?.checked) capacities.push('<?= t('cap_investment_broker') ?>');
-        if (document.querySelector('input[name="capacity_placement_agent"]')?.checked) capacities.push('<?= t('cap_placement_agent') ?>');
-        if (document.querySelector('input[name="capacity_corporate_finance_advisor"]')?.checked) capacities.push('<?= t('cap_corporate_finance') ?>');
-        if (document.querySelector('input[name="capacity_fund_manager"]')?.checked) capacities.push('<?= t('cap_fund_manager') ?>');
-        if (document.querySelector('input[name="capacity_family_office_rep"]')?.checked) capacities.push('<?= t('cap_family_office') ?>');
-        if (document.querySelector('input[name="capacity_esg_advisor"]')?.checked) capacities.push('<?= t('cap_esg_advisor') ?>');
-        if (document.querySelector('input[name="capacity_independent_introducer"]')?.checked) capacities.push('<?= t('cap_independent_introducer') ?>');
-        const capacityOther = document.getElementById('capacity_other').value;
-        if (capacityOther) capacities.push('<?= t('other_label') ?>: ' + capacityOther);
-        const regulatoryStatus = document.getElementById('regulatory_status').value || '<?= t('not_specified') ?>';
-        const engagementModel = document.getElementById('engagement_model').value || '<?= t('not_specified') ?>';
+    function genererResume() {
+        const resume = document.getElementById('resume');
+        const nomComplet = document.getElementById('nom_complet').value || 'Non fourni';
+        const courriel = document.getElementById('courriel').value || 'Non fourni';
+        const nomSociete = document.getElementById('nom_societe').value || 'Non fourni';
+        const paysNom = document.getElementById('pays_nom').textContent || 'Non sélectionné';
+        const capacites = [];
+        if (document.querySelector('input[name="capacite_courtier_investissement"]')?.checked) capacites.push('Courtier en investissement');
+        if (document.querySelector('input[name="capacite_agent_placement"]')?.checked) capacites.push('Agent de placement');
+        if (document.querySelector('input[name="capacite_conseiller_finances_entreprise"]')?.checked) capacites.push('Conseiller en finance d\'entreprise');
+        if (document.querySelector('input[name="capacite_gestionnaire_fonds"]')?.checked) capacites.push('Gestionnaire de fonds');
+        if (document.querySelector('input[name="capacite_representant_family_office"]')?.checked) capacites.push('Représentant family office');
+        if (document.querySelector('input[name="capacite_conseiller_esg"]')?.checked) capacites.push('Conseiller ESG');
+        if (document.querySelector('input[name="capacite_introducteur_independant"]')?.checked) capacites.push('Introducteur indépendant');
+        const capaciteAutre = document.getElementById('capacite_autre').value;
+        if (capaciteAutre) capacites.push('Autre : ' + capaciteAutre);
+        const statutReglementaire = document.getElementById('statut_reglementaire').value || 'Non spécifié';
+        const modeleEngagement = document.getElementById('modele_engagement').value || 'Non spécifié';
         let html = `
-            <div class="summary-section"><h6><i class="fas fa-user-circle"></i> <?= t('identity_summary') ?></h6>
-            <div class="summary-item"><span class="summary-label"><?= t('full_name') ?></span><span class="summary-value">${escapeHtml(fullName)}</span></div>
-            <div class="summary-item"><span class="summary-label"><?= t('firm_name') ?></span><span class="summary-value">${escapeHtml(firmName)}</span></div>
-            <div class="summary-item"><span class="summary-label"><?= t('email') ?></span><span class="summary-value">${escapeHtml(email)}</span></div></div>
-            <div class="summary-section"><h6><i class="fas fa-map-marked-alt"></i> <?= t('location_summary') ?></h6>
-            <div class="summary-item"><span class="summary-label"><?= t('country_label') ?></span><span class="summary-value">${escapeHtml(paysName)}</span></div></div>
-            <div class="summary-section"><h6><i class="fas fa-shield-alt"></i> <?= t('regulation_summary') ?></h6>
-            <div class="summary-item"><span class="summary-label"><?= t('regulatory_status_label') ?></span><span class="summary-value">${escapeHtml(regulatoryStatus)}</span></div></div>`;
-        if (capacities.length > 0) html += `<div class="summary-section"><h6><i class="fas fa-briefcase"></i> <?= t('capacities_summary') ?></h6><div>${capacities.map(cap => `<span class="badge-custom">${escapeHtml(cap)}</span>`).join('')}</div></div>`;
-        html += `<div class="summary-section"><h6><i class="fas fa-handshake"></i> <?= t('engagement_summary') ?></h6>
-            <div class="summary-item"><span class="summary-label"><?= t('engagement_model_label') ?></span><span class="summary-value">${escapeHtml(engagementModel)}</span></div></div>`;
-        summary.innerHTML = html;
+            <div class="section-resume"><h6><i class="fas fa-user-circle"></i> Identité</h6>
+            <div class="element-resume"><span class="label-resume">Nom complet</span><span class="valeur-resume">${echapperHtml(nomComplet)}</span></div>
+            <div class="element-resume"><span class="label-resume">Nom de la société</span><span class="valeur-resume">${echapperHtml(nomSociete)}</span></div>
+            <div class="element-resume"><span class="label-resume">Courriel</span><span class="valeur-resume">${echapperHtml(courriel)}</span></div></div>
+            <div class="section-resume"><h6><i class="fas fa-map-marked-alt"></i> Localisation</h6>
+            <div class="element-resume"><span class="label-resume">Pays</span><span class="valeur-resume">${echapperHtml(paysNom)}</span></div></div>
+            <div class="section-resume"><h6><i class="fas fa-shield-alt"></i> Régulation</h6>
+            <div class="element-resume"><span class="label-resume">Statut réglementaire</span><span class="valeur-resume">${echapperHtml(statutReglementaire)}</span></div></div>`;
+        if (capacites.length > 0) html += `<div class="section-resume"><h6><i class="fas fa-briefcase"></i> Capacités</h6><div>${capacites.map(cap => `<span class="badge-personnalise">${echapperHtml(cap)}</span>`).join('')}</div></div>`;
+        html += `<div class="section-resume"><h6><i class="fas fa-handshake"></i> Engagement</h6>
+            <div class="element-resume"><span class="label-resume">Modèle d'engagement</span><span class="valeur-resume">${echapperHtml(modeleEngagement)}</span></div></div>`;
+        resume.innerHTML = html;
     }
 
-    function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+    function echapperHtml(texte) { const div = document.createElement('div'); div.textContent = texte; return div.innerHTML; }
 
     // ==================== NOTIFICATIONS TOAST ====================
-    function showToast(type, title, message, duration = 5000) {
-        let container = document.getElementById('toastContainer');
-        if (!container) { container = document.createElement('div'); container.id = 'toastContainer'; container.className = 'toast-container'; document.body.appendChild(container); }
-        const toast = document.createElement('div'); toast.className = `toast-custom ${type}`;
-        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-        const colors = { success: '#27ae60', error: '#E74C3C', warning: '#FF6B35', info: '#3498DB' };
-        toast.innerHTML = `<div class="toast-icon" style="background: ${colors[type]}20; color: ${colors[type]};"><i class="fas ${icons[type] || icons.info}"></i></div>
-            <div class="toast-content"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(message)}</p></div>
-            <button class="toast-close" onclick="removeToast(this.parentElement)"><i class="fas fa-times"></i></button>`;
-        container.appendChild(toast);
-        const autoRemove = setTimeout(() => removeToast(toast), duration);
-        toast.addEventListener('mouseenter', () => clearTimeout(autoRemove));
-        toast.addEventListener('mouseleave', () => setTimeout(() => removeToast(toast), 1000));
+    function afficherToast(type, titre, message, duree = 5000) {
+        let conteneur = document.getElementById('conteneurToast');
+        if (!conteneur) { conteneur = document.createElement('div'); conteneur.id = 'conteneurToast'; conteneur.className = 'conteneur-toast'; document.body.appendChild(conteneur); }
+        const toast = document.createElement('div'); toast.className = `toast-personnalise ${type}`;
+        const icones = { succes: 'fa-check-circle', erreur: 'fa-exclamation-circle', avertissement: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const couleurs = { succes: '#27ae60', erreur: '#E74C3C', avertissement: '#FF6B35', info: '#3498DB' };
+        toast.innerHTML = `<div class="icone-toast" style="background: ${couleurs[type]}20; color: ${couleurs[type]};"><i class="fas ${icones[type] || icones.info}"></i></div>
+            <div class="contenu-toast"><h4>${echapperHtml(titre)}</h4><p>${echapperHtml(message)}</p></div>
+            <button class="fermer-toast" onclick="supprimerToast(this.parentElement)"><i class="fas fa-times"></i></button>`;
+        conteneur.appendChild(toast);
+        const suppressionAuto = setTimeout(() => supprimerToast(toast), duree);
+        toast.addEventListener('mouseenter', () => clearTimeout(suppressionAuto));
+        toast.addEventListener('mouseleave', () => setTimeout(() => supprimerToast(toast), 1000));
     }
 
-    function removeToast(toast) { if (!toast || !toast.parentElement) return; toast.classList.add('hiding'); setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300); }
+    function supprimerToast(toast) { if (!toast || !toast.parentElement) return; toast.classList.add('disparait'); setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300); }
 
-    // ==================== SOUMISSION (CORRIGÉE) ====================
-    document.getElementById('brokerForm').addEventListener('submit', async function(e) {
+    // ==================== SOUMISSION ====================
+    document.getElementById('formulaireCourtier').addEventListener('submit', async function(e) {
         e.preventDefault();
-        if (!validateStep5()) { 
-            showToast('error', t('validation_error'), t('validation_error_message')); 
+        if (!validerEtape5()) { 
+            afficherToast('erreur', 'Erreur de validation', 'Veuillez accepter toutes les conditions'); 
             return; 
         }
         
-        const submitBtn = document.getElementById('submitBtn'); 
-        submitBtn.classList.add('loading'); 
-        submitBtn.disabled = true;
+        const boutonSoumettre = document.getElementById('boutonSoumettre'); 
+        boutonSoumettre.classList.add('chargement'); 
+        boutonSoumettre.disabled = true;
         
-        const formData = new FormData(this); 
-        const data = Object.fromEntries(formData.entries());
+        const donneesFormulaire = new FormData(this); 
+        const donnees = Object.fromEntries(donneesFormulaire.entries());
         
-        // UTILISER LA ROUTE EXISTANTE : /{lang}/Brokers-form
-        const submitUrl = '<?= base_url('Brokers-form') ?>';
+        const urlSoumission = '<?= base_url('Courtiers-formulaire') ?>';
         
         try {
-            const response = await fetch(submitUrl, { 
+            const reponse = await fetch(urlSoumission, { 
                 method: 'POST', 
                 headers: { 
                     'Content-Type': 'application/json', 
                     'X-Requested-With': 'XMLHttpRequest' 
                 }, 
-                body: JSON.stringify(data) 
+                body: JSON.stringify(donnees) 
             });
             
-            const result = await response.json();
+            const resultat = await reponse.json();
             
-            if (result.success) {
-                document.getElementById('successName').textContent = data.full_name.split(' ')[0] + ' !';
-                const modal = new bootstrap.Modal(document.getElementById('successModal')); 
+            if (resultat.succes) {
+                document.getElementById('prenomSucces').textContent = donnees.nom_complet.split(' ')[0] + ' !';
+                const modal = new bootstrap.Modal(document.getElementById('modalSucces')); 
                 modal.show();
                 this.reset(); 
-                resetForm(); 
-                showToast('success', t('success_label'), result.message);
+                reinitialiserFormulaire(); 
+                afficherToast('succes', 'Succès', resultat.message);
                 setTimeout(() => { 
-                    goToStep(1); 
+                    allerEtape(1); 
                     modal.hide(); 
                 }, 3000);
             } else {
-                if (result.errors) {
-                    Object.keys(result.errors).forEach(field => { 
-                        const el = document.getElementById(field); 
+                if (resultat.erreurs) {
+                    Object.keys(resultat.erreurs).forEach(champ => { 
+                        const el = document.getElementById(champ); 
                         if (el) { 
-                            el.classList.add('is-invalid'); 
-                            const feedback = document.getElementById(field + '-error'); 
-                            if (feedback) { 
-                                feedback.textContent = result.errors[field]; 
-                                feedback.style.display = 'block'; 
+                            el.classList.add('invalide'); 
+                            const retour = document.getElementById(champ + '-erreur'); 
+                            if (retour) { 
+                                retour.textContent = resultat.erreurs[champ]; 
+                                retour.style.display = 'block'; 
                             } 
                         } 
                     });
                 }
-                showToast('error', t('error_label'), result.message || '<?= t('error_occurred') ?>');
+                afficherToast('erreur', 'Erreur', resultat.message || 'Une erreur est survenue');
             }
-        } catch (error) { 
-            console.error('Error:', error); 
-            showToast('error', t('error_label'), t('network_error')); 
+        } catch (erreur) { 
+            console.error('Erreur:', erreur); 
+            afficherToast('erreur', 'Erreur', 'Erreur de connexion au serveur'); 
         } finally { 
-            submitBtn.classList.remove('loading'); 
-            submitBtn.disabled = false; 
+            boutonSoumettre.classList.remove('chargement'); 
+            boutonSoumettre.disabled = false; 
         }
     });
 
-    function resetForm() {
-        document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-        document.querySelectorAll('.is-valid').forEach(el => el.classList.remove('is-valid'));
-        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-        clearCountry('pays');
-        document.querySelectorAll('.char-counter').forEach(el => { 
-            const id = el.id.replace('-count', ''); 
-            const field = document.getElementById(id); 
-            if (field && field.maxLength) el.textContent = `0/${field.maxLength}`; 
+    function reinitialiserFormulaire() {
+        document.querySelectorAll('.selectionnee').forEach(el => el.classList.remove('selectionnee'));
+        document.querySelectorAll('.valide').forEach(el => el.classList.remove('valide'));
+        document.querySelectorAll('.invalide').forEach(el => el.classList.remove('invalide'));
+        effacerPays('pays');
+        document.querySelectorAll('.compteur-caracteres').forEach(el => { 
+            const id = el.id.replace('-compteur', ''); 
+            const champ = document.getElementById(id); 
+            if (champ && champ.maxLength) el.textContent = `0/${champ.maxLength}`; 
         });
     }
 
-    function closeSuccessModal() { 
-        const modalEl = document.getElementById('successModal'); 
+    function fermerModalSucces() { 
+        const modalEl = document.getElementById('modalSucces'); 
         const modal = bootstrap.Modal.getInstance(modalEl); 
         modal.hide(); 
     }
 </script>
 
-<?php include VIEWPATH . 'includes/frontend/Footer.php'; ?>
+<?php include VIEWPATH . 'includes/frontend/PiedDePage.php'; ?>

@@ -1,1 +1,0 @@
-reset_password_success.php
