@@ -4,11 +4,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Broker_model extends CI_Model {
     
     protected $table = 'brokers';
+    protected $investor_table = 'broker_investors';
     
     public function __construct() {
         parent::__construct();
         $this->load->database();
     }
+    
+    // ========== BROKERS ==========
     
     /**
      * Insère un nouveau broker
@@ -42,7 +45,6 @@ class Broker_model extends CI_Model {
             $this->db->where('brokers.id_pays', $filters['id_pays']);
         }
         
-        // Correction : trier par created_at au lieu de pays
         $this->db->order_by('brokers.created_at', 'DESC');
         
         if ($limit !== null) {
@@ -91,6 +93,15 @@ class Broker_model extends CI_Model {
     }
     
     /**
+     * Récupère un broker par son email
+     */
+    public function get_broker_by_email($email) {
+        $this->db->where('email', $email);
+        $query = $this->db->get($this->table);
+        return $query->row();
+    }
+    
+    /**
      * Vérifie si l'email existe déjà
      */
     public function email_exists($email, $exclude_id = null) {
@@ -117,12 +128,14 @@ class Broker_model extends CI_Model {
         $this->db->where('id', $id);
         return $this->db->update($this->table, $data);
     }
-
-
-   
+    
+    // ========== PAYS ==========
+    
+    /**
+     * Récupère tous les pays
+     */
     public function get_all_pays() {
-        // Correction : utiliser la bonne colonne 'pays' dans la table 'pays'
-        $this->db->order_by('pays','ASC');  // 'pays' est dans la table 'pays'
+        $this->db->order_by('pays', 'ASC');
         $query = $this->db->get('pays');
         return $query->result();
     }
@@ -135,4 +148,134 @@ class Broker_model extends CI_Model {
         $query = $this->db->get('pays');
         return $query->row();
     }
+    
+    // ========== INVESTORS ==========
+    
+    /**
+     * Récupère tous les investisseurs d'un broker
+     */
+    public function get_investors_by_broker($broker_id) {
+        $this->db->where('broker_id', $broker_id);
+        $this->db->order_by('created_at', 'DESC');
+        return $this->db->get($this->investor_table)->result();
+    }
+    
+    /**
+     * Récupère un investisseur par son ID
+     */
+    public function get_investor_by_id($id, $broker_id = null) {
+        $this->db->where('id', $id);
+        if ($broker_id) {
+            $this->db->where('broker_id', $broker_id);
+        }
+        return $this->db->get($this->investor_table)->row();
+    }
+    
+    /**
+     * Insère un nouvel investisseur
+     */
+    public function insert_investor($data) {
+        $this->db->insert($this->investor_table, $data);
+        return $this->db->insert_id();
+    }
+    
+    /**
+     * Met à jour un investisseur
+     */
+    public function update_investor($id, $data) {
+        $this->db->where('id', $id);
+        return $this->db->update($this->investor_table, $data);
+    }
+    
+    /**
+     * Supprime un investisseur
+     */
+    public function delete_investor($id, $broker_id = null) {
+        if ($broker_id) {
+            $this->db->where('broker_id', $broker_id);
+        }
+        $this->db->where('id', $id);
+        return $this->db->delete($this->investor_table);
+    }
+    
+    /**
+     * Compte le nombre d'investisseurs d'un broker
+     */
+    public function count_investors_by_broker($broker_id) {
+        $this->db->where('broker_id', $broker_id);
+        return $this->db->count_all_results($this->investor_table);
+    }
+    
+    /**
+     * Récupère les statistiques des investisseurs par statut
+     */
+    public function get_investor_stats($broker_id) {
+        $this->db->select('status, COUNT(*) as count');
+        $this->db->where('broker_id', $broker_id);
+        $this->db->group_by('status');
+        $query = $this->db->get($this->investor_table);
+        $result = $query->result();
+        
+        $stats = [
+            'total_investors' => 0, 
+            'pending' => 0, 
+            'contacted' => 0, 
+            'invested' => 0
+        ];
+        
+        foreach ($result as $row) {
+            if (isset($stats[$row->status])) {
+                $stats[$row->status] = $row->count;
+            }
+            $stats['total_investors'] += $row->count;
+        }
+        
+        return $stats;
+    }
+
+
+    // ========== USERS (table users) ==========
+
+/**
+ * Récupère un utilisateur par son email
+ */
+public function get_user_by_email($email) {
+    $this->db->where('email', $email);
+    $query = $this->db->get('users');
+    return $query->row();
 }
+
+/**
+ * Récupère un utilisateur par son ID
+ */
+public function get_user_by_id($id) {
+    $this->db->where('id', $id);
+    $query = $this->db->get('users');
+    return $query->row();
+}
+
+/**
+ * Vérifie si l'email existe déjà dans la table users
+ */
+public function user_email_exists($email) {
+    $this->db->where('email', $email);
+    return $this->db->get('users')->num_rows() > 0;
+}
+
+/**
+ * Insère un nouvel utilisateur
+ */
+public function insert_user($data) {
+    $this->db->insert('users', $data);
+    return $this->db->insert_id();
+}
+
+/**
+ * Met à jour le mot de passe d'un utilisateur
+ */
+public function update_user_password($user_id, $hashed_password) {
+    $this->db->where('id', $user_id);
+    return $this->db->update('users', ['password' => $hashed_password]);
+}
+}
+?>

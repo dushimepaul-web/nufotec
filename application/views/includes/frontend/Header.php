@@ -1772,7 +1772,7 @@ function googleTranslateElementInit() {
                         <div class="mega-column">
                             <h3><i class="bi bi-building"></i> <?= t('corporate') ?></h3>
                             <ul class="mega-list">
-                                <li><a href="<?= base_url('Profile-Entreprise') ?>"><i class="bi bi-chevron-right"></i> <?= t('corporate_profile') ?></a></li>
+                                <!--<li><a href="<?= base_url('Profile-Entreprise') ?>"><i class="bi bi-chevron-right"></i> <?= t('corporate_profile') ?></a></li>-->
                                 <li><a href="<?= base_url('background-strategic-rationale') ?>"><i class="bi bi-chevron-right"></i> <?= t('background_strategy') ?></a></li>
                                 <li><a href="<?= base_url('corporate-structure-governance') ?>"><i class="bi bi-chevron-right"></i> <?= t('governance') ?></a></li>
                                 <li><a href="<?= base_url('vision-mission') ?>"><i class="bi bi-chevron-right"></i> <?= t('vision_mission') ?></a></li>
@@ -1792,7 +1792,7 @@ function googleTranslateElementInit() {
                             <h3><i class="bi bi-gear-wide-connected"></i> <?= t('facilities') ?></h3>
                             <ul class="mega-list">
                                 <li><a href="<?= base_url('nufotec-phytomed-facility') ?>"><i class="bi bi-chevron-right"></i> <?= t('nufotec_facility') ?></a></li>
-                                <li><a href="<?= base_url('manufacturing-facility') ?>"><i class="bi bi-chevron-right"></i> <?= t('manufacturing_facility') ?></a></li>
+                                <!--<li><a href="<?= base_url('manufacturing-facility') ?>"><i class="bi bi-chevron-right"></i> <?= t('manufacturing_facility') ?></a></li>-->
                             </ul>
                         </div>
                     </div>
@@ -1829,8 +1829,8 @@ function googleTranslateElementInit() {
                             <h3><i class="bi bi-bank"></i> <?= t('relations') ?></h3>
                             <ul class="mega-list">
                                 <li><a href="<?= base_url('broker-commission') ?>"><i class="bi bi-chevron-right"></i> <?= t('broker_commission') ?></a></li>
-                                <li><a href="<?= base_url('Brokers-form') ?>"><i class="bi bi-chevron-right"></i> <?= t('become_broker') ?> <span class="badge-pro">Pro</span></a></li>
-                                <li><a href="<?= base_url('Investors-form') ?>"><i class="bi bi-chevron-right"></i> <?= t('become_partner') ?> <span class="badge-pro">Pro</span></a></li>
+                                <!--<li><a href="<?= base_url('Brokers-form') ?>"><i class="bi bi-chevron-right"></i> <?= t('become_broker') ?> <span class="badge-pro">Pro</span></a></li>
+                                <li><a href="<?= base_url('Investors-form') ?>"><i class="bi bi-chevron-right"></i> <?= t('become_partner') ?> <span class="badge-pro">Pro</span></a></li>-->
                             </ul>
                         </div>
                     </div>

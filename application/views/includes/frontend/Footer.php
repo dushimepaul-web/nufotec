@@ -193,7 +193,7 @@
         <i class="bi bi-camera-video"></i>
         <span>Téléconsultation</span>
     </a>
-    <a href="<?= base_url('Investors-form') ?>" class="sticky-nav-item">
+    <a href="<?= base_url('#') ?>" class="sticky-nav-item">
         <i class="bi bi-graph-up-arrow"></i>
         <span>Investir</span>
     </a>
