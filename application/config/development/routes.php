@@ -112,6 +112,28 @@ $route['update-profile'] = 'Dashboard/PatientDashboard/update_home';
 $route['patient-fallowed'] = 'Consultations/Entente/confirme';
 $route['dashboard/patientdashboard/update_profile'] = 'Dashboard/PatientDashboard/update_profile';
 
+
+
+
+
+// ============================================
+// ROUTES CONFIGURATIONS (DOIT ÊTRE AVANT LA ROUTE GÉNÉRIQUE)
+// ============================================
+$route['Configurations'] = 'Configurations/index';
+$route['configurations'] = 'Configurations/index';
+$route['Configurations/index'] = 'Configurations/index';
+$route['configurations/index'] = 'Configurations/index';
+$route['Configurations/update'] = 'Configurations/update';
+$route['configurations/update'] = 'Configurations/update';
+$route['Configurations/upload_image'] = 'Configurations/upload_image';
+$route['configurations/upload_image'] = 'Configurations/upload_image';
+$route['Configurations/create'] = 'Configurations/create';
+$route['configurations/create'] = 'Configurations/create';
+$route['Configurations/delete'] = 'Configurations/delete';
+$route['configurations/delete'] = 'Configurations/delete';
+$route['Configurations/test_upload_path'] = 'Configurations/test_upload_path';
+$route['configurations/test_upload_path'] = 'Configurations/test_upload_path';
+
 // ============================================
 // ROUTES MÉDIAS (VIDEO, AUDIO, AUTRE)
 // ============================================
