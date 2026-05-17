@@ -25,24 +25,81 @@ class PatientForm extends Public_Controller {
             'file'
         ]);
         
+        $this->load->model('Model');
+        
         $this->upload_path = FCPATH . 'attachments/FichierPatient/';
         
         if (!is_dir($this->upload_path)) {
             mkdir($this->upload_path, 0755, TRUE);
         }
-    }
-    
-    public function index()
-    {   
-        // Check if user is logged in
-        if (!$this->session->userdata('user_id')) {
-            redirect('Auth');
+        
+        // ============================================
+        // PROTECTION TOTALE - COMME DANS LE CONTROLEUR MEDIA
+        // TOUTES LES MÉTHODES NÉCESSITENT UNE CONNEXION
+        // ============================================
+        
+        // Méthodes accessibles sans connexion (à laisser vides si tout doit être protégé)
+        $public_methods = [
+            'get_countries',  // API pour les pays (accessible sans connexion)
+            'medicin',        // Liste des médecins (accessible sans connexion)
+            'checkDisponibiliteMaintenant' // Vérification disponibilité
+        ];
+        
+        $current_method = $this->router->fetch_method();
+        
+        // Si la méthode n'est pas publique, vérifier la connexion
+        if (!in_array($current_method, $public_methods)) {
+            $user_id = $this->session->userdata('user_id');
+            
+            if (!$user_id) {
+                // Sauvegarder l'URL demandée
+                $current_url = current_url();
+                $query_string = $_SERVER['QUERY_STRING'];
+                if (!empty($query_string)) {
+                    $current_url .= '?' . $query_string;
+                }
+                $this->session->set_userdata('login_redirect', $current_url);
+                
+                // Rediriger vers la page de connexion
+                redirect('Auth');
+            }
         }
+    }
 
+
+
+   public function index()
+    {   
+        // Vérifier si l'utilisateur est connecté
+        $user_id = $this->session->userdata('user_id');
+        
+        // Si l'utilisateur n'est pas connecté, sauvegarder l'URL et rediriger
+        if (!$user_id) {
+            // Sauvegarder l'URL actuelle avec un timestamp pour éviter l'écrasement
+            $current_url = current_url();
+            
+            // Vérifier si un paramètre GET existe
+            $query_string = $_SERVER['QUERY_STRING'];
+            if (!empty($query_string)) {
+                $current_url .= '?' . $query_string;
+            }
+            
+            $this->session->set_userdata('login_redirect', $current_url);
+            
+            // Pour déboguer
+            log_message('debug', 'PatientForm: URL sauvegardée dans session: ' . $current_url);
+            
+            redirect('Auth');
+            return;
+        }
+        
+        // Récupérer l'utilisateur connecté
+        $user = $this->getCurrentUser();
+        
         // ============================================
         // VÉRIFIER S'IL Y A UNE CONSULTATION EN ATTENTE DE PAIEMENT
         // ============================================
-        $patient_id = $this->session->userdata('user_id');
+        $patient_id = $user_id;
         
         $pending_consultation = $this->Model->getPendingConsultationByPatient($patient_id);
         
@@ -61,6 +118,7 @@ class PatientForm extends Public_Controller {
             if (!$medecin) {
                 $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
                 redirect('Medicins');
+                return;
             }
         } else {
             $doctor_data = $this->session->userdata('pending_doctor');
@@ -68,11 +126,13 @@ class PatientForm extends Public_Controller {
                 $this->session->unset_userdata('pending_doctor');
                 $this->session->set_flashdata('error', 'Please select a doctor.');
                 redirect('Medicins');
+                return;
             }
             $medecin = $this->Model->getDoctorByUUID($doctor_data['uuid']);
             if (!$medecin) {
                 $this->session->set_flashdata('error', 'Doctor not found or unavailable.');
                 redirect('Dashboard/patient_dashboard');
+                return;
             }
         }
 
@@ -88,7 +148,8 @@ class PatientForm extends Public_Controller {
             'products'       => $this->Model->read('advertise_product', null, 'id', 'DESC'),
             'mode_payements' => $this->Model->read('mode_payement', null, 'id_mode_payement'),
             'is_logged_in'   => TRUE,
-            'user_id'        => $this->session->userdata('user_id'),
+            'user_id'        => $user_id,
+            'user'           => $user,
             'medecin'        => $medecin,
             'prix_usd'       => $prix_usd,
             'prix_eur'       => $prix_eur,
@@ -99,6 +160,35 @@ class PatientForm extends Public_Controller {
 
         $this->load->view('PatientForm_View', $data);
     }
+
+    /**
+     * Récupérer l'utilisateur connecté
+     */
+    private function getCurrentUser()
+    {
+        if ($this->session->userdata('user_id')) {
+            return $this->db->query("
+                SELECT id, uuid, email, nom, prenom, photo, type_utilisateur 
+                FROM users 
+                WHERE id = ? AND is_active = 1
+            ", [$this->session->userdata('user_id')])->row_array();
+        }
+        return null;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public function changeDoctor()
     {

@@ -9,14 +9,21 @@ $route['default_controller'] = 'Home/Home/index';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
+
+
+
+
 // ============================================
 // CHANGEMENT DE LANGUE
 // ============================================
 $route['switch_lang/(fr|en|sw)'] = 'Home/Home/switch_lang/$1';
 
 
+// Dans routes.php
 $route['Admin'] = 'Admin/index';
-
+$route['admin'] = 'Admin/index';
+$route['Admin/do_login'] = 'Admin/do_login';
+$route['admin/do_login'] = 'Admin/do_login';
 // ============================================
 // ROUTES DASHBOARD
 // ============================================
@@ -409,6 +416,10 @@ $route['Products/delete_order'] = 'Products/delete_order';
 $route['products/delete_order'] = 'Products/delete_order';
 $route['Products/export_orders_csv'] = 'Products/export_orders_csv';
 $route['products/export_orders_csv'] = 'Products/export_orders_csv';
+
+
+
+
 
 // ============================================
 // ROUTES API

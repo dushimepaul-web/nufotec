@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= $lang ?? 'fr' ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><?= $page_title ?? 'NUFOTEC' ?> - Media</title>
     <link rel="icon" href="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>" type="image/png">
     <link rel="apple-touch-icon" href="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
     <!-- Google Translate -->
@@ -23,33 +23,39 @@
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     
     <style>
-        /* YouTube Dark Mode Colors */
+        /* Variables modernes */
         :root {
-            --yt-black: #0f0f0f;
-            --yt-white: #ffffff;
-            --yt-gray-100: #f1f1f1;
-            --yt-gray-200: #e5e5e5;
-            --yt-gray-300: #d4d4d4;
-            --yt-gray-400: #aaaaaa;
-            --yt-gray-500: #717171;
-            --yt-gray-600: #606060;
-            --yt-gray-700: #3d3d3d;
-            --yt-gray-800: #272727;
-            --yt-gray-900: #212121;
-            --yt-red: #ff0000;
-            --yt-blue: #3ea6ff;
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #121212;
+            --bg-tertiary: #1a1a1a;
+            --bg-card: #181818;
+            --bg-hover: #272727;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --text-tertiary: #717171;
+            --accent-green: #00d084;
+            --accent-blue: #3ea6ff;
+            --accent-red: #ff0000;
+            --border-color: #2a2a2a;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.4);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: all 0.15s ease;
+            --glass-bg: rgba(26, 26, 26, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
         
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: var(--yt-black); 
-            color: var(--yt-gray-100);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: var(--bg-primary); 
+            color: var(--text-primary);
             overflow-x: hidden;
             top: 0 !important;
             margin-top: 0 !important;
             padding-top: 0 !important;
+            line-height: 1.5;
         }
 
         /* Cacher l'interface Google Translate */
@@ -64,18 +70,44 @@
             position: absolute !important;
             top: -9999px !important;
         }
+        
+        body {
+            top: 0 !important;
+            position: relative !important;
+        }
+
+        /* Scrollbar personnalisée */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
 
         /* ============================================ */
-        /* NAVBAR YOUTUBE STYLE */
+        /* NAVBAR GLASSMORPHISM */
         /* ============================================ */
         .navbar {
-            background: var(--yt-black);
-            border-bottom: 1px solid var(--yt-gray-800);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
             padding: 0.5rem 1rem;
             position: sticky;
             top: 0;
             z-index: 1000;
-            height: 56px;
+            height: 64px;
         }
         
         .navbar .container-fluid {
@@ -84,6 +116,8 @@
             justify-content: space-between;
             height: 100%;
             gap: 1rem;
+            max-width: 1600px;
+            margin: 0 auto;
         }
         
         .logo-wrapper {
@@ -96,17 +130,21 @@
         .menu-icon {
             background: transparent;
             border: none;
-            color: var(--yt-gray-100);
+            color: var(--text-primary);
             font-size: 1.5rem;
             padding: 0.5rem;
             cursor: pointer;
             border-radius: 50%;
-            transition: background 0.2s;
-            flex-shrink: 0;
+            transition: var(--transition-fast);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .menu-icon:hover {
-            background: var(--yt-gray-800);
+            background: var(--bg-hover);
         }
         
         .navbar-brand {
@@ -117,85 +155,93 @@
             flex-shrink: 0;
         }
         
+        .brand-logo {
+            height: 36px;
+            width: auto;
+        }
+        
         .brand-name {
             font-weight: 700;
-            font-size: 1.2rem;
-            color: var(--yt-gray-100);
+            font-size: 1.25rem;
+            color: var(--text-primary);
             letter-spacing: -0.5px;
-            white-space: nowrap;
         }
         
         .brand-subname {
             font-size: 0.7rem;
-            color: var(--yt-gray-500);
+            color: var(--accent-green);
             margin-left: 0.25rem;
+            font-weight: 500;
         }
 
         /* Search Bar */
         .search-container {
             flex: 1;
-            max-width: 640px;
-            margin: 0 2rem;
-            display: flex;
-            justify-content: center;
+            max-width: 600px;
+            margin: 0 1rem;
         }
         
         .search-form {
             display: flex;
             width: 100%;
-            max-width: 640px;
         }
         
         .search-input {
-            background: var(--yt-gray-900);
-            border: 1px solid var(--yt-gray-700);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
             border-radius: 40px 0 0 40px;
-            color: var(--yt-gray-100);
+            color: var(--text-primary);
             padding: 0.5rem 1rem;
             width: 100%;
             font-size: 0.9rem;
             outline: none;
-            height: 40px;
+            height: 42px;
+            transition: var(--transition-fast);
         }
         
         .search-input:focus {
-            border-color: var(--yt-blue);
-            background: var(--yt-black);
+            border-color: var(--accent-blue);
+            background: var(--bg-secondary);
         }
         
         .search-btn {
-            background: var(--yt-gray-800);
-            border: 1px solid var(--yt-gray-700);
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
             border-left: none;
             border-radius: 0 40px 40px 0;
-            color: var(--yt-gray-100);
+            color: var(--text-primary);
             padding: 0 1.25rem;
             cursor: pointer;
-            transition: background 0.2s;
-            height: 40px;
+            transition: var(--transition-fast);
+            height: 42px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
         .search-btn:hover {
-            background: var(--yt-gray-700);
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
         }
 
         /* Mobile Search */
-        .search-toggle {
+        .search-toggle, .mobile-search-toggle {
             display: none;
             background: transparent;
             border: none;
-            color: var(--yt-gray-100);
+            color: var(--text-primary);
             font-size: 1.2rem;
             padding: 0.5rem;
             cursor: pointer;
             border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
         }
         
-        .search-toggle:hover {
-            background: var(--yt-gray-800);
+        .search-toggle:hover, .mobile-search-toggle:hover {
+            background: var(--bg-hover);
         }
 
         .mobile-search-overlay {
@@ -204,12 +250,13 @@
             top: 0;
             left: 0;
             right: 0;
-            background: var(--yt-black);
-            padding: 0.5rem 1rem;
+            background: var(--bg-primary);
+            padding: 0.75rem 1rem;
             z-index: 1002;
             align-items: center;
             gap: 0.5rem;
-            height: 56px;
+            height: 64px;
+            border-bottom: 1px solid var(--border-color);
         }
         
         .mobile-search-overlay.active {
@@ -223,12 +270,20 @@
         .back-btn {
             background: transparent;
             border: none;
-            color: var(--yt-gray-100);
+            color: var(--text-primary);
             font-size: 1.5rem;
             padding: 0.5rem;
             cursor: pointer;
             border-radius: 50%;
-            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-btn:hover {
+            background: var(--bg-hover);
         }
 
         /* Language Selector Desktop */
@@ -242,28 +297,26 @@
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
-            background: var(--yt-gray-800);
-            border: 1px solid var(--yt-gray-700);
-            border-radius: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
             cursor: pointer;
-            font-family: 'Roboto', sans-serif;
             font-size: 13px;
             font-weight: 500;
-            color: var(--yt-gray-100);
-            transition: all 0.2s ease;
+            color: var(--text-primary);
+            transition: var(--transition-fast);
         }
         
         .custom-language-btn:hover {
-            border-color: var(--yt-blue);
-            background: var(--yt-gray-700);
+            border-color: var(--accent-blue);
+            background: var(--bg-hover);
             transform: translateY(-1px);
         }
         
         .custom-language-btn img {
             width: 20px;
             height: 15px;
-            border-radius: 2px;
-            object-fit: cover;
+            border-radius: 3px;
         }
         
         .custom-language-btn i {
@@ -276,17 +329,17 @@
             top: 100%;
             right: 0;
             margin-top: 8px;
-            background: var(--yt-gray-900);
+            background: var(--bg-tertiary);
             border-radius: 16px;
-            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow);
             padding: 8px;
             min-width: 220px;
             opacity: 0;
             visibility: hidden;
             transform: translateY(-10px);
-            transition: all 0.2s ease;
+            transition: var(--transition);
             z-index: 1000;
-            border: 1px solid var(--yt-gray-700);
+            border: 1px solid var(--border-color);
             max-height: 400px;
             overflow-y: auto;
         }
@@ -310,13 +363,13 @@
             cursor: pointer !important;
             font-size: 13px !important;
             font-weight: 500 !important;
-            color: var(--yt-gray-100) !important;
-            transition: all 0.2s ease !important;
+            color: var(--text-primary) !important;
+            transition: var(--transition-fast) !important;
         }
         
         .lang-option:hover {
-            background: var(--yt-gray-800) !important;
-            color: var(--yt-blue) !important;
+            background: var(--bg-hover) !important;
+            color: var(--accent-blue) !important;
             transform: translateX(4px) !important;
         }
         
@@ -324,33 +377,139 @@
             width: 22px !important;
             height: 16px !important;
             border-radius: 3px !important;
-            object-fit: cover !important;
+        }
+
+        /* Nav Icons */
+        .nav-icons {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            flex-shrink: 0;
+        }
+        
+        .nav-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+            position: relative;
+        }
+        
+        .nav-icon:hover {
+            background: var(--bg-hover);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--accent-red);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* ============================================ */
-        /* SELECTEUR DE LANGUE MOBILE (DANS SIDEBAR) */
+        /* SIDEBAR MODERNE */
         /* ============================================ */
+        .sidebar { 
+            position: fixed; 
+            left: 0; 
+            top: 64px; 
+            width: 260px; 
+            height: calc(100vh - 64px); 
+            background: var(--bg-secondary); 
+            overflow-y: auto; 
+            padding: 0.75rem 0; 
+            z-index: 999; 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-right: 1px solid var(--border-color);
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 1.25rem; 
+            padding: 0.625rem 1.5rem; 
+            color: var(--text-primary); 
+            text-decoration: none; 
+            cursor: pointer; 
+            transition: var(--transition-fast);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0;
+        }
+        
+        .sidebar-item:hover { 
+            background: var(--bg-hover); 
+        }
+        
+        .sidebar-item.active { 
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--accent-green);
+        }
+        
+        .sidebar-item i { 
+            font-size: 1.25rem; 
+            width: 24px; 
+        }
+        
+        .sidebar-section { 
+            padding: 0.5rem 0; 
+            border-bottom: 1px solid var(--border-color); 
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar-title { 
+            padding: 0.5rem 1.5rem; 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            color: var(--text-tertiary); 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+        }
+
+        /* Mobile Language Selector in Sidebar */
         .mobile-lang-selector {
             padding: 0 1rem;
             margin-top: 0.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .current-mobile-lang {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 16px;
-            background: var(--yt-gray-800);
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
             border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid var(--yt-gray-700);
+            transition: var(--transition-fast);
+            border: 1px solid var(--border-color);
         }
 
         .current-mobile-lang:hover {
-            background: var(--yt-gray-700);
-            border-color: var(--yt-blue);
+            background: var(--bg-hover);
+            border-color: var(--accent-blue);
         }
 
         .current-mobile-lang img {
@@ -376,13 +535,14 @@
 
         .mobile-lang-dropdown {
             margin-top: 8px;
-            background: var(--yt-gray-800);
+            background: var(--bg-tertiary);
             border-radius: 12px;
             overflow: hidden;
             max-height: 0;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
         }
 
         .mobile-lang-dropdown.active {
@@ -400,15 +560,15 @@
             width: 100% !important;
             background: transparent !important;
             border: none !important;
-            color: var(--yt-gray-100) !important;
+            color: var(--text-primary) !important;
             font-size: 14px !important;
             cursor: pointer !important;
-            transition: all 0.2s ease !important;
+            transition: var(--transition-fast) !important;
             text-align: left !important;
         }
 
         .mobile-lang-option:hover {
-            background: var(--yt-gray-700) !important;
+            background: var(--bg-hover) !important;
             padding-left: 24px !important;
         }
 
@@ -418,104 +578,58 @@
             border-radius: 3px;
         }
 
-        /* Nav Icons */
-        .nav-icons {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-shrink: 0;
-        }
-        
-        /* Sidebar */
-        .sidebar { 
-            position: fixed; 
-            left: 0; 
-            top: 56px; 
-            width: 240px; 
-            height: calc(100vh - 56px); 
-            background: var(--yt-black); 
-            overflow-y: auto; 
-            padding: 0.75rem 0; 
-            z-index: 999; 
-            transition: transform 0.3s ease;
-        }
-        
-        .sidebar::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .sidebar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb {
-            background: var(--yt-gray-700);
-            border-radius: 4px;
-        }
-        
-        .sidebar-item { 
-            display: flex; 
-            align-items: center; 
-            gap: 1.5rem; 
-            padding: 0.5rem 1.5rem; 
-            color: var(--yt-gray-100); 
-            text-decoration: none; 
-            cursor: pointer; 
-            transition: background 0.2s;
-            font-size: 0.875rem;
-        }
-        
-        .sidebar-item:hover, .sidebar-item.active { 
-            background: var(--yt-gray-800); 
-        }
-        
-        .sidebar-item i { 
-            font-size: 1.25rem; 
-            width: 24px; 
-        }
-        
-        .sidebar-section { 
-            padding: 0.5rem 0; 
-            border-bottom: 1px solid var(--yt-gray-800); 
-        }
-        
-        .sidebar-title { 
-            padding: 0.5rem 1.5rem; 
-            font-size: 0.75rem; 
-            font-weight: 600; 
-            color: var(--yt-gray-500); 
-            text-transform: uppercase; 
-        }
-        
-        /* Main Content */
+        /* ============================================ */
+        /* MAIN CONTENT PREMIUM */
+        /* ============================================ */
         .main-content { 
-            margin-left: 240px; 
+            margin-left: 260px; 
             padding: 1.5rem; 
-            min-height: calc(100vh - 56px); 
-            transition: margin-left 0.3s ease;
+            min-height: calc(100vh - 64px); 
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 1600px;
         }
         
-        /* Media Grid */
+        /* Search Header */
+        .search-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .search-header h5 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Media Grid Premium */
         .media-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-            gap: 1rem; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 1.5rem; 
         }
         
+        /* Media Card Premium */
         .media-card { 
             cursor: pointer; 
-            transition: transform 0.2s; 
+            transition: var(--transition);
+            border-radius: 12px;
+            overflow: hidden;
         }
         
         .media-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-4px);
+        }
+        
+        .media-card:hover .thumbnail-img {
+            transform: scale(1.05);
         }
         
         .thumbnail-container { 
             position: relative; 
             border-radius: 12px;
             overflow: hidden;
-            background: var(--yt-gray-900);
+            background: var(--bg-tertiary);
             aspect-ratio: 16 / 9;
         }
         
@@ -523,19 +637,45 @@
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        
+        .media-card:hover .play-overlay {
+            opacity: 1;
+        }
+        
+        .play-overlay i {
+            font-size: 3rem;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         
         .duration-badge { 
             position: absolute; 
             bottom: 8px; 
             right: 8px; 
-            background: rgba(0,0,0,0.85); 
-            color: var(--yt-gray-100); 
-            padding: 2px 6px; 
+            background: rgba(0, 0, 0, 0.85); 
+            color: var(--text-primary); 
+            padding: 3px 6px; 
             border-radius: 4px; 
             font-size: 0.7rem; 
-            font-weight: 500; 
-            z-index: 10; 
+            font-weight: 600; 
+            z-index: 10;
+            backdrop-filter: blur(4px);
         }
         
         .card-info { 
@@ -548,11 +688,16 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: var(--yt-gray-700);
+            background: linear-gradient(135deg, var(--accent-green), #00a86b);
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        .channel-avatar i {
+            font-size: 1rem;
+            color: white;
         }
         
         .card-details {
@@ -561,43 +706,59 @@
         }
         
         .card-title { 
-            font-size: 0.9rem; 
-            font-weight: 500; 
+            font-size: 0.95rem; 
+            font-weight: 600; 
             margin-bottom: 0.25rem; 
-            line-height: 1.3; 
+            line-height: 1.35; 
             display: -webkit-box; 
             -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical; 
             overflow: hidden;
-            color: var(--yt-gray-100);
+            color: var(--text-primary);
         }
         
         .card-meta { 
-            color: var(--yt-gray-500); 
+            color: var(--text-tertiary); 
             font-size: 0.75rem; 
+            font-weight: 500;
+        }
+        
+        .card-meta i {
+            font-size: 0.7rem;
+            margin-right: 2px;
         }
 
-        /* Audio Player */
-        .audio-player-bar { 
+        /* Empty State */
+        .empty-state { 
+            text-align: center; 
+            padding: 4rem 2rem; 
+            color: var(--text-tertiary); 
+        }
+        
+        .empty-state i { 
+            font-size: 4rem; 
+            margin-bottom: 1rem; 
+            opacity: 0.5;
+        }
+
+        /* Toast Container */
+        .toast-container { 
             position: fixed; 
-            bottom: 0; 
-            left: 240px; 
-            right: 0; 
-            background: var(--yt-gray-900); 
-            border-top: 1px solid var(--yt-gray-800); 
-            padding: 0.5rem 1rem; 
-            display: none; 
-            align-items: center; 
-            gap: 1rem; 
-            z-index: 1001; 
-            height: 64px; 
+            bottom: 80px; 
+            right: 20px; 
+            z-index: 9999; 
+        }
+
+        /* ============================================ */
+        /* RESPONSIVE DESIGN */
+        /* ============================================ */
+        @media (max-width: 1200px) {
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 1rem;
+            }
         }
         
-        .audio-player-bar.active { 
-            display: flex; 
-        }
-        
-        /* Responsive */
         @media (max-width: 1023px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -608,76 +769,96 @@
             .main-content {
                 margin-left: 0;
             }
-            .audio-player-bar {
-                left: 0;
-            }
             .media-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             }
         }
         
-        @media (max-width: 767px) {
+        @media (max-width: 768px) {
+            .navbar {
+                height: 56px;
+            }
+            .sidebar {
+                top: 56px;
+                height: calc(100vh - 56px);
+            }
             .search-container {
                 display: none;
             }
             .search-toggle {
                 display: flex;
             }
-            .media-grid {
-                grid-template-columns: 1fr;
+            .nav-icon {
+                width: 36px;
+                height: 36px;
+            }
+            .brand-name {
+                font-size: 1rem;
             }
             .brand-subname {
                 display: none;
             }
-            /* Cacher le sélecteur desktop sur mobile */
+            .brand-logo {
+                height: 28px;
+            }
+            .media-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .main-content {
+                padding: 1rem;
+            }
             .lang-selector-custom {
                 display: none !important;
             }
         }
         
-        @media (min-width: 768px) {
-            /* Afficher le sélecteur desktop sur desktop */
+        @media (min-width: 769px) {
             .lang-selector-custom {
                 display: block;
             }
-            /* Cacher le sélecteur mobile sur desktop */
             .mobile-lang-selector {
+                display: none;
+            }
+            .mobile-search-toggle {
                 display: none;
             }
         }
         
-        @media (max-width: 479px) {
-            .sidebar {
-                width: 200px;
-            }
+        @media (max-width: 480px) {
             .main-content {
                 padding: 0.75rem;
             }
-            .brand-name {
-                font-size: 1rem;
+            .media-grid {
+                gap: 0.75rem;
+            }
+            .card-title {
+                font-size: 0.85rem;
+            }
+            .channel-avatar {
+                width: 32px;
+                height: 32px;
+            }
+            .channel-avatar i {
+                font-size: 0.85rem;
             }
         }
-
-        .empty-state { 
-            text-align: center; 
-            padding: 4rem 2rem; 
-            color: var(--yt-gray-500); 
+        
+        /* Animation pour le loader */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
         }
         
-        .empty-state i { 
-            font-size: 4rem; 
-            margin-bottom: 1rem; 
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 50%, var(--bg-tertiary) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
         }
         
-        .search-header { 
-            margin-bottom: 1.5rem; 
-        }
-        
-        .toast-container { 
-            position: fixed; 
-            bottom: 80px; 
-            right: 20px; 
-            z-index: 9999; 
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
     </style>
 </head>
@@ -692,16 +873,16 @@
         <i class="bi bi-arrow-left"></i>
     </button>
     <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form">
-        <input type="text" name="q" class="search-input" placeholder="Rechercher" id="mobileSearchInput">
+        <input type="text" name="q" class="search-input" placeholder="Rechercher..." id="mobileSearchInput">
         <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
     </form>
 </div>
 
-<!-- Navbar -->
+<!-- Navbar Premium -->
 <nav class="navbar">
     <div class="container-fluid">
         <div class="logo-wrapper">
-            <button class="menu-icon d-md-none" onclick="toggleSidebar()">
+            <button class="menu-icon d-lg-none" onclick="toggleSidebar()">
                 <i class="bi bi-list"></i>
             </button>
             <a class="navbar-brand" href="<?= base_url('media') ?>">
@@ -709,27 +890,27 @@
                 $site_logo = $this->Model->get_setting('site_logo');
                 if (!empty($site_logo)): 
                 ?>
-                    <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="Logo NUFOTEC" height="40">
+                    <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="NUFOTEC" class="brand-logo">
                 <?php endif; ?>
                 <span class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
-                <span class="brand-subname">MEDIA</span>
+                <span class="brand-subname">Media</span>
             </a>
         </div>
         
         <!-- Desktop Search -->
         <div class="search-container">
             <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form">
-                <input type="text" name="q" class="search-input" placeholder="Rechercher" value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>">
+                <input type="text" name="q" class="search-input" placeholder="Rechercher..." value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>">
                 <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
             </form>
         </div>
         
         <div class="nav-icons">
-            <button class="search-toggle" onclick="openMobileSearch()">
+            <button class="search-toggle d-md-none" onclick="openMobileSearch()">
                 <i class="bi bi-search"></i>
             </button>
             
-            <!-- Language Selector DESKTOP (visible sur desktop seulement) -->
+            <!-- Language Selector DESKTOP -->
             <div class="lang-selector-custom">
                 <button class="custom-language-btn" id="customLanguageBtn">
                     <img src="https://flagcdn.com/w20/fr.png" alt="Français" id="currentLangFlag">
@@ -785,17 +966,29 @@
                     <button class="lang-option" data-lang="ko" data-flag="kr" data-label="한국어">
                         <img src="https://flagcdn.com/w20/kr.png" alt="한국어"> 한국어
                     </button>
+                    <button class="lang-option" data-lang="hi" data-flag="in" data-label="हिन्दी">
+                        <img src="https://flagcdn.com/w20/in.png" alt="हिन्दी"> हिन्दी
+                    </button>
+                    <button class="lang-option" data-lang="vi" data-flag="vn" data-label="Tiếng Việt">
+                        <img src="https://flagcdn.com/w20/vn.png" alt="Tiếng Việt"> Tiếng Việt
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </nav>
 
-<!-- Sidebar -->
+<!-- Sidebar Premium -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-section">
         <a href="<?= base_url('media') ?>" class="sidebar-item <?= empty($current_type) && empty($search_query) ? 'active' : '' ?>">
             <i class="bi bi-house-fill"></i><span>Accueil</span>
+        </a>
+        <a href="javascript:void(0)" class="sidebar-item">
+            <i class="bi bi-fire"></i><span>Tendances</span>
+        </a>
+        <a href="javascript:void(0)" class="sidebar-item">
+            <i class="bi bi-newspaper"></i><span>Actualités</span>
         </a>
     </div>
 
@@ -816,7 +1009,7 @@
         <?php endforeach; ?>
     </div>
 
-    <!-- Language Selector MOBILE (visible dans le sidebar sur mobile) -->
+    <!-- Language Selector MOBILE (dans le sidebar) -->
     <div class="sidebar-section">
         <div class="sidebar-title">
             <i class="bi bi-translate"></i> Langue
@@ -861,21 +1054,6 @@
                 <button class="mobile-lang-option" data-lang="ru" data-flag="ru" data-label="Русский">
                     <img src="https://flagcdn.com/w20/ru.png" alt="Русский"> Русский
                 </button>
-                <button class="mobile-lang-option" data-lang="nl" data-flag="nl" data-label="Nederlands">
-                    <img src="https://flagcdn.com/w20/nl.png" alt="Nederlands"> Nederlands
-                </button>
-                <button class="mobile-lang-option" data-lang="pl" data-flag="pl" data-label="Polski">
-                    <img src="https://flagcdn.com/w20/pl.png" alt="Polski"> Polski
-                </button>
-                <button class="mobile-lang-option" data-lang="tr" data-flag="tr" data-label="Türkçe">
-                    <img src="https://flagcdn.com/w20/tr.png" alt="Türkçe"> Türkçe
-                </button>
-                <button class="mobile-lang-option" data-lang="ja" data-flag="jp" data-label="日本語">
-                    <img src="https://flagcdn.com/w20/jp.png" alt="日本語"> 日本語
-                </button>
-                <button class="mobile-lang-option" data-lang="ko" data-flag="kr" data-label="한국어">
-                    <img src="https://flagcdn.com/w20/kr.png" alt="한국어"> 한국어
-                </button>
             </div>
         </div>
     </div>
@@ -896,7 +1074,7 @@
         </div>
     <?php endif; ?>
 
-    <div class="media-grid">
+    <div class="media-grid" id="mediaGrid">
         <?php if (!empty($medias)): ?>
             <?php foreach ($medias as $media): ?>
                 <?= createMediaCard($media, $lang ?? 'fr') ?>
@@ -904,57 +1082,19 @@
         <?php endif; ?>
     </div>
 
-    <div class="empty-state" style="display: <?= empty($medias) ? 'flex' : 'none' ?>; flex-direction: column; align-items: center;">
+    <div class="empty-state" id="emptyState" style="display: <?= empty($medias) ? 'flex' : 'none' ?>; flex-direction: column; align-items: center;">
         <i class="bi bi-play-circle"></i>
         <h5>Aucun média disponible</h5>
         <small class="text-secondary">Revenez plus tard pour découvrir du nouveau contenu.</small>
     </div>
 </main>
 
-<!-- Audio Player -->
-<div class="audio-player-bar" id="audioPlayerBar">
-    <div class="player-info">
-        <img src="" alt="" class="player-thumb" id="playerThumb">
-        <div class="player-details">
-            <h4 id="playerTitle">Titre</h4>
-        </div>
-    </div>
-    <div class="player-controls">
-        <div class="control-buttons">
-            <button class="control-btn" onclick="previousTrack()"><i class="bi bi-skip-start-fill"></i></button>
-            <button class="control-btn play" onclick="togglePlay()" id="playPauseBtn"><i class="bi bi-play-fill"></i></button>
-            <button class="control-btn" onclick="nextTrack()"><i class="bi bi-skip-end-fill"></i></button>
-        </div>
-        <div class="progress-container">
-            <span id="currentTime">0:00</span>
-            <div class="progress-bar" onclick="seekAudio(event)"><div class="progress-fill" id="progressFill"></div></div>
-            <span id="totalTime">0:00</span>
-        </div>
-    </div>
-    <button class="control-btn" onclick="toggleMute()"><i class="bi bi-volume-up-fill" id="volumeIcon"></i></button>
-    <audio id="audioElement" preload="metadata"></audio>
-</div>
-
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ============================================
-// AUDIO PLAYER FUNCTIONS
+// FONCTIONS PRINCIPALES
 // ============================================
-let audioElement = document.getElementById('audioElement');
-let isPlaying = false;
-let mediaQueue = [];
-let currentQueueIndex = 0;
-
-if (audioElement) {
-    audioElement.addEventListener('timeupdate', updateProgress);
-    audioElement.addEventListener('ended', nextTrack);
-    audioElement.addEventListener('loadedmetadata', function() {
-        document.getElementById('totalTime').textContent = formatTime(audioElement.duration);
-    });
-}
-
 function openMedia(mediaSlug) {
     window.location.href = '<?= base_url('media/detail/') ?>' + mediaSlug;
 }
@@ -974,46 +1114,12 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-function togglePlay() {
-    if (!audioElement) return;
-    if (isPlaying) audioElement.pause(); else audioElement.play();
-    isPlaying = !isPlaying;
-    updatePlayButton();
-}
-
-function updatePlayButton() {
-    const btn = document.getElementById('playPauseBtn');
-    if (btn) btn.innerHTML = isPlaying ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>';
-}
-
-function updateProgress() {
-    if (!audioElement) return;
-    const percent = (audioElement.currentTime / audioElement.duration) * 100;
-    const fill = document.getElementById('progressFill');
-    if (fill) fill.style.width = percent + '%';
-    document.getElementById('currentTime').textContent = formatTime(audioElement.currentTime);
-}
-
-function seekAudio(e) {
-    if (!audioElement) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    audioElement.currentTime = (x / rect.width) * audioElement.duration;
-}
-
-function previousTrack() { if (currentQueueIndex > 0) currentQueueIndex--; }
-function nextTrack() { if (currentQueueIndex < mediaQueue.length - 1) currentQueueIndex++; }
-function toggleMute() { if (!audioElement) return; audioElement.muted = !audioElement.muted; }
-
-function formatTime(seconds) {
-    if (isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
 function filterMedia(type) {
-    window.location.href = type === 'all' ? '<?= base_url('media') ?>' : '<?= base_url('media/type/') ?>' + type;
+    if (type === 'all') {
+        window.location.href = '<?= base_url('media') ?>';
+    } else {
+        window.location.href = '<?= base_url('media/type/') ?>' + type;
+    }
 }
 
 function toggleSidebar() {
@@ -1024,9 +1130,18 @@ function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'primary'} border-0`;
-    toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
     container.appendChild(toast);
-    new bootstrap.Toast(toast).show();
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
     setTimeout(() => toast.remove(), 3000);
 }
 
@@ -1069,20 +1184,16 @@ if (langBtn) {
     });
 }
 
-// Fonction améliorée avec nettoyage complet
 function changeLanguage(langCode, flagCode, label) {
-    // Mise à jour UI
     if (currentLangFlag && currentLangLabel) {
         currentLangFlag.src = `https://flagcdn.com/w20/${flagCode}.png`;
         currentLangLabel.textContent = label;
     }
     
-    // Sauvegarde
     localStorage.setItem('preferred_language', langCode);
     localStorage.setItem('preferred_flag', flagCode);
     localStorage.setItem('preferred_label', label);
     
-    // Nettoyage complet des cookies googtrans
     const cookies = document.cookie.split(';');
     for (let cookie of cookies) {
         if (cookie.trim().startsWith('googtrans=')) {
@@ -1092,21 +1203,16 @@ function changeLanguage(langCode, flagCode, label) {
         }
     }
     
-    // Réinitialiser l'élément Google Translate
+    document.cookie = `googtrans=/fr/${langCode}; path=/; max-age=31536000`;
+    
     const googleTranslateElement = document.getElementById('google_translate_element');
     if (googleTranslateElement) {
         googleTranslateElement.innerHTML = '';
     }
     
-    // Recharger Google Translate API
-    if (typeof google !== 'undefined' && google.translate) {
-        // Attendre un peu pour la réinitialisation
-        setTimeout(() => {
-            window.location.reload();
-        }, 100);
-    } else {
+    setTimeout(() => {
         window.location.reload();
-    }
+    }, 100);
 }
 
 document.querySelectorAll('.lang-option').forEach(option => {
@@ -1120,7 +1226,7 @@ document.querySelectorAll('.lang-option').forEach(option => {
 });
 
 // ============================================
-// LANGUAGE MANAGEMENT - MOBILE (SIDEBAR)
+// LANGUAGE MANAGEMENT - MOBILE
 // ============================================
 function toggleMobileLangDropdown() {
     const currentMobileLang = document.getElementById('currentMobileLang');
@@ -1133,7 +1239,6 @@ function toggleMobileLangDropdown() {
 }
 
 function changeLanguageMobile(langCode, flagCode, label) {
-    // Mettre à jour l'affichage dans la sidebar
     const mobileCurrentLangFlag = document.getElementById('mobileCurrentLangFlag');
     const mobileCurrentLangLabel = document.getElementById('mobileCurrentLangLabel');
     
@@ -1142,25 +1247,19 @@ function changeLanguageMobile(langCode, flagCode, label) {
         mobileCurrentLangLabel.textContent = label;
     }
     
-    // Mettre à jour l'affichage desktop aussi
     if (currentLangFlag && currentLangLabel) {
         currentLangFlag.src = `https://flagcdn.com/w20/${flagCode}.png`;
         currentLangLabel.textContent = label;
     }
     
-    // Sauvegarder dans localStorage
     localStorage.setItem('preferred_language', langCode);
     localStorage.setItem('preferred_flag', flagCode);
     localStorage.setItem('preferred_label', label);
     
-    // Définir le cookie Google Translate
     document.cookie = `googtrans=/fr/${langCode}; path=/; max-age=31536000`;
-    
-    // Recharger la page
     window.location.reload();
 }
 
-// Ajouter les événements pour les options de langue mobile
 document.querySelectorAll('.mobile-lang-option').forEach(option => {
     option.addEventListener('click', function(event) {
         event.stopPropagation();
@@ -1171,21 +1270,17 @@ document.querySelectorAll('.mobile-lang-option').forEach(option => {
     });
 });
 
-// Fermer le dropdown mobile si on clique ailleurs
 document.addEventListener('click', function(event) {
     const mobileLangSelector = document.getElementById('mobileLangSelector');
     const currentMobileLang = document.getElementById('currentMobileLang');
     const mobileLangDropdown = document.getElementById('mobileLangDropdown');
     
-    if (mobileLangSelector && currentMobileLang && mobileLangDropdown) {
-        if (!mobileLangSelector.contains(event.target)) {
-            currentMobileLang.classList.remove('active');
-            mobileLangDropdown.classList.remove('active');
-        }
+    if (mobileLangSelector && currentMobileLang && mobileLangDropdown && !mobileLangSelector.contains(event.target)) {
+        currentMobileLang.classList.remove('active');
+        mobileLangDropdown.classList.remove('active');
     }
 });
 
-// Mettre à jour l'affichage mobile avec la langue sauvegardée
 if (savedLang && savedFlag && savedLabel && savedLang !== 'fr') {
     const mobileCurrentLangFlag = document.getElementById('mobileCurrentLangFlag');
     const mobileCurrentLangLabel = document.getElementById('mobileCurrentLangLabel');
@@ -1198,7 +1293,7 @@ if (savedLang && savedFlag && savedLabel && savedLang !== 'fr') {
 
 // Supprimer la barre Google Translate
 setInterval(function() {
-    var banner = document.querySelector('.goog-te-banner-frame');
+    const banner = document.querySelector('.goog-te-banner-frame');
     if (banner) {
         banner.style.display = 'none';
         banner.style.visibility = 'hidden';
@@ -1208,6 +1303,9 @@ setInterval(function() {
     document.body.style.top = '0';
 }, 100);
 </script>
+
+<!-- Inclure Bootstrap JS pour les toasts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
@@ -1260,6 +1358,9 @@ function createMediaCard($media, $lang) {
     <div class="media-card" onclick="openMedia(\'' . addslashes($identifier) . '\')">
         <div class="thumbnail-container">
             <img src="' . $thumbUrl . '" class="thumbnail-img" loading="lazy" alt="' . $title . '">
+            <div class="play-overlay">
+                <i class="bi bi-play-circle-fill"></i>
+            </div>
             <span class="duration-badge">' . $duration . '</span>
         </div>
         <div class="card-info">
@@ -1268,7 +1369,10 @@ function createMediaCard($media, $lang) {
             </div>
             <div class="card-details">
                 <div class="card-title">' . $title . '</div>
-                <div class="card-meta">' . $channel . ' • ' . $views . ' vues</div>
+                <div class="card-meta">
+                    <i class="bi bi-person"></i> ' . $channel . ' • 
+                    <i class="bi bi-eye"></i> ' . $views . ' vues
+                </div>
             </div>
         </div>
     </div>';

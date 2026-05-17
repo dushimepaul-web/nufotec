@@ -68,6 +68,10 @@ class Auth extends Public_Controller {
         redirect($redirect ?: 'home-patient');
     }
 
+
+
+
+
     public function register() {
     if ($this->input->server('REQUEST_METHOD') !== 'POST') {
         redirect('Auth?register=1');
@@ -190,7 +194,7 @@ class Auth extends Public_Controller {
     public function logout() {
         $this->session->sess_destroy();
         delete_cookie('remember_email');
-        redirect('Auth');
+        redirect('');
     }
 
     // ============================================

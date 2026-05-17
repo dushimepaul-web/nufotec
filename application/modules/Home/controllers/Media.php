@@ -10,23 +10,36 @@ class Media extends Public_Controller{
 
     // Ne pas redéclarer $current_lang, il est déjà public dans MY_Controller
 
-    function __construct()
-    {
-        parent::__construct();
-        $this->load->model('Model');
-        $this->load->helper('cookie');
-        $this->load->library('user_agent');
-        $this->load->helper('string');
-        
-        // La langue courante est déjà définie dans MY_Controller ($this->current_lang)
-        // Pas besoin de la redéfinir.
-        
-        // Désactiver CSRF pour les requêtes AJAX
-        if ($this->input->is_ajax_request()) {
-            $this->config->set_item('csrf_protection', FALSE);
-        }
+   function __construct()
+{
+    parent::__construct();
+    $this->load->model('Model');
+    $this->load->helper('cookie');
+    $this->load->library('user_agent');
+    $this->load->helper('string');
+    
+    // Désactiver CSRF pour les requêtes AJAX
+    if ($this->input->is_ajax_request()) {
+        $this->config->set_item('csrf_protection', FALSE);
     }
     
+    // ============================================
+    // PROTECTION TOTALE - TOUTES LES MÉTHODES NÉCESSITENT UNE CONNEXION
+    // ============================================
+    
+    // Récupérer l'utilisateur connecté
+    $user = $this->getCurrentUser();
+    
+    // Si l'utilisateur n'est pas connecté
+    if (!$user) {
+        // Sauvegarder l'URL demandée
+        $this->session->set_userdata('login_redirect', current_url());
+        
+        // Rediriger vers la page de connexion
+        redirect('Auth');
+    }
+}
+
  
     /**
      * Récupérer l'utilisateur connecté

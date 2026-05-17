@@ -1396,23 +1396,23 @@ body {
                                 <i class="bi bi-eye"></i> <?= t('details') ?>
                             </button>
                             <?php if($is_online): ?>
-                                <?php if($this->session->userdata('user_id')): ?>
-                                    <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary">
-                                        <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
-                                    </a>
-                                <?php else: ?>
-                                    <form method="POST" action="<?= base_url('Auth') ?>" class="d-inline">
-                                        <input type="hidden" name="selected_doctor_uuid" value="<?= $medecin['uuid'] ?>">
-                                        <button type="submit" class="btn-consult btn-consult-primary">
-                                            <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
-                                        </button>
-                                    </form>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <button class="btn-consult btn-consult-secondary" disabled>
-                                    <i class="bi bi-clock"></i> <?= t('unavailable') ?>
-                                </button>
-                            <?php endif; ?>
+    <?php if($this->session->userdata('user_id')): ?>
+        <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary">
+            <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
+        </a>
+    <?php else: ?>
+        <form method="GET" action="<?= base_url('patient-form') ?>" class="d-inline">
+            <input type="hidden" name="doctor_uuid" value="<?= $medecin['uuid'] ?>">
+            <button type="submit" class="btn-consult btn-consult-primary">
+                <i class="bi bi-calendar-plus"></i> <?= t('appointment') ?>
+            </button>
+        </form>
+    <?php endif; ?>
+<?php else: ?>
+    <button class="btn-consult btn-consult-secondary" disabled>
+        <i class="bi bi-clock"></i> <?= t('unavailable') ?>
+    </button>
+<?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -1486,23 +1486,22 @@ body {
 
                             <div class="text-center mt-4">
                                 <?php if($is_online): ?>
-                                    <?php if($this->session->userdata('user_id')): ?>
-                                        <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
-                                            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
-                                        </a>
-                                    <?php else: ?>
-                                        <form method="POST" action="<?= base_url('Auth') ?>">
-                                            <input type="hidden" name="selected_doctor_uuid" value="<?= $medecin['uuid'] ?>">
-                                            <button type="submit" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
-                                                <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <button class="btn-consult btn-consult-secondary" disabled style="padding: 14px 28px;">
-                                        <i class="bi bi-clock"></i> <?= t('doctor_unavailable') ?>
-                                    </button>
-                                <?php endif; ?>
+    <?php if($this->session->userdata('user_id')): ?>
+        <!-- Utilisateur connecté : lien direct -->
+        <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
+            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
+        </a>
+    <?php else: ?>
+        <!-- Utilisateur NON connecté : lien direct aussi (PatientForm redirigera vers Auth) -->
+        <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
+            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
+        </a>
+    <?php endif; ?>
+<?php else: ?>
+    <button class="btn-consult btn-consult-secondary" disabled style="padding: 14px 28px;">
+        <i class="bi bi-clock"></i> <?= t('doctor_unavailable') ?>
+    </button>
+<?php endif; ?>
                             </div>
                         </div>
                     </div>

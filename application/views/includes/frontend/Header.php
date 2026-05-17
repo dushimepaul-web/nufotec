@@ -2430,7 +2430,7 @@ window.addEventListener('load', function() {
 <style>
 @media(max-width:768px){
     .responsive-main{
-        padding:20px !important;
+        padding:17px !important;
     }
 }
 </style>

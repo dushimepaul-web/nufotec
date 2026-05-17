@@ -1,82 +1,3 @@
-<?php 
-// Fonction pour obtenir l'URL correcte du fichier selon son type
-function getMediaFileUrl($fichier, $type) {
-    if (empty($fichier)) return '';
-    if (preg_match('/^https?:\/\//', $fichier)) return $fichier;
-    $base_url = base_url();
-    switch($type) {
-        case 'video':
-            $url = $base_url . 'attachments/Video/Originals/' . $fichier;
-            if (!file_exists(FCPATH . 'attachments/Video/Originals/' . $fichier)) {
-                $url = $base_url . 'attachments/Video/Encoded/' . $fichier;
-            }
-            return $url;
-        case 'audio':
-            $url = $base_url . 'attachments/Audio/Originals/' . $fichier;
-            if (!file_exists(FCPATH . 'attachments/Audio/Originals/' . $fichier)) {
-                $url = $base_url . 'attachments/Audio/Converted/' . $fichier;
-            }
-            return $url;
-        case 'image':
-            return $base_url . 'attachments/Images/' . $fichier;
-        case 'document':
-            return $base_url . 'attachments/Documents/' . $fichier;
-        default:
-            return $base_url . $fichier;
-    }
-}
-
-function isMediaFileExists($fichier, $type) {
-    if (empty($fichier)) return false;
-    if (preg_match('/^https?:\/\//', $fichier)) return true;
-    $base = FCPATH;
-    switch($type) {
-        case 'video':
-            $path = $base . 'attachments/Video/Originals/' . $fichier;
-            if (file_exists($path)) return true;
-            return file_exists($base . 'attachments/Video/Encoded/' . $fichier);
-        case 'audio':
-            $path = $base . 'attachments/Audio/Originals/' . $fichier;
-            if (file_exists($path)) return true;
-            return file_exists($base . 'attachments/Audio/Converted/' . $fichier);
-        case 'image':
-            return file_exists($base . 'attachments/Images/' . $fichier);
-        case 'document':
-            return file_exists($base . 'attachments/Documents/' . $fichier);
-        default:
-            return file_exists($base . $fichier);
-    }
-}
-
-function getMediaThumbnail($media) {
-    if (!empty($media['youtube_id'])) {
-        return "https://img.youtube.com/vi/{$media['youtube_id']}/hqdefault.jpg";
-    }
-    if (!empty($media['miniature']) && file_exists(FCPATH . $media['miniature'])) {
-        return base_url($media['miniature']);
-    }
-    if ($media['type'] === 'video' && !empty($media['fichier'])) {
-        $thumb_path = FCPATH . 'attachments/Video/Thumbnails/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_thumb.jpg';
-        if (file_exists($thumb_path)) {
-            return base_url('attachments/Video/Thumbnails/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_thumb.jpg');
-        }
-    }
-    if ($media['type'] === 'audio' && !empty($media['fichier'])) {
-        $cover_path = FCPATH . 'attachments/Audio/Covers/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_cover.jpg';
-        if (file_exists($cover_path)) {
-            return base_url('attachments/Audio/Covers/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_cover.jpg');
-        }
-    }
-    $defaults = [
-        'audio' => base_url('assets/images/audio-default.png'),
-        'video' => base_url('assets/images/video-default.jpg'),
-        'image' => base_url('assets/images/image-default.jpg'),
-        'document' => base_url('assets/images/document-default.jpg'),
-        'default' => base_url('assets/images/default-thumbnail.jpg')
-    ];
-    return $defaults[$media['type']] ?? $defaults['default'];
-}
-?>
 <!DOCTYPE html>
 <html lang="<?= $lang ?? 'fr' ?>">
 <head>
@@ -87,64 +8,63 @@ function getMediaThumbnail($media) {
     <meta property="og:description" content="<?= htmlspecialchars($media['description'] ?? $media['credits'] ?? '') ?>">
     <meta property="og:image" content="<?= $media['thumbnail_url'] ?? base_url('assets/images/default-share.jpg') ?>">
     <meta property="og:url" content="<?= current_url() ?>">
-    <meta property="og:type" content="article">
+    <meta property="og:type" content="video.other">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="theme-color" content="#0f0f0f">
+    <meta name="theme-color" content="#0a0a0a">
     <link rel="icon" href="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>" type="image/png">
-    <link rel="apple-touch-icon" href="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
-    <!-- Google Translate -->
-    <script type="text/javascript">
-    function googleTranslateElementInit() {
-        new google.translate.TranslateElement({
-            pageLanguage: 'fr',
-            includedLanguages: 'fr,en,rn,sw,ar,de,es,pt,it,zh-CN,ru,nl,pl,tr,ja,ko,hi,vi,th,el,he,sv,da,no,fi,cs,hu,ro,uk',
-            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-            autoDisplay: false
-        }, 'google_translate_element');
-    }
-    </script>
-    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <style>
-        /* YouTube Dark Mode Colors */
+        /* ============================================
+           VARIABLES PREMIUM
+        ============================================ */
         :root {
-            --yt-bg-dark: #0f0f0f;
-            --yt-bg-card: #212121;
-            --yt-bg-hover: #2a2a2a;
-            --yt-bg-header: #202020;
-            --yt-text-primary: #ffffff;
-            --yt-text-secondary: #aaaaaa;
-            --yt-border: #3d3d3d;
-            --yt-red: #ff0000;
-            --yt-blue: #3ea6ff;
-            --yt-gray: #606060;
-            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-area-inset-top: env(safe-area-inset-top, 0px);
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #121212;
+            --bg-tertiary: #1a1a1a;
+            --bg-card: #1e1e1e;
+            --bg-hover: #2a2a2a;
+            --bg-glass: rgba(26, 26, 26, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --text-tertiary: #717171;
+            --accent-green: #00d084;
+            --accent-blue: #3ea6ff;
+            --accent-red: #ff0000;
+            --border-color: #2a2a2a;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: all 0.15s ease;
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 16px;
+            --border-radius-xl: 24px;
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; 
-            background: var(--yt-bg-dark); 
-            color: var(--yt-text-primary); 
-            overflow-x: hidden; 
-            -webkit-font-smoothing: antialiased;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: var(--bg-primary); 
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.5;
             top: 0 !important;
             margin-top: 0 !important;
             padding-top: 0 !important;
         }
 
-        /* Cacher l'interface Google Translate */
-        .goog-te-banner-frame.skiptranslate,
-        .goog-te-banner-frame,
-        .goog-te-banner,
-        .skiptranslate {
+        /* Scrollbar Premium */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+        ::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* Cacher Google Translate */
+        .goog-te-banner-frame, .goog-te-banner, .skiptranslate {
             display: none !important;
             height: 0 !important;
             visibility: hidden !important;
@@ -152,644 +72,496 @@ function getMediaThumbnail($media) {
             position: absolute !important;
             top: -9999px !important;
         }
-        
-        /* Language Selector Desktop */
-        .lang-selector-custom {
-            position: relative;
-            margin-left: 8px;
+        body { top: 0 !important; position: relative !important; }
+
+        /* ============================================
+           NAVBAR PREMIUM
+        ============================================ */
+        .navbar {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: 64px;
+            padding: 0 1.5rem;
         }
         
+        .navbar .container-fluid {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            gap: 1rem;
+        }
+        
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+        
+        .navbar-brand img { height: 36px; width: auto; }
+        .brand-name { font-weight: 700; font-size: 1.25rem; color: var(--text-primary); letter-spacing: -0.5px; }
+        .brand-badge { 
+            background: linear-gradient(135deg, var(--accent-green), #00a86b);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        /* Language Selector */
+        .lang-selector-custom { position: relative; margin-left: 8px; }
         .custom-language-btn {
             display: flex;
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
-            background: var(--yt-bg-header);
-            border: 1px solid var(--yt-border);
-            border-radius: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
             cursor: pointer;
-            font-family: 'Roboto', sans-serif;
             font-size: 13px;
             font-weight: 500;
-            color: var(--yt-text-primary);
-            transition: all 0.2s ease;
+            color: var(--text-primary);
+            transition: var(--transition-fast);
         }
-        
-        .custom-language-btn:hover {
-            border-color: var(--yt-blue);
-            background: var(--yt-bg-hover);
-            transform: translateY(-1px);
-        }
-        
-        .custom-language-btn img {
-            width: 20px;
-            height: 15px;
-            border-radius: 2px;
-            object-fit: cover;
-        }
-        
-        .custom-language-btn i {
-            font-size: 10px;
-            transition: transform 0.2s ease;
-        }
-        
+        .custom-language-btn:hover { border-color: var(--accent-blue); background: var(--bg-hover); transform: translateY(-1px); }
+        .custom-language-btn img { width: 20px; height: 15px; border-radius: 3px; }
         .custom-language-dropdown {
             position: absolute;
             top: 100%;
             right: 0;
             margin-top: 8px;
-            background: var(--yt-bg-card);
-            border-radius: 16px;
-            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.3);
+            background: var(--bg-tertiary);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
             padding: 8px;
             min-width: 220px;
             opacity: 0;
             visibility: hidden;
             transform: translateY(-10px);
-            transition: all 0.2s ease;
+            transition: var(--transition);
             z-index: 1000;
-            border: 1px solid var(--yt-border);
+            border: 1px solid var(--border-color);
             max-height: 400px;
             overflow-y: auto;
         }
-        
-        .custom-language-dropdown.active {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transform: translateY(0) !important;
-        }
-        
+        .custom-language-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
         .lang-option {
             display: flex !important;
             align-items: center !important;
-            gap: 12px !important;
-            padding: 10px 14px !important;
-            border-radius: 10px !important;
-            width: 100% !important;
-            border: none !important;
-            background: transparent !important;
-            text-align: left !important;
-            cursor: pointer !important;
-            font-size: 13px !important;
-            font-weight: 500 !important;
-            color: var(--yt-text-primary) !important;
-            transition: all 0.2s ease !important;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            width: 100%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: var(--transition-fast);
         }
+        .lang-option:hover { background: var(--bg-hover); color: var(--accent-blue); transform: translateX(4px); }
+        .lang-option img { width: 22px; height: 16px; border-radius: 3px; }
+
+        /* ============================================
+           MAIN CONTENT
+        ============================================ */
+        .main-content { max-width: 1600px; margin: 0 auto; padding: 1.5rem; }
         
-        .lang-option:hover {
-            background: var(--yt-bg-hover) !important;
-            color: var(--yt-blue) !important;
-            transform: translateX(4px) !important;
-        }
-        
-        .lang-option img {
-            width: 22px !important;
-            height: 16px !important;
-            border-radius: 3px !important;
-            object-fit: cover !important;
-        }
-        
-        .navbar { 
-            background: var(--yt-bg-dark); 
-            border-bottom: 1px solid var(--yt-border); 
-            padding: 0.5rem 1rem; 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-        }
-        
-        .navbar-brand { 
-            font-weight: 700; 
-            font-size: 1.25rem; 
-            color: var(--yt-text-primary); 
-            text-decoration: none; 
-        }
-        
-        .navbar-brand i { 
-            color: var(--yt-red); 
-            font-size: 1.5rem; 
-        }
-        
-        .main-content { 
-            max-width: 1400px; 
-            margin: 0 auto; 
-            padding: 1rem; 
-        }
-        
-        .two-column-layout { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 1.5rem; 
+        .watch-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
         
         @media (min-width: 1024px) {
-            .two-column-layout { 
-                flex-direction: row; 
-            }
-            .main-column { 
-                flex: 2; 
-                min-width: 0; 
-            }
-            .sidebar-column { 
-                flex: 1; 
-                min-width: 0; 
-            }
+            .watch-layout { flex-direction: row; }
+            .video-column { flex: 2.5; min-width: 0; }
+            .suggestions-column { flex: 1.2; min-width: 0; }
+        }
+
+        /* ============================================
+           VIDEO PLAYER PREMIUM
+        ============================================ */
+        .video-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: var(--border-radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            aspect-ratio: 16 / 9;
         }
         
-        .video-container { 
-            background: #000; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            position: relative; 
-            width: 100%; 
-            aspect-ratio: 16 / 9; 
+        .video-wrapper iframe, .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            border: none;
+            object-fit: contain;
         }
         
-        .video-container iframe, .video-container video { 
-            width: 100%; 
-            height: 100%; 
-            border: none; 
-            object-fit: contain; 
+        .video-controls-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 1rem;
+            opacity: 0;
+            transition: var(--transition);
         }
         
-        .video-container .download-floating { 
-            position: absolute; 
-            bottom: 1rem; 
-            right: 1rem; 
-            z-index: 10; 
-            opacity: 0; 
-            transition: opacity 0.2s; 
-            background: rgba(0,0,0,0.7); 
-            border: none; 
-            border-radius: 50%; 
-            width: 40px; 
-            height: 40px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            cursor: pointer; 
+        .video-wrapper:hover .video-controls-overlay { opacity: 1; }
+        
+        .download-floating {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 10;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            opacity: 0;
         }
         
-        .video-container:hover .download-floating { 
-            opacity: 1; 
+        .video-wrapper:hover .download-floating { opacity: 1; }
+        .download-floating:hover { background: var(--accent-blue); transform: scale(1.05); }
+
+        /* ============================================
+           VIDEO INFO PREMIUM
+        ============================================ */
+        .video-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 1rem 0 0.75rem;
+            line-height: 1.3;
         }
         
-        .video-container .download-floating:hover { 
-            background: var(--yt-blue); 
-            transform: scale(1.05); 
+        .video-meta-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
         }
         
-        .media-title { 
-            font-size: 1.25rem; 
-            font-weight: 600; 
-            margin: 0.75rem 0 0.5rem 0; 
-            line-height: 1.3; 
+        .video-stats {
+            display: flex;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
         }
         
-        .media-meta-bar { 
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: space-between; 
-            align-items: center; 
-            gap: 1rem; 
-            padding-bottom: 0.75rem; 
-            border-bottom: 1px solid var(--yt-border); 
-            margin-bottom: 1rem; 
+        .video-stats i { margin-right: 0.25rem; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
         
-        .media-stats { 
-            display: flex; 
-            gap: 1rem; 
-            color: var(--yt-text-secondary); 
-            font-size: 0.875rem; 
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 40px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
         }
         
-        .action-buttons { 
-            display: flex; 
-            gap: 0.5rem; 
-            flex-wrap: wrap; 
+        .action-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .action-btn.active { color: var(--accent-blue); }
+        .action-btn.disliked { color: var(--accent-blue); }
+
+        /* Channel Info Premium */
+        .channel-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
         }
         
-        .action-btn { 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 0.5rem; 
-            padding: 0.5rem 1rem; 
-            background: transparent; 
-            border: none; 
-            border-radius: 40px; 
-            color: var(--yt-text-secondary); 
-            font-size: 0.875rem; 
-            font-weight: 500; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            text-decoration: none; 
+        .channel-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
         
-        .action-btn:hover { 
-            background: var(--yt-bg-hover); 
-            color: var(--yt-text-primary); 
+        .channel-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-green), #00a86b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .action-btn.active { 
-            color: var(--yt-blue); 
+        .channel-avatar i { font-size: 1.5rem; color: white; }
+        
+        .channel-details h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .channel-details p { font-size: 0.75rem; color: var(--text-tertiary); }
+        
+        .subscribe-btn {
+            background: var(--accent-green);
+            color: #0a0a0a;
+            border: none;
+            padding: 0.5rem 1.25rem;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
         }
         
-        .action-btn.disliked { 
-            color: var(--yt-blue); 
+        .subscribe-btn:hover { transform: scale(1.02); background: #00e896; }
+
+        /* Description Premium */
+        .description-box {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-md);
+            padding: 1rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: var(--transition-fast);
         }
         
-        .action-btn:disabled { 
-            opacity: 0.5; 
-            cursor: not-allowed; 
+        .description-box:hover { background: var(--bg-hover); }
+        .description-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        .description-text:not(.expanded) {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .description-text.expanded { white-space: normal; }
+
+        /* ============================================
+           COMMENTS SECTION
+        ============================================ */
+        .comments-section { margin-top: 1.5rem; }
+        .comments-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        
+        .comment-form { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-hover);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .comment-input-wrapper { flex: 1; }
+        .comment-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+        }
+        .comment-input:focus { outline: none; border-bottom-color: var(--accent-blue); }
+        .comment-submit {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            transition: var(--transition-fast);
+        }
+        .comment-submit:hover { opacity: 0.9; }
+        
+        .comment-item { display: flex; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem 0; }
+        .comment-author { font-weight: 600; font-size: 0.8125rem; margin-bottom: 0.25rem; }
+        .comment-text { font-size: 0.875rem; line-height: 1.4; word-break: break-word; }
+
+        /* ============================================
+           SUGGESTIONS PREMIUM
+        ============================================ */
+        .suggestions-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
-        .description-box { 
-            background: var(--yt-bg-card); 
-            border-radius: 12px; 
-            padding: 1rem; 
-            margin: 1rem 0; 
-            cursor: pointer; 
+        .related-item {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            padding: 0.5rem;
+            border-radius: var(--border-radius-sm);
         }
         
-        .description-box .channel-name { 
-            font-weight: 500; 
-            margin-bottom: 0.5rem; 
+        .related-item:hover { background: var(--bg-hover); transform: translateX(4px); }
+        
+        .related-thumb {
+            width: 168px;
+            height: 94px;
+            border-radius: var(--border-radius-sm);
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
         }
         
-        .description-text { 
-            color: var(--yt-text-secondary); 
-            font-size: 0.875rem; 
-            line-height: 1.4; 
+        .related-info { flex: 1; min-width: 0; }
+        .related-title-sm {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
-        
-        .description-text.expanded { 
-            white-space: normal; 
+        .related-meta { font-size: 0.75rem; color: var(--text-tertiary); }
+        .related-meta i { font-size: 0.65rem; margin-right: 2px; }
+
+        /* Audio Player Premium */
+        .audio-player {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            text-align: center;
         }
-        
-        .description-text:not(.expanded) { 
-            display: -webkit-box; 
-            -webkit-line-clamp: 2; 
-            -webkit-box-orient: vertical; 
-            overflow: hidden; 
+        .audio-cover {
+            width: 200px;
+            height: 200px;
+            border-radius: var(--border-radius-md);
+            margin: 0 auto 1rem;
+            background-size: cover;
+            background-position: center;
+            box-shadow: var(--shadow-md);
         }
-        
-        .comments-section { 
-            margin-top: 1.5rem; 
+        .audio-controls { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin: 1.5rem 0; }
+        .audio-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition-fast);
         }
-        
-        .comments-title { 
-            font-size: 1rem; 
-            font-weight: 600; 
-            margin-bottom: 1rem; 
+        .audio-btn:hover { transform: scale(1.05); background: rgba(255,255,255,0.2); }
+        .audio-btn.play-pause { width: 56px; height: 56px; background: var(--accent-blue); }
+        .progress { cursor: pointer; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden; }
+        .progress-bar { background: var(--accent-blue); height: 100%; width: 0%; transition: width 0.1s linear; }
+
+        /* Toast */
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .toast-custom {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius-sm);
+            margin-top: 0.5rem;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-sm);
         }
-        
-        .comment-form { 
-            display: flex; 
-            gap: 1rem; 
-            margin-bottom: 1.5rem; 
-        }
-        
-        .comment-avatar { 
-            width: 40px; 
-            height: 40px; 
-            border-radius: 50%; 
-            background: var(--yt-bg-hover); 
-            flex-shrink: 0; 
-            overflow: hidden; 
-        }
-        
-        .comment-avatar img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-        }
-        
-        .comment-input-wrapper { 
-            flex: 1; 
-        }
-        
-        .comment-input { 
-            width: 100%; 
-            background: transparent; 
-            border: none; 
-            border-bottom: 1px solid var(--yt-border); 
-            color: var(--yt-text-primary); 
-            padding: 0.5rem 0; 
-            resize: vertical; 
-            font-size: 0.875rem; 
-        }
-        
-        .comment-input:focus { 
-            outline: none; 
-            border-bottom-color: var(--yt-blue); 
-        }
-        
-        .comment-submit { 
-            background: var(--yt-blue); 
-            color: white; 
-            border: none; 
-            padding: 0.5rem 1rem; 
-            border-radius: 18px; 
-            cursor: pointer; 
-            font-size: 0.875rem; 
-            margin-top: 0.5rem; 
-            transition: opacity 0.2s; 
-        }
-        
-        .comment-submit:hover { 
-            opacity: 0.9; 
-        }
-        
-        .comment-item { 
-            display: flex; 
-            gap: 1rem; 
-            margin-bottom: 1rem; 
-            padding: 0.5rem 0; 
-        }
-        
-        .comment-author { 
-            font-weight: 500; 
-            font-size: 0.8125rem; 
-            margin-bottom: 0.25rem; 
-        }
-        
-        .comment-text { 
-            font-size: 0.875rem; 
-            line-height: 1.4; 
-            word-break: break-word; 
-        }
-        
-        .related-title { 
-            font-size: 1rem; 
-            font-weight: 600; 
-            margin-bottom: 1rem; 
-        }
-        
-        .related-item { 
-            display: flex; 
-            gap: 0.75rem; 
-            margin-bottom: 0.75rem; 
-            cursor: pointer; 
-            transition: background 0.2s; 
-            padding: 0.5rem; 
-            border-radius: 8px; 
-        }
-        
-        .related-item:hover { 
-            background: var(--yt-bg-hover); 
-        }
-        
-        .related-thumb { 
-            width: 168px; 
-            height: 94px; 
-            border-radius: 8px; 
-            background-size: cover; 
-            background-position: center; 
-            flex-shrink: 0; 
-        }
-        
-        .related-info { 
-            flex: 1; 
-        }
-        
-        .related-title-sm { 
-            font-size: 0.875rem; 
-            font-weight: 500; 
-            margin: 0 0 0.25rem 0; 
-            line-height: 1.3; 
-            display: -webkit-box; 
-            -webkit-line-clamp: 2; 
-            -webkit-box-orient: vertical; 
-            overflow: hidden; 
-        }
-        
-        .related-meta { 
-            font-size: 0.75rem; 
-            color: var(--yt-text-secondary); 
-        }
-        
-        .audio-player { 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-            border-radius: 12px; 
-            padding: 2rem; 
-            text-align: center; 
-        }
-        
-        .audio-cover { 
-            width: 200px; 
-            height: 200px; 
-            border-radius: 12px; 
-            margin: 0 auto 1rem; 
-            background-size: cover; 
-            background-position: center; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
-        }
-        
-        .audio-title { 
-            font-size: 1.25rem; 
-            font-weight: 600; 
-            margin-bottom: 0.25rem; 
-        }
-        
-        .audio-artist { 
-            color: var(--yt-text-secondary); 
-            margin-bottom: 1rem; 
-        }
-        
-        .audio-controls { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 1.5rem; 
-            margin: 1.5rem 0; 
-        }
-        
-        .audio-btn { 
-            width: 48px; 
-            height: 48px; 
-            border-radius: 50%; 
-            background: rgba(255,255,255,0.1); 
-            border: none; 
-            color: white; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-        }
-        
-        .audio-btn:hover { 
-            transform: scale(1.05); 
-            background: rgba(255,255,255,0.2); 
-        }
-        
-        .audio-btn.play-pause { 
-            width: 56px; 
-            height: 56px; 
-            background: var(--yt-blue); 
-        }
-        
-        .progress-bar-custom { 
-            max-width: 500px; 
-            margin: 0 auto; 
-        }
-        
-        .progress { 
-            cursor: pointer; 
-        }
-        
-        .image-viewer { 
-            text-align: center; 
-            background: #000; 
-            border-radius: 12px; 
-            padding: 1rem; 
-            position: relative; 
-        }
-        
-        .image-viewer img { 
-            max-width: 100%; 
-            max-height: 500px; 
-            border-radius: 8px; 
-        }
-        
-        .image-viewer .download-floating { 
-            position: absolute; 
-            top: 1rem; 
-            right: 1rem; 
-            background: rgba(0,0,0,0.7); 
-            border: none; 
-            border-radius: 50%; 
-            width: 40px; 
-            height: 40px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-        }
-        
-        .image-viewer .download-floating:hover { 
-            background: var(--yt-blue); 
-            transform: scale(1.05); 
-        }
-        
-        .toast-container { 
-            position: fixed; 
-            bottom: 20px; 
-            right: 20px; 
-            z-index: 9999; 
-        }
-        
-        .toast-custom { 
-            background: var(--yt-bg-card); 
-            border: 1px solid var(--yt-border); 
-            color: white; 
-            padding: 0.75rem 1rem; 
-            border-radius: 8px; 
-            margin-top: 0.5rem; 
-            animation: slideIn 0.3s ease; 
-            display: flex; 
-            align-items: center; 
-            gap: 0.5rem; 
-        }
-        
-        @keyframes slideIn { 
-            from { transform: translateX(100%); opacity: 0; } 
-            to { transform: translateX(0); opacity: 1; } 
-        }
-        
-        @keyframes spin { 
-            from { transform: rotate(0deg); } 
-            to { transform: rotate(360deg); } 
-        }
-        
-        .spin { 
-            animation: spin 1s linear infinite; 
-            display: inline-block; 
-        }
-        
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .related-item { 
-                flex-direction: column; 
-            }
-            .related-thumb { 
-                width: 100%; 
-                aspect-ratio: 16/9; 
-            }
-            .action-btn span:not(.count) { 
-                display: none; 
-            }
-            .action-btn { 
-                padding: 0.5rem; 
-            }
-            .audio-cover { 
-                width: 150px; 
-                height: 150px; 
-            }
+            .navbar { padding: 0 1rem; height: 56px; }
+            .main-content { padding: 1rem; }
+            .video-title { font-size: 1.125rem; }
+            .action-btn span:not(.count) { display: none; }
+            .action-btn { padding: 0.5rem; }
+            .related-item { flex-direction: column; }
+            .related-thumb { width: 100%; aspect-ratio: 16/9; height: auto; }
+            .channel-left { flex: 1; }
+            .brand-badge { display: none; }
+            .navbar-brand img { height: 28px; }
+            .brand-name { font-size: 1rem; }
         }
         
-        .alert-secondary { 
-            background: var(--yt-bg-card); 
-            border: 1px solid var(--yt-border); 
-            color: var(--yt-text-secondary); 
-            padding: 1rem; 
-            border-radius: 12px; 
+        @media (max-width: 480px) {
+            .video-stats { font-size: 0.75rem; gap: 0.75rem; }
+            .channel-avatar { width: 36px; height: 36px; }
+            .channel-avatar i { font-size: 1rem; }
+            .subscribe-btn { padding: 0.35rem 1rem; font-size: 0.75rem; }
         }
-        
-        .alert-secondary a { 
-            color: var(--yt-blue); 
-        }
-        
-        .text-secondary { 
-            color: var(--yt-text-secondary) !important; 
-        }
-        
-        .bg-dark { 
-            background: var(--yt-bg-card) !important; 
-        }
-        
-        .rounded-3 { 
-            border-radius: 12px !important; 
-        }
-        
-        .btn-outline-secondary { 
-            border-color: var(--yt-border); 
-            color: var(--yt-text-secondary); 
-        }
-        
-        .btn-outline-secondary:hover { 
-            background: var(--yt-bg-hover); 
-            border-color: var(--yt-blue); 
-            color: var(--yt-text-primary); 
-        }
+
+        .alert-secondary { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 1rem; }
+        .alert-secondary a { color: var(--accent-blue); text-decoration: none; }
+        .btn-outline-secondary { border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); border-radius: 30px; padding: 0.5rem 1rem; font-size: 0.875rem; transition: var(--transition-fast); }
+        .btn-outline-secondary:hover { background: var(--bg-hover); border-color: var(--accent-blue); color: var(--text-primary); }
     </style>
 </head>
 <body>
 
-<!-- Google Translate Container (caché) -->
+<!-- Google Translate Container -->
 <div id="google_translate_element" style="display: none;"></div>
 
+<!-- Navbar Premium -->
 <nav class="navbar">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="<?= base_url('media') ?>">
-                <?php 
-                $site_logo = $this->Model->get_setting('site_logo');
-                if (!empty($site_logo)): 
-                ?>
-                    <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="Logo NUFOTEC" class="logo-img" height="35">
-                <?php else: ?>
-                    <i class="bi bi-youtube"></i>
-                <?php endif; ?>
-                <span><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
-            </a>
-        </div>
+    <div class="container-fluid">
+        <a class="navbar-brand" href="<?= base_url('media') ?>">
+            <?php 
+            $site_logo = $this->Model->get_setting('site_logo');
+            if (!empty($site_logo)): ?>
+                <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="NUFOTEC">
+            <?php endif; ?>
+            <span class="brand-name">NUFOTEC</span>
+            <span class="brand-badge">MEDIA</span>
+        </a>
+        
         <div class="d-flex gap-2 align-items-center">
-            <a href="<?= base_url('media') ?>" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-house"></i> <span class="d-none d-sm-inline"><?= t('home') ?></span>
+            <a href="<?= base_url('media') ?>" class="btn-outline-secondary" style="text-decoration: none;">
+                <i class="bi bi-house"></i> <span class="d-none d-sm-inline">Accueil</span>
             </a>
             
-            <!-- Language Selector DESKTOP -->
             <div class="lang-selector-custom">
                 <button class="custom-language-btn" id="customLanguageBtn">
                     <img src="https://flagcdn.com/w20/fr.png" alt="Français" id="currentLangFlag">
@@ -797,60 +569,17 @@ function getMediaThumbnail($media) {
                     <i class="bi bi-chevron-down"></i>
                 </button>
                 <div class="custom-language-dropdown" id="customLanguageDropdown">
-                    <button class="lang-option" data-lang="fr" data-flag="fr" data-label="Français">
-                        <img src="https://flagcdn.com/w20/fr.png" alt="Français"> Français
-                    </button>
-                    <button class="lang-option" data-lang="en" data-flag="us" data-label="English">
-                        <img src="https://flagcdn.com/w20/us.png" alt="English"> English
-                    </button>
-                    <button class="lang-option" data-lang="rn" data-flag="bi" data-label="Kirundi">
-                        <img src="https://flagcdn.com/w20/bi.png" alt="Kirundi"> Kirundi
-                    </button>
-                    <button class="lang-option" data-lang="sw" data-flag="tz" data-label="Kiswahili">
-                        <img src="https://flagcdn.com/w20/tz.png" alt="Kiswahili"> Kiswahili
-                    </button>
-                    <button class="lang-option" data-lang="ar" data-flag="sa" data-label="العربية">
-                        <img src="https://flagcdn.com/w20/sa.png" alt="العربية"> العربية
-                    </button>
-                    <button class="lang-option" data-lang="de" data-flag="de" data-label="Deutsch">
-                        <img src="https://flagcdn.com/w20/de.png" alt="Deutsch"> Deutsch
-                    </button>
-                    <button class="lang-option" data-lang="es" data-flag="es" data-label="Español">
-                        <img src="https://flagcdn.com/w20/es.png" alt="Español"> Español
-                    </button>
-                    <button class="lang-option" data-lang="pt" data-flag="pt" data-label="Português">
-                        <img src="https://flagcdn.com/w20/pt.png" alt="Português"> Português
-                    </button>
-                    <button class="lang-option" data-lang="it" data-flag="it" data-label="Italiano">
-                        <img src="https://flagcdn.com/w20/it.png" alt="Italiano"> Italiano
-                    </button>
-                    <button class="lang-option" data-lang="zh-CN" data-flag="cn" data-label="中文">
-                        <img src="https://flagcdn.com/w20/cn.png" alt="中文"> 中文
-                    </button>
-                    <button class="lang-option" data-lang="ru" data-flag="ru" data-label="Русский">
-                        <img src="https://flagcdn.com/w20/ru.png" alt="Русский"> Русский
-                    </button>
-                    <button class="lang-option" data-lang="nl" data-flag="nl" data-label="Nederlands">
-                        <img src="https://flagcdn.com/w20/nl.png" alt="Nederlands"> Nederlands
-                    </button>
-                    <button class="lang-option" data-lang="pl" data-flag="pl" data-label="Polski">
-                        <img src="https://flagcdn.com/w20/pl.png" alt="Polski"> Polski
-                    </button>
-                    <button class="lang-option" data-lang="tr" data-flag="tr" data-label="Türkçe">
-                        <img src="https://flagcdn.com/w20/tr.png" alt="Türkçe"> Türkçe
-                    </button>
-                    <button class="lang-option" data-lang="ja" data-flag="jp" data-label="日本語">
-                        <img src="https://flagcdn.com/w20/jp.png" alt="日本語"> 日本語
-                    </button>
-                    <button class="lang-option" data-lang="ko" data-flag="kr" data-label="한국어">
-                        <img src="https://flagcdn.com/w20/kr.png" alt="한국어"> 한국어
-                    </button>
-                    <button class="lang-option" data-lang="hi" data-flag="in" data-label="हिन्दी">
-                        <img src="https://flagcdn.com/w20/in.png" alt="हिन्दी"> हिन्दी
-                    </button>
-                    <button class="lang-option" data-lang="vi" data-flag="vn" data-label="Tiếng Việt">
-                        <img src="https://flagcdn.com/w20/vn.png" alt="Tiếng Việt"> Tiếng Việt
-                    </button>
+                    <button class="lang-option" data-lang="fr" data-flag="fr" data-label="Français"><img src="https://flagcdn.com/w20/fr.png"> Français</button>
+                    <button class="lang-option" data-lang="en" data-flag="us" data-label="English"><img src="https://flagcdn.com/w20/us.png"> English</button>
+                    <button class="lang-option" data-lang="rn" data-flag="bi" data-label="Kirundi"><img src="https://flagcdn.com/w20/bi.png"> Kirundi</button>
+                    <button class="lang-option" data-lang="sw" data-flag="tz" data-label="Kiswahili"><img src="https://flagcdn.com/w20/tz.png"> Kiswahili</button>
+                    <button class="lang-option" data-lang="ar" data-flag="sa" data-label="العربية"><img src="https://flagcdn.com/w20/sa.png"> العربية</button>
+                    <button class="lang-option" data-lang="de" data-flag="de" data-label="Deutsch"><img src="https://flagcdn.com/w20/de.png"> Deutsch</button>
+                    <button class="lang-option" data-lang="es" data-flag="es" data-label="Español"><img src="https://flagcdn.com/w20/es.png"> Español</button>
+                    <button class="lang-option" data-lang="pt" data-flag="pt" data-label="Português"><img src="https://flagcdn.com/w20/pt.png"> Português</button>
+                    <button class="lang-option" data-lang="it" data-flag="it" data-label="Italiano"><img src="https://flagcdn.com/w20/it.png"> Italiano</button>
+                    <button class="lang-option" data-lang="zh-CN" data-flag="cn" data-label="中文"><img src="https://flagcdn.com/w20/cn.png"> 中文</button>
+                    <button class="lang-option" data-lang="ru" data-flag="ru" data-label="Русский"><img src="https://flagcdn.com/w20/ru.png"> Русский</button>
                 </div>
             </div>
         </div>
@@ -861,20 +590,15 @@ function getMediaThumbnail($media) {
     <?php 
     function formatFileSize($bytes) {
         if (!$bytes) return '';
-        if ($bytes >= 1073741824) {
-            return number_format($bytes / 1073741824, 1) . ' Go';
-        } elseif ($bytes >= 1048576) {
-            return number_format($bytes / 1048576, 1) . ' Mo';
-        } elseif ($bytes >= 1024) {
-            return number_format($bytes / 1024, 1) . ' Ko';
-        }
+        if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 1) . ' Go';
+        if ($bytes >= 1048576) return number_format($bytes / 1048576, 1) . ' Mo';
+        if ($bytes >= 1024) return number_format($bytes / 1024, 1) . ' Ko';
         return $bytes . ' octets';
     }
     
     if ($media): 
         $mediaSlug = !empty($media['slug']) ? $media['slug'] : $media['id_media'];
         $type = $media['type'] ?? 'autre';
-        $sous_type = $media['sous_type'] ?? '';
         $fichier = $media['fichier_url'] ?? '';
         $youtube_id = $media['youtube_id'] ?? '';
         $lien = $media['lien'] ?? '';
@@ -891,24 +615,18 @@ function getMediaThumbnail($media) {
         $is_youtube_link = !empty($youtube_id);
         $is_downloadable = in_array($type, ['video', 'audio', 'image', 'document']) && !empty($media['fichier']);
     ?>
-        <div class="two-column-layout">
-            <div class="main-column">
-                <!-- Media Player -->
+        <div class="watch-layout">
+            <div class="video-column">
+                <!-- Lecteur Vidéo Premium -->
                 <?php if ($is_youtube_link): ?>
-                    <div class="video-container">
-                        <iframe 
-                            src="https://www.youtube-nocookie.com/embed/<?= htmlspecialchars($youtube_id) ?>?autoplay=1&rel=0&modestbranding=1&showinfo=0&controls=1&fs=1"
-                            frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowfullscreen>
-                        </iframe>
+                    <div class="video-wrapper">
+                        <iframe src="https://www.youtube-nocookie.com/embed/<?= htmlspecialchars($youtube_id) ?>?autoplay=1&rel=0&modestbranding=1&showinfo=0&controls=1&fs=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                     </div>
                     
                 <?php elseif ($type === 'video' && !empty($fichier)): ?>
-                    <div class="video-container">
+                    <div class="video-wrapper">
                         <video controls autoplay playsinline>
                             <source src="<?= htmlspecialchars($fichier) ?>" type="video/mp4">
-                            <?= t('video_not_supported') ?>
                         </video>
                         <button class="download-floating" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
                             <i class="bi bi-download"></i>
@@ -919,109 +637,97 @@ function getMediaThumbnail($media) {
                     <div class="audio-player">
                         <div class="audio-cover" style="background-image: url('<?= htmlspecialchars($media['cover_url'] ?? base_url('assets/images/audio-default.png')) ?>')"></div>
                         <div class="audio-title"><?= htmlspecialchars($media['titre']) ?></div>
-                        <div class="audio-artist"><?= htmlspecialchars($media['artist'] ?? $media['credits'] ?? t('unknown_artist')) ?></div>
-                        <button class="btn btn-outline-light btn-sm mb-3" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-                            <i class="bi bi-download"></i> <?= t('download') ?>
+                        <div class="audio-artist"><?= htmlspecialchars($media['artist'] ?? $media['credits'] ?? 'Artiste') ?></div>
+                        <button class="btn-outline-secondary" style="margin-bottom: 1rem;" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+                            <i class="bi bi-download"></i> Télécharger
                         </button>
-                        
                         <audio id="audioElement" src="<?= htmlspecialchars($fichier) ?>" preload="metadata"></audio>
                         <div class="audio-controls">
-                            <button class="audio-btn" onclick="previousTrack()">
-                                <i class="bi bi-skip-backward-fill"></i>
-                            </button>
-                            <button class="audio-btn play-pause" id="playPauseBtn" onclick="togglePlay()">
-                                <i class="bi bi-play-fill"></i>
-                            </button>
-                            <button class="audio-btn" onclick="nextTrack()">
-                                <i class="bi bi-skip-forward-fill"></i>
-                            </button>
+                            <button class="audio-btn" onclick="previousTrack()"><i class="bi bi-skip-backward-fill"></i></button>
+                            <button class="audio-btn play-pause" id="playPauseBtn" onclick="togglePlay()"><i class="bi bi-play-fill"></i></button>
+                            <button class="audio-btn" onclick="nextTrack()"><i class="bi bi-skip-forward-fill"></i></button>
                         </div>
                         <div class="progress-bar-custom">
                             <div class="d-flex justify-content-between small mb-1">
                                 <span id="currentTime">0:00</span>
                                 <span id="totalTime">0:00</span>
                             </div>
-                            <div class="progress" style="height: 4px; background: rgba(255,255,255,0.3); cursor: pointer;" onclick="seekAudio(event)">
-                                <div class="progress-bar bg-primary" id="progressFill" style="width: 0%;"></div>
-                            </div>
+                            <div class="progress" onclick="seekAudio(event)"><div class="progress-bar" id="progressFill"></div></div>
                         </div>
                     </div>
                     
                 <?php elseif ($type === 'image' && !empty($fichier)): ?>
-                    <div class="image-viewer">
-                        <img src="<?= htmlspecialchars($fichier) ?>" alt="<?= htmlspecialchars($media['titre']) ?>" loading="lazy">
-                        <button class="download-floating" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+                    <div class="image-viewer" style="text-align: center; background: #000; border-radius: var(--border-radius-lg); padding: 2rem; position: relative;">
+                        <img src="<?= htmlspecialchars($fichier) ?>" alt="<?= htmlspecialchars($media['titre']) ?>" style="max-width: 100%; max-height: 500px; border-radius: var(--border-radius-md);">
+                        <button class="download-floating" style="position: absolute; top: 1rem; right: 1rem;" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
                             <i class="bi bi-download"></i>
                         </button>
                     </div>
                     
                 <?php else: ?>
-                    <div class="text-center p-5 bg-dark rounded-3">
-                        <i class="bi bi-file-earmark" style="font-size: 4rem;"></i>
+                    <div class="text-center p-5" style="background: var(--bg-card); border-radius: var(--border-radius-lg);">
+                        <i class="bi bi-file-earmark" style="font-size: 4rem; opacity: 0.5;"></i>
                         <h4 class="mt-2"><?= htmlspecialchars($media['titre']) ?></h4>
                         <?php if (!empty($lien) || !empty($fichier)): ?>
-                            <a href="<?= htmlspecialchars($lien ?: $fichier) ?>" target="_blank" class="btn btn-primary mt-3">
-                                <i class="bi bi-box-arrow-up-right"></i> <?= t('open') ?>
+                            <a href="<?= htmlspecialchars($lien ?: $fichier) ?>" target="_blank" class="btn-outline-secondary" style="display: inline-block; margin-top: 1rem; text-decoration: none;">
+                                <i class="bi bi-box-arrow-up-right"></i> Ouvrir
                             </a>
-                        <?php endif; ?>
-                        <?php if ($is_downloadable): ?>
-                            <button class="action-btn" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-                                <i class="bi bi-download"></i> <?= t('download') ?>
-                            </button>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
                 
-                <!-- Media Info -->
-                <h1 class="media-title"><?= htmlspecialchars($media['titre']) ?></h1>
+                <!-- Informations Vidéo -->
+                <h1 class="video-title"><?= htmlspecialchars($media['titre']) ?></h1>
                 
-                <div class="media-meta-bar">
-                    <div class="media-stats">
-                        <span><i class="bi bi-eye"></i> <?= number_format($media['views_count'] ?? 0) ?> <?= t('views') ?></span>
+                <div class="video-meta-bar">
+                    <div class="video-stats">
+                        <span><i class="bi bi-eye"></i> <?= number_format($media['views_count'] ?? 0) ?> vues</span>
                         <span><i class="bi bi-hand-thumbs-up"></i> <?= number_format($media['likes_count'] ?? 0) ?></span>
-                        <span><i class="bi bi-chat"></i> <?= number_format($media['comments_count'] ?? 0) ?> <?= t('comments') ?></span>
-                        <?php if (!empty($media['telechargements'])): ?>
-                            <span><i class="bi bi-download"></i> <?= number_format($media['telechargements']) ?></span>
-                        <?php endif; ?>
+                        <span><i class="bi bi-chat"></i> <?= number_format($media['comments_count'] ?? 0) ?> commentaires</span>
                     </div>
                     <div class="action-buttons">
                         <button class="action-btn <?= ($media['user_like_action'] ?? '') === 'like' ? 'active' : '' ?>" onclick="toggleLike(<?= (int)$media['id_media'] ?>)">
-                            <i class="bi bi-hand-thumbs-up"></i> <span id="likeCount" class="count"><?= (int)($media['likes_count'] ?? 0) ?></span>
+                            <i class="bi bi-hand-thumbs-up"></i> <span id="likeCount"><?= (int)($media['likes_count'] ?? 0) ?></span>
                         </button>
                         <button class="action-btn <?= ($media['user_like_action'] ?? '') === 'dislike' ? 'disliked' : '' ?>" onclick="toggleDislike(<?= (int)$media['id_media'] ?>)">
-                            <i class="bi bi-hand-thumbs-down"></i> <span id="dislikeCount" class="count"><?= (int)($media['dislikes_count'] ?? 0) ?></span>
-                        </button>
-                        <button class="action-btn <?= ($media['is_favorite'] ?? 0) ? 'active' : '' ?>" onclick="toggleFavorite(<?= (int)$media['id_media'] ?>)">
-                            <i class="bi bi-bookmark"></i> <span class="d-none d-md-inline"><?= t('favorites') ?></span>
+                            <i class="bi bi-hand-thumbs-down"></i> <span id="dislikeCount"><?= (int)($media['dislikes_count'] ?? 0) ?></span>
                         </button>
                         <button class="action-btn" onclick="shareMedia()">
-                            <i class="bi bi-share"></i> <span class="d-none d-md-inline"><?= t('share') ?></span>
+                            <i class="bi bi-share"></i> <span class="d-none d-md-inline">Partager</span>
                         </button>
                         <?php if ($is_downloadable && $type !== 'audio'): ?>
-                            <button class="action-btn" id="downloadBtn" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-                                <i class="bi bi-download"></i> <span class="d-none d-md-inline"><?= t('download') ?></span>
-                                <?php if (!empty($media['taille'])): ?>
-                                    <small class="text-secondary ms-1">(<?= formatFileSize($media['taille']) ?>)</small>
-                                <?php endif; ?>
+                            <button class="action-btn" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+                                <i class="bi bi-download"></i> <span class="d-none d-md-inline">Télécharger</span>
                             </button>
                         <?php endif; ?>
+                    </div>
+                </div>
+                
+                <!-- Chaîne -->
+                <div class="channel-info">
+                    <div class="channel-left">
+                        <div class="channel-avatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="channel-details">
+                            <h4><?= htmlspecialchars($media['credits'] ?? 'NUFOTEC BURUNDI') ?></h4>
+                            <p><?= number_format($media['views_count'] ?? 0) ?> vues</p>
+                        </div>
+                        <button class="subscribe-btn">S'abonner</button>
                     </div>
                 </div>
                 
                 <!-- Description -->
                 <div class="description-box" onclick="toggleDescription()">
-                    <div class="channel-name">
-                        <i class="bi bi-person-circle"></i> <?= htmlspecialchars($media['credits'] ?? t('unknown_channel')) ?>
-                    </div>
                     <div class="description-text" id="descriptionText">
-                        <?= nl2br(htmlspecialchars($media['description'] ?? t('no_description'))) ?>
+                        <?= nl2br(htmlspecialchars($media['description'] ?? 'Aucune description')) ?>
                     </div>
-                    <small class="text-secondary mt-1 d-block" id="descriptionToggle"><?= t('show_more') ?></small>
+                    <small class="text-secondary mt-1 d-block" id="descriptionToggle">Afficher plus</small>
                 </div>
                 
-                <!-- Comments -->
+                <!-- Commentaires -->
                 <div class="comments-section">
-                    <div class="comments-title"><i class="bi bi-chat-dots"></i> <?= (int)($media['comments_count'] ?? 0) ?> <?= t('comments') ?></div>
+                    <div class="comments-title"><i class="bi bi-chat-dots"></i> <?= (int)($media['comments_count'] ?? 0) ?> commentaires</div>
                     
                     <?php if (isset($user) && $user): ?>
                     <div class="comment-form">
@@ -1029,22 +735,20 @@ function getMediaThumbnail($media) {
                             <?php if (!empty($user['photo'])): ?>
                                 <img src="<?= base_url('attachments/Users/' . $user['photo']) ?>" alt="Avatar">
                             <?php else: ?>
-                                <div class="default-avatar w-100 h-100 rounded-circle bg-primary d-flex align-items-center justify-content-center">
+                                <div style="width: 100%; height: 100%; background: var(--accent-green); display: flex; align-items: center; justify-content: center;">
                                     <?= strtoupper(substr($user['prenom'] ?? 'U', 0, 1)) ?>
                                 </div>
                             <?php endif; ?>
                         </div>
                         <div class="comment-input-wrapper">
-                            <textarea class="comment-input" id="commentText" rows="1" placeholder="<?= t('add_comment_placeholder') ?>"></textarea>
-                            <button class="comment-submit d-none" id="commentSubmit" onclick="addComment(<?= (int)$media['id_media'] ?>)">
-                                <?= t('comment') ?>
-                            </button>
+                            <textarea class="comment-input" id="commentText" rows="1" placeholder="Ajouter un commentaire..."></textarea>
+                            <button class="comment-submit d-none" id="commentSubmit" onclick="addComment(<?= (int)$media['id_media'] ?>)">Commenter</button>
                         </div>
                     </div>
                     <?php else: ?>
-                    <div class="alert alert-secondary">
+                    <div class="alert-secondary">
                         <i class="bi bi-info-circle"></i> 
-                        <a href="<?= base_url('Auth') ?>" class="text-decoration-none"><?= t('login_to_comment') ?></a>
+                        <a href="<?= base_url('Auth') ?>">Connectez-vous</a> pour commenter
                     </div>
                     <?php endif; ?>
                     
@@ -1056,14 +760,14 @@ function getMediaThumbnail($media) {
                                         <?php if (!empty($comment['photo'])): ?>
                                             <img src="<?= base_url('attachments/Users/' . $comment['photo']) ?>" alt="Avatar">
                                         <?php else: ?>
-                                            <div class="default-avatar w-100 h-100 rounded-circle bg-secondary d-flex align-items-center justify-content-center">
+                                            <div style="width: 100%; height: 100%; background: var(--accent-green); display: flex; align-items: center; justify-content: center;">
                                                 <?= strtoupper(substr($comment['prenom'] ?? $comment['author_name'] ?? 'V', 0, 1)) ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
                                     <div class="comment-content">
                                         <div class="comment-author">
-                                            <?= htmlspecialchars(($comment['prenom'] ?? '') . ' ' . ($comment['nom'] ?? $comment['author_name'] ?? t('visitor'))) ?>
+                                            <?= htmlspecialchars(($comment['prenom'] ?? '') . ' ' . ($comment['nom'] ?? $comment['author_name'] ?? 'Visiteur')) ?>
                                             <span class="text-secondary ms-2"><?= $comment['created_at_formatted'] ?? date('d/m/Y H:i', strtotime($comment['created_at'])) ?></span>
                                         </div>
                                         <div class="comment-text"><?= nl2br(htmlspecialchars($comment['comment'])) ?></div>
@@ -1073,15 +777,16 @@ function getMediaThumbnail($media) {
                         <?php else: ?>
                             <div class="text-center text-secondary py-4">
                                 <i class="bi bi-chat display-6"></i>
-                                <p class="mt-2"><?= t('no_comments_yet') ?></p>
+                                <p class="mt-2">Aucun commentaire pour le moment</p>
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
             
-            <div class="sidebar-column">
-                <div class="related-title"><i class="bi bi-collection-play"></i> <?= t('watch_next') ?></div>
+            <!-- Suggestions -->
+            <div class="suggestions-column">
+                <div class="suggestions-title"><i class="bi bi-collection-play"></i> À regarder ensuite</div>
                 <?php if (!empty($recommended)): ?>
                     <?php foreach($recommended as $related): 
                         $relatedSlug = !empty($related['slug']) ? $related['slug'] : $related['id_media'];
@@ -1091,7 +796,8 @@ function getMediaThumbnail($media) {
                             <div class="related-info">
                                 <p class="related-title-sm"><?= htmlspecialchars($related['titre']) ?></p>
                                 <div class="related-meta">
-                                    <?= number_format($related['views_count'] ?? 0) ?> <?= t('views') ?>
+                                    <i class="bi bi-person"></i> <?= htmlspecialchars($related['credits'] ?? 'NUFOTEC') ?> • 
+                                    <i class="bi bi-eye"></i> <?= number_format($related['views_count'] ?? 0) ?>
                                 </div>
                             </div>
                         </div>
@@ -1099,19 +805,19 @@ function getMediaThumbnail($media) {
                 <?php else: ?>
                     <div class="text-center text-secondary py-4">
                         <i class="bi bi-collection-play display-6"></i>
-                        <p class="mt-2"><?= t('no_recommendations') ?></p>
+                        <p class="mt-2">Aucune suggestion</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
         
     <?php else: ?>
-        <div class="text-center p-5">
-            <i class="bi bi-exclamation-triangle display-1"></i>
-            <h3 class="mt-3"><?= t('media_not_found') ?></h3>
-            <p class="text-secondary"><?= t('media_not_found_message') ?></p>
-            <a href="<?= base_url('media') ?>" class="btn btn-primary mt-3">
-                <i class="bi bi-house"></i> <?= t('back_to_home') ?>
+        <div class="text-center p-5" style="background: var(--bg-card); border-radius: var(--border-radius-lg);">
+            <i class="bi bi-exclamation-triangle display-1" style="opacity: 0.5;"></i>
+            <h3 class="mt-3">Média non trouvé</h3>
+            <p class="text-secondary">Le média que vous recherchez n'existe pas ou a été supprimé.</p>
+            <a href="<?= base_url('media') ?>" class="btn-outline-secondary" style="display: inline-block; margin-top: 1rem; text-decoration: none;">
+                <i class="bi bi-house"></i> Retour à l'accueil
             </a>
         </div>
     <?php endif; ?>
@@ -1119,13 +825,10 @@ function getMediaThumbnail($media) {
 
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Configuration
 const mediaId = <?= (int)($media['id_media'] ?? 0) ?>;
 const mediaSlug = '<?= htmlspecialchars($mediaSlug ?? '') ?>';
-
-// URL de base sans slash à la fin
 const baseUrl = '<?= rtrim(base_url(), '/') ?>';
 
 // Audio Player
@@ -1134,15 +837,10 @@ let isPlaying = false;
 
 if (audioElement) {
     audioElement.addEventListener('timeupdate', updateProgress);
-    audioElement.addEventListener('ended', () => { 
-        isPlaying = false; 
-        updatePlayButton(); 
-    });
+    audioElement.addEventListener('ended', () => { isPlaying = false; updatePlayButton(); });
     audioElement.addEventListener('loadedmetadata', () => {
         const totalTimeSpan = document.getElementById('totalTime');
-        if (totalTimeSpan) {
-            totalTimeSpan.textContent = formatTime(audioElement.duration);
-        }
+        if (totalTimeSpan) totalTimeSpan.textContent = formatTime(audioElement.duration);
     });
 }
 
@@ -1156,9 +854,7 @@ function togglePlay() {
 
 function updatePlayButton() {
     const btn = document.getElementById('playPauseBtn');
-    if (btn) {
-        btn.innerHTML = isPlaying ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>';
-    }
+    if (btn) btn.innerHTML = isPlaying ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>';
 }
 
 function updateProgress() {
@@ -1167,9 +863,7 @@ function updateProgress() {
     const fill = document.getElementById('progressFill');
     if (fill) fill.style.width = percent + '%';
     const currentTimeSpan = document.getElementById('currentTime');
-    if (currentTimeSpan) {
-        currentTimeSpan.textContent = formatTime(audioElement.currentTime);
-    }
+    if (currentTimeSpan) currentTimeSpan.textContent = formatTime(audioElement.currentTime);
 }
 
 function formatTime(seconds) {
@@ -1186,13 +880,8 @@ function seekAudio(e) {
     audioElement.currentTime = percent * audioElement.duration;
 }
 
-function previousTrack() { 
-    showToast('<?= t('feature_coming_soon') ?>', 'info'); 
-}
-
-function nextTrack() { 
-    showToast('<?= t('feature_coming_soon') ?>', 'info'); 
-}
+function previousTrack() { showToast('Fonctionnalité à venir', 'info'); }
+function nextTrack() { showToast('Fonctionnalité à venir', 'info'); }
 
 function downloadMedia(identifier) {
     const isNumeric = !isNaN(identifier) && !isNaN(parseFloat(identifier));
@@ -1201,11 +890,8 @@ function downloadMedia(identifier) {
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.setAttribute('download', '');
-    link.style.display = 'none';
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    showToast('<?= t('download_started') ?>', 'success');
+    showToast('Téléchargement démarré', 'success');
 }
 
 function toggleLike(mediaId) {
@@ -1221,20 +907,18 @@ function toggleLike(mediaId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const likeCount = document.getElementById('likeCount');
-            const dislikeCount = document.getElementById('dislikeCount');
-            if (likeCount) likeCount.textContent = data.likes;
-            if (dislikeCount) dislikeCount.textContent = data.dislikes;
+            document.getElementById('likeCount').textContent = data.likes;
+            document.getElementById('dislikeCount').textContent = data.dislikes;
             btn.classList.toggle('active', !isLiked);
             const dislikeBtn = document.querySelector('[onclick*="toggleDislike"]');
             if (dislikeBtn) dislikeBtn.classList.remove('disliked');
-            showToast(isLiked ? '<?= t('like_removed') ?>' : '<?= t('like_added') ?>', 'success');
+            showToast(isLiked ? 'Like retiré' : 'Like ajouté', 'success');
         } else if (data.need_login) {
-            showToast('<?= t('need_login') ?>', 'warning');
+            showToast('Veuillez vous connecter', 'warning');
             setTimeout(() => window.location.href = baseUrl + '/Auth', 1500);
         }
     })
-    .catch(() => showToast('<?= t('error_occurred') ?>', 'error'));
+    .catch(() => showToast('Erreur', 'error'));
 }
 
 function toggleDislike(mediaId) {
@@ -1250,49 +934,26 @@ function toggleDislike(mediaId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const likeCount = document.getElementById('likeCount');
-            const dislikeCount = document.getElementById('dislikeCount');
-            if (likeCount) likeCount.textContent = data.likes;
-            if (dislikeCount) dislikeCount.textContent = data.dislikes;
+            document.getElementById('likeCount').textContent = data.likes;
+            document.getElementById('dislikeCount').textContent = data.dislikes;
             btn.classList.toggle('disliked', !isDisliked);
             const likeBtn = document.querySelector('[onclick*="toggleLike"]');
             if (likeBtn) likeBtn.classList.remove('active');
-            showToast(isDisliked ? '<?= t('dislike_removed') ?>' : '<?= t('dislike_added') ?>', 'success');
+            showToast(isDisliked ? 'Dislike retiré' : 'Dislike ajouté', 'success');
         } else if (data.need_login) {
-            showToast('<?= t('need_login') ?>', 'warning');
+            showToast('Veuillez vous connecter', 'warning');
             setTimeout(() => window.location.href = baseUrl + '/Auth', 1500);
         }
     })
-    .catch(() => showToast('<?= t('error_occurred') ?>', 'error'));
-}
-
-function toggleFavorite(mediaId) {
-    fetch(baseUrl + '/media/apiToggleFavorite', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${mediaId}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const btn = document.querySelector('[onclick*="toggleFavorite"]');
-            if (btn) btn.classList.toggle('active', data.is_favorite);
-            showToast(data.message, 'success');
-        } else if (data.need_login) {
-            showToast('<?= t('need_login') ?>', 'warning');
-            setTimeout(() => window.location.href = baseUrl + '/Auth', 1500);
-        }
-    })
-    .catch(() => showToast('<?= t('error_occurred') ?>', 'error'));
+    .catch(() => showToast('Erreur', 'error'));
 }
 
 function addComment(mediaId) {
     const commentText = document.getElementById('commentText');
-    if (!commentText) return;
-    const comment = commentText.value.trim();
+    const comment = commentText?.value.trim();
     
     if (!comment) {
-        showToast('<?= t('write_comment_warning') ?>', 'warning');
+        showToast('Veuillez écrire un commentaire', 'warning');
         return;
     }
     
@@ -1304,40 +965,23 @@ function addComment(mediaId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('<?= t('comment_added') ?>', 'success');
+            showToast('Commentaire ajouté', 'success');
             commentText.value = '';
             setTimeout(() => location.reload(), 1000);
         } else if (data.need_login) {
-            showToast('<?= t('need_login') ?>', 'warning');
+            showToast('Veuillez vous connecter', 'warning');
             setTimeout(() => window.location.href = baseUrl + '/Auth', 1500);
         } else {
-            showToast(data.message || '<?= t('error_occurred') ?>', 'error');
+            showToast(data.message || 'Erreur', 'error');
         }
     })
-    .catch(() => showToast('<?= t('error_occurred') ?>', 'error'));
-}
-
-let descriptionExpanded = false;
-function toggleDescription() {
-    const desc = document.getElementById('descriptionText');
-    const toggle = document.getElementById('descriptionToggle');
-    if (!desc || !toggle) return;
-    descriptionExpanded = !descriptionExpanded;
-    if (descriptionExpanded) {
-        desc.classList.add('expanded');
-        toggle.textContent = '<?= t('show_less') ?>';
-    } else {
-        desc.classList.remove('expanded');
-        toggle.textContent = '<?= t('show_more') ?>';
-    }
+    .catch(() => showToast('Erreur', 'error'));
 }
 
 function shareMedia() {
     if (navigator.share) {
-        navigator.share({
-            title: '<?= htmlspecialchars($media['titre'] ?? '') ?>',
-            url: window.location.href
-        }).catch(() => copyToClipboard());
+        navigator.share({ title: '<?= htmlspecialchars($media['titre'] ?? '') ?>', url: window.location.href })
+            .catch(() => copyToClipboard());
     } else {
         copyToClipboard();
     }
@@ -1345,7 +989,17 @@ function shareMedia() {
 
 function copyToClipboard() {
     navigator.clipboard.writeText(window.location.href);
-    showToast('<?= t('link_copied') ?>', 'success');
+    showToast('Lien copié !', 'success');
+}
+
+let descriptionExpanded = false;
+function toggleDescription() {
+    const desc = document.getElementById('descriptionText');
+    const toggle = document.getElementById('descriptionToggle');
+    if (!desc) return;
+    descriptionExpanded = !descriptionExpanded;
+    desc.classList.toggle('expanded', descriptionExpanded);
+    toggle.textContent = descriptionExpanded ? 'Afficher moins' : 'Afficher plus';
 }
 
 function showToast(message, type = 'info') {
@@ -1353,13 +1007,10 @@ function showToast(message, type = 'info') {
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = 'toast-custom';
-    let icon = 'info-circle';
-    let bgColor = '#212121';
-    if (type === 'success') { icon = 'check-circle'; bgColor = '#2e7d32'; }
-    else if (type === 'error') { icon = 'exclamation-triangle'; bgColor = '#c62828'; }
-    else if (type === 'warning') { icon = 'exclamation-circle'; bgColor = '#ed6c02'; }
+    let icon = type === 'success' ? 'bi-check-circle-fill' : (type === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill');
+    let bgColor = type === 'success' ? '#2e7d32' : (type === 'error' ? '#c62828' : '#1e1e1e');
     toast.style.background = bgColor;
-    toast.innerHTML = `<i class="bi bi-${icon}"></i><span>${message}</span>`;
+    toast.innerHTML = `<i class="bi ${icon}"></i><span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
@@ -1368,28 +1019,19 @@ const commentTextarea = document.getElementById('commentText');
 if (commentTextarea) {
     commentTextarea.addEventListener('input', function() {
         const submit = document.getElementById('commentSubmit');
-        if (submit) {
-            submit.classList.toggle('d-none', !this.value.trim());
-        }
+        if (submit) submit.classList.toggle('d-none', !this.value.trim());
     });
 }
 
 if (mediaId) {
-    fetch(baseUrl + '/media/apiTrackView', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `id_media=${mediaId}`
-    }).catch(() => {});
+    fetch(baseUrl + '/media/apiTrackView', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `id_media=${mediaId}` }).catch(() => {});
 }
 
-// ============================================
-// LANGUAGE MANAGEMENT
-// ============================================
+// Language Management
 const langBtn = document.getElementById('customLanguageBtn');
 const langDropdown = document.getElementById('customLanguageDropdown');
 const currentLangFlag = document.getElementById('currentLangFlag');
 const currentLangLabel = document.getElementById('currentLangLabel');
-
 const savedLang = localStorage.getItem('preferred_language');
 const savedFlag = localStorage.getItem('preferred_flag');
 const savedLabel = localStorage.getItem('preferred_label');
@@ -1402,73 +1044,38 @@ if (savedLang && savedFlag && savedLabel && savedLang !== 'fr') {
     }
 }
 
-function toggleDropdown() {
-    if (langDropdown) {
-        langDropdown.classList.toggle('active');
-    }
-}
-
+function toggleDropdown() { if (langDropdown) langDropdown.classList.toggle('active'); }
 document.addEventListener('click', function(event) {
     if (langBtn && langDropdown && !langBtn.contains(event.target) && !langDropdown.contains(event.target)) {
         langDropdown.classList.remove('active');
     }
 });
-
-if (langBtn) {
-    langBtn.addEventListener('click', function(event) {
-        event.stopPropagation();
-        toggleDropdown();
-    });
-}
+if (langBtn) langBtn.addEventListener('click', function(event) { event.stopPropagation(); toggleDropdown(); });
 
 function changeLanguage(langCode, flagCode, label) {
     if (currentLangFlag && currentLangLabel) {
         currentLangFlag.src = `https://flagcdn.com/w20/${flagCode}.png`;
         currentLangLabel.textContent = label;
     }
-    
     localStorage.setItem('preferred_language', langCode);
     localStorage.setItem('preferred_flag', flagCode);
     localStorage.setItem('preferred_label', label);
-    
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-        if (cookie.trim().startsWith('googtrans=')) {
-            const cookieName = cookie.trim().split('=')[0];
-            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
-        }
-    }
-    
-    const googleTranslateElement = document.getElementById('google_translate_element');
-    if (googleTranslateElement) {
-        googleTranslateElement.innerHTML = '';
-    }
-    
-    setTimeout(() => {
-        window.location.reload();
-    }, 100);
+    document.cookie = `googtrans=/fr/${langCode}; path=/; max-age=31536000`;
+    window.location.reload();
 }
 
 document.querySelectorAll('.lang-option').forEach(option => {
     option.addEventListener('click', function(event) {
         event.stopPropagation();
-        const langCode = this.getAttribute('data-lang');
-        const flagCode = this.getAttribute('data-flag');
-        const label = this.getAttribute('data-label');
-        changeLanguage(langCode, flagCode, label);
+        changeLanguage(this.dataset.lang, this.dataset.flag, this.dataset.label);
     });
 });
 
+// Cache Google Translate banner
 setInterval(function() {
     const banner = document.querySelector('.goog-te-banner-frame');
-    if (banner) {
-        banner.style.display = 'none';
-        banner.style.visibility = 'hidden';
-        banner.style.height = '0';
-    }
+    if (banner) { banner.style.display = 'none'; banner.style.height = '0'; }
     document.body.style.marginTop = '0';
-    document.body.style.top = '0';
 }, 100);
 </script>
 </body>

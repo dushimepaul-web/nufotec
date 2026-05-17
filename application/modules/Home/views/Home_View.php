@@ -1224,6 +1224,8 @@ document.addEventListener("DOMContentLoaded", () => {
 </style>
 
 
+
+
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- APPELS À L'ACTION - GRILLE DYNAMIQUE -->
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -1246,6 +1248,11 @@ document.addEventListener("DOMContentLoaded", () => {
             foreach ($active_ctas as $cta): 
                 $bg_style = !empty($cta['image_fond_url']) ? 
                     'style="background-image: url(\'' . htmlspecialchars($cta['image_fond_url']) . '\');"' : '';
+                
+                // Nettoyer le lien : enlever le préfixe de langue s'il existe
+                $lien = ltrim($cta['bouton_lien'], '/');
+                // Enlever le préfixe de langue (fr/, en/, sw/) s'il est présent
+                $lien = preg_replace('/^(fr|en|sw)\//', '', $lien);
             ?>
             
             <article class="cta-card" <?= $bg_style ?> data-aos="zoom-in">
@@ -1259,7 +1266,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <p><?= htmlspecialchars($cta['sous_titre']) ?></p>
                     </div>
                     
-                    <a href="<?= base_url($lang . '/' . ltrim($cta['bouton_lien'], '/')) ?>" class="cta-btn">
+                    <a href="<?= base_url($lien) ?>" class="cta-btn">
                         <?= htmlspecialchars($cta['bouton_texte']) ?>
                         <i class="bi bi-arrow-right-circle"></i>
                     </a>
