@@ -1124,10 +1124,9 @@ function getMediaThumbnail($media) {
 // Configuration
 const mediaId = <?= (int)($media['id_media'] ?? 0) ?>;
 const mediaSlug = '<?= htmlspecialchars($mediaSlug ?? '') ?>';
-const lang = '<?= $lang ?>';
 
-// Base URL avec préfixe langue (ex: /fr, /en, /sw)
-const baseUrl = '<?= base_url($lang) ?>';
+// URL de base sans slash à la fin
+const baseUrl = '<?= rtrim(base_url(), '/') ?>';
 
 // Audio Player
 let audioElement = document.getElementById('audioElement');
@@ -1198,7 +1197,6 @@ function nextTrack() {
 function downloadMedia(identifier) {
     const isNumeric = !isNaN(identifier) && !isNaN(parseFloat(identifier));
     const paramName = isNumeric ? 'id' : 'slug';
-    // Utiliser l'URL avec préfixe langue
     const downloadUrl = baseUrl + '/media/downloader?' + paramName + '=' + encodeURIComponent(identifier);
     const link = document.createElement('a');
     link.href = downloadUrl;
@@ -1220,7 +1218,7 @@ function toggleLike(mediaId) {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: `id_media=${mediaId}&action=${isLiked ? 'remove' : 'like'}`
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
             const likeCount = document.getElementById('likeCount');
@@ -1231,6 +1229,9 @@ function toggleLike(mediaId) {
             const dislikeBtn = document.querySelector('[onclick*="toggleDislike"]');
             if (dislikeBtn) dislikeBtn.classList.remove('disliked');
             showToast(isLiked ? '<?= t('like_removed') ?>' : '<?= t('like_added') ?>', 'success');
+        } else if (data.need_login) {
+            showToast('<?= t('need_login') ?>', 'warning');
+            setTimeout(() => window.location.href = baseUrl + '/Auth', 1500);
         }
     })
     .catch(() => showToast('<?= t('error_occurred') ?>', 'error'));
@@ -1246,7 +1247,7 @@ function toggleDislike(mediaId) {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: `id_media=${mediaId}&action=${isDisliked ? 'remove' : 'dislike'}`
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
             const likeCount = document.getElementById('likeCount');
@@ -1257,6 +1258,9 @@ function toggleDislike(mediaId) {
             const likeBtn = document.querySelector('[onclick*="toggleLike"]');
             if (likeBtn) likeBtn.classList.remove('active');
             showToast(isDisliked ? '<?= t('dislike_removed') ?>' : '<?= t('dislike_added') ?>', 'success');
+        } else if (data.need_login) {
+            showToast('<?= t('need_login') ?>', 'warning');
+            setTimeout(() => window.location.href = baseUrl + '/Auth', 1500);
         }
     })
     .catch(() => showToast('<?= t('error_occurred') ?>', 'error'));
@@ -1268,7 +1272,7 @@ function toggleFavorite(mediaId) {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: `id_media=${mediaId}`
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
             const btn = document.querySelector('[onclick*="toggleFavorite"]');
@@ -1297,12 +1301,15 @@ function addComment(mediaId) {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: `id_media=${mediaId}&comment=${encodeURIComponent(comment)}`
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
             showToast('<?= t('comment_added') ?>', 'success');
             commentText.value = '';
             setTimeout(() => location.reload(), 1000);
+        } else if (data.need_login) {
+            showToast('<?= t('need_login') ?>', 'warning');
+            setTimeout(() => window.location.href = baseUrl + '/Auth', 1500);
         } else {
             showToast(data.message || '<?= t('error_occurred') ?>', 'error');
         }
@@ -1424,9 +1431,23 @@ function changeLanguage(langCode, flagCode, label) {
     localStorage.setItem('preferred_flag', flagCode);
     localStorage.setItem('preferred_label', label);
     
-    document.cookie = `googtrans=/fr/${langCode}; path=/; max-age=31536000`;
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        if (cookie.trim().startsWith('googtrans=')) {
+            const cookieName = cookie.trim().split('=')[0];
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+        }
+    }
     
-    window.location.reload();
+    const googleTranslateElement = document.getElementById('google_translate_element');
+    if (googleTranslateElement) {
+        googleTranslateElement.innerHTML = '';
+    }
+    
+    setTimeout(() => {
+        window.location.reload();
+    }, 100);
 }
 
 document.querySelectorAll('.lang-option').forEach(option => {
@@ -1439,9 +1460,8 @@ document.querySelectorAll('.lang-option').forEach(option => {
     });
 });
 
-// Supprimer la barre Google Translate
 setInterval(function() {
-    var banner = document.querySelector('.goog-te-banner-frame');
+    const banner = document.querySelector('.goog-te-banner-frame');
     if (banner) {
         banner.style.display = 'none';
         banner.style.visibility = 'hidden';

@@ -149,22 +149,28 @@ $route['media/player/(:any)'] = 'Home/media/player/$1';
 $route['media/downloader'] = 'Home/media/downloader';
 $route['media/downloader/(:any)'] = 'Home/media/downloader/$1';
 
-// API Médias
-$route['media/searchAjax'] = 'Home/Media/apiSearch';
+// ============================================
+// ROUTES API MÉDIAS CORRIGÉES (AVEC PRÉFIXE 'api')
+// ============================================
+$route['media/apiTrackView'] = 'Home/Media/apiTrackView';
+$route['media/apiToggleLike'] = 'Home/Media/apiToggleLike';
+$route['media/apiToggleFavorite'] = 'Home/Media/apiToggleFavorite';
+$route['media/apiAddComment'] = 'Home/Media/apiAddComment';
+$route['media/apiGetComments/(:any)'] = 'Home/Media/apiGetComments/$1';
+$route['media/apiGetMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
+$route['media/apiGetStats'] = 'Home/Media/apiGetStats';
 $route['media/apiSearch'] = 'Home/Media/apiSearch';
+$route['media/apiGetWaveform/(:num)'] = 'Home/Media/apiGetWaveform/$1';
+
+// Garder aussi les anciennes routes pour compatibilité
 $route['media/trackView'] = 'Home/Media/apiTrackView';
-$route['media/trackPlay'] = 'Home/Media/apiTrackPlay';
 $route['media/toggleLike'] = 'Home/Media/apiToggleLike';
-$route['media/rateMedia'] = 'Home/Media/apiRateMedia';
-$route['media/addComment'] = 'Home/Media/apiAddComment';
-$route['media/checkUserLike/(:num)'] = 'Home/Media/checkUserLike/$1';
-$route['media/getFavorites'] = 'Home/Media/apiGetFavorites';
 $route['media/toggleFavorite'] = 'Home/Media/apiToggleFavorite';
-$route['media/share'] = 'Home/Media/apiShare';
+$route['media/addComment'] = 'Home/Media/apiAddComment';
 $route['media/getComments/(:any)'] = 'Home/Media/apiGetComments/$1';
 $route['media/getMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
 $route['media/getStats'] = 'Home/Media/apiGetStats';
-$route['media/getWaveform/(:num)'] = 'Home/Media/apiGetWaveform/$1';
+$route['media/searchAjax'] = 'Home/Media/apiSearch';
 
 // Backend Médias
 $route['video'] = 'media/Video/index';

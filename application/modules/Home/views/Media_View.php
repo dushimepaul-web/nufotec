@@ -1069,19 +1069,44 @@ if (langBtn) {
     });
 }
 
+// Fonction améliorée avec nettoyage complet
 function changeLanguage(langCode, flagCode, label) {
+    // Mise à jour UI
     if (currentLangFlag && currentLangLabel) {
         currentLangFlag.src = `https://flagcdn.com/w20/${flagCode}.png`;
         currentLangLabel.textContent = label;
     }
     
+    // Sauvegarde
     localStorage.setItem('preferred_language', langCode);
     localStorage.setItem('preferred_flag', flagCode);
     localStorage.setItem('preferred_label', label);
     
-    document.cookie = `googtrans=/fr/${langCode}; path=/; max-age=31536000`;
+    // Nettoyage complet des cookies googtrans
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        if (cookie.trim().startsWith('googtrans=')) {
+            const cookieName = cookie.trim().split('=')[0];
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+        }
+    }
     
-    window.location.reload();
+    // Réinitialiser l'élément Google Translate
+    const googleTranslateElement = document.getElementById('google_translate_element');
+    if (googleTranslateElement) {
+        googleTranslateElement.innerHTML = '';
+    }
+    
+    // Recharger Google Translate API
+    if (typeof google !== 'undefined' && google.translate) {
+        // Attendre un peu pour la réinitialisation
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
+    } else {
+        window.location.reload();
+    }
 }
 
 document.querySelectorAll('.lang-option').forEach(option => {
