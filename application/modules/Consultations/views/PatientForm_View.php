@@ -1744,7 +1744,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const heroTitle = document.querySelector('.consultation-hero h1');
     if (heroTitle) {
-        heroTitle.innerHTML = `<i class="bi bi-heart-pulse"></i> Consultation avec Dr. <?= htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''), ENT_QUOTES) ?>`;
+        heroTitle.innerHTML = `<i class="bi bi-heart-pulse"></i> Consultation <?= htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''), ENT_QUOTES) ?>`;
     }
 });
 
