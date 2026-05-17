@@ -428,4 +428,37 @@ if (!empty($telephone)) {
         ];
         return $roles[$type] ?? 8;
     }
+
+   // ============================================
+// EFFACER LES MESSAGES FLASH (AJAX)
+// ============================================
+
+public function clear_flash() {
+    $this->output->set_content_type('application/json');
+    $key = $this->input->post('key');
+    
+    if ($key) {
+        // Supprimer le flashdata
+        $this->session->unset_userdata($key);
+        $this->session->set_flashdata($key, null);
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'No key provided']);
+    }
+}
+
+public function clear_flash_data() {
+    $this->output->set_content_type('application/json');
+    $keys = $this->input->post('keys');
+    
+    if ($keys && is_array($keys)) {
+        foreach ($keys as $key) {
+            $this->session->unset_userdata($key);
+            $this->session->set_flashdata($key, null);
+        }
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+}
 }

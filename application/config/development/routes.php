@@ -62,18 +62,34 @@ $route['admin/do_login'] = 'Admin/do_login';
 // ============================================
 // ROUTES AUTHENTIFICATION (METTRE AVANT LA ROUTE GÉNÉRIQUE)
 // ============================================
+// ROUTES AUTHENTIFICATION (COMPLÈTES)
+// ============================================
+
+// Routes principales
 $route['auth'] = 'Auth/index';
 $route['auth/index'] = 'Auth/index';
 $route['auth/login'] = 'Auth/login';
 $route['auth/register'] = 'Auth/register';
 $route['auth/logout'] = 'Auth/logout';
+
+// Routes pour mot de passe oublié (OTP)
 $route['auth/send_reset_code'] = 'Auth/send_reset_code';
 $route['auth/verify_reset_code'] = 'Auth/verify_reset_code';
 $route['auth/reset_password'] = 'Auth/reset_password';
 $route['auth/resend_otp'] = 'Auth/resend_otp';
 
-// Alias pour la compatibilité
+// Route pour effacer les messages flash (AJAX)
+$route['auth/clear_flash'] = 'Auth/clear_flash';
+$route['auth/clear_flash_data'] = 'Auth/clear_flash_data';
+
+// Routes pour les tests
+$route['auth/test_email'] = 'Auth/test_email';
+
+// ============================================
+// ALIAS AVEC MAJUSCULE (Compatibilité)
+// ============================================
 $route['Auth'] = 'Auth/index';
+$route['Auth/index'] = 'Auth/index';
 $route['Auth/login'] = 'Auth/login';
 $route['Auth/register'] = 'Auth/register';
 $route['Auth/logout'] = 'Auth/logout';
@@ -81,12 +97,20 @@ $route['Auth/send_reset_code'] = 'Auth/send_reset_code';
 $route['Auth/verify_reset_code'] = 'Auth/verify_reset_code';
 $route['Auth/reset_password'] = 'Auth/reset_password';
 $route['Auth/resend_otp'] = 'Auth/resend_otp';
+$route['Auth/clear_flash'] = 'Auth/clear_flash';
 
-// Alias simples
+// ============================================
+// ALIAS SIMPLES (Sans préfixe auth)
+// ============================================
 $route['connexion'] = 'Auth/index';
 $route['inscription'] = 'Auth/index';
 $route['login'] = 'Auth/index';
 $route['register'] = 'Auth/index';
+$route['logout'] = 'Auth/logout';
+$route['mot-de-passe-oublie'] = 'Auth/index';
+$route['forgot-password'] = 'Auth/index';
+
+
 
 
 

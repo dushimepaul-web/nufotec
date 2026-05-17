@@ -580,15 +580,55 @@
 
    // Flash messages avec SweetAlert - Version corrigée
 <?php if($this->session->flashdata('login_error')): ?>
-    showError('<?= addslashes($this->session->flashdata('login_error')) ?>');
+    (function() {
+        var message = '<?= addslashes($this->session->flashdata('login_error')) ?>';
+        showError(message);
+        // Effacer le message après affichage via AJAX
+        $.ajax({
+            url: baseUrl + '/auth/clear_flash',
+            method: 'POST',
+            data: { key: 'login_error' },
+            async: false
+        });
+    })();
 <?php endif; ?>
+
 <?php if($this->session->flashdata('register_error')): ?>
-    showError('<?= addslashes($this->session->flashdata('register_error')) ?>');
+    (function() {
+        var message = '<?= addslashes($this->session->flashdata('register_error')) ?>';
+        showError(message);
+        // Effacer le message après affichage via AJAX
+        $.ajax({
+            url: baseUrl + '/auth/clear_flash',
+            method: 'POST',
+            data: { key: 'register_error' },
+            async: false
+        });
+    })();
 <?php endif; ?>
+
 <?php if($this->session->flashdata('register_success')): ?>
-    showSuccess('<?= addslashes($this->session->flashdata('register_success')) ?>');
-    // Ne pas rediriger automatiquement, laisser l'utilisateur choisir
-    // setTimeout(function() { switchToLogin(); }, 2000);
+    (function() {
+        var message = '<?= addslashes($this->session->flashdata('register_success')) ?>';
+        showSuccess(message);
+        // Effacer le message de la session via AJAX
+        $.ajax({
+            url: baseUrl + '/auth/clear_flash',
+            method: 'POST',
+            data: { key: 'register_success' },
+            async: false
+        });
+        // Rester sur la page de connexion après inscription
+        setTimeout(function() {
+            // S'assurer qu'on est sur le formulaire de connexion
+            document.getElementById('loginPanel').classList.add('active-form');
+            document.getElementById('registerPanel').classList.remove('active-form');
+            // Nettoyer l'URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('register');
+            window.history.pushState({}, '', url);
+        }, 2000);
+    })();
 <?php endif; ?>
 </script>
 </body>
