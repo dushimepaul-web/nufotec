@@ -24,6 +24,11 @@ $route['Admin'] = 'Admin/index';
 $route['admin'] = 'Admin/index';
 $route['Admin/do_login'] = 'Admin/do_login';
 $route['admin/do_login'] = 'Admin/do_login';
+
+
+
+$route['Produits'] = 'Produits/index';
+
 // ============================================
 // ROUTES DASHBOARD
 // ============================================
