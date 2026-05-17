@@ -520,141 +520,141 @@ include VIEWPATH.'includes/frontend/Header.php';
 
 
 
-        <?php if (!empty($product)): ?>
+       <?php if (!empty($product)): ?>
 
-        <div class="row g-4 g-lg-5">
-            <div class="col-lg-6">
-                <div class="product-detail-image-wrapper">
-                    <div class="main-image-container">
-                        <img src="<?= base_url('attachments/Products/'.$product['main_image']) ?>" 
-                             id="mainProductImage"
-                             class="img-fluid w-100"
-                             style="cursor: zoom-in; max-height: 500px; object-fit: contain; background: var(--light);"
-                             alt="<?= htmlspecialchars($product['title']) ?>"
-                             onerror="this.src='<?= base_url('assets/fro.png') ?>'">
+<div class="row g-4 g-lg-5">
+    <div class="col-lg-6">
+        <div class="product-detail-image-wrapper">
+            <div class="main-image-container">
+                <img src="<?= base_url('attachments/Products/'.$product['main_image']) ?>" 
+                     id="mainProductImage"
+                     class="img-fluid w-100"
+                     style="cursor: zoom-in; max-height: 500px; object-fit: contain; background: var(--light);"
+                     alt="<?= htmlspecialchars($product['title']) ?>"
+                     onerror="this.src='<?= base_url('assets/fro.png') ?>'">
 
-                        <?php if (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days')): ?>
-                        <div class="product-badge-detail">
-                            <span class="badge">✨ <?= t('badge_new') ?></span>
-                        </div>
-                        <?php endif; ?>
-
-                        <button class="btn zoom-detail-btn" id="zoomDetailBtn">
-                            <i class="bx bx-search-alt"></i> <?= t('zoom') ?>
-                        </button>
-                    </div>
+                <?php if (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days')): ?>
+                <div class="product-badge-detail">
+                    <span class="badge">✨ <?= t('badge_new') ?></span>
                 </div>
-            </div>
+                <?php endif; ?>
 
-            <div class="col-lg-6">
-                <div class="product-detail-info">
-                    <h1 class="product-detail-title mb-3">
-                        <?= htmlspecialchars($product['title']) ?>
-                    </h1>
-
-                    <div class="product-detail-price mb-4">
-                        <span class="price-large"><?= htmlspecialchars($product['price']) ?></span>
-                    </div>
-
-                    <div class="product-detail-description mb-4">
-                        <h5 class="fw-semibold mb-3" style="color: var(--primary);">
-                            <i class="bx bx-info-circle me-2"></i><?= t('description_label') ?>
-                        </h5>
-                        <p class="text-muted lh-lg">
-                            <?= nl2br(htmlspecialchars($product['description'] ?? t('no_description_available'))) ?>
-                        </p>
-                    </div>
-
-                    <div class="product-cta mt-4">
-                        <div class="d-flex gap-3 flex-wrap">
-                            <button class="btn btn-whatsapp flex-grow-1" id="openOrderModalBtn" 
-                                    data-title="<?= htmlspecialchars($product['title']) ?>"
-                                    data-price="<?= htmlspecialchars($product['price']) ?>"
-                                    data-id="<?= $product['id'] ?>"
-                                    data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
-                                <i class="bx bxl-whatsapp"></i> <?= t('order_on_whatsapp') ?>
-                            </button>
-
-                            <button class="btn btn-outline-share flex-grow-1" id="openShareModalBtn"
-                                    data-title="<?= htmlspecialchars($product['title']) ?>"
-                                    data-url="<?= base_url($lang . '/Product/'.($product['slug'] ?? $product['id'])) ?>"
-                                    data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>"
-                                    data-price="<?= htmlspecialchars($product['price']) ?>">
-                                <i class="bx bx-share-alt"></i> <?= t('share') ?>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="product-meta mt-4">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block mb-1">
-                                    <i class="bx bx-calendar me-1"></i><?= t('added_on') ?>
-                                </small>
-                                <strong style="color: var(--primary);">
-                                    <?= date('d/m/Y', strtotime($product['created_at'])) ?>
-                                </strong>
-                            </div>
-                            <?php if (!empty($product['stock']) && $product['stock'] > 0): ?>
-                            <div class="col-6">
-                                <small class="text-muted d-block mb-1">
-                                    <i class="bx bx-package me-1"></i><?= t('stock_label') ?>
-                                </small>
-                                <strong style="color: var(--success, #198754);">
-                                    <?= $product['stock'] ?> <?= t('stock_available') ?>
-                                </strong>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
+                <button class="btn zoom-detail-btn" id="zoomDetailBtn">
+                    <i class="bx bx-search-alt"></i> <?= t('zoom') ?>
+                </button>
             </div>
         </div>
-
-        <!-- Produits similaires -->
-        <?php if (!empty($similar_products)): ?>
-        <div class="similar-products">
-            <div class="section-header text-center mb-4">
-                <h2 class="section-title"><?= t('similar_products') ?></h2>
-                <div class="title-border" style="width: 80px; height: 3px; background: var(--accent); margin: 15px auto 0; border-radius: 3px;"></div>
-            </div>
-            <div class="row g-4">
-                <?php foreach ($similar_products as $similar): ?>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="similar-product-card h-100">
-                        <div class="card-img-wrapper">
-                            <img src="<?= base_url('attachments/Products/'.$similar['main_image']) ?>" 
-                                 class="similar-card-img" 
-                                 alt="<?= htmlspecialchars($similar['title']) ?>"
-                                 onerror="this.src='<?= base_url('assets/fro.png') ?>'">
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            <h6 class="card-title"><?= htmlspecialchars($similar['title']) ?></h6>
-                            <p class="card-price mt-auto"><?= htmlspecialchars($similar['price']) ?></p>
-                            <a href="<?= base_url($lang . '/product/'.($similar['slug'] ?? $similar['id'])) ?>" class="btn-view mt-2">
-                                <?= t('view_details_short') ?> <i class="bx bx-right-arrow-alt"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <?php else: ?>
-        <div class="text-center py-5">
-            <div class="mb-4">
-                <i class="bx bx-package text-muted" style="font-size: 5rem; opacity: 0.5;"></i>
-            </div>
-            <h3 class="mb-3" style="color: var(--primary);"><?= t('product_not_found') ?></h3>
-            <p class="text-muted mb-4"><?= t('product_not_found_message') ?></p>
-            <a href="<?= base_url($lang . '/products') ?>" class="btn btn-lg" style="background: var(--primary); color: white; border-radius: 50px; padding: 12px 30px;">
-                <i class="bx bx-arrow-back me-2"></i><?= t('back_to_products') ?>
-            </a>
-        </div>
-        <?php endif; ?>
     </div>
+
+    <div class="col-lg-6">
+        <div class="product-detail-info">
+            <h1 class="product-detail-title mb-3">
+                <?= htmlspecialchars($product['title']) ?>
+            </h1>
+
+            <div class="product-detail-price mb-4">
+                <span class="price-large"><?= htmlspecialchars($product['price']) ?></span>
+            </div>
+
+            <div class="product-detail-description mb-4">
+                <h5 class="fw-semibold mb-3" style="color: var(--primary);">
+                    <i class="bx bx-info-circle me-2"></i><?= t('description_label') ?>
+                </h5>
+                <p class="text-muted lh-lg">
+                    <?= nl2br(htmlspecialchars($product['description'] ?? t('no_description_available'))) ?>
+                </p>
+            </div>
+
+            <div class="product-cta mt-4">
+                <div class="d-flex gap-3 flex-wrap">
+                    <button class="btn btn-whatsapp flex-grow-1" id="openOrderModalBtn" 
+                            data-title="<?= htmlspecialchars($product['title']) ?>"
+                            data-price="<?= htmlspecialchars($product['price']) ?>"
+                            data-id="<?= $product['id'] ?>"
+                            data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
+                        <i class="bx bxl-whatsapp"></i> <?= t('order_on_whatsapp') ?>
+                    </button>
+
+                    <button class="btn btn-outline-share flex-grow-1" id="openShareModalBtn"
+                            data-title="<?= htmlspecialchars($product['title']) ?>"
+                            data-url="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>"
+                            data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>"
+                            data-price="<?= htmlspecialchars($product['price']) ?>">
+                        <i class="bx bx-share-alt"></i> <?= t('share') ?>
+                    </button>
+                </div>
+            </div>
+
+            <div class="product-meta mt-4">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block mb-1">
+                            <i class="bx bx-calendar me-1"></i><?= t('added_on') ?>
+                        </small>
+                        <strong style="color: var(--primary);">
+                            <?= date('d/m/Y', strtotime($product['created_at'])) ?>
+                        </strong>
+                    </div>
+                    <?php if (!empty($product['stock']) && $product['stock'] > 0): ?>
+                    <div class="col-6">
+                        <small class="text-muted d-block mb-1">
+                            <i class="bx bx-package me-1"></i><?= t('stock_label') ?>
+                        </small>
+                        <strong style="color: var(--success, #198754);">
+                            <?= $product['stock'] ?> <?= t('stock_available') ?>
+                        </strong>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Produits similaires -->
+<?php if (!empty($similar_products)): ?>
+<div class="similar-products">
+    <div class="section-header text-center mb-4">
+        <h2 class="section-title"><?= t('similar_products') ?></h2>
+        <div class="title-border" style="width: 80px; height: 3px; background: var(--accent); margin: 15px auto 0; border-radius: 3px;"></div>
+    </div>
+    <div class="row g-4">
+        <?php foreach ($similar_products as $similar): ?>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="similar-product-card h-100">
+                <div class="card-img-wrapper">
+                    <img src="<?= base_url('attachments/Products/'.$similar['main_image']) ?>" 
+                         class="similar-card-img" 
+                         alt="<?= htmlspecialchars($similar['title']) ?>"
+                         onerror="this.src='<?= base_url('assets/fro.png') ?>'">
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title"><?= htmlspecialchars($similar['title']) ?></h6>
+                    <p class="card-price mt-auto"><?= htmlspecialchars($similar['price']) ?></p>
+                    <a href="<?= base_url('product/'.($similar['slug'] ?? $similar['id'])) ?>" class="btn-view mt-2">
+                        <?= t('view_details_short') ?> <i class="bx bx-right-arrow-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php else: ?>
+<div class="text-center py-5">
+    <div class="mb-4">
+        <i class="bx bx-package text-muted" style="font-size: 5rem; opacity: 0.5;"></i>
+    </div>
+    <h3 class="mb-3" style="color: var(--primary);"><?= t('product_not_found') ?></h3>
+    <p class="text-muted mb-4"><?= t('product_not_found_message') ?></p>
+    <a href="<?= base_url('products') ?>" class="btn btn-lg" style="background: var(--primary); color: white; border-radius: 50px; padding: 12px 30px;">
+        <i class="bx bx-arrow-back me-2"></i><?= t('back_to_products') ?>
+    </a>
+</div>
+<?php endif; ?>
+</div>
 </div>
 
 <!-- ============================================
@@ -875,8 +875,7 @@ include VIEWPATH.'includes/frontend/Header.php';
 </div>
 
 <!-- ============================================
-     TOAST PRIX RÉEL - DÉPLACÉ APRÈS LES MODALS
-     z-index: 9999 pour être AU-DESSUS du backdrop
+     TOAST PRIX RÉEL
      ============================================ -->
 <div class="toast-container-custom">
     <div id="priceToast" class="toast align-items-center text-white bg-dark border-warning shadow-lg" 
@@ -926,10 +925,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // DÉTECTION AUTO DE LA BONNE URL
     // ==========================================
     function getApiUrl() {
-        return '<?= base_url($lang . "/products/increment_price_request") ?>';
+        return '<?= base_url("products/increment_price_request") ?>';
     }
     function getSaveOrderUrl() {
-        return '<?= base_url($lang . "/products/save_order_request") ?>';
+        return '<?= base_url("products/save_order_request") ?>';
     }
 
     // ==========================================
