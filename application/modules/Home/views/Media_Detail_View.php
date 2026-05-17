@@ -703,20 +703,7 @@
                     </div>
                 </div>
                 
-                <!-- Chaîne -->
-                <div class="channel-info">
-                    <div class="channel-left">
-                        <div class="channel-avatar">
-                            <i class="bi bi-person-circle"></i>
-                        </div>
-                        <div class="channel-details">
-                            <h4><?= htmlspecialchars($media['credits'] ?? 'NUFOTEC BURUNDI') ?></h4>
-                            <p><?= number_format($media['views_count'] ?? 0) ?> vues</p>
-                        </div>
-                        <button class="subscribe-btn">S'abonner</button>
-                    </div>
-                </div>
-                
+                                
                 <!-- Description -->
                 <div class="description-box" onclick="toggleDescription()">
                     <div class="description-text" id="descriptionText">
