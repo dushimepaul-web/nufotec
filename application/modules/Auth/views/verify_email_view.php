@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vérification email - NUFOTEC</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -100,61 +101,63 @@
 <script>
 const baseUrl = '<?= rtrim(base_url(), '/') ?>';
 
-document.getElementById('verifyBtn')?.addEventListener('click', function() {
-    const code = document.getElementById('verificationCode').value.trim();
-    
-    if (!code || code.length !== 6) {
-        Swal.fire('Erreur', 'Veuillez saisir un code à 6 chiffres', 'error');
-        return;
-    }
-    
-    Swal.fire({
-        title: 'Vérification...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-    });
-    
-    $.ajax({
-        url: baseUrl + '/auth/verify_email_code',
-        method: 'POST',
-        data: { code: code },
-        dataType: 'json',
-        success: function(res) {
-            if (res.success) {
-                Swal.fire('Succès !', res.message, 'success').then(() => {
-                    window.location.href = baseUrl + '/Auth';
-                });
-            } else {
-                Swal.fire('Erreur', res.message, 'error');
-            }
-        },
-        error: function() {
-            Swal.fire('Erreur', 'Erreur de connexion au serveur', 'error');
+$(document).ready(function() {
+    $('#verifyBtn').on('click', function() {
+        const code = $('#verificationCode').val().trim();
+        
+        if (!code || code.length !== 6) {
+            Swal.fire('Erreur', 'Veuillez saisir un code à 6 chiffres', 'error');
+            return;
         }
-    });
-});
-
-document.getElementById('resendBtn')?.addEventListener('click', function() {
-    Swal.fire({
-        title: 'Renvoi en cours...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
+        
+        Swal.fire({
+            title: 'Vérification...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        $.ajax({
+            url: baseUrl + '/auth/verify_email_code',
+            method: 'POST',
+            data: { code: code },
+            dataType: 'json',
+            success: function(res) {
+                if (res.success) {
+                    Swal.fire('Succès !', res.message, 'success').then(() => {
+                        window.location.href = baseUrl + '/Auth';
+                    });
+                } else {
+                    Swal.fire('Erreur', res.message, 'error');
+                }
+            },
+            error: function() {
+                Swal.fire('Erreur', 'Erreur de connexion au serveur', 'error');
+            }
+        });
     });
     
-    $.ajax({
-        url: baseUrl + '/auth/resend_verification_code',
-        method: 'POST',
-        dataType: 'json',
-        success: function(res) {
-            if (res.success) {
-                Swal.fire('Succès', res.message, 'success');
-            } else {
-                Swal.fire('Erreur', res.message, 'error');
+    $('#resendBtn').on('click', function() {
+        Swal.fire({
+            title: 'Renvoi en cours...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        $.ajax({
+            url: baseUrl + '/auth/resend_verification_code',
+            method: 'POST',
+            dataType: 'json',
+            success: function(res) {
+                if (res.success) {
+                    Swal.fire('Succès', res.message, 'success');
+                } else {
+                    Swal.fire('Erreur', res.message, 'error');
+                }
+            },
+            error: function() {
+                Swal.fire('Erreur', 'Erreur lors du renvoi du code', 'error');
             }
-        },
-        error: function() {
-            Swal.fire('Erreur', 'Erreur lors du renvoi du code', 'error');
-        }
+        });
     });
 });
 </script>

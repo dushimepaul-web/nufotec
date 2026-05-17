@@ -50,379 +50,662 @@ class Cpanel_email_lib {
         }
     }
     
-   public function send_otp_code($to, $user_name, $otp_code, $type = 'reset') {
+
+    
+public function send_otp_code($to, $user_name, $otp_code, $type = 'reset')
+{
     $subject = 'Code de vérification - NUFOTEC';
-    
-    // Récupérer les informations du site
+
+    // Informations du site
     $site_logo = $this->CI->Model->get_setting('site_logo');
     $site_name = $this->CI->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
-    $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
-    
+
+    $logo_url = !empty($site_logo)
+        ? base_url('attachments/Configurations/' . $site_logo)
+        : '';
+
     $message = '
     <!DOCTYPE html>
-    <html>
+    <html lang="fr">
     <head>
+
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>' . htmlspecialchars($site_name) . ' - Code de vérification</title>
+
+        <title>' . htmlspecialchars($site_name) . '</title>
+
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
+
+            body{
+                margin:0;
+                padding:0;
+                background:#f3f6fb;
+                font-family:Arial, Helvetica, sans-serif;
+                -webkit-font-smoothing:antialiased;
             }
-            
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                background-color: #f5f7fa;
-                margin: 0;
-                padding: 40px 20px;
-                line-height: 1.6;
+
+            table{
+                border-spacing:0;
             }
-            
-            .email-container {
-                max-width: 560px;
-                margin: 0 auto;
-                background-color: #ffffff;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+
+            img{
+                border:0;
+                display:block;
+                max-width:100%;
             }
-            
-            .email-header {
-                background-color: #ffffff;
-                padding: 32px 32px 24px;
-                text-align: center;
-                border-bottom: 1px solid #eef2f6;
+
+            .wrapper{
+                width:100%;
+                table-layout:fixed;
+                background:#f3f6fb;
+                padding:30px 15px;
             }
-            
-            .logo {
-                max-height: 60px;
-                width: auto;
-                margin-bottom: 16px;
+
+            .main{
+                width:100%;
+                max-width:620px;
+                margin:0 auto;
+                background:#ffffff;
+                border-radius:22px;
+                overflow:hidden;
+                box-shadow:0 10px 40px rgba(0,0,0,0.08);
             }
-            
-            .company-name {
-                font-size: 20px;
-                font-weight: 600;
-                color: #1a2a3a;
-                letter-spacing: -0.3px;
+
+            .header{
+                background:linear-gradient(135deg,#0f172a,#1d4ed8,#2563eb);
+                padding:45px 30px;
+                text-align:center;
             }
-            
-            .email-body {
-                padding: 32px;
+
+            .logo{
+                max-height:75px;
+                margin:0 auto 18px;
             }
-            
-            .greeting {
-                font-size: 24px;
-                font-weight: 600;
-                color: #1a2a3a;
-                margin-bottom: 16px;
-                letter-spacing: -0.5px;
+
+            .site-name{
+                color:#ffffff;
+                font-size:30px;
+                font-weight:700;
+                margin-bottom:10px;
             }
-            
-            .message-text {
-                color: #4a5a6a;
-                font-size: 16px;
-                margin-bottom: 24px;
+
+            .header-text{
+                color:rgba(255,255,255,0.88);
+                font-size:15px;
+                line-height:1.7;
             }
-            
-            .code-container {
-                background-color: #f7f9fc;
-                border-radius: 12px;
-                padding: 24px;
-                text-align: center;
-                margin: 24px 0;
-                border: 1px solid #eef2f6;
+
+            .content{
+                padding:40px 35px;
             }
-            
-            .code-label {
-                font-size: 14px;
-                color: #6b7a8a;
-                margin-bottom: 12px;
-                text-transform: uppercase;
-                letter-spacing: 1px;
+
+            .greeting{
+                font-size:28px;
+                font-weight:700;
+                color:#111827;
+                margin-bottom:20px;
             }
-            
-            .verification-code {
-                font-size: 48px;
-                font-weight: 700;
-                color: #0a66c2;
-                letter-spacing: 12px;
-                font-family: "Courier New", monospace;
-                background: #ffffff;
-                padding: 16px 24px;
-                border-radius: 8px;
-                display: inline-block;
-                border: 1px solid #e0e7ed;
+
+            .text{
+                color:#4b5563;
+                font-size:16px;
+                line-height:1.9;
+                margin-bottom:28px;
             }
-            
-            .expiry-info {
-                font-size: 13px;
-                color: #8a9aaa;
-                margin-top: 16px;
+
+            .otp-container{
+                background:linear-gradient(135deg,#eff6ff,#dbeafe);
+                border:2px dashed #2563eb;
+                border-radius:20px;
+                padding:35px 20px;
+                text-align:center;
+                margin:35px 0;
             }
-            
-            .warning-text {
-                background-color: #fef8e7;
-                border-left: 3px solid #f5a623;
-                padding: 12px 16px;
-                font-size: 13px;
-                color: #8a6d3b;
-                margin: 24px 0;
-                border-radius: 6px;
+
+            .otp-label{
+                color:#1d4ed8;
+                font-size:14px;
+                font-weight:700;
+                letter-spacing:1px;
+                text-transform:uppercase;
+                margin-bottom:18px;
             }
-            
-            .email-footer {
-                background-color: #f8fafc;
-                padding: 24px 32px;
-                text-align: center;
-                border-top: 1px solid #eef2f6;
+
+            .otp-code{
+                display:inline-block;
+                background:#ffffff;
+                color:#111827;
+                font-size:44px;
+                font-weight:800;
+                letter-spacing:12px;
+                font-family:"Courier New", monospace;
+                padding:18px 28px;
+                border-radius:16px;
+                box-shadow:0 5px 20px rgba(37,99,235,0.15);
             }
-            
-            .footer-text {
-                font-size: 12px;
-                color: #8a9aaa;
-                margin-bottom: 12px;
+
+            .expire{
+                margin-top:18px;
+                color:#6b7280;
+                font-size:13px;
             }
-            
-            .footer-links {
-                margin-top: 16px;
+
+            .security-box{
+                background:#fff7ed;
+                border-left:4px solid #f97316;
+                padding:18px;
+                border-radius:12px;
+                margin-top:30px;
             }
-            
-            .footer-links a {
-                color: #6b7a8a;
-                text-decoration: none;
-                font-size: 12px;
-                margin: 0 8px;
+
+            .security-title{
+                font-size:14px;
+                font-weight:700;
+                color:#c2410c;
+                margin-bottom:8px;
             }
-            
-            .footer-links a:hover {
-                color: #0a66c2;
-                text-decoration: underline;
+
+            .security-text{
+                color:#7c2d12;
+                font-size:14px;
+                line-height:1.7;
             }
-            
-            .footer-logo {
-                max-height: 35px;
-                width: auto;
-                margin-top: 16px;
-                opacity: 0.6;
+
+            .footer{
+                background:#111827;
+                padding:35px 25px;
+                text-align:center;
             }
-            
-            hr {
-                border: none;
-                border-top: 1px solid #eef2f6;
-                margin: 16px 0;
+
+            .footer-text{
+                color:#9ca3af;
+                font-size:13px;
+                line-height:1.8;
             }
-            
-            @media (max-width: 600px) {
-                body {
-                    padding: 20px 12px;
+
+            .footer-links{
+                margin-top:18px;
+            }
+
+            .footer-links a{
+                color:#60a5fa;
+                text-decoration:none;
+                font-size:13px;
+                margin:0 10px;
+            }
+
+            .footer-logo{
+                max-height:40px;
+                margin:20px auto 0;
+                opacity:0.7;
+            }
+
+            @media screen and (max-width:600px){
+
+                .content{
+                    padding:30px 22px !important;
                 }
-                .email-body {
-                    padding: 24px 20px;
+
+                .header{
+                    padding:35px 20px !important;
                 }
-                .email-header {
-                    padding: 24px 20px;
+
+                .greeting{
+                    font-size:24px !important;
                 }
-                .verification-code {
-                    font-size: 36px;
-                    letter-spacing: 8px;
+
+                .otp-code{
+                    font-size:34px !important;
+                    letter-spacing:8px !important;
+                    padding:16px 20px !important;
+                }
+
+                .text{
+                    font-size:15px !important;
+                }
+
+                .site-name{
+                    font-size:24px !important;
                 }
             }
+
+            @media screen and (max-width:420px){
+
+                .otp-code{
+                    width:100%;
+                    box-sizing:border-box;
+                    font-size:28px !important;
+                    letter-spacing:5px !important;
+                }
+
+                .content{
+                    padding:25px 18px !important;
+                }
+            }
+
         </style>
+
     </head>
+
     <body>
-        <div class="email-container">
-            <div class="email-header">';
-    
-    // Ajouter le logo s'il existe
+
+        <div class="wrapper">
+
+            <table class="main" align="center">
+
+                <!-- HEADER -->
+                <tr>
+                    <td class="header">';
+
     if (!empty($logo_url)) {
+
         $message .= '
-                <img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="logo">';
+                        <img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="logo">';
+    }
+
+    $message .= '
+
+                        <div class="site-name">
+                            ' . htmlspecialchars($site_name) . '
+                        </div>
+
+                        <div class="header-text">
+                            Vérification sécurisée de votre compte
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- CONTENT -->
+                <tr>
+                    <td class="content">
+
+                        <div class="greeting">
+                            Bonjour ' . htmlspecialchars($user_name) . ' 👋
+                        </div>
+
+                        <div class="text">';
+
+    if ($type == 'reset') {
+
+        $message .= '
+                            Vous avez demandé la réinitialisation de votre mot de passe.
+                            Utilisez le code de vérification ci-dessous pour continuer la procédure.';
     } else {
+
         $message .= '
-                <div class="company-name">' . htmlspecialchars($site_name) . '</div>';
+                            Utilisez le code ci-dessous pour vérifier votre compte et sécuriser votre accès.';
     }
-    
+
     $message .= '
-            </div>
-            
-            <div class="email-body">
-                <div class="greeting">Bonjour ' . htmlspecialchars($user_name) . ',</div>
-                
-                <div class="message-text">
-                    Vous avez demandé ' . ($type == 'reset' ? 'la réinitialisation de votre mot de passe' : 'la vérification de votre compte') . '.
-                </div>
-                
-                <div class="code-container">
-                    <div class="code-label">Votre code de vérification</div>
-                    <div class="verification-code">' . $otp_code . '</div>
-                    <div class="expiry-info">Ce code expire dans 15 minutes</div>
-                </div>
-                
-                <div class="warning-text">
-                    Si vous n\'êtes pas à l\'origine de cette demande, veuillez ignorer cet email. 
-                    Aucune modification ne sera apportée à votre compte.
-                </div>
-            </div>
-            
-            <div class="email-footer">
-                <div class="footer-text">
-                    &copy; ' . date('Y') . ' ' . htmlspecialchars($site_name) . '. Tous droits réservés.
-                </div>
-                <div class="footer-links">
-                    <a href="' . base_url() . '">Accueil</a>';
-    
+                        </div>
+
+                        <div class="otp-container">
+
+                            <div class="otp-label">
+                                Votre code OTP
+                            </div>
+
+                            <div class="otp-code">
+                                ' . htmlspecialchars($otp_code) . '
+                            </div>
+
+                            <div class="expire">
+                                ⏳ Ce code expire dans 15 minutes
+                            </div>
+
+                        </div>
+
+                        <div class="security-box">
+
+                            <div class="security-title">
+                                🔒 Avertissement de sécurité
+                            </div>
+
+                            <div class="security-text">
+                                Ne partagez jamais ce code avec une autre personne.
+                                Si vous n\'êtes pas à l\'origine de cette demande,
+                                ignorez simplement cet email. Aucune modification ne sera effectuée sur votre compte.
+                            </div>
+
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- FOOTER -->
+                <tr>
+                    <td class="footer">
+
+                        <div class="footer-text">
+                            © ' . date('Y') . ' ' . htmlspecialchars($site_name) . '<br>
+                            Tous droits réservés.
+                        </div>
+
+                        <div class="footer-links">
+                            <a href="' . base_url() . '">Accueil</a>
+                        </div>';
+
     if (!empty($logo_url)) {
+
         $message .= '
-                    <br>
-                    <img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="footer-logo">';
+                        <img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="footer-logo">';
     }
-    
+
     $message .= '
-                </div>
-            </div>
+
+                    </td>
+                </tr>
+
+            </table>
+
         </div>
+
     </body>
     </html>';
-    
+
     return $this->send_email($to, $subject, $message);
 }
 
 
 
 
-public function send_verification_code($to, $user_name, $otp_code) {
+
+
+public function send_verification_code($to, $user_name, $otp_code)
+{
     $subject = 'Vérifiez votre adresse email - NUFOTEC';
-    
-    // Récupérer les informations du site
+
+    // Informations du site
     $site_logo = $this->CI->Model->get_setting('site_logo');
     $site_name = $this->CI->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
-    $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
-    
+
+    $logo_url = !empty($site_logo)
+        ? base_url('attachments/Configurations/' . $site_logo)
+        : '';
+
     $message = '
     <!DOCTYPE html>
-    <html>
+    <html lang="fr">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Vérification email - ' . htmlspecialchars($site_name) . '</title>
+        <title>Vérification Email</title>
+
         <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                background-color: #f5f7fa;
-                margin: 0;
-                padding: 40px 20px;
-                line-height: 1.6;
+            body{
+                margin:0;
+                padding:0;
+                background:#f4f7fb;
+                font-family:Arial, Helvetica, sans-serif;
+                -webkit-font-smoothing:antialiased;
             }
-            .email-container {
-                max-width: 560px;
-                margin: 0 auto;
-                background-color: #ffffff;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+
+            table{
+                border-spacing:0;
             }
-            .email-header {
-                background-color: #ffffff;
-                padding: 32px 32px 24px;
-                text-align: center;
-                border-bottom: 1px solid #eef2f6;
+
+            img{
+                border:0;
+                display:block;
+                max-width:100%;
             }
-            .logo {
-                max-height: 60px;
-                width: auto;
-                margin-bottom: 16px;
+
+            .wrapper{
+                width:100%;
+                table-layout:fixed;
+                background:#f4f7fb;
+                padding:30px 15px;
             }
-            .email-body {
-                padding: 32px;
+
+            .main{
+                background:#ffffff;
+                margin:0 auto;
+                width:100%;
+                max-width:600px;
+                border-radius:20px;
+                overflow:hidden;
+                box-shadow:0 10px 40px rgba(0,0,0,0.08);
             }
-            .greeting {
-                font-size: 24px;
-                font-weight: 600;
-                color: #1a2a3a;
-                margin-bottom: 16px;
+
+            .header{
+                background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+                padding:40px 30px;
+                text-align:center;
             }
-            .code-container {
-                background-color: #f7f9fc;
-                border-radius: 12px;
-                padding: 24px;
-                text-align: center;
-                margin: 24px 0;
-                border: 1px solid #eef2f6;
+
+            .logo{
+                max-height:70px;
+                margin:0 auto 15px;
             }
-            .verification-code {
-                font-size: 48px;
-                font-weight: 700;
-                color: #0a66c2;
-                letter-spacing: 12px;
-                font-family: "Courier New", monospace;
-                background: #ffffff;
-                padding: 16px 24px;
-                border-radius: 8px;
-                display: inline-block;
-                border: 1px solid #e0e7ed;
+
+            .header-title{
+                color:#ffffff;
+                font-size:28px;
+                font-weight:700;
+                margin:0;
             }
-            .expiry-info {
-                font-size: 13px;
-                color: #8a9aaa;
-                margin-top: 16px;
+
+            .header-subtitle{
+                color:rgba(255,255,255,0.85);
+                font-size:15px;
+                margin-top:10px;
             }
-            .email-footer {
-                background-color: #f8fafc;
-                padding: 24px 32px;
-                text-align: center;
-                border-top: 1px solid #eef2f6;
+
+            .content{
+                padding:40px 35px;
             }
-            .footer-text {
-                font-size: 12px;
-                color: #8a9aaa;
+
+            .welcome{
+                font-size:26px;
+                color:#111827;
+                font-weight:700;
+                margin-bottom:20px;
             }
+
+            .text{
+                font-size:16px;
+                color:#4b5563;
+                line-height:1.8;
+                margin-bottom:20px;
+            }
+
+            .otp-box{
+                background:linear-gradient(135deg,#eff6ff,#dbeafe);
+                border:2px dashed #2563eb;
+                border-radius:18px;
+                padding:30px 20px;
+                text-align:center;
+                margin:35px 0;
+            }
+
+            .otp-label{
+                font-size:15px;
+                color:#1e40af;
+                margin-bottom:15px;
+                font-weight:600;
+            }
+
+            .otp-code{
+                font-size:42px;
+                letter-spacing:12px;
+                font-weight:800;
+                color:#111827;
+                background:#ffffff;
+                display:inline-block;
+                padding:18px 30px;
+                border-radius:14px;
+                box-shadow:0 4px 15px rgba(37,99,235,0.15);
+                font-family:"Courier New", monospace;
+            }
+
+            .expire{
+                margin-top:18px;
+                font-size:13px;
+                color:#6b7280;
+            }
+
+            .security-box{
+                background:#f9fafb;
+                border-left:4px solid #2563eb;
+                padding:18px;
+                border-radius:10px;
+                margin-top:30px;
+            }
+
+            .security-text{
+                font-size:14px;
+                color:#4b5563;
+                line-height:1.7;
+            }
+
+            .footer{
+                background:#111827;
+                padding:30px 20px;
+                text-align:center;
+            }
+
+            .footer-text{
+                color:#9ca3af;
+                font-size:13px;
+                line-height:1.7;
+            }
+
+            .footer-link{
+                color:#60a5fa;
+                text-decoration:none;
+            }
+
+            @media screen and (max-width:600px){
+
+                .content{
+                    padding:30px 22px !important;
+                }
+
+                .header{
+                    padding:35px 20px !important;
+                }
+
+                .welcome{
+                    font-size:22px !important;
+                }
+
+                .otp-code{
+                    font-size:32px !important;
+                    letter-spacing:8px !important;
+                    padding:15px 20px !important;
+                }
+
+                .text{
+                    font-size:15px !important;
+                }
+
+                .header-title{
+                    font-size:24px !important;
+                }
+            }
+
+            @media screen and (max-width:400px){
+
+                .otp-code{
+                    font-size:26px !important;
+                    letter-spacing:5px !important;
+                    width:100%;
+                    box-sizing:border-box;
+                }
+            }
+
         </style>
     </head>
+
     <body>
-        <div class="email-container">
-            <div class="email-header">';
-    
+
+        <div class="wrapper">
+
+            <table class="main" align="center">
+
+                <!-- HEADER -->
+                <tr>
+                    <td class="header">';
+
     if (!empty($logo_url)) {
-        $message .= '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="logo">';
+        $message .= '
+                        <img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="logo">';
     }
-    
+
     $message .= '
-            </div>
-            
-            <div class="email-body">
-                <div class="greeting">Bienvenue ' . htmlspecialchars($user_name) . ',</div>
-                
-                <p style="margin-bottom: 16px; color: #4a5a6a;">
-                    Merci de vous être inscrit sur ' . htmlspecialchars($site_name) . '. 
-                    Pour activer votre compte, veuillez confirmer votre adresse email.
-                </p>
-                
-                <div class="code-container">
-                    <div style="font-size: 14px; color: #6b7a8a; margin-bottom: 12px;">Votre code de vérification</div>
-                    <div class="verification-code">' . $otp_code . '</div>
-                    <div class="expiry-info">Ce code expire dans 15 minutes</div>
-                </div>
-                
-                <p style="color: #4a5a6a; font-size: 14px; margin-top: 16px;">
-                    Une fois votre email vérifié, vous pourrez vous connecter et profiter de tous nos services.
-                </p>
-            </div>
-            
-            <div class="email-footer">
-                <div class="footer-text">
-                    &copy; ' . date('Y') . ' ' . htmlspecialchars($site_name) . '. Tous droits réservés.
-                </div>
-            </div>
+
+                        <h1 class="header-title">Confirmation Email</h1>
+
+                        <div class="header-subtitle">
+                            Sécurisez votre compte en vérifiant votre adresse email
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- CONTENT -->
+                <tr>
+                    <td class="content">
+
+                        <div class="welcome">
+                            Bonjour ' . htmlspecialchars($user_name) . ' 👋
+                        </div>
+
+                        <div class="text">
+                            Merci de rejoindre <strong>' . htmlspecialchars($site_name) . '</strong>.
+                            Utilisez le code de vérification ci-dessous pour confirmer votre adresse email et activer votre compte.
+                        </div>
+
+                        <div class="otp-box">
+
+                            <div class="otp-label">
+                                Votre code de vérification
+                            </div>
+
+                            <div class="otp-code">
+                                ' . htmlspecialchars($otp_code) . '
+                            </div>
+
+                            <div class="expire">
+                                ⏳ Ce code expire dans 15 minutes
+                            </div>
+
+                        </div>
+
+                        <div class="security-box">
+                            <div class="security-text">
+                                🔒 Pour votre sécurité, ne partagez jamais ce code avec une autre personne.
+                                Si vous n\'êtes pas à l\'origine de cette demande, ignorez simplement cet email.
+                            </div>
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- FOOTER -->
+                <tr>
+                    <td class="footer">
+
+                        <div class="footer-text">
+                            © ' . date('Y') . ' ' . htmlspecialchars($site_name) . '<br>
+                            Tous droits réservés.
+                        </div>
+
+                    </td>
+                </tr>
+
+            </table>
+
         </div>
+
     </body>
     </html>';
-    
+
     return $this->send_email($to, $subject, $message);
 }
+
+
 
 
 
