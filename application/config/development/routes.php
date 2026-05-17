@@ -58,13 +58,36 @@ $route['sections/browseImages'] = 'Sections/browseImages';
 // ============================================
 $route['admin'] = 'Admin/index';
 $route['admin/do_login'] = 'Admin/do_login';
+
 $route['auth'] = 'Auth/index';
 $route['auth/login'] = 'Auth/login';
+$route['Auth'] = 'Auth/login';
 $route['auth/logout'] = 'Auth/logout';
 $route['auth/register'] = 'Auth/register';
 $route['auth/forgot_password'] = 'Auth/forgot_password';
 $route['auth/google'] = 'Auth/google';
 $route['auth/facebook'] = 'Auth/facebook';
+
+
+
+
+// ============================================
+// ROUTES AUTHENTIFICATION (À AJOUTER AVANT LA ROUTE GÉNÉRIQUE)
+// ============================================
+$route['Auth'] = 'Auth/index';
+$route['Auth/index'] = 'Auth/index';
+$route['Auth/login'] = 'Auth/login';
+$route['Auth/register'] = 'Auth/register';
+$route['Auth/logout'] = 'Auth/logout';
+$route['Auth/send_reset_code'] = 'Auth/send_reset_code';
+$route['Auth/reset_password'] = 'Auth/reset_password';
+
+// Pour la vue de connexion/inscription (si vous avez une vue spécifique)
+$route['connexion'] = 'Auth/index';
+$route['inscription'] = 'Auth/index';
+$route['login'] = 'Auth/index';
+$route['register'] = 'Auth/index';
+
 
 // ============================================
 // ROUTES PRODUITS
