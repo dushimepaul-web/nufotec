@@ -86,6 +86,8 @@ class Auth extends Public_Controller {
     $terms = $this->input->post('terms');
     $type_utilisateur = $this->input->post('type_utilisateur') ?? 'patient';
     $nom_entreprise = $this->input->post('nom_entreprise');
+        // ⭐ AJOUTER CETTE LIGNE - Récupérer l'ID du pays
+    $pays_id = $this->input->post('pays_id') ?: null;
 
     $errors = [];
 
@@ -138,6 +140,7 @@ class Auth extends Public_Controller {
         'prenom' => $prenom,
         'email' => $email,
         'telephone' => !empty($telephone) ? $telephone : null,
+        'pays_id' => $pays_id,  // ⭐ AJOUTER CETTE LIGNE
         'password' => $hashed_password,
         'type_utilisateur' => $type_utilisateur,
         'role_id' => $this->get_role_id_by_type($type_utilisateur),
