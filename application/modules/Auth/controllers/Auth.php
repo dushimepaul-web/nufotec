@@ -97,14 +97,33 @@ class Auth extends Public_Controller {
             return;
         }
 
-        // Vérification TÉLÉPHONE
-        if (!empty($telephone)) {
-            if (!preg_match('/^\+\d{8,15}$/', $telephone)) {
-                $errors[] = 'Téléphone au format +257XXXXXXXXX.';
-            } elseif ($this->Login->phone_exists($telephone)) {
-                $errors[] = 'Téléphone déjà utilisé.';
-            }
-        }
+
+
+        // Ancienne validation (trop stricte)
+if (!empty($telephone) && !preg_match('/^\+\d{8,15}$/', $telephone)) {
+    $errors[] = 'Téléphone au format +257XXXXXXXXX.';
+} elseif (!empty($telephone) && $this->Login->phone_exists($telephone)) {
+    $errors[] = 'Téléphone déjà utilisé.';
+}
+
+// Nouvelle validation plus flexible
+if (!empty($telephone)) {
+    // Nettoyer le numéro pour la validation
+    $clean_phone = preg_replace('/[^0-9]/', '', $telephone);
+    
+    // Vérifier que le numéro a entre 8 et 15 chiffres
+    if (strlen($clean_phone) < 8 || strlen($clean_phone) > 15) {
+        $errors[] = 'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.';
+    }
+    
+    // Vérifier si le téléphone existe déjà (en nettoyant les deux côtés)
+    if ($this->Login->phone_exists($telephone)) {
+        $errors[] = 'Téléphone déjà utilisé.';
+    }
+}
+
+
+
 
         if (strlen($password) < 8) {
             $errors[] = 'Mot de passe (≥8 caractères).';
