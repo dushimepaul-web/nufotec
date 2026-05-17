@@ -29,6 +29,10 @@ $route['admin/do_login'] = 'Admin/do_login';
 
 $route['Produits'] = 'Produits/index';
 
+
+$route['advertise-product/cron_daily_promo/(:any)'] = 'Advertise_product/cron_daily_promo/$1';
+$route['Advertise-product/cron_daily_promo/(:any)'] = 'Advertise_product/cron_daily_promo/$1';
+
 // ============================================
 // ROUTES DASHBOARD
 // ============================================
