@@ -205,13 +205,19 @@ class Login extends CI_Model {
      */
     // Dans Login.php, modifiez la validation du téléphone
 public function phone_exists($phone) {
-    // Nettoyer le numéro pour la comparaison
+    // Nettoyer le numéro (enlever + et espaces)
     $clean_phone = preg_replace('/[^0-9]/', '', $phone);
     
-    $this->db->where('REPLACE(REPLACE(telephone, "+", ""), " ", "")', $clean_phone);
+    // Chercher dans la base
     $this->db->where('deleted_at IS NULL');
+    $this->db->group_start();
+    $this->db->like('telephone', $clean_phone, 'both');
+    $this->db->or_like('telephone', '+' . $clean_phone, 'both');
+    $this->db->group_end();
+    
     return $this->db->get('users')->num_rows() > 0;
 }
+
 
     /**
      * Récupérer utilisateur par email
