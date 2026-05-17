@@ -578,17 +578,18 @@
         showResetPasswordModal();
     });
 
-    // Flash messages avec SweetAlert
-    <?php if($this->session->flashdata('login_error')): ?>
-        showError('<?= addslashes($this->session->flashdata('login_error')) ?>');
-    <?php endif; ?>
-    <?php if($this->session->flashdata('register_error')): ?>
-        showError('<?= addslashes($this->session->flashdata('register_error')) ?>');
-    <?php endif; ?>
-    <?php if($this->session->flashdata('register_success')): ?>
-        showSuccess('<?= addslashes($this->session->flashdata('register_success')) ?>');
-        setTimeout(function() { switchToLogin(); }, 2000);
-    <?php endif; ?>
+   // Flash messages avec SweetAlert - Version corrigée
+<?php if($this->session->flashdata('login_error')): ?>
+    showError('<?= addslashes($this->session->flashdata('login_error')) ?>');
+<?php endif; ?>
+<?php if($this->session->flashdata('register_error')): ?>
+    showError('<?= addslashes($this->session->flashdata('register_error')) ?>');
+<?php endif; ?>
+<?php if($this->session->flashdata('register_success')): ?>
+    showSuccess('<?= addslashes($this->session->flashdata('register_success')) ?>');
+    // Ne pas rediriger automatiquement, laisser l'utilisateur choisir
+    // setTimeout(function() { switchToLogin(); }, 2000);
+<?php endif; ?>
 </script>
 </body>
 </html>
