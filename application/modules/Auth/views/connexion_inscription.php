@@ -275,26 +275,41 @@
     document.getElementById('switchToRegister')?.addEventListener('click', (e) => { e.preventDefault(); switchToRegister(); });
     document.getElementById('switchToLogin')?.addEventListener('click', (e) => { e.preventDefault(); switchToLogin(); });
 
-    // Connexion progressive
-    const loginIdentifier = document.getElementById('loginIdentifier');
-    const loginPassword = document.getElementById('loginPassword');
-    const passwordField = document.getElementById('passwordField');
-    const submitBtn = document.getElementById('submitBtn');
-    const forgotLink = document.getElementById('forgotLink');
+   // Connexion - Affichage par défaut du mot de passe
+const loginIdentifier = document.getElementById('loginIdentifier');
+const loginPassword = document.getElementById('loginPassword');
+const passwordField = document.getElementById('passwordField');
+const submitBtn = document.getElementById('submitBtn');
+const forgotLink = document.getElementById('forgotLink');
 
-    loginIdentifier?.addEventListener('input', function() {
-        if (this.value.trim().length > 0) {
-            passwordField.style.display = 'block';
-            loginPassword.setAttribute('required', 'required');
-            submitBtn.innerHTML = 'Se connecter';
-            forgotLink.style.display = 'block';
-        } else {
-            passwordField.style.display = 'none';
-            loginPassword.removeAttribute('required');
-            submitBtn.innerHTML = 'Continuer';
-            forgotLink.style.display = 'none';
-        }
-    });
+// Afficher le champ mot de passe et le lien par défaut
+passwordField.style.display = 'block';
+loginPassword.setAttribute('required', 'required');
+submitBtn.innerHTML = 'Se connecter';
+forgotLink.style.display = 'block';
+
+// Optionnel : garder l'écoute pour cacher si vide (si vous voulez)
+loginIdentifier?.addEventListener('input', function() {
+    if (this.value.trim().length > 0) {
+        passwordField.style.display = 'block';
+        loginPassword.setAttribute('required', 'required');
+        submitBtn.innerHTML = 'Se connecter';
+        forgotLink.style.display = 'block';
+    } else {
+        // Si vous voulez garder le champ visible même quand vide, commentez ces lignes
+        // passwordField.style.display = 'none';
+        // loginPassword.removeAttribute('required');
+        // submitBtn.innerHTML = 'Continuer';
+        // forgotLink.style.display = 'none';
+        
+        // Ou laissez-les visibles en permanence
+        passwordField.style.display = 'block';
+        loginPassword.setAttribute('required', 'required');
+        submitBtn.innerHTML = 'Se connecter';
+        forgotLink.style.display = 'block';
+    }
+});
+
 
     // Auto-complétion du code téléphone
     const paysSelect = document.getElementById('paysSelect');
