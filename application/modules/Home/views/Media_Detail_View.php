@@ -1027,7 +1027,7 @@ function getMediaThumbnail($media) {
                     <div class="comment-form">
                         <div class="comment-avatar">
                             <?php if (!empty($user['photo'])): ?>
-                                <img src="<?= base_url('uploads/users/' . $user['photo']) ?>" alt="Avatar">
+                                <img src="<?= base_url('attachments/users/' . $user['photo']) ?>" alt="Avatar">
                             <?php else: ?>
                                 <div class="default-avatar w-100 h-100 rounded-circle bg-primary d-flex align-items-center justify-content-center">
                                     <?= strtoupper(substr($user['prenom'] ?? 'U', 0, 1)) ?>
@@ -1054,7 +1054,7 @@ function getMediaThumbnail($media) {
                                 <div class="comment-item">
                                     <div class="comment-avatar">
                                         <?php if (!empty($comment['photo'])): ?>
-                                            <img src="<?= base_url('uploads/users/' . $comment['photo']) ?>" alt="Avatar">
+                                            <img src="<?= base_url('attachments/users/' . $comment['photo']) ?>" alt="Avatar">
                                         <?php else: ?>
                                             <div class="default-avatar w-100 h-100 rounded-circle bg-secondary d-flex align-items-center justify-content-center">
                                                 <?= strtoupper(substr($comment['prenom'] ?? $comment['author_name'] ?? 'V', 0, 1)) ?>
