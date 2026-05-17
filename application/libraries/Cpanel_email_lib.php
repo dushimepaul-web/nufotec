@@ -289,6 +289,143 @@ class Cpanel_email_lib {
     
     return $this->send_email($to, $subject, $message);
 }
+
+
+
+
+public function send_verification_code($to, $user_name, $otp_code) {
+    $subject = 'Vérifiez votre adresse email - NUFOTEC';
+    
+    // Récupérer les informations du site
+    $site_logo = $this->CI->Model->get_setting('site_logo');
+    $site_name = $this->CI->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
+    $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
+    
+    $message = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Vérification email - ' . htmlspecialchars($site_name) . '</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                background-color: #f5f7fa;
+                margin: 0;
+                padding: 40px 20px;
+                line-height: 1.6;
+            }
+            .email-container {
+                max-width: 560px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            }
+            .email-header {
+                background-color: #ffffff;
+                padding: 32px 32px 24px;
+                text-align: center;
+                border-bottom: 1px solid #eef2f6;
+            }
+            .logo {
+                max-height: 60px;
+                width: auto;
+                margin-bottom: 16px;
+            }
+            .email-body {
+                padding: 32px;
+            }
+            .greeting {
+                font-size: 24px;
+                font-weight: 600;
+                color: #1a2a3a;
+                margin-bottom: 16px;
+            }
+            .code-container {
+                background-color: #f7f9fc;
+                border-radius: 12px;
+                padding: 24px;
+                text-align: center;
+                margin: 24px 0;
+                border: 1px solid #eef2f6;
+            }
+            .verification-code {
+                font-size: 48px;
+                font-weight: 700;
+                color: #0a66c2;
+                letter-spacing: 12px;
+                font-family: "Courier New", monospace;
+                background: #ffffff;
+                padding: 16px 24px;
+                border-radius: 8px;
+                display: inline-block;
+                border: 1px solid #e0e7ed;
+            }
+            .expiry-info {
+                font-size: 13px;
+                color: #8a9aaa;
+                margin-top: 16px;
+            }
+            .email-footer {
+                background-color: #f8fafc;
+                padding: 24px 32px;
+                text-align: center;
+                border-top: 1px solid #eef2f6;
+            }
+            .footer-text {
+                font-size: 12px;
+                color: #8a9aaa;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="email-header">';
+    
+    if (!empty($logo_url)) {
+        $message .= '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="logo">';
+    }
+    
+    $message .= '
+            </div>
+            
+            <div class="email-body">
+                <div class="greeting">Bienvenue ' . htmlspecialchars($user_name) . ',</div>
+                
+                <p style="margin-bottom: 16px; color: #4a5a6a;">
+                    Merci de vous être inscrit sur ' . htmlspecialchars($site_name) . '. 
+                    Pour activer votre compte, veuillez confirmer votre adresse email.
+                </p>
+                
+                <div class="code-container">
+                    <div style="font-size: 14px; color: #6b7a8a; margin-bottom: 12px;">Votre code de vérification</div>
+                    <div class="verification-code">' . $otp_code . '</div>
+                    <div class="expiry-info">Ce code expire dans 15 minutes</div>
+                </div>
+                
+                <p style="color: #4a5a6a; font-size: 14px; margin-top: 16px;">
+                    Une fois votre email vérifié, vous pourrez vous connecter et profiter de tous nos services.
+                </p>
+            </div>
+            
+            <div class="email-footer">
+                <div class="footer-text">
+                    &copy; ' . date('Y') . ' ' . htmlspecialchars($site_name) . '. Tous droits réservés.
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>';
+    
+    return $this->send_email($to, $subject, $message);
+}
+
+
+
     
     // Vérifier si l'email est valide
     public function validate_email($email) {

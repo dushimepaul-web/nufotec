@@ -113,6 +113,12 @@ $route['forgot-password'] = 'Auth/index';
 
 
 
+// Routes pour vérification email
+$route['auth/verify_email_page'] = 'Auth/verify_email_page';
+$route['auth/verify_email_code'] = 'Auth/verify_email_code';
+$route['auth/resend_verification_code'] = 'Auth/resend_verification_code';
+
+
 
 // ============================================
 // ROUTES AUTHENTIFICATION (À AJOUTER AVANT LA ROUTE GÉNÉRIQUE)

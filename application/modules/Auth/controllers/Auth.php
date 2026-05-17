@@ -69,104 +69,123 @@ class Auth extends Public_Controller {
     }
 
     public function register() {
-        if ($this->input->server('REQUEST_METHOD') !== 'POST') {
-            redirect('Auth?register=1');
+    if ($this->input->server('REQUEST_METHOD') !== 'POST') {
+        redirect('Auth?register=1');
+    }
+
+    $nom = trim($this->input->post('nom'));
+    $prenom = trim($this->input->post('prenom'));
+    $email = trim($this->input->post('email'));
+    $telephone = trim($this->input->post('telephone'));
+    $password = $this->input->post('password');
+    $confirm = $this->input->post('confirm_password');
+    $terms = $this->input->post('terms');
+    $type_utilisateur = $this->input->post('type_utilisateur') ?? 'patient';
+    $nom_entreprise = $this->input->post('nom_entreprise');
+
+    $errors = [];
+
+    if (strlen($nom) < 2) $errors[] = 'Nom (≥2 caractères)';
+    if (strlen($prenom) < 2) $errors[] = 'Prénom (≥2 caractères)';
+
+    // Vérification EMAIL
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Email invalide.';
+    } elseif ($this->Login->email_exists($email)) {
+        $this->session->set_flashdata('register_error', 'Cet email est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.');
+        redirect('Auth?register=1');
+        return;
+    }
+
+    // Vérification TÉLÉPHONE
+    if (!empty($telephone)) {
+        $clean_phone = preg_replace('/[^0-9]/', '', $telephone);
+        if (strlen($clean_phone) < 8 || strlen($clean_phone) > 15) {
+            $errors[] = 'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.';
+        } elseif ($this->Login->phone_exists($telephone)) {
+            $errors[] = 'Téléphone déjà utilisé.';
         }
+    }
 
-        $nom = trim($this->input->post('nom'));
-        $prenom = trim($this->input->post('prenom'));
-        $email = trim($this->input->post('email'));
-        $telephone = trim($this->input->post('telephone'));
-        $password = $this->input->post('password');
-        $confirm = $this->input->post('confirm_password');
-        $terms = $this->input->post('terms');
-        $type_utilisateur = $this->input->post('type_utilisateur') ?? 'patient';
-        $nom_entreprise = $this->input->post('nom_entreprise');
-
-        $errors = [];
-
-        if (strlen($nom) < 2) $errors[] = 'Nom (≥2 caractères)';
-        if (strlen($prenom) < 2) $errors[] = 'Prénom (≥2 caractères)';
-
-        // Vérification EMAIL
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Email invalide.';
-        } elseif ($this->Login->email_exists($email)) {
-            $this->session->set_flashdata('register_error', 'Cet email est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.');
-            redirect('Auth?register=1');
-            return;
-        }
-
-
-
-        // Ancienne validation (trop stricte)
-if (!empty($telephone) && !preg_match('/^\+\d{8,15}$/', $telephone)) {
-    $errors[] = 'Téléphone au format +257XXXXXXXXX.';
-} elseif (!empty($telephone) && $this->Login->phone_exists($telephone)) {
-    $errors[] = 'Téléphone déjà utilisé.';
-}
-
-// Nouvelle validation plus flexible
-if (!empty($telephone)) {
-    // Nettoyer le numéro pour la validation
-    $clean_phone = preg_replace('/[^0-9]/', '', $telephone);
-    
-    // Vérifier que le numéro a entre 8 et 15 chiffres
-    if (strlen($clean_phone) < 8 || strlen($clean_phone) > 15) {
-        $errors[] = 'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.';
+    if (strlen($password) < 8) {
+        $errors[] = 'Mot de passe (≥8 caractères).';
+    } elseif (!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
+        $errors[] = 'Mot de passe : une majuscule et un chiffre.';
     }
     
-    // Vérifier si le téléphone existe déjà (en nettoyant les deux côtés)
-    if ($this->Login->phone_exists($telephone)) {
-        $errors[] = 'Téléphone déjà utilisé.';
+    if ($password !== $confirm) $errors[] = 'Confirmation différente.';
+    if (!$terms) $errors[] = 'Acceptez les conditions.';
+    if ($type_utilisateur === 'entreprise' && empty($nom_entreprise)) {
+        $errors[] = 'Nom de l\'entreprise requis.';
     }
-}
 
+    if (!empty($errors)) {
+        $this->session->set_flashdata('register_error', implode('<br>', $errors));
+        redirect('Auth?register=1');
+    }
 
+    // Générer un token de vérification d'email
+    $email_verification_token = bin2hex(random_bytes(32));
+    
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
+    $user_data = [
+        'nom' => $nom,
+        'prenom' => $prenom,
+        'email' => $email,
+        'telephone' => !empty($telephone) ? $telephone : null,
+        'password' => $hashed_password,
+        'type_utilisateur' => $type_utilisateur,
+        'role_id' => $this->get_role_id_by_type($type_utilisateur),
+        'is_active' => 0, // Compte inactif jusqu'à vérification email
+        'email_verification_token' => $email_verification_token,
+        'nom_entreprise' => ($type_utilisateur === 'entreprise') ? $nom_entreprise : null,
+        'created_at' => date('Y-m-d H:i:s')
+    ];
 
-        if (strlen($password) < 8) {
-            $errors[] = 'Mot de passe (≥8 caractères).';
-        } elseif (!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
-            $errors[] = 'Mot de passe : une majuscule et un chiffre.';
-        }
+    $result = $this->Login->create_user($user_data);
+
+    if ($result['success']) {
+        // Envoyer le code de vérification par email
+        $otp_code = sprintf("%06d", mt_rand(1, 999999));
+        $expiration = date('Y-m-d H:i:s', strtotime('+15 minutes'));
         
-        if ($password !== $confirm) $errors[] = 'Confirmation différente.';
-        if (!$terms) $errors[] = 'Acceptez les conditions.';
-        if ($type_utilisateur === 'entreprise' && empty($nom_entreprise)) {
-            $errors[] = 'Nom de l\'entreprise requis.';
-        }
-
-        if (!empty($errors)) {
-            $this->session->set_flashdata('register_error', implode('<br>', $errors));
-            redirect('Auth?register=1');
-        }
-
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        $user_data = [
-            'nom' => $nom,
-            'prenom' => $prenom,
+        // Sauvegarder le code OTP
+        $this->db->where('user_id', $result['user_id'])->where('type_otp', 'verification_email')->delete('codes_otp');
+        $this->db->insert('codes_otp', [
+            'user_id' => $result['user_id'],
+            'code' => $otp_code,
+            'type_otp' => 'verification_email',
             'email' => $email,
-            'telephone' => !empty($telephone) ? $telephone : null,
-            'password' => $hashed_password,
-            'type_utilisateur' => $type_utilisateur,
-            'role_id' => $this->get_role_id_by_type($type_utilisateur),
-            'is_active' => 1,
-            'nom_entreprise' => ($type_utilisateur === 'entreprise') ? $nom_entreprise : null,
+            'tentatives' => 0,
+            'date_expiration' => $expiration,
+            'utilise' => 0,
             'created_at' => date('Y-m-d H:i:s')
-        ];
-
-        $result = $this->Login->create_user($user_data);
-
-        if ($result['success']) {
-            $this->session->set_flashdata('register_success', 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
-            redirect('Auth');
+        ]);
+        
+        // Envoyer l'email de vérification
+        $user_name = trim($prenom . ' ' . $nom);
+        $email_sent = $this->cpanel_email_lib->send_verification_code($email, $user_name, $otp_code);
+        
+        if ($email_sent['success']) {
+            // Stocker l'email en session pour la vérification
+            $this->session->set_tempdata('verification_email', $email, 900);
+            $this->session->set_tempdata('verification_user_id', $result['user_id'], 900);
+            
+            // Rediriger vers la page de vérification
+            redirect('auth/verify_email_page');
         } else {
-            $this->session->set_flashdata('register_error', $result['message']);
+            $this->session->set_flashdata('register_error', 'Compte créé mais erreur lors de l\'envoi de l\'email de vérification. Veuillez contacter l\'administrateur.');
             redirect('Auth?register=1');
         }
+    } else {
+        $this->session->set_flashdata('register_error', $result['message']);
+        redirect('Auth?register=1');
     }
+}
+
+
+
 
     public function logout() {
         $this->session->sess_destroy();
@@ -459,6 +478,119 @@ public function clear_flash_data() {
         echo json_encode(['success' => true]);
     } else {
         echo json_encode(['success' => false]);
+    }
+}
+
+
+
+
+// Page de vérification d'email
+public function verify_email_page() {
+    $email = $this->session->tempdata('verification_email');
+    
+    if (!$email) {
+        redirect('Auth');
+    }
+    
+    $data['email'] = $email;
+    $this->load->view('verify_email_view', $data);
+}
+
+// Vérifier le code OTP d'email
+public function verify_email_code() {
+    $this->output->set_content_type('application/json');
+    
+    $email = $this->session->tempdata('verification_email');
+    $user_id = $this->session->tempdata('verification_user_id');
+    $code = trim($this->input->post('code'));
+    
+    if (!$email || !$user_id) {
+        echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez vous reconnecter.']);
+        return;
+    }
+    
+    if (empty($code)) {
+        echo json_encode(['success' => false, 'message' => 'Veuillez entrer le code de vérification.']);
+        return;
+    }
+    
+    // Vérifier le code OTP
+    $otp = $this->db->where('user_id', $user_id)
+                    ->where('code', $code)
+                    ->where('type_otp', 'verification_email')
+                    ->where('utilise', 0)
+                    ->where('date_expiration >', date('Y-m-d H:i:s'))
+                    ->get('codes_otp')
+                    ->row();
+    
+    if (!$otp) {
+        echo json_encode(['success' => false, 'message' => 'Code invalide ou expiré.']);
+        return;
+    }
+    
+    // Marquer le code comme utilisé
+    $this->db->where('id', $otp->id)->update('codes_otp', ['utilise' => 1]);
+    
+    // Activer le compte utilisateur
+    $this->db->where('id', $user_id)->update('users', [
+        'is_active' => 1,
+        'email_verified_at' => date('Y-m-d H:i:s'),
+        'email_verification_token' => null
+    ]);
+    
+    // Nettoyer la session
+    $this->session->unset_tempdata('verification_email');
+    $this->session->unset_tempdata('verification_user_id');
+    
+    echo json_encode(['success' => true, 'message' => 'Email vérifié avec succès ! Vous pouvez maintenant vous connecter.']);
+}
+
+// Renvoyer le code de vérification
+public function resend_verification_code() {
+    $this->output->set_content_type('application/json');
+    
+    $email = $this->session->tempdata('verification_email');
+    $user_id = $this->session->tempdata('verification_user_id');
+    
+    if (!$email || !$user_id) {
+        echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez recommencer l\'inscription.']);
+        return;
+    }
+    
+    $user = $this->Login->get_user_by_id($user_id);
+    
+    if (!$user) {
+        echo json_encode(['success' => false, 'message' => 'Utilisateur non trouvé.']);
+        return;
+    }
+    
+    // Générer nouveau code
+    $otp_code = sprintf("%06d", mt_rand(1, 999999));
+    $expiration = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+    
+    // Supprimer ancien code
+    $this->db->where('user_id', $user_id)->where('type_otp', 'verification_email')->delete('codes_otp');
+    
+    // Sauvegarder nouveau code
+    $this->db->insert('codes_otp', [
+        'user_id' => $user_id,
+        'code' => $otp_code,
+        'type_otp' => 'verification_email',
+        'email' => $email,
+        'tentatives' => 0,
+        'date_expiration' => $expiration,
+        'utilise' => 0,
+        'created_at' => date('Y-m-d H:i:s')
+    ]);
+    
+    // Envoyer l'email
+    $user_name = trim($user['prenom'] . ' ' . $user['nom']);
+    $result = $this->cpanel_email_lib->send_verification_code($email, $user_name, $otp_code);
+    
+    if ($result['success']) {
+        echo json_encode(['success' => true, 'message' => 'Un nouveau code a été envoyé à votre adresse email.']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'envoi du code.']);
     }
 }
 }
