@@ -394,32 +394,34 @@ class Advertise_product extends MY_Controller {
     }
 
     private function buildPromoProductsHtml($products)
-    {
-        $html = '';
-        
-        foreach ($products as $product) {
-            $product_image_url = base_url('attachments/Products/' . $product['main_image']);
-            if (!file_exists(FCPATH . 'attachments/Products/' . $product['main_image']) || $product['main_image'] == 'default-product.png') {
-                $product_image_url = base_url('assets/images/default-product.jpg');
-            }
-            
-            $product_url = base_url('product/' . $product['id'] . '_' . $product['slug']);
-            $product_title = htmlspecialchars($product['title_fr'] ?: $product['title']);
-            $product_price = $this->formatPrice($product['price']);
-            
-            $html .= '
-            <div style="background: #ffffff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2f6;">
-                <img src="' . $product_image_url . '" alt="' . $product_title . '" style="width: 100%; height: 180px; object-fit: cover;">
-                <div style="padding: 16px;">
-                    <h3 style="color: #1a2a3a; margin: 0 0 8px; font-size: 16px;">' . $product_title . '</h3>
-                    <p style="color: #0a66c2; font-size: 18px; font-weight: bold; margin: 0 0 12px;">' . $product_price . '</p>
-                    <a href="' . $product_url . '" style="display: inline-block; background: #0a2540; color: #ffffff; padding: 8px 20px; text-decoration: none; border-radius: 25px; font-size: 13px;">Découvrir</a>
-                </div>
-            </div>';
+{
+    $html = '';
+    
+    foreach ($products as $product) {
+        $product_image_url = base_url('attachments/Products/' . $product['main_image']);
+        if (!file_exists(FCPATH . 'attachments/Products/' . $product['main_image']) || $product['main_image'] == 'default-product.png') {
+            $product_image_url = base_url('assets/images/default-product.jpg');
         }
         
-        return $html;
+        // URL CORRIGÉE : utiliser uniquement le slug (sans l'ID)
+        $product_url = base_url('product/' . $product['slug']);
+        
+        $product_title = htmlspecialchars($product['title_fr'] ?: $product['title']);
+        $product_price = $this->formatPrice($product['price']);
+        
+        $html .= '
+        <div style="background: #ffffff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2f6;">
+            <img src="' . $product_image_url . '" alt="' . $product_title . '" style="width: 100%; height: 180px; object-fit: cover;">
+            <div style="padding: 16px;">
+                <h3 style="color: #1a2a3a; margin: 0 0 8px; font-size: 16px;">' . $product_title . '</h3>
+                <p style="color: #0a66c2; font-size: 18px; font-weight: bold; margin: 0 0 12px;">' . $product_price . '</p>
+                <a href="' . $product_url . '" style="display: inline-block; background: #0a2540; color: #ffffff; padding: 8px 20px; text-decoration: none; border-radius: 25px; font-size: 13px;">Découvrir</a>
+            </div>
+        </div>';
     }
+    
+    return $html;
+}
 
     private function buildDailyPromoTemplate($products_html, $subject)
     {
