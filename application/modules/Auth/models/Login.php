@@ -196,16 +196,7 @@ class Login extends CI_Model {
         );
     }
 
-    /**
-     * Vérifier si email existe
-     * @param string $email
-     * @return bool
-     */
-    public function email_exists($email) {
-        $this->db->where('email', $email);
-        $this->db->where('deleted_at IS NULL');
-        return $this->db->get('users')->num_rows() > 0;
-    }
+  
 
     /**
      * Vérifier si téléphone existe
@@ -519,4 +510,128 @@ class Login extends CI_Model {
         
         return $type;
     }
+
+
+
+
+    // ==================== GESTION OTP (MOT DE PASSE OUBLIÉ) ====================
+    
+    /**
+     * Générer un code OTP à 6 chiffres
+     * @return string
+     */
+    public function generate_otp_code() {
+        return sprintf("%06d", mt_rand(1, 999999));
+    }
+    
+    /**
+     * Sauvegarder un code OTP pour réinitialisation de mot de passe
+     * @param int $user_id
+     * @param string $code
+     * @param string $email
+     * @return bool
+     */
+    public function save_reset_otp($user_id, $code, $email) {
+        // Supprimer les anciens codes non utilisés pour cet utilisateur
+        $this->db->where('user_id', $user_id);
+        $this->db->where('type_otp', 'reinitialisation_mdp');
+        $this->db->where('utilise', 0);
+        $this->db->delete('codes_otp');
+        
+        // Insérer le nouveau code
+        $data = array(
+            'user_id' => $user_id,
+            'code' => $code,
+            'type_otp' => 'reinitialisation_mdp',
+            'email' => $email,
+            'tentatives' => 0,
+            'date_expiration' => date('Y-m-d H:i:s', strtotime('+15 minutes')),
+            'utilise' => 0,
+            'created_at' => date('Y-m-d H:i:s')
+        );
+        
+        return $this->db->insert('codes_otp', $data);
+    }
+    
+    /**
+     * Vérifier si un code OTP est valide
+     * @param int $user_id
+     * @param string $code
+     * @return bool|object
+     */
+    public function verify_reset_otp($user_id, $code) {
+        $otp = $this->db->where('user_id', $user_id)
+                        ->where('code', $code)
+                        ->where('type_otp', 'reinitialisation_mdp')
+                        ->where('utilise', 0)
+                        ->where('date_expiration >', date('Y-m-d H:i:s'))
+                        ->get('codes_otp')
+                        ->row();
+        
+        if ($otp) {
+            return $otp;
+        }
+        
+        // Incrémenter le compteur de tentatives
+        $this->db->where('user_id', $user_id)
+                 ->where('type_otp', 'reinitialisation_mdp')
+                 ->where('utilise', 0)
+                 ->set('tentatives', 'tentatives+1', FALSE)
+                 ->update('codes_otp');
+        
+        return false;
+    }
+    
+    /**
+     * Marquer un code OTP comme utilisé
+     * @param int $otp_id
+     * @return bool
+     */
+    public function mark_otp_as_used($otp_id) {
+        $this->db->where('id', $otp_id);
+        return $this->db->update('codes_otp', ['utilise' => 1]);
+    }
+    
+    /**
+     * Supprimer tous les codes OTP d'un utilisateur
+     * @param int $user_id
+     * @return bool
+     */
+    public function delete_user_otps($user_id) {
+        $this->db->where('user_id', $user_id);
+        $this->db->where('type_otp', 'reinitialisation_mdp');
+        return $this->db->delete('codes_otp');
+    }
+    
+    /**
+     * Vérifier le nombre de tentatives pour un utilisateur
+     * @param int $user_id
+     * @return int
+     */
+    public function get_otp_attempts($user_id) {
+        $this->db->select('tentatives');
+        $this->db->where('user_id', $user_id);
+        $this->db->where('type_otp', 'reinitialisation_mdp');
+        $this->db->where('utilise', 0);
+        $this->db->order_by('id', 'DESC');
+        $this->db->limit(1);
+        $otp = $this->db->get('codes_otp')->row();
+        
+        if ($otp) {
+            return (int)$otp->tentatives;
+        }
+        
+        return 0;
+    }
+
+    /**
+ * Vérifier si email existe
+ * @param string $email
+ * @return bool
+ */
+public function email_exists($email) {
+    $this->db->where('email', $email);
+    $this->db->where('deleted_at IS NULL');
+    return $this->db->get('users')->num_rows() > 0;
+}
 }

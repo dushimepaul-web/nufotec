@@ -589,3 +589,8 @@ $config['taux_devise'] = [
     'USD_TO_BIF' => 1000
 ];
 
+
+// Configuration email pour cPanel
+$config['cpanel_from_email'] = 'info@nufotec.com'; // Remplacez par votre vrai email
+$config['cpanel_from_name'] = 'NUFOTEC BURUNDI';
+
