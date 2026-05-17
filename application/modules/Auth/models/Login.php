@@ -18,35 +18,39 @@ class Login extends CI_Model {
      * @param string $password Mot de passe
      * @return array
      */
-    public function verify_login($login, $password) {
-        // Chercher par email ou téléphone
-        $this->db->where('(email = '.$this->db->escape($login).' OR telephone = '.$this->db->escape($login).')');
-        $this->db->where('deleted_at IS NULL');
-        $user = $this->db->get('users')->row_array();
+   public function verify_login($login, $password) {
+    $this->db->where('(email = '.$this->db->escape($login).' OR telephone = '.$this->db->escape($login).')');
+    $this->db->where('deleted_at IS NULL');
+    $user = $this->db->get('users')->row_array();
 
-        if (!$user) {
-            return ['success' => false, 'message' => 'Identifiants incorrects'];
-        }
-
-        // Vérifier si compte actif
-        if (isset($user['is_active']) && $user['is_active'] != 1) {
-            return ['success' => false, 'message' => 'Votre compte est désactivé. Veuillez contacter l\'administrateur.'];
-        }
-
-        // Vérifier mot de passe
-        if (!password_verify($password, $user['password'])) {
-            return ['success' => false, 'message' => 'Identifiants incorrects'];
-        }
-
-        // Mettre à jour dernière connexion
-        $this->db->where('id', $user['id']);
-        $this->db->update('users', [
-            'last_login_at' => date('Y-m-d H:i:s'),
-            'last_login_ip' => $this->input->ip_address()
-        ]);
-
-        return ['success' => true, 'user' => $this->get_user_data($user['id'])];
+    if (!$user) {
+        return ['success' => false, 'message' => 'Identifiants incorrects'];
     }
+
+    // Vérifier si compte actif
+    if (isset($user['is_active']) && $user['is_active'] != 1) {
+        return ['success' => false, 'message' => 'Votre compte est désactivé. Veuillez contacter l\'administrateur.'];
+    }
+
+    // Vérifier si email vérifié (optionnel - vous pouvez commenter cette ligne en développement)
+    // if (is_null($user['email_verified_at'])) {
+    //     return ['success' => false, 'message' => 'Veuillez vérifier votre email avant de vous connecter.'];
+    // }
+
+    // Vérifier mot de passe
+    if (!password_verify($password, $user['password'])) {
+        return ['success' => false, 'message' => 'Identifiants incorrects'];
+    }
+
+    // Mettre à jour dernière connexion
+    $this->db->where('id', $user['id']);
+    $this->db->update('users', [
+        'last_login_at' => date('Y-m-d H:i:s'),
+        'last_login_ip' => $this->input->ip_address()
+    ]);
+
+    return ['success' => true, 'user' => $this->get_user_data($user['id'])];
+}
 
     /**
      * Créer un nouvel utilisateur (inscription)
@@ -643,5 +647,76 @@ public function email_exists($email) {
     $this->db->where('email', $email);
     $this->db->where('deleted_at IS NULL');
     return $this->db->get('users')->num_rows() > 0;
+}
+
+
+/**
+ * Récupérer un utilisateur par son ID
+ * @param int $user_id
+ * @return array|null
+ */
+public function get_user_by_id($user_id) {
+    $this->db->where('id', $user_id);
+    $this->db->where('deleted_at IS NULL');
+    return $this->db->get('users')->row_array();
+}
+
+/**
+ * Vérifier si un code OTP de vérification email est valide
+ * @param int $user_id
+ * @param string $code
+ * @return bool|object
+ */
+public function verify_email_otp($user_id, $code) {
+    $otp = $this->db->where('user_id', $user_id)
+                    ->where('code', $code)
+                    ->where('type_otp', 'verification_email')
+                    ->where('utilise', 0)
+                    ->where('date_expiration >', date('Y-m-d H:i:s'))
+                    ->get('codes_otp')
+                    ->row();
+    
+    if ($otp) {
+        return $otp;
+    }
+    
+    // Incrémenter le compteur de tentatives
+    $this->db->where('user_id', $user_id)
+             ->where('type_otp', 'verification_email')
+             ->where('utilise', 0)
+             ->set('tentatives', 'tentatives+1', FALSE)
+             ->update('codes_otp');
+    
+    return false;
+}
+
+/**
+ * Sauvegarder un code OTP pour vérification email
+ * @param int $user_id
+ * @param string $code
+ * @param string $email
+ * @return bool
+ */
+public function save_verification_otp($user_id, $code, $email) {
+    // Supprimer les anciens codes non utilisés
+    $this->db->where('user_id', $user_id);
+    $this->db->where('type_otp', 'verification_email');
+    $this->db->where('utilise', 0);
+    $this->db->delete('codes_otp');
+    
+    // Insérer le nouveau code
+    $data = array(
+        'user_id' => $user_id,
+        'code' => $code,
+        'type_otp' => 'verification_email',
+        'email' => $email,
+        'tentatives' => 0,
+        'date_expiration' => date('Y-m-d H:i:s', strtotime('+15 minutes')),
+        'utilise' => 0,
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s')
+    );
+    
+    return $this->db->insert('codes_otp', $data);
 }
 }

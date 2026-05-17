@@ -500,7 +500,8 @@ public function verify_email_page() {
     $this->load->view('verify_email_view', $data);
 }
 
-// Vérifier le code OTP d'email
+
+
 public function verify_email_code() {
     $this->output->set_content_type('application/json');
     
@@ -509,7 +510,7 @@ public function verify_email_code() {
     $code = trim($this->input->post('code'));
     
     if (!$email || !$user_id) {
-        echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez vous reconnecter.']);
+        echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez recommencer l\'inscription.']);
         return;
     }
     
@@ -518,14 +519,8 @@ public function verify_email_code() {
         return;
     }
     
-    // Vérifier le code OTP
-    $otp = $this->db->where('user_id', $user_id)
-                    ->where('code', $code)
-                    ->where('type_otp', 'verification_email')
-                    ->where('utilise', 0)
-                    ->where('date_expiration >', date('Y-m-d H:i:s'))
-                    ->get('codes_otp')
-                    ->row();
+    // Utiliser la méthode du modèle
+    $otp = $this->Login->verify_email_otp($user_id, $code);
     
     if (!$otp) {
         echo json_encode(['success' => false, 'message' => 'Code invalide ou expiré.']);
@@ -533,7 +528,7 @@ public function verify_email_code() {
     }
     
     // Marquer le code comme utilisé
-    $this->db->where('id', $otp->id)->update('codes_otp', ['utilise' => 1]);
+    $this->Login->mark_otp_as_used($otp->id);
     
     // Activer le compte utilisateur
     $this->db->where('id', $user_id)->update('users', [
@@ -548,6 +543,8 @@ public function verify_email_code() {
     
     echo json_encode(['success' => true, 'message' => 'Email vérifié avec succès ! Vous pouvez maintenant vous connecter.']);
 }
+
+
 
 // Renvoyer le code de vérification
 public function resend_verification_code() {

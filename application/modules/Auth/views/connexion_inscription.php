@@ -34,7 +34,8 @@
         .input-field select { cursor: pointer; }
         .input-field input:focus, .input-field select:focus { border-color: #0a66c2; box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1); }
         .phone-wrapper { display: flex; gap: 10px; align-items: center; }
-        .phone-code { width: 100px; flex-shrink: 0; }
+        .phone-code { width: 110px; flex-shrink: 0; }
+        .phone-code select { width: 100%; padding: 16px 12px; cursor: pointer; }
         .phone-number { flex: 1; }
         .phone-number input { width: 100%; }
         .btn-primary {
@@ -75,7 +76,16 @@
         .checkbox input { width: 18px; height: 18px; }
         .checkbox label { font-size: 13px; color: #6c757d; }
         .reset-link { text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0; cursor: pointer; color: #8a99b0; }
-        @media (max-width: 480px) { .auth-card { padding: 30px 20px; } .row-2cols { grid-template-columns: 1fr; gap: 0; } .phone-wrapper { flex-direction: column; } .phone-code { width: 100%; } }
+        .error-border { border-color: #dc2626 !important; }
+        .error-message { color: #dc2626; font-size: 12px; margin-top: 5px; display: block; }
+        @media (max-width: 560px) {
+            .phone-wrapper { flex-direction: column; }
+            .phone-code { width: 100%; }
+        }
+        @media (max-width: 480px) { 
+            .auth-card { padding: 30px 20px; } 
+            .row-2cols { grid-template-columns: 1fr; gap: 0; } 
+        }
     </style>
 </head>
 <body>
@@ -90,125 +100,304 @@
         <h1>Nufotec Burundi</h1>
     </div>
 
-    <!-- FORMULAIRE CONNEXION -->
-    <div id="loginPanel" class="form-container active-form">
-        <div class="welcome-title">Bienvenue chez Nufotec</div>
-        <div class="welcome-subtitle">Utilisez votre e-mail ou votre téléphone pour vous connecter.</div>
+ <!-- FORMULAIRE CONNEXION -->
+<div id="loginPanel" class="form-container active-form">
+    <div class="welcome-title">Bienvenue chez Nufotec</div>
+    <div class="welcome-subtitle">Utilisez votre e-mail ou votre téléphone pour vous connecter.</div>
 
-        <form id="loginForm" method="POST" action="<?= base_url('auth/login') ?>">
-            <div class="input-field">
-                <input type="text" name="email" id="loginIdentifier" placeholder="Adresse email ou numéro de téléphone" required>
-            </div>
-            <div class="input-field" id="passwordField" style="display: none;">
-                <input type="password" name="password" id="loginPassword" placeholder="Mot de passe">
-            </div>
-            <button type="submit" class="btn-primary" id="submitBtn">Continuer</button>
-        </form>
-
-        <div class="forgot-link" id="forgotLink" style="display: none;">
+    <form id="loginForm" method="POST" action="<?= base_url('auth/login') ?>">
+        <div class="input-field">
+            <input type="text" name="email" id="loginIdentifier" placeholder="Adresse email ou numéro de téléphone" required>
+        </div>
+        
+        <div class="input-field" id="passwordField">
+            <input type="password" name="password" id="loginPassword" placeholder="Mot de passe" required>
+        </div>
+        
+        <!-- Mot de passe oublié - aligné à droite -->
+        <div class="forgot-link-right">
             <a href="#" id="openForgotModal"><i class="fas fa-key"></i> Mot de passe oublié ?</a>
         </div>
-
-        <div class="separator"><span>Ou connectez-vous avec :</span></div>
-        <div class="social-icons">
-            <a href="#" class="social-icon"><i class="fab fa-google"></i></a>
-            <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="social-icon"><i class="fab fa-apple"></i></a>
-        </div>
-
-        <div class="legal-text">
-            En continuant, vous acceptez les <a href="#">conditions d'utilisation</a> de Nufotec<br>
-            <a href="#">Termes et conditions</a>
-        </div>
-
-        <div style="text-align: center; margin-top: 24px;">
-            <span style="font-size: 14px; color: #6c757d;">Pas encore de compte ? </span>
+        
+        <button type="submit" class="btn-primary" id="submitBtn">Se connecter</button>
+        
+        <!-- Créer un compte - en dessous du bouton -->
+        <div class="signup-link">
+            <span class="signup-text">Pas encore de compte ? </span>
             <span id="switchToRegister" class="toggle-link">Créer un compte</span>
         </div>
+    </form>
+
+    <div class="separator"><span>Ou connectez-vous avec :</span></div>
+    <div class="social-icons">
+        <a href="#" class="social-icon"><i class="fab fa-google"></i></a>
+        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" class="social-icon"><i class="fab fa-apple"></i></a>
     </div>
 
-    <!-- FORMULAIRE INSCRIPTION -->
-    <div id="registerPanel" class="form-container">
-        <div class="welcome-title">Créer un compte Nufotec Burundi</div>
-        <div class="welcome-subtitle">Remplissez vos informations pour rejoindre notre communauté.</div>
-
-        <form id="registerForm" method="POST" action="<?= base_url('auth/register') ?>">
-            <div class="row-2cols">
-                <div class="input-field">
-                    <label>Nom</label>
-                    <input type="text" name="nom" id="regNom" required>
-                </div>
-                <div class="input-field">
-                    <label>Prénom</label>
-                    <input type="text" name="prenom" id="regPrenom" required>
-                </div>
-            </div>
-            <div class="input-field">
-                <label>Adresse email</label>
-                <input type="email" name="email" id="regEmail" required>
-            </div>
-            
-            <div class="input-field">
-                <label>Pays</label>
-                <select name="pays_id" id="paysSelect">
-                    <option value="">-- Sélectionnez votre pays --</option>
-                    <?php if(isset($pays_list) && !empty($pays_list)): ?>
-                        <?php foreach($pays_list as $p): ?>
-                            <option value="<?= $p['id'] ?>" data-code="<?= $p['ITU_T_Telephone_Code'] ?>">
-                                <?= htmlspecialchars($p['pays']) ?> (+<?= htmlspecialchars($p['ITU_T_Telephone_Code']) ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <option value="1" data-code="257">Burundi (+257)</option>
-                        <option value="2" data-code="250">Rwanda (+250)</option>
-                        <option value="3" data-code="256">Ouganda (+256)</option>
-                        <option value="4" data-code="243">RDC (+243)</option>
-                        <option value="5" data-code="254">Kenya (+254)</option>
-                    <?php endif; ?>
-                </select>
-            </div>
-            
-            <div class="input-field">
-                <label>Numéro de téléphone</label>
-                <div class="phone-wrapper">
-                    <div class="phone-code">
-                        <input type="text" id="phoneCode" value="+257" readonly style="background:#f5f5f5;">
-                    </div>
-                    <div class="phone-number">
-                        <input type="tel" name="telephone" id="regPhone" placeholder="XX XXX XXX" value="">
-                    </div>
-                </div>
-            </div>
-            
-            <input type="hidden" name="type_utilisateur" value="patient">
-            <div class="input-field">
-                <label>Mot de passe</label>
-                <input type="password" name="password" id="regPassword" placeholder="8+ caractères, 1 majuscule, 1 chiffre" required>
-            </div>
-            <div class="input-field">
-                <label>Confirmer le mot de passe</label>
-                <input type="password" name="confirm_password" id="regConfirmPwd" required>
-            </div>
-            <div class="checkbox">
-                <input type="checkbox" name="terms" id="termsCheckbox" required>
-                <label>J'accepte les <a href="#">conditions générales</a></label>
-            </div>
-            <button type="submit" class="btn-primary"><i class="fas fa-user-plus"></i> Créer mon compte</button>
-        </form>
-
-        <div class="separator"><span>Ou inscrivez-vous avec :</span></div>
-        <div class="social-icons">
-            <a href="#" class="social-icon"><i class="fab fa-google"></i></a>
-            <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="social-icon"><i class="fab fa-apple"></i></a>
-        </div>
-
-        <div style="text-align: center; margin-top: 24px;">
-            <span style="font-size: 14px; color: #6c757d;">Déjà inscrit ? </span>
-            <span id="switchToLogin" class="toggle-link">Me connecter</span>
-        </div>
+    <div class="legal-text">
+        En continuant, vous acceptez les <a href="#">conditions d'utilisation</a> de Nufotec<br>
+        <a href="#">Termes et conditions</a>
     </div>
 </div>
+
+<!-- FORMULAIRE INSCRIPTION -->
+<div id="registerPanel" class="form-container">
+    <div class="welcome-title">Créer un compte Nufotec Burundi</div>
+    <div class="welcome-subtitle">Remplissez vos informations pour rejoindre notre communauté.</div>
+
+    <form id="registerForm" method="POST" action="<?= base_url('auth/register') ?>">
+        <div class="row-2cols">
+            <div class="input-field">
+                <label>Nom</label>
+                <input type="text" name="nom" id="regNom" required>
+            </div>
+            <div class="input-field">
+                <label>Prénom</label>
+                <input type="text" name="prenom" id="regPrenom" required>
+            </div>
+        </div>
+        
+        <div class="input-field">
+            <label>Adresse email</label>
+            <input type="email" name="email" id="regEmail" required>
+        </div>
+        
+        <!-- Sélection du pays - International -->
+        <div class="input-field">
+            <label>Pays de résidence</label>
+            <select name="pays_id" id="paysSelect" required>
+                <option value="">-- Sélectionnez votre pays --</option>
+                <?php if(isset($pays_list) && !empty($pays_list)): ?>
+                    <?php foreach($pays_list as $p): 
+                        $phone_code = ltrim($p['ITU_T_Telephone_Code'], '+');
+                    ?>
+                        <option value="<?= $p['id'] ?>" data-code="<?= $phone_code ?>">
+                            <?= htmlspecialchars($p['pays']) ?> (+<?= htmlspecialchars($phone_code) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <option value="1" data-code="257">Burundi (+257)</option>
+                    <option value="2" data-code="250">Rwanda (+250)</option>
+                    <option value="3" data-code="256">Ouganda (+256)</option>
+                    <option value="4" data-code="243">RDC (+243)</option>
+                    <option value="5" data-code="254">Kenya (+254)</option>
+                    <option value="6" data-code="33">France (+33)</option>
+                    <option value="7" data-code="1">États-Unis (+1)</option>
+                    <option value="8" data-code="44">Royaume-Uni (+44)</option>
+                    <option value="9" data-code="49">Allemagne (+49)</option>
+                    <option value="10" data-code="86">Chine (+86)</option>
+                <?php endif; ?>
+            </select>
+        </div>
+        
+        <!-- Champ téléphone international - Version responsive même ligne -->
+        <div class="input-field">
+            <label>Numéro de téléphone</label>
+            <div class="phone-wrapper-inline">
+                <div class="phone-code-inline">
+                    <select id="phoneCodeSelect">
+                        <?php if(isset($pays_list) && !empty($pays_list)): ?>
+                            <?php foreach($pays_list as $p): 
+                                $phone_code = ltrim($p['ITU_T_Telephone_Code'], '+');
+                            ?>
+                                <option value="<?= $phone_code ?>" data-country-id="<?= $p['id'] ?>">
+                                    +<?= $phone_code ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="257">+257</option>
+                            <option value="250">+250</option>
+                            <option value="256">+256</option>
+                            <option value="243">+243</option>
+                            <option value="254">+254</option>
+                            <option value="33">+33</option>
+                            <option value="1">+1</option>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <div class="phone-number-inline">
+                    <input type="tel" name="telephone" id="regPhone" placeholder="Numéro (ex: 68863945)">
+                </div>
+            </div>
+            <small class="error-message" id="phoneError" style="display:none;"></small>
+        </div>
+        
+        <input type="hidden" name="type_utilisateur" value="patient">
+        
+        <div class="input-field">
+            <label>Mot de passe</label>
+            <input type="password" name="password" id="regPassword" placeholder="8+ caractères, 1 majuscule, 1 chiffre" required>
+        </div>
+        
+        <div class="input-field">
+            <label>Confirmer le mot de passe</label>
+            <input type="password" name="confirm_password" id="regConfirmPwd" required>
+        </div>
+        
+        <div class="checkbox">
+            <input type="checkbox" name="terms" id="termsCheckbox" required>
+            <label>J'accepte les <a href="#">conditions générales</a></label>
+        </div>
+        
+        <button type="submit" class="btn-primary"><i class="fas fa-user-plus"></i> Créer mon compte</button>
+    </form>
+
+    <div class="separator"><span>Ou inscrivez-vous avec :</span></div>
+    <div class="social-icons">
+        <a href="#" class="social-icon"><i class="fab fa-google"></i></a>
+        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" class="social-icon"><i class="fab fa-apple"></i></a>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+        <span style="font-size: 14px; color: #6c757d;">Déjà inscrit ? </span>
+        <span id="switchToLogin" class="toggle-link">Se Connecter</span>
+    </div>
+</div>
+
+<style>
+    /* Conteneur pour le champ mot de passe et le lien oublié */
+    .forgot-link-right {
+        text-align: right;
+        margin-top: -12px;
+        margin-bottom: 20px;
+    }
+
+    .forgot-link-right a {
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .forgot-link-right a:hover {
+        color: #0a66c2;
+        text-decoration: underline;
+    }
+
+    /* Lien de création de compte */
+    .signup-link {
+        text-align: center;
+        margin-top: 16px;
+    }
+
+    .signup-text {
+        font-size: 14px;
+        color: #6c757d;
+    }
+
+    /* Style pour garder les champs téléphone sur la même ligne */
+    .phone-wrapper-inline {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .phone-code-inline {
+        width: 100px;
+        flex-shrink: 0;
+    }
+    
+    .phone-code-inline select {
+        width: 100%;
+        padding: 16px 12px;
+        font-size: 15px;
+        font-family: 'Inter', sans-serif;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background: #ffffff;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+        color: #1a1a2e;
+    }
+    
+    .phone-code-inline select:focus {
+        border-color: #0a66c2;
+        box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
+    }
+    
+    .phone-number-inline {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .phone-number-inline input {
+        width: 100%;
+        padding: 16px 18px;
+        font-size: 15px;
+        font-family: 'Inter', sans-serif;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background: #ffffff;
+        transition: all 0.2s;
+        outline: none;
+        color: #1a1a2e;
+    }
+    
+    .phone-number-inline input:focus {
+        border-color: #0a66c2;
+        box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
+    }
+    
+    /* Responsive : garder sur la même ligne même sur mobile */
+    @media (max-width: 480px) {
+        .phone-wrapper-inline {
+            flex-direction: row !important;
+            flex-wrap: nowrap;
+            gap: 8px;
+        }
+        
+        .phone-code-inline {
+            width: 85px;
+            flex-shrink: 0;
+        }
+        
+        .phone-code-inline select {
+            padding: 14px 8px;
+            font-size: 14px;
+        }
+        
+        .phone-number-inline input {
+            padding: 14px 12px;
+            font-size: 14px;
+        }
+        
+        .auth-card {
+            padding: 30px 20px;
+        }
+        
+        .row-2cols {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+    }
+    
+    @media (max-width: 360px) {
+        .phone-wrapper-inline {
+            gap: 6px;
+        }
+        
+        .phone-code-inline {
+            width: 75px;
+        }
+        
+        .phone-code-inline select {
+            padding: 12px 6px;
+            font-size: 13px;
+        }
+        
+        .phone-number-inline input {
+            padding: 12px 10px;
+            font-size: 13px;
+        }
+    }
+</style>
+
+
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
@@ -216,46 +405,16 @@
     let resetEmail = '';
     let isLoading = false;
 
-    function showSweetAlert(icon, title, message) {
-        Swal.fire({
-            icon: icon,
-            title: title,
-            text: message,
-            confirmButtonColor: '#0a66c2',
-            confirmButtonText: 'OK'
-        });
-    }
-
+    // Fonctions SweetAlert
     function showSuccess(message) {
-        Swal.fire({
-            icon: 'success',
-            title: 'Succès !',
-            text: message,
-            confirmButtonColor: '#0a66c2',
-            timer: 3000,
-            showConfirmButton: true
-        });
+        Swal.fire({ icon: 'success', title: 'Succès !', text: message, confirmButtonColor: '#0a66c2', timer: 3000 });
     }
 
     function showError(message) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: message,
-            confirmButtonColor: '#0a66c2'
-        });
+        Swal.fire({ icon: 'error', title: 'Erreur', text: message, confirmButtonColor: '#0a66c2' });
     }
 
-    function showLoading(message) {
-        Swal.fire({
-            title: message,
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-    }
-
+    // Basculer entre formulaires
     function switchToLogin() {
         document.getElementById('loginPanel').classList.add('active-form');
         document.getElementById('registerPanel').classList.remove('active-form');
@@ -275,65 +434,82 @@
     document.getElementById('switchToRegister')?.addEventListener('click', (e) => { e.preventDefault(); switchToRegister(); });
     document.getElementById('switchToLogin')?.addEventListener('click', (e) => { e.preventDefault(); switchToLogin(); });
 
-   // Connexion - Affichage par défaut du mot de passe
-const loginIdentifier = document.getElementById('loginIdentifier');
-const loginPassword = document.getElementById('loginPassword');
-const passwordField = document.getElementById('passwordField');
-const submitBtn = document.getElementById('submitBtn');
-const forgotLink = document.getElementById('forgotLink');
-
-// Afficher le champ mot de passe et le lien par défaut
-passwordField.style.display = 'block';
-loginPassword.setAttribute('required', 'required');
-submitBtn.innerHTML = 'Se connecter';
-forgotLink.style.display = 'block';
-
-// Optionnel : garder l'écoute pour cacher si vide (si vous voulez)
-loginIdentifier?.addEventListener('input', function() {
-    if (this.value.trim().length > 0) {
-        passwordField.style.display = 'block';
-        loginPassword.setAttribute('required', 'required');
-        submitBtn.innerHTML = 'Se connecter';
-        forgotLink.style.display = 'block';
-    } else {
-        // Si vous voulez garder le champ visible même quand vide, commentez ces lignes
-        // passwordField.style.display = 'none';
-        // loginPassword.removeAttribute('required');
-        // submitBtn.innerHTML = 'Continuer';
-        // forgotLink.style.display = 'none';
-        
-        // Ou laissez-les visibles en permanence
-        passwordField.style.display = 'block';
-        loginPassword.setAttribute('required', 'required');
-        submitBtn.innerHTML = 'Se connecter';
-        forgotLink.style.display = 'block';
-    }
-});
-
-
-    // Auto-complétion du code téléphone
+    // Synchronisation Pays ↔ Code Téléphone
     const paysSelect = document.getElementById('paysSelect');
-    const phoneCode = document.getElementById('phoneCode');
-    
+    const phoneCodeSelect = document.getElementById('phoneCodeSelect');
+
+    // Quand on change le pays dans la liste déroulante principale
     paysSelect?.addEventListener('change', function() {
-    const selectedOption = this.options[this.selectedIndex];
-    let code = selectedOption.getAttribute('data-code');
-    if (code) {
-        // Si le code contient déjà un +, ne pas en ajouter un autre
-        if (code.startsWith('+')) {
-            phoneCode.value = code;
-        } else {
-            phoneCode.value = '+' + code;
+        const selectedOption = this.options[this.selectedIndex];
+        const code = selectedOption.getAttribute('data-code');
+        const countryId = this.value;
+        
+        if (code) {
+            // Mettre à jour le sélecteur de code téléphone
+            for(let i = 0; i < phoneCodeSelect.options.length; i++) {
+                if(phoneCodeSelect.options[i].value === code) {
+                    phoneCodeSelect.selectedIndex = i;
+                    break;
+                }
+            }
         }
-    } else {
-        phoneCode.value = '+257';
+    });
+
+    // Quand on change le code téléphone directement
+    phoneCodeSelect?.addEventListener('change', function() {
+        const selectedCode = this.value;
+        // Chercher et sélectionner le pays correspondant
+        for(let i = 0; i < paysSelect.options.length; i++) {
+            const optionCode = paysSelect.options[i].getAttribute('data-code');
+            if(optionCode === selectedCode) {
+                paysSelect.selectedIndex = i;
+                break;
+            }
+        }
+    });
+
+    // Validation du numéro de téléphone en temps réel
+    const regPhone = document.getElementById('regPhone');
+    const phoneError = document.getElementById('phoneError');
+
+    function validatePhoneNumber() {
+        const phone = regPhone.value.trim();
+        const phoneRegex = /^[0-9]{7,15}$/;
+        
+        if (phone && !phoneRegex.test(phone)) {
+            phoneError.textContent = 'Le numéro doit contenir uniquement des chiffres (7 à 15 chiffres)';
+            phoneError.style.display = 'block';
+            regPhone.classList.add('error-border');
+            return false;
+        } else {
+            phoneError.style.display = 'none';
+            regPhone.classList.remove('error-border');
+            return true;
+        }
     }
-});
+
+    regPhone?.addEventListener('input', validatePhoneNumber);
+    regPhone?.addEventListener('blur', validatePhoneNumber);
 
     // Validation inscription
     document.getElementById('registerForm')?.addEventListener('submit', function(e) {
         const pwd = document.getElementById('regPassword').value;
         const confirm = document.getElementById('regConfirmPwd').value;
+        const phone = regPhone.value.trim();
+        const phoneCode = phoneCodeSelect.value;
+        
+        // Construire le numéro complet pour l'envoi
+        if (phone) {
+            const fullPhone = '+' + phoneCode + phone;
+            // Créer un champ caché pour envoyer le numéro complet
+            let hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'telephone';
+            hiddenInput.value = fullPhone;
+            this.appendChild(hiddenInput);
+            // Désactiver le champ original pour qu'il ne soit pas envoyé
+            regPhone.disabled = true;
+        }
         
         if (pwd !== confirm) { 
             e.preventDefault(); 
@@ -350,10 +526,16 @@ loginIdentifier?.addEventListener('input', function() {
             showError('Le mot de passe doit contenir au moins une majuscule et un chiffre.');
             return false; 
         }
+        if (phone && !/^[0-9]{7,15}$/.test(phone)) {
+            e.preventDefault();
+            showError('Format de téléphone invalide. Utilisez uniquement des chiffres.');
+            return false;
+        }
+        
         return true;
     });
 
-    // MODALE RÉINITIALISATION AVEC SWEETALERT
+    // MODALE RÉINITIALISATION
     async function showResetPasswordModal() {
         const { value: email } = await Swal.fire({
             title: 'Réinitialisation du mot de passe',
@@ -379,15 +561,7 @@ loginIdentifier?.addEventListener('input', function() {
         });
 
         if (email) {
-            // Envoyer la demande de code
-            Swal.fire({
-                title: 'Envoi en cours...',
-                text: 'Veuillez patienter',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+            Swal.fire({ title: 'Envoi en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             $.ajax({
                 url: baseUrl + '/auth/send_reset_code',
@@ -405,10 +579,7 @@ loginIdentifier?.addEventListener('input', function() {
                         showError(res.message);
                     }
                 },
-                error: function(xhr, status, error) {
-                    Swal.close();
-                    showError('Erreur de connexion au serveur. Veuillez réessayer.');
-                }
+                error: function() { Swal.close(); showError('Erreur de connexion au serveur.'); }
             });
         }
     }
@@ -416,10 +587,11 @@ loginIdentifier?.addEventListener('input', function() {
     function showVerifyCodeModal(email) {
         Swal.fire({
             title: 'Code de vérification',
-            html: `
-                <p>Code envoyé à <strong>${email}</strong></p>
-                <input type="text" id="swal-code" class="swal2-input" placeholder="Code à 6 chiffres" maxlength="6" style="text-align:center; font-size:24px; letter-spacing:5px;">
-            `,
+            html: `<p>Code envoyé à <strong>${email}</strong></p>
+                   <div style="margin: 20px 0;">
+                       <input type="text" id="swal-code" class="swal2-input" placeholder="Code à 6 chiffres" maxlength="6" 
+                              style="text-align:center; font-size:32px; letter-spacing:8px; font-weight:bold;">
+                   </div>`,
             showCancelButton: true,
             confirmButtonColor: '#0a66c2',
             cancelButtonColor: '#6c757d',
@@ -429,222 +601,118 @@ loginIdentifier?.addEventListener('input', function() {
             denyButtonText: 'Renvoyer le code',
             denyButtonColor: '#28a745',
             preConfirm: () => {
-                const code = document.getElementById('swal-code').value;
-                if (!code || code.length !== 6) {
-                    Swal.showValidationMessage('Veuillez saisir le code à 6 chiffres');
-                    return false;
-                }
-                if (!/^\d{6}$/.test(code)) {
-                    Swal.showValidationMessage('Le code doit contenir 6 chiffres');
+                const code = document.getElementById('swal-code')?.value;
+                if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+                    Swal.showValidationMessage('Veuillez saisir un code valide à 6 chiffres');
                     return false;
                 }
                 return code;
             }
         }).then((result) => {
-            if (result.isConfirmed) {
-                const code = result.value;
-                verifyCode(code);
-            } else if (result.isDenied) {
-                resendCode(email);
-            }
+            if (result.isConfirmed) verifyCode(result.value);
+            else if (result.isDenied) resendCode(email);
         });
     }
 
     function verifyCode(code) {
-        Swal.fire({
-            title: 'Vérification...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
+        Swal.fire({ title: 'Vérification...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         $.ajax({
             url: baseUrl + '/auth/verify_reset_code',
             method: 'POST',
             data: { code: code },
             dataType: 'json',
-            timeout: 30000,
             success: function(res) {
-                if (res.success) {
-                    Swal.close();
-                    showNewPasswordModal();
-                } else {
-                    Swal.close();
-                    showError(res.message);
-                }
+                if (res.success) { Swal.close(); showNewPasswordModal(); }
+                else { Swal.close(); showError(res.message); }
             },
-            error: function() {
-                Swal.close();
-                showError('Erreur de vérification. Veuillez réessayer.');
-            }
+            error: function() { Swal.close(); showError('Erreur de vérification.'); }
         });
     }
 
     function resendCode(email) {
-        Swal.fire({
-            title: 'Renvoi en cours...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
+        Swal.fire({ title: 'Renvoi en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         $.ajax({
             url: baseUrl + '/auth/resend_otp',
             method: 'POST',
             data: { email: email },
             dataType: 'json',
-            timeout: 30000,
             success: function(res) {
                 if (res.success) {
                     Swal.close();
-                    showSuccess('Un nouveau code a été envoyé à votre adresse email.');
+                    showSuccess('Nouveau code envoyé');
                     showVerifyCodeModal(email);
-                } else {
-                    Swal.close();
-                    showError(res.message);
-                }
+                } else { Swal.close(); showError(res.message); }
             },
-            error: function() {
-                Swal.close();
-                showError('Erreur lors du renvoi du code.');
-            }
+            error: function() { Swal.close(); showError('Erreur lors du renvoi.'); }
         });
     }
 
     function showNewPasswordModal() {
         Swal.fire({
             title: 'Nouveau mot de passe',
-            html: `
-                <input type="password" id="swal-password" class="swal2-input" placeholder="Nouveau mot de passe" style="margin-bottom:10px;">
-                <input type="password" id="swal-confirm" class="swal2-input" placeholder="Confirmer le mot de passe">
-                <p style="font-size:12px; color:#6c757d; margin-top:10px;">Minimum 8 caractères, 1 majuscule et 1 chiffre</p>
-            `,
+            html: `<input type="password" id="swal-password" class="swal2-input" placeholder="Nouveau mot de passe" style="margin-bottom:10px;">
+                   <input type="password" id="swal-confirm" class="swal2-input" placeholder="Confirmer le mot de passe">
+                   <p style="font-size:12px; color:#6c757d;">Minimum 8 caractères, 1 majuscule et 1 chiffre</p>`,
             showCancelButton: true,
             confirmButtonColor: '#0a66c2',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Changer le mot de passe',
             cancelButtonText: 'Annuler',
             preConfirm: () => {
-                const password = document.getElementById('swal-password').value;
+                const pwd = document.getElementById('swal-password').value;
                 const confirm = document.getElementById('swal-confirm').value;
-                
-                if (!password || password.length < 8) {
-                    Swal.showValidationMessage('Le mot de passe doit contenir au moins 8 caractères');
+                if (!pwd || pwd.length < 8) {
+                    Swal.showValidationMessage('8 caractères minimum');
                     return false;
                 }
-                if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-                    Swal.showValidationMessage('Le mot de passe doit contenir une majuscule et un chiffre');
+                if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd)) {
+                    Swal.showValidationMessage('Une majuscule et un chiffre requis');
                     return false;
                 }
-                if (password !== confirm) {
+                if (pwd !== confirm) {
                     Swal.showValidationMessage('Les mots de passe ne correspondent pas');
                     return false;
                 }
-                return password;
+                return pwd;
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                const newPassword = result.value;
-                
-                Swal.fire({
-                    title: 'Modification en cours...',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
+                Swal.fire({ title: 'Modification...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 $.ajax({
                     url: baseUrl + '/auth/reset_password',
                     method: 'POST',
-                    data: { password: newPassword, confirm_password: newPassword },
+                    data: { password: result.value, confirm_password: result.value },
                     dataType: 'json',
-                    timeout: 30000,
                     success: function(res) {
                         if (res.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Succès !',
-                                text: res.message,
-                                confirmButtonColor: '#0a66c2',
-                                timer: 2000,
-                                showConfirmButton: true
-                            }).then(() => {
-                                switchToLogin();
-                            });
-                        } else {
-                            Swal.close();
-                            showError(res.message);
-                        }
+                            Swal.fire({ icon: 'success', title: 'Succès !', text: res.message, confirmButtonColor: '#0a66c2' })
+                                .then(() => switchToLogin());
+                        } else { Swal.close(); showError(res.message); }
                     },
-                    error: function() {
-                        Swal.close();
-                        showError('Erreur lors de la modification du mot de passe.');
-                    }
+                    error: function() { Swal.close(); showError('Erreur lors de la modification.'); }
                 });
             }
         });
     }
 
-    document.getElementById('openForgotModal')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        showResetPasswordModal();
-    });
+    document.getElementById('openForgotModal')?.addEventListener('click', (e) => { e.preventDefault(); showResetPasswordModal(); });
 
-   // Flash messages avec SweetAlert - Version corrigée
-<?php if($this->session->flashdata('login_error')): ?>
-    (function() {
-        var message = '<?= addslashes($this->session->flashdata('login_error')) ?>';
-        showError(message);
-        // Effacer le message après affichage via AJAX
-        $.ajax({
-            url: baseUrl + '/auth/clear_flash',
-            method: 'POST',
-            data: { key: 'login_error' },
-            async: false
-        });
-    })();
-<?php endif; ?>
-
-<?php if($this->session->flashdata('register_error')): ?>
-    (function() {
-        var message = '<?= addslashes($this->session->flashdata('register_error')) ?>';
-        showError(message);
-        // Effacer le message après affichage via AJAX
-        $.ajax({
-            url: baseUrl + '/auth/clear_flash',
-            method: 'POST',
-            data: { key: 'register_error' },
-            async: false
-        });
-    })();
-<?php endif; ?>
-
-<?php if($this->session->flashdata('register_success')): ?>
-    (function() {
-        var message = '<?= addslashes($this->session->flashdata('register_success')) ?>';
-        showSuccess(message);
-        // Effacer le message de la session via AJAX
-        $.ajax({
-            url: baseUrl + '/auth/clear_flash',
-            method: 'POST',
-            data: { key: 'register_success' },
-            async: false
-        });
-        // Rester sur la page de connexion après inscription
-        setTimeout(function() {
-            // S'assurer qu'on est sur le formulaire de connexion
-            document.getElementById('loginPanel').classList.add('active-form');
-            document.getElementById('registerPanel').classList.remove('active-form');
-            // Nettoyer l'URL
-            const url = new URL(window.location.href);
-            url.searchParams.delete('register');
-            window.history.pushState({}, '', url);
-        }, 2000);
-    })();
-<?php endif; ?>
+    // Messages flash
+    <?php if($this->session->flashdata('login_error')): ?>
+        (function() { showError('<?= addslashes($this->session->flashdata('login_error')) ?>'); 
+        $.ajax({ url: baseUrl + '/auth/clear_flash', method: 'POST', data: { key: 'login_error' }, async: false }); })();
+    <?php endif; ?>
+    <?php if($this->session->flashdata('register_error')): ?>
+        (function() { showError('<?= addslashes($this->session->flashdata('register_error')) ?>'); 
+        $.ajax({ url: baseUrl + '/auth/clear_flash', method: 'POST', data: { key: 'register_error' }, async: false }); })();
+    <?php endif; ?>
+    <?php if($this->session->flashdata('register_success')): ?>
+        (function() { 
+            showSuccess('<?= addslashes($this->session->flashdata('register_success')) ?>'); 
+            $.ajax({ url: baseUrl + '/auth/clear_flash', method: 'POST', data: { key: 'register_success' }, async: false });
+            setTimeout(() => switchToLogin(), 2000);
+        })();
+    <?php endif; ?>
 </script>
 </body>
 </html>
