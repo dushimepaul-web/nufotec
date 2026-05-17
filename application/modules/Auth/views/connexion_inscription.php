@@ -301,14 +301,19 @@
     const phoneCode = document.getElementById('phoneCode');
     
     paysSelect?.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const code = selectedOption.getAttribute('data-code');
-        if (code) {
-            phoneCode.value = '+' + code;
+    const selectedOption = this.options[this.selectedIndex];
+    let code = selectedOption.getAttribute('data-code');
+    if (code) {
+        // Si le code contient déjà un +, ne pas en ajouter un autre
+        if (code.startsWith('+')) {
+            phoneCode.value = code;
         } else {
-            phoneCode.value = '+257';
+            phoneCode.value = '+' + code;
         }
-    });
+    } else {
+        phoneCode.value = '+257';
+    }
+});
 
     // Validation inscription
     document.getElementById('registerForm')?.addEventListener('submit', function(e) {
