@@ -51,6 +51,8 @@ class Advertise_product extends MY_Controller {
         redirect(base_url('advertise-product'));    
     }
     
+    // Note: Cette méthode conserve l'ancien format car elle extrait l'ID à partir du paramètre "id_slug"
+    // C'est correct pour l'administration, mais pour les emails on utilise uniquement le slug
     function ProductDetail($productDetail)
     {
         $id = explode('_', $productDetail);
@@ -169,7 +171,11 @@ class Advertise_product extends MY_Controller {
         }
         
         $site_url = base_url();
-        $product_url = base_url('product/' . $product['id'] . '_' . $product['slug']);
+        
+        // ✅ CORRECTION IMPORTANTE : Utiliser uniquement le slug (sans l'ID)
+        // Format correct : /product/extrait-anti-tumoral
+        // Ancien format (404) : /product/1_extrait-anti-tumoral
+        $product_url = base_url('product/' . $product['slug']);
         
         $subject = "NOUVEAU PRODUIT CHEZ NUFOTEC : " . htmlspecialchars($product['title_fr'] ?: $product['title']);
         $message = $this->buildProductNotificationTemplate(
@@ -343,28 +349,26 @@ class Advertise_product extends MY_Controller {
     }
 
     public function cron_daily_promo($secret_key = null)
-{
-    // Accepter la clé via GET ou via paramètre d'URL
-    $valid_key = 'nufotec_promo_2024';
-    $input_key = $secret_key ?: $this->input->get('key');
-    
-    if ($input_key !== $valid_key) {
-        // Au lieu de show_404(), retourner une erreur claire
-        echo "Erreur: Clé de sécurité invalide. Reçu: " . $input_key . "\n";
-        echo "Attendu: " . $valid_key . "\n";
-        return;
+    {
+        // Accepter la clé via GET ou via paramètre d'URL
+        $valid_key = 'nufotec_promo_2024';
+        $input_key = $secret_key ?: $this->input->get('key');
+        
+        if ($input_key !== $valid_key) {
+            echo "Erreur: Clé de sécurité invalide. Reçu: " . $input_key . "\n";
+            echo "Attendu: " . $valid_key . "\n";
+            return;
+        }
+        
+        set_time_limit(300);
+        $result = $this->sendDailyPromoEmail();
+        
+        header('Content-Type: text/plain');
+        echo "NUFOTEC Daily Promo - " . date('Y-m-d H:i:s') . "\n";
+        echo "Succès: " . $result['success'] . "\n";
+        echo "Échecs: " . $result['error'] . "\n";
+        echo "Total: " . ($result['success'] + $result['error']) . "\n";
     }
-    
-    set_time_limit(300);
-    $result = $this->sendDailyPromoEmail();
-    
-    header('Content-Type: text/plain');
-    echo "NUFOTEC Daily Promo - " . date('Y-m-d H:i:s') . "\n";
-    echo "Succès: " . $result['success'] . "\n";
-    echo "Échecs: " . $result['error'] . "\n";
-    echo "Total: " . ($result['success'] + $result['error']) . "\n";
-}
-
 
     private function sendDailyPromoEmail()
     {
@@ -394,34 +398,34 @@ class Advertise_product extends MY_Controller {
     }
 
     private function buildPromoProductsHtml($products)
-{
-    $html = '';
-    
-    foreach ($products as $product) {
-        $product_image_url = base_url('attachments/Products/' . $product['main_image']);
-        if (!file_exists(FCPATH . 'attachments/Products/' . $product['main_image']) || $product['main_image'] == 'default-product.png') {
-            $product_image_url = base_url('assets/images/default-product.jpg');
+    {
+        $html = '';
+        
+        foreach ($products as $product) {
+            $product_image_url = base_url('attachments/Products/' . $product['main_image']);
+            if (!file_exists(FCPATH . 'attachments/Products/' . $product['main_image']) || $product['main_image'] == 'default-product.png') {
+                $product_image_url = base_url('assets/images/default-product.jpg');
+            }
+            
+            // ✅ CORRECTION : Utiliser uniquement le slug (sans l'ID)
+            $product_url = base_url('product/' . $product['slug']);
+            
+            $product_title = htmlspecialchars($product['title_fr'] ?: $product['title']);
+            $product_price = $this->formatPrice($product['price']);
+            
+            $html .= '
+            <div style="background: #ffffff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2f6;">
+                <img src="' . $product_image_url . '" alt="' . $product_title . '" style="width: 100%; height: 180px; object-fit: cover;">
+                <div style="padding: 16px;">
+                    <h3 style="color: #1a2a3a; margin: 0 0 8px; font-size: 16px;">' . $product_title . '</h3>
+                    <p style="color: #0a66c2; font-size: 18px; font-weight: bold; margin: 0 0 12px;">' . $product_price . '</p>
+                    <a href="' . $product_url . '" style="display: inline-block; background: #0a2540; color: #ffffff; padding: 8px 20px; text-decoration: none; border-radius: 25px; font-size: 13px;">Découvrir</a>
+                </div>
+            </div>';
         }
         
-        // URL CORRIGÉE : utiliser uniquement le slug (sans l'ID)
-        $product_url = base_url('product/' . $product['slug']);
-        
-        $product_title = htmlspecialchars($product['title_fr'] ?: $product['title']);
-        $product_price = $this->formatPrice($product['price']);
-        
-        $html .= '
-        <div style="background: #ffffff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2f6;">
-            <img src="' . $product_image_url . '" alt="' . $product_title . '" style="width: 100%; height: 180px; object-fit: cover;">
-            <div style="padding: 16px;">
-                <h3 style="color: #1a2a3a; margin: 0 0 8px; font-size: 16px;">' . $product_title . '</h3>
-                <p style="color: #0a66c2; font-size: 18px; font-weight: bold; margin: 0 0 12px;">' . $product_price . '</p>
-                <a href="' . $product_url . '" style="display: inline-block; background: #0a2540; color: #ffffff; padding: 8px 20px; text-decoration: none; border-radius: 25px; font-size: 13px;">Découvrir</a>
-            </div>
-        </div>';
+        return $html;
     }
-    
-    return $html;
-}
 
     private function buildDailyPromoTemplate($products_html, $subject)
     {
