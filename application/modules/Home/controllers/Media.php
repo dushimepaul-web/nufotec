@@ -147,115 +147,66 @@ class Media extends Public_Controller{
     /**
      * Récupérer les médias par type (multilingue)
      */
-/**
- * Récupérer les médias par type (multilingue)
- */
-private function getMediasByType($type)
-{
-    $lang = $this->current_lang;
-    
-    $select = "
-        g.id_media, g.titre, g.slug, 
-        CASE 
-            WHEN g.type IN ('image', 'document', 'book') THEN 'autre'
-            ELSE g.type 
-        END as type_display,
-        g.type as original_type,
-        CASE 
-            WHEN g.type IN ('image', 'document', 'book') THEN g.type
-            ELSE g.sous_type 
-        END as sous_type,
-        g.fichier, g.lien, g.miniature,
-        g.date_media, g.taille, g.mime_type, g.duree, g.est_actif,
-        g.description_{$lang} AS description,
-        g.categorie_{$lang} AS categorie,
-        g.credits_{$lang} AS credits,
-        g.message_reseaux_{$lang} AS message_reseaux,
-        g.contenu_texte_{$lang} AS contenu_texte,
-        (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-        (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-        (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
-        (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
-        (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
-        (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
-        (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
-    ";
-    
-    // Pour la catégorie 'autre', on inclut image, document ET book
-    if ($type === 'autre') {
-        $sql = "
-            SELECT {$select}
-            FROM galerie_medias g
-            WHERE g.est_actif = 1 
-            AND (
-                g.type = 'autre' 
-                OR g.type = 'image'
-                OR g.type = 'document'
-                OR g.type = 'book'
-            )
-            ORDER BY g.created_at DESC
-        ";
-        $result = $this->db->query($sql)->result_array();
+    private function getMediasByType($type)
+    {
+        $lang = $this->current_lang;
+        $types_autre = ['image', 'book', 'document'];
         
-        // Modifier le type pour l'affichage
-        foreach ($result as &$media) {
-            if (in_array($media['original_type'], ['image', 'document', 'book'])) {
-                $media['type'] = 'autre';
-            }
-        }
-        return $result;
-    }
-    
-    // Pour 'video' et 'audio', comportement normal
-    if ($type === 'video') {
-        $sql = "
-            SELECT {$select}, 1 as is_video_content
-            FROM galerie_medias g
-            WHERE g.est_actif = 1 
-            AND (
-                g.type = 'video' 
-                OR (g.type = 'link' AND g.lien IS NOT NULL AND (
-                    g.lien LIKE '%youtube%' OR 
-                    g.lien LIKE '%youtu.be%' OR 
-                    g.lien LIKE '%vimeo%' OR 
-                    g.lien LIKE '%dailymotion%' OR
-                    g.lien LIKE '%facebook.com/watch%' OR
-                    g.lien LIKE '%twitch.tv%'
-                ))
-            )
-            ORDER BY CASE WHEN g.type = 'video' THEN 0 ELSE 1 END, g.created_at DESC
+        $select = "
+            g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
+            g.date_media, g.taille, g.mime_type, g.duree, g.est_actif,
+            g.description_{$lang} AS description,
+            g.categorie_{$lang} AS categorie,
+            g.credits_{$lang} AS credits,
+            g.message_reseaux_{$lang} AS message_reseaux,
+            g.contenu_texte_{$lang} AS contenu_texte,
+            (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+            (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+            (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
+            (SELECT COUNT(*) FROM media_plays WHERE id_media = g.id_media) as plays_count,
+            (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count,
+            (SELECT AVG(rating) FROM media_ratings WHERE id_media = g.id_media) as rating_avg,
+            (SELECT COUNT(*) FROM media_ratings WHERE id_media = g.id_media) as total_ratings
         ";
-        return $this->db->query($sql)->result_array();
-    }
-    
-    // Pour les types 'image', 'book', 'document' - on les redirige vers 'autre'
-    if (in_array($type, ['image', 'book', 'document'])) {
-        $sql = "
-            SELECT {$select}
-            FROM galerie_medias g
-            WHERE g.est_actif = 1 
-            AND g.type = '{$type}'
-            ORDER BY g.created_at DESC
-        ";
-        $result = $this->db->query($sql)->result_array();
         
-        // Modifier le type pour l'affichage
-        foreach ($result as &$media) {
-            $media['type'] = 'autre';
-            $media['sous_type'] = $type;
+        if ($type === 'video') {
+            $sql = "
+                SELECT {$select}, 1 as is_video_content
+                FROM galerie_medias g
+                WHERE g.est_actif = 1 
+                AND (
+                    g.type = 'video' 
+                    OR (g.type = 'link' AND g.lien IS NOT NULL AND (
+                        g.lien LIKE '%youtube%' OR 
+                        g.lien LIKE '%youtu.be%' OR 
+                        g.lien LIKE '%vimeo%' OR 
+                        g.lien LIKE '%dailymotion%' OR
+                        g.lien LIKE '%facebook.com/watch%' OR
+                        g.lien LIKE '%twitch.tv%'
+                    ))
+                )
+                ORDER BY CASE WHEN g.type = 'video' THEN 0 ELSE 1 END, g.created_at DESC
+            ";
+            return $this->db->query($sql)->result_array();
+        } elseif (in_array($type, $types_autre)) {
+            $sql = "
+                SELECT {$select}, 0 as is_video_content, '{$type}' as sub_type_filter
+                FROM galerie_medias g
+                WHERE g.est_actif = 1 AND g.type = ?
+                ORDER BY g.created_at DESC
+            ";
+            return $this->db->query($sql, [$type])->result_array();
+        } else {
+            $sql = "
+                SELECT {$select}, 0 as is_video_content
+                FROM galerie_medias g
+                WHERE g.est_actif = 1 AND g.type = ?
+                ORDER BY g.created_at DESC
+            ";
+            return $this->db->query($sql, [$type])->result_array();
         }
-        return $result;
     }
-    
-    // Pour 'audio'
-    $sql = "
-        SELECT {$select}, 0 as is_video_content
-        FROM galerie_medias g
-        WHERE g.est_actif = 1 AND g.type = 'audio'
-        ORDER BY g.created_at DESC
-    ";
-    return $this->db->query($sql)->result_array();
-}
+
     /**
      * Statistiques par type
      */
