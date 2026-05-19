@@ -198,141 +198,170 @@ class Advertise_product extends MY_Controller {
     }
 
     private function buildProductNotificationTemplate($product_title, $product_price, $product_description, $product_image_url, $product_url, $subject, $site_url)
-    {
-        return '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>' . $subject . '</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                    background-color: #f4f6f9;
-                    margin: 0;
-                    padding: 20px;
-                    line-height: 1.5;
-                }
-                .container {
-                    max-width: 560px;
-                    margin: 0 auto;
-                    background: #ffffff;
-                    border-radius: 16px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-                }
-                .header {
-                    background: #0a2540;
-                    padding: 30px 24px;
-                    text-align: center;
-                }
-                .header h1 {
-                    color: #ffffff;
-                    font-size: 22px;
-                    font-weight: 600;
-                    margin: 0;
-                }
-                .header p {
-                    color: rgba(255,255,255,0.8);
-                    font-size: 14px;
-                    margin: 8px 0 0;
-                }
-                .product-image {
-                    width: 100%;
-                    height: auto;
-                    max-height: 300px;
-                    object-fit: cover;
-                }
-                .content {
-                    padding: 28px;
-                }
-                .product-title {
-                    font-size: 22px;
-                    font-weight: 700;
-                    color: #1a2a3a;
-                    margin-bottom: 15px;
-                }
-                .price-box {
-                    background: #f7f9fc;
-                    border-radius: 12px;
-                    padding: 15px;
-                    margin: 15px 0;
-                    text-align: center;
-                    border: 1px solid #e8ecf0;
-                }
-                .price-label {
-                    font-size: 13px;
-                    color: #8a9aaa;
-                    margin-bottom: 5px;
-                }
-                .price-value {
-                    font-size: 28px;
-                    font-weight: 700;
-                    color: #0a66c2;
-                }
-                .description {
-                    color: #5a6a7a;
-                    font-size: 14px;
-                    margin: 20px 0;
-                    line-height: 1.6;
-                }
-                .btn {
-                    display: inline-block;
-                    background: #0a66c2;
-                    color: white;
-                    padding: 12px 28px;
-                    text-decoration: none;
-                    border-radius: 40px;
-                    font-weight: 600;
-                    font-size: 14px;
-                    margin: 10px 0;
-                }
-                .footer {
-                    background: #f8fafc;
-                    padding: 20px;
-                    text-align: center;
-                    border-top: 1px solid #eef2f6;
-                }
-                .footer-text {
-                    font-size: 12px;
-                    color: #9aaab9;
-                }
-                @media (max-width: 560px) {
-                    .content { padding: 20px; }
-                    .product-title { font-size: 18px; }
-                    .price-value { font-size: 22px; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>NOUVEAU PRODUIT</h1>
-                    <p>NUFOTEC BURUNDI</p>
+{
+    // Récupération des informations du site
+    $linkgroupewhatsapp = $this->Model->get_setting('linkgroupewhatsapp');
+    $site_logo = $this->Model->get_setting('site_logo');
+    $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
+    $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
+    $whatsapp_link = !empty($linkgroupewhatsapp) ? $linkgroupewhatsapp : '#';
+    
+    return '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>' . $subject . '</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                background-color: #f4f6f9;
+                margin: 0;
+                padding: 20px;
+                line-height: 1.5;
+            }
+            .container {
+                max-width: 560px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            }
+            .header {
+                background: #0a2540;
+                padding: 30px 24px;
+                text-align: center;
+            }
+            .header-logo {
+                max-width: 120px;
+                margin-bottom: 15px;
+            }
+            .header h1 {
+                color: #ffffff;
+                font-size: 22px;
+                font-weight: 600;
+                margin: 0;
+            }
+            .header p {
+                color: rgba(255,255,255,0.8);
+                font-size: 14px;
+                margin: 8px 0 0;
+            }
+            .product-image {
+                width: 100%;
+                height: auto;
+                max-height: 300px;
+                object-fit: cover;
+            }
+            .content {
+                padding: 28px;
+            }
+            .product-title {
+                font-size: 22px;
+                font-weight: 700;
+                color: #1a2a3a;
+                margin-bottom: 15px;
+            }
+            .price-box {
+                background: #f7f9fc;
+                border-radius: 12px;
+                padding: 15px;
+                margin: 15px 0;
+                text-align: center;
+                border: 1px solid #e8ecf0;
+            }
+            .price-label {
+                font-size: 13px;
+                color: #8a9aaa;
+                margin-bottom: 5px;
+            }
+            .price-value {
+                font-size: 28px;
+                font-weight: 700;
+                color: #0a66c2;
+            }
+            .description {
+                color: #5a6a7a;
+                font-size: 14px;
+                margin: 20px 0;
+                line-height: 1.6;
+            }
+            .btn {
+                display: inline-block;
+                background: #0a66c2;
+                color: white;
+                padding: 12px 28px;
+                text-decoration: none;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 14px;
+                margin: 10px 0;
+            }
+            .btn-whatsapp {
+                display: inline-block;
+                background: #25D366;
+                color: white;
+                padding: 10px 24px;
+                text-decoration: none;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 13px;
+                margin: 5px;
+            }
+            .social-links {
+                margin: 15px 0;
+                text-align: center;
+            }
+            .footer {
+                background: #f8fafc;
+                padding: 20px;
+                text-align: center;
+                border-top: 1px solid #eef2f6;
+            }
+            .footer-text {
+                font-size: 12px;
+                color: #9aaab9;
+            }
+            @media (max-width: 560px) {
+                .content { padding: 20px; }
+                .product-title { font-size: 18px; }
+                .price-value { font-size: 22px; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
+                <h1>NOUVEAU PRODUIT</h1>
+                <p>' . htmlspecialchars($site_name) . '</p>
+            </div>
+            <img src="' . $product_image_url . '" alt="' . $product_title . '" class="product-image">
+            <div class="content">
+                <div class="product-title">' . $product_title . '</div>
+                <div class="price-box">
+                    <div class="price-label">Prix</div>
+                    <div class="price-value">' . $product_price . '</div>
                 </div>
-                <img src="' . $product_image_url . '" alt="' . $product_title . '" class="product-image">
-                <div class="content">
-                    <div class="product-title">' . $product_title . '</div>
-                    <div class="price-box">
-                        <div class="price-label">Prix</div>
-                        <div class="price-value">' . $product_price . '</div>
-                    </div>
-                    <div class="description">' . $product_description . '</div>
-                    <div style="text-align: center;">
-                        <a href="' . $product_url . '" class="btn">Voir le produit</a>
-                    </div>
-                </div>
-                <div class="footer">
-                    <div class="footer-text">© ' . date('Y') . ' NUFOTEC BURUNDI - Tous droits réservés</div>
-                    <div class="footer-text"><a href="' . $site_url . 'unsubscribe" style="color:#9aaab9;">Se désabonner</a></div>
+                <div class="description">' . $product_description . '</div>
+                <div style="text-align: center;">
+                    <a href="' . $product_url . '" class="btn">Voir le produit</a>
                 </div>
             </div>
-        </body>
-        </html>';
-    }
-
+            <div class="footer">
+                <div class="social-links">
+                    ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp">📱  Rejoignez notre groupe WhatsApp (si vous n\'êtes pas encore membre)</a>' : '') . '
+                </div>
+                <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>
+                <div class="footer-text"><a href="' . $site_url . '" style="color:#9aaab9;">Visitez notre site</a></div>
+            </div>
+        </div>
+    </body>
+    </html>';
+}
     // ================== PROMOTION QUOTIDIENNE ==================
 
     public function promo()
@@ -397,136 +426,194 @@ class Advertise_product extends MY_Controller {
         return $this->sendEmails($emails, $subject, $message, 'daily_promo');
     }
 
-    private function buildPromoProductsHtml($products)
-    {
-        $html = '';
-        
-        foreach ($products as $product) {
-            $product_image_url = base_url('attachments/Products/' . $product['main_image']);
-            if (!file_exists(FCPATH . 'attachments/Products/' . $product['main_image']) || $product['main_image'] == 'default-product.png') {
-                $product_image_url = base_url('assets/images/default-product.jpg');
-            }
-            
-            // ✅ CORRECTION : Utiliser uniquement le slug (sans l'ID)
-            $product_url = base_url('product/' . $product['slug']);
-            
-            $product_title = htmlspecialchars($product['title_fr'] ?: $product['title']);
-            $product_price = $this->formatPrice($product['price']);
-            
-            $html .= '
-            <div style="background: #ffffff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2f6;">
-                <img src="' . $product_image_url . '" alt="' . $product_title . '" style="width: 100%; height: 180px; object-fit: cover;">
-                <div style="padding: 16px;">
-                    <h3 style="color: #1a2a3a; margin: 0 0 8px; font-size: 16px;">' . $product_title . '</h3>
-                    <p style="color: #0a66c2; font-size: 18px; font-weight: bold; margin: 0 0 12px;">' . $product_price . '</p>
-                    <a href="' . $product_url . '" style="display: inline-block; background: #0a2540; color: #ffffff; padding: 8px 20px; text-decoration: none; border-radius: 25px; font-size: 13px;">Découvrir</a>
-                </div>
-            </div>';
+
+
+
+
+
+
+
+
+
+
+
+   private function buildPromoProductsHtml($products)
+{
+    $html = '';
+    
+    foreach ($products as $product) {
+        $product_image_url = base_url('attachments/Products/' . $product['main_image']);
+        if (!file_exists(FCPATH . 'attachments/Products/' . $product['main_image']) || $product['main_image'] == 'default-product.png') {
+            $product_image_url = base_url('assets/images/default-product.jpg');
         }
         
-        return $html;
+        $product_url = base_url('product/' . $product['slug']);
+        
+        $product_title = htmlspecialchars($product['title_fr'] ?: $product['title']);
+        $product_price = $this->formatPrice($product['price']);
+        $product_description = htmlspecialchars($product['description_fr'] ?: $product['description']);
+        
+        $html .= '
+        <div style="background: #ffffff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2f6;">
+            <img src="' . $product_image_url . '" alt="' . $product_title . '" style="width: 100%; height: 180px; object-fit: cover;">
+            <div style="padding: 16px;">
+                <h3 style="color: #1a2a3a; margin: 0 0 8px; font-size: 16px;">' . $product_title . '</h3>
+                <p style="color: #0a66c2; font-size: 18px; font-weight: bold; margin: 0 0 12px;">' . $product_price . '</p>
+                <div style="color: #5a6a7a; font-size: 13px; line-height: 1.5; margin-bottom: 12px;">' . $product_description . '</div>
+                <a href="' . $product_url . '" style="display: inline-block; background: #0a2540; color: #ffffff; padding: 8px 20px; text-decoration: none; border-radius: 25px; font-size: 13px;">Découvrir</a>
+            </div>
+        </div>';
     }
+    
+    return $html;
+}
+
+
+
+
+
+
+
 
     private function buildDailyPromoTemplate($products_html, $subject)
-    {
-        $site_url = base_url();
-        $current_date = date('d/m/Y');
-        
-        return '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>' . $subject . '</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                    background-color: #f4f6f9;
-                    margin: 0;
-                    padding: 20px;
-                }
-                .container {
-                    max-width: 560px;
-                    margin: 0 auto;
-                    background: #ffffff;
-                    border-radius: 16px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-                }
-                .header {
-                    background: linear-gradient(135deg, #0a2540, #0f4c3a);
-                    padding: 30px 24px;
-                    text-align: center;
-                }
-                .header h1 {
-                    color: #ffffff;
-                    font-size: 24px;
-                    font-weight: 700;
-                    margin: 0;
-                }
-                .header p {
-                    color: rgba(255,255,255,0.8);
-                    font-size: 14px;
-                    margin: 8px 0 0;
-                }
-                .intro {
-                    background: #f8fafc;
-                    padding: 20px;
-                    text-align: center;
-                    border-bottom: 1px solid #eef2f6;
-                }
-                .intro p {
-                    color: #5a6a7a;
-                    font-size: 14px;
-                }
-                .products {
-                    padding: 20px;
-                }
-                .footer {
-                    background: #f8fafc;
-                    padding: 20px;
-                    text-align: center;
-                    border-top: 1px solid #eef2f6;
-                }
-                .footer-text {
-                    font-size: 12px;
-                    color: #9aaab9;
-                }
-                .btn-shop {
-                    display: inline-block;
-                    background: #0a66c2;
-                    color: white;
-                    padding: 12px 28px;
-                    text-decoration: none;
-                    border-radius: 40px;
-                    font-weight: 600;
-                    margin: 10px 0;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>Offres du jour</h1>
-                    <p>' . $current_date . '</p>
-                </div>
-                <div class="intro">
-                    <p>Découvrez notre sélection de produits naturels pour votre bien-être quotidien.</p>
-                </div>
-                <div class="products">' . $products_html . '</div>
-                <div style="text-align: center; padding: 0 20px 20px;">
-                    <a href="' . $site_url . 'Products" class="btn-shop">Voir tous nos produits</a>
-                </div>
-                <div class="footer">
-                    <div class="footer-text">© ' . date('Y') . ' NUFOTEC BURUNDI - Votre partenaire santé naturelle</div>
-                    <div class="footer-text"><a href="' . $site_url . 'unsubscribe" style="color:#9aaab9;">Se désabonner</a></div>
-                </div>
+{
+    $site_url = base_url();
+    $current_date = date('d/m/Y');
+    
+    // Récupération des informations du site
+    $linkgroupewhatsapp = $this->Model->get_setting('linkgroupewhatsapp');
+    $site_logo = $this->Model->get_setting('site_logo');
+    $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
+    $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
+    $whatsapp_link = !empty($linkgroupewhatsapp) ? $linkgroupewhatsapp : '#';
+    
+    return '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>' . $subject . '</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                background-color: #f4f6f9;
+                margin: 0;
+                padding: 20px;
+            }
+            .container {
+                max-width: 560px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            }
+            .header {
+                background: linear-gradient(135deg, #0a2540, #0f4c3a);
+                padding: 30px 24px;
+                text-align: center;
+            }
+            .header-logo {
+                max-width: 100px;
+                margin-bottom: 15px;
+                filter: brightness(0) invert(1);
+            }
+            .header h1 {
+                color: #ffffff;
+                font-size: 24px;
+                font-weight: 700;
+                margin: 0;
+            }
+            .header p {
+                color: rgba(255,255,255,0.8);
+                font-size: 14px;
+                margin: 8px 0 0;
+            }
+            .intro {
+                background: #f8fafc;
+                padding: 20px;
+                text-align: center;
+                border-bottom: 1px solid #eef2f6;
+            }
+            .intro p {
+                color: #5a6a7a;
+                font-size: 14px;
+            }
+            .products {
+                padding: 20px;
+            }
+            .btn-whatsapp {
+                display: inline-block;
+                background: #25D366;
+                color: white;
+                padding: 10px 24px;
+                text-decoration: none;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 13px;
+                margin: 5px;
+            }
+            .footer {
+                background: #f8fafc;
+                padding: 20px;
+                text-align: center;
+                border-top: 1px solid #eef2f6;
+            }
+            .footer-text {
+                font-size: 12px;
+                color: #9aaab9;
+            }
+            .btn-shop {
+                display: inline-block;
+                background: #0a66c2;
+                color: white;
+                padding: 12px 28px;
+                text-decoration: none;
+                border-radius: 40px;
+                font-weight: 600;
+                margin: 10px 0;
+            }
+            .social-links {
+                margin: 15px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
+                <h1>Offres du jour</h1>
+                <p>' . $current_date . '</p>
             </div>
-        </body>
-        </html>';
-    }
+            <div class="intro">
+                <p>Découvrez notre sélection de produits naturels pour votre bien-être quotidien.</p>
+            </div>
+            <div class="products">' . $products_html . '</div>
+            <div style="text-align: center; padding: 0 20px 20px;">
+                <a href="' . $site_url . 'products" class="btn-shop">Voir tous nos produits</a>
+            </div>
+            <div class="footer">
+                <div class="social-links">
+                    ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp">📱 Rejoignez notre groupe WhatsApp (si vous n\'êtes pas encore membre)</a>' : '') . '
+                </div>
+                <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Votre partenaire santé naturelle</div>
+                <div class="footer-text"><a href="' . $site_url . '" style="color:#9aaab9;">Visitez notre site</a></div>
+            </div>
+        </div>
+    </body>
+    </html>';
+}
+
+
+
+
+
+
+
+
+
 
     // ================== CRUD PRODUITS ==================
 

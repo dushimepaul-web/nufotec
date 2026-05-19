@@ -43,8 +43,11 @@ $route['Advertise-product/index'] = 'Advertise_product/index';
 $route['advertise-product/create'] = 'Advertise_product/create';
 $route['Advertise-product/create'] = 'Advertise_product/create';
 $route['advertise-product/update'] = 'Advertise_product/update';
+$route['advertise-product-update'] = 'Advertise_product/update';
+
 $route['Advertise-product/update'] = 'Advertise_product/update';
 $route['advertise-product/delete'] = 'Advertise_product/delete';
+
 $route['Advertise-product/delete'] = 'Advertise_product/delete';
 
 // Routes pour changer le statut
