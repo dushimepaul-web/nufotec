@@ -270,6 +270,7 @@ public function admin_liste($offset = 0) {
         
         return [
             'titre' => $titre,
+            'type'= $this->input->post('sous_type'),
             'slug' => $this->autre_model->generate_slug($titre, $id),
             'sous_type' => $this->input->post('sous_type'),
             'description' => $this->input->post('description'),
