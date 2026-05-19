@@ -120,27 +120,29 @@ class Advertise_product extends MY_Controller {
         return array('success' => $success_count, 'error' => $error_count);
     }
 
-    private function getAllEmails()
-    {
-        $emails = array();
-        
-        $active_users = $this->Model->read('users', array('is_active' => 1, 'deleted_at' => null), 'id', 'ASC');
-        $newsletter_emails = $this->Model->read('newsletter', null, 'id_newsletter', 'ASC');
-        
-        foreach ($active_users as $user) {
-            if (!empty($user['email']) && filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
-                $emails[$user['email']] = $user['email'];
-            }
+   private function getAllEmails()
+{
+    $emails = array();
+    
+    $active_users = $this->Model->read('users', array('is_active' => 1, 'deleted_at' => null), 'id', 'ASC');
+    $newsletter_emails = $this->Model->read('newsletter', null, 'id_newsletter', 'ASC');
+    
+    // Utiliser un tableau associatif pour éviter les doublons
+    foreach ($active_users as $user) {
+        if (!empty($user['email']) && filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
+            $emails[$user['email']] = $user['email'];
         }
-        
-        foreach ($newsletter_emails as $newsletter) {
-            if (!empty($newsletter['email']) && filter_var($newsletter['email'], FILTER_VALIDATE_EMAIL)) {
-                $emails[$newsletter['email']] = $newsletter['email'];
-            }
-        }
-        
-        return $emails;
     }
+    
+    foreach ($newsletter_emails as $newsletter) {
+        if (!empty($newsletter['email']) && filter_var($newsletter['email'], FILTER_VALIDATE_EMAIL)) {
+            $emails[$newsletter['email']] = $newsletter['email'];
+        }
+    }
+    
+    return array_values($emails); // Retourner les valeurs uniques
+}
+    
 
     // ================== NOTIFICATION NOUVEAU PRODUIT ==================
     
@@ -336,7 +338,7 @@ class Advertise_product extends MY_Controller {
         <div class="container">
             <div class="header">
                 ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
-                <h1>NOUVEAU PRODUIT</h1>
+                <h1>NOUVEAU PRODUIT (Médecines naturelles & nutrition)</h1>
                 <p>' . htmlspecialchars($site_name) . '</p>
             </div>
             <img src="' . $product_image_url . '" alt="' . $product_title . '" class="product-image">
@@ -476,85 +478,62 @@ class Advertise_product extends MY_Controller {
 
 
     private function buildDailyPromoTemplate($products_html, $subject)
-{
+    {
     $site_url = base_url();
     $current_date = date('d/m/Y');
     
-    // Récupération des informations du site
-    $linkgroupewhatsapp = $this->Model->get_setting('linkgroupewhatsapp');
-    $site_logo = $this->Model->get_setting('site_logo');
-    $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
-    $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
-    $whatsapp_link = !empty($linkgroupewhatsapp) ? $linkgroupewhatsapp : '#';
-    
-    return '
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>' . $subject . '</title>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                background-color: #f4f6f9;
-                margin: 0;
-                padding: 20px;
-            }
-            .container {
-                max-width: 560px;
-                margin: 0 auto;
-                background: #ffffff;
-                border-radius: 16px;
-                overflow: hidden;
-                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-            }
+        return '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>' . $subject . '</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                    background-color: #f4f6f9;
+                    margin: 0;
+                    padding: 20px;
+                }
+                .container {
+                    max-width: 560px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+                }
             .header {
-                background: linear-gradient(135deg, #0a2540, #0f4c3a);
-                padding: 30px 24px;
-                text-align: center;
-            }
-            .header-logo {
-                max-width: 100px;
-                margin-bottom: 15px;
-                filter: brightness(0) invert(1);
-            }
-            .header h1 {
-                color: #ffffff;
-                font-size: 24px;
-                font-weight: 700;
-                margin: 0;
-            }
-            .header p {
-                color: rgba(255,255,255,0.8);
-                font-size: 14px;
-                margin: 8px 0 0;
-            }
-            .intro {
-                background: #f8fafc;
-                padding: 20px;
-                text-align: center;
-                border-bottom: 1px solid #eef2f6;
-            }
-            .intro p {
-                color: #5a6a7a;
-                font-size: 14px;
-            }
-            .products {
-                padding: 20px;
-            }
-            .btn-whatsapp {
-                display: inline-block;
-                background: #25D366;
-                color: white;
-                padding: 10px 24px;
-                text-decoration: none;
-                border-radius: 40px;
-                font-weight: 600;
-                font-size: 13px;
-                margin: 5px;
-            }
+                    background: linear-gradient(135deg, #0a2540, #0f4c3a);
+                    padding: 30px 24px;
+                    text-align: center;
+                }
+                .header h1 {
+                    color: #ffffff;
+                    font-size: 24px;
+                    font-weight: 700;
+                    margin: 0;
+                }
+                .header p {
+                    color: rgba(255,255,255,0.8);
+                    font-size: 14px;
+                    margin: 8px 0 0;
+                }
+                .intro {
+                    background: #f8fafc;
+                    padding: 20px;
+                    text-align: center;
+                    border-bottom: 1px solid #eef2f6;
+                }
+                .intro p {
+                    color: #5a6a7a;
+                    font-size: 14px;
+                }
+                .products {
+                    padding: 20px;
+                }
             .footer {
                 background: #f8fafc;
                 padding: 20px;
@@ -574,29 +553,25 @@ class Advertise_product extends MY_Controller {
                 border-radius: 40px;
                 font-weight: 600;
                 margin: 10px 0;
-            }
-            .social-links {
-                margin: 15px 0;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
-                <h1>Offres du jour</h1>
-                <p>' . $current_date . '</p>
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Offres du jour (Médecines naturelles & nutrition)</h1>
+                    <p>' . $current_date . '</p>
             </div>
             <div class="intro">
-                <p>Découvrez notre sélection de produits naturels pour votre bien-être quotidien.</p>
+                <p>Découvrez notre sélection de médecine naturels pour votre bien-être quotidien.</p>
             </div>
             <div class="products">' . $products_html . '</div>
             <div style="text-align: center; padding: 0 20px 20px;">
-                <a href="' . $site_url . 'products" class="btn-shop">Voir tous nos produits</a>
-            </div>
-            <div class="footer">
-                <div class="social-links">
-                    ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp">📱 Rejoignez notre groupe WhatsApp (si vous n\'êtes pas encore membre)</a>' : '') . '
+                <a href="' . $site_url . 'Products" class="btn-shop">Voir tous nos produits</a>
+                </div>
+                <div class="footer">
+                    <div class="footer-text">© ' . date('Y') . ' NUFOTEC BURUNDI - Votre partenaire santé naturelle</div>
+                    <div class="footer-text"><a href="' . $site_url . 'unsubscribe" style="color:#9aaab9;">Se désabonner</a></div>
                 </div>
                 <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Votre partenaire santé naturelle</div>
                 <div class="footer-text"><a href="' . $site_url . '" style="color:#9aaab9;">Visitez notre site</a></div>
