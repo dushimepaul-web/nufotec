@@ -8,6 +8,7 @@ class Home extends Public_Controller
         parent::__construct();
         $this->load->helper('text');
         $this->load->model('Model');
+         $this->load->helper('string');
     }
 
     /**
