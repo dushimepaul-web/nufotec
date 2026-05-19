@@ -26,6 +26,7 @@ class Audio extends MX_Controller {
         $this->checkGDAvailability();
         $this->ensureDirectories();
         is_admin();
+            $this->load->library('cpanel_email_lib');
         
         $this->load->model('media/Model_media', 'Model');
     }
