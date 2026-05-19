@@ -1473,7 +1473,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <?= t('newsletter_desc') ?>
                     </p>
 
-                    <form id="subscribeForm" method="POST" action="<?= base_url($lang . '/Home/Abonner'); ?>" class="newsletter-form" novalidate>
+                    <form id="subscribeForm" method="POST" action="<?= base_url('Home/Abonner'); ?>" class="newsletter-form" novalidate>
                         
                         <!-- Choix du type -->
                         <div class="subscription-toggle mb-4">
