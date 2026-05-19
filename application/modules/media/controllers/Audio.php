@@ -531,93 +531,123 @@ class Audio extends MX_Controller {
     }
 
     // ==================== CRUD ====================
-
-    public function Create()
-    {
-        $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
-        
-        if ($this->form_validation->run() == FALSE) {
-            $this->session->set_flashdata('error', validation_errors());
-            redirect(base_url('media/audio'));
-            return;
-        }
-
-        $auto_data = json_decode($this->input->post('auto_detected_data') ?: '{}', true);
-        
-        $data = [
-            'titre'           => $this->input->post('titre'),
-            'type'            => 'audio',
-            'description'     => $this->input->post('description'),
-            'categorie'       => $this->input->post('categorie'),
-            'fichier'         => $this->input->post('uploaded_file_path'),
-            'duree'           => $auto_data['analysis']['duration'] ?? 0,
-            'taille'          => $auto_data['analysis']['size'] ?? 0,
-            'bitrate'         => $auto_data['analysis']['bitrate'] ?? 0,
-            'miniature'       => $this->input->post('thumbnail') ?: ($auto_data['thumbnails']->cover ?? $auto_data['thumbnails']->generated ?? null),
-            'metadata_id3'    => json_encode($auto_data),
-            'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
-            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
-            'created_at'      => date('Y-m-d H:i:s'),
-            'updated_at'      => date('Y-m-d H:i:s')
-        ];
-        
-        // AJOUT: Générer le slug automatiquement avant l'insertion
-        $data['slug'] = $this->generateUniqueSlug($data['titre']);
-
-        $rsp = $this->Model->create('galerie_medias', $data);
-        
-        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Audio créé' : 'Erreur création');
+public function Create()
+{
+    $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
+    
+    if ($this->form_validation->run() == FALSE) {
+        $this->session->set_flashdata('error', validation_errors());
         redirect(base_url('media/audio'));
+        return;
     }
 
-    public function Update()
-    {
-        $id = $this->input->post('id');
+    $auto_data = json_decode($this->input->post('auto_detected_data') ?: '{}', true);
+    
+    $data = [
+        'titre'           => $this->input->post('titre'),
+        'type'            => 'audio',
+        'description'     => $this->input->post('description'),
+        'categorie'       => $this->input->post('categorie'),
+        'fichier'         => $this->input->post('uploaded_file_path'),
+        'duree'           => $auto_data['analysis']['duration'] ?? 0,
+        'taille'          => $auto_data['analysis']['size'] ?? 0,
+        'bitrate'         => $auto_data['analysis']['bitrate'] ?? 0,
+        'miniature'       => $this->input->post('thumbnail') ?: ($auto_data['thumbnails']->cover ?? $auto_data['thumbnails']->generated ?? null),
+        'metadata_id3'    => json_encode($auto_data),
+        'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
+        'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
+        'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
+        'created_at'      => date('Y-m-d H:i:s'),
+        'updated_at'      => date('Y-m-d H:i:s')
+    ];
+    
+    // Générer le slug automatiquement avant l'insertion
+    $data['slug'] = $this->generateUniqueSlug($data['titre']);
+
+    $rsp = $this->Model->create('galerie_medias', $data);
+    
+    if ($rsp) {
+        // Récupérer l'audio créé pour envoyer la notification
+        $new_audio = $this->Model->readOne('galerie_medias', ['id_media' => $rsp]);
         
-        $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
-        
-        if ($this->form_validation->run() == FALSE) {
-            $this->session->set_flashdata('error', validation_errors());
-            redirect(base_url('media/audio'));
-            return;
+        // Envoyer les notifications à tous les utilisateurs
+        if (!empty($new_audio)) {
+            $notification_result = $this->sendAudioNotification($new_audio);
+            $this->session->set_flashdata('success', 'Audio créé. ' . $notification_result['success'] . ' notifications envoyées.');
+        } else {
+            $this->session->set_flashdata('success', 'Audio créé avec succès.');
         }
-
-        // Récupérer l'audio actuel pour comparer
-        $current_audio = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
-
-        $data = [
-            'titre'           => $this->input->post('titre'),
-            'description'     => $this->input->post('description'),
-            'categorie'       => $this->input->post('categorie'),
-            'date_media'      => $this->input->post('date_media'),
-            'credits'         => $this->input->post('credits'),
-            'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
-            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
-            'updated_at'      => date('Y-m-d H:i:s')
-        ];
-        
-        // AJOUT: Mettre à jour le slug si le titre a changé
-        if ($data['titre'] != $current_audio['titre']) {
-            $data['slug'] = $this->generateUniqueSlug($data['titre'], $id);
-        }
-
-        // Gestion de la miniature modifiée
-        $new_thumbnail = $this->input->post('thumbnail');
-        if (!empty($new_thumbnail) && $new_thumbnail !== ($current_audio['miniature'] ?? '')) {
-            // Supprimer l'ancienne miniature personnalisée si elle existe
-            if (!empty($current_audio['miniature']) && strpos($current_audio['miniature'], 'Custom/') !== false) {
-                @unlink(FCPATH . $current_audio['miniature']);
-            }
-            $data['miniature'] = $new_thumbnail;
-        }
-
-        $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
-        
-        $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Audio mis à jour' : 'Erreur mise à jour');
-        redirect(base_url('media/audio'));
+    } else {
+        $this->session->set_flashdata('error', 'Erreur lors de la création de l\'audio.');
     }
+    
+    redirect(base_url('media/audio'));
+}
+
+
+
+
+
+
+
+
+   public function Update()
+{
+    $id = $this->input->post('id');
+    
+    $this->form_validation->set_rules('titre', 'Titre', 'required|trim|max_length[255]');
+    
+    if ($this->form_validation->run() == FALSE) {
+        $this->session->set_flashdata('error', validation_errors());
+        redirect(base_url('media/audio'));
+        return;
+    }
+
+    // Récupérer l'audio actuel pour comparer
+    $current_audio = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
+
+    $data = [
+        'titre'           => $this->input->post('titre'),
+        'description'     => $this->input->post('description'),
+        'categorie'       => $this->input->post('categorie'),
+        'date_media'      => $this->input->post('date_media'),
+        'credits'         => $this->input->post('credits'),
+        'est_actif'       => $this->input->post('est_actif') ? 1 : 0,
+        'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
+        'is_for_website'  => $this->input->post('is_for_website') ? 1 : 0,
+        'updated_at'      => date('Y-m-d H:i:s')
+    ];
+    
+    // Mettre à jour le slug si le titre a changé
+    if ($data['titre'] != $current_audio['titre']) {
+        $data['slug'] = $this->generateUniqueSlug($data['titre'], $id);
+    }
+
+    // Gestion de la miniature modifiée
+    $new_thumbnail = $this->input->post('thumbnail');
+    if (!empty($new_thumbnail) && $new_thumbnail !== ($current_audio['miniature'] ?? '')) {
+        if (!empty($current_audio['miniature']) && strpos($current_audio['miniature'], 'Custom/') !== false) {
+            @unlink(FCPATH . $current_audio['miniature']);
+        }
+        $data['miniature'] = $new_thumbnail;
+    }
+
+    $rsp = $this->Model->update('galerie_medias', ['id_media' => $id], $data);
+    
+    // Optionnel: envoyer notification de mise à jour
+    if ($rsp && $data['est_actif'] == 1) {
+        $updated_audio = $this->Model->readOne('galerie_medias', ['id_media' => $id]);
+        if (!empty($updated_audio)) {
+            $this->sendAudioNotification($updated_audio);
+        }
+    }
+    
+    $this->session->set_flashdata($rsp ? 'success' : 'error', $rsp ? 'Audio mis à jour' : 'Erreur mise à jour');
+    redirect(base_url('media/audio'));
+}
+
+
+
 
     public function Delete()
     {
@@ -1238,4 +1268,250 @@ class Audio extends MX_Controller {
         
         echo "<br>Total mis à jour: {$updated} slugs pour les audios.";
     }
+
+
+
+
+    // ==================== NOTIFICATION NOUVEAU AUDIO ====================
+
+/**
+ * Envoyer une notification à tous les utilisateurs pour un nouvel audio
+ */
+private function sendAudioNotification($audio_data)
+{
+    try {
+        // Récupérer tous les emails des utilisateurs actifs
+        $emails = $this->getAllUserEmails();
+        
+        if (empty($emails)) {
+            log_message('info', "Aucun email trouvé pour la notification audio ID " . $audio_data['id_media']);
+            return ['success' => 0, 'error' => 0];
+        }
+        
+        // Récupérer les informations du site
+        $site_logo = $this->Model->get_setting('site_logo');
+        $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
+        $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
+        $linkgroupewhatsapp = $this->Model->get_setting('linkgroupewhatsapp');
+        $whatsapp_link = !empty($linkgroupewhatsapp) ? $linkgroupewhatsapp : '#';
+        
+        // Construire l'URL du détail audio
+        $audio_slug = !empty($audio_data['slug']) ? $audio_data['slug'] : $audio_data['id_media'];
+        $audio_url = base_url('media/detail/' . $audio_slug);
+        
+        // Récupérer la miniature
+        $thumbnail_url = !empty($audio_data['miniature']) 
+            ? base_url($audio_data['miniature']) 
+            : base_url('assets/images/audio-default.png');
+        
+        $success_count = 0;
+        $error_count = 0;
+        $max_emails = 50;
+        $email_count = 0;
+        
+        $subject = "🎵 NOUVEAU AUDIO - " . htmlspecialchars($site_name);
+        
+        foreach ($emails as $email) {
+            if ($email_count >= $max_emails) {
+                log_message('warning', "Limite d'emails atteinte ({$max_emails}) pour notification audio");
+                break;
+            }
+            
+            $message = $this->buildAudioNotificationTemplate(
+                htmlspecialchars($audio_data['titre']),
+                nl2br(htmlspecialchars($audio_data['description'] ?? '')),
+                $thumbnail_url,
+                $audio_url,
+                $subject,
+                $site_name,
+                $logo_url,
+                $whatsapp_link
+            );
+            
+            $result = $this->cpanel_email_lib->send_email($email, $subject, $message);
+            if ($result['success']) {
+                $success_count++;
+            } else {
+                $error_count++;
+                log_message('error', "Échec d'envoi à {$email} pour notification audio: " . print_r($result, true));
+            }
+            $email_count++;
+        }
+        
+        log_message('info', "Notifications audio envoyées: {$success_count} succès, {$error_count} échecs");
+        return ['success' => $success_count, 'error' => $error_count];
+        
+    } catch (Exception $e) {
+        log_message('error', "Erreur lors de l'envoi des notifications audio: " . $e->getMessage());
+        return ['success' => 0, 'error' => 1];
+    }
+}
+
+/**
+ * Récupérer tous les emails des utilisateurs actifs
+ */
+private function getAllUserEmails()
+{
+    $emails = [];
+    
+    $active_users = $this->Model->read('users', array('is_active' => 1, 'deleted_at' => null), 'id', 'ASC');
+    $newsletter_emails = $this->Model->read('newsletter', null, 'id_newsletter', 'ASC');
+    
+    foreach ($active_users as $user) {
+        if (!empty($user['email']) && filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
+            $emails[$user['email']] = $user['email'];
+        }
+    }
+    
+    foreach ($newsletter_emails as $newsletter) {
+        if (!empty($newsletter['email']) && filter_var($newsletter['email'], FILTER_VALIDATE_EMAIL)) {
+            $emails[$newsletter['email']] = $newsletter['email'];
+        }
+    }
+    
+    return array_values($emails);
+}
+
+/**
+ * Construire le template HTML pour la notification audio
+ */
+private function buildAudioNotificationTemplate($title, $description, $thumbnail_url, $audio_url, $subject, $site_name, $logo_url, $whatsapp_link)
+{
+    $current_date = date('d/m/Y');
+    
+    return '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>' . $subject . '</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                background-color: #f4f6f9;
+                margin: 0;
+                padding: 20px;
+                line-height: 1.5;
+            }
+            .container {
+                max-width: 560px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            }
+            .header {
+                background: linear-gradient(135deg, #0a2540, #0f4c3a);
+                padding: 30px 24px;
+                text-align: center;
+            }
+            .header-logo {
+                max-width: 100px;
+                margin-bottom: 15px;
+            }
+            .header h1 {
+                color: #ffffff;
+                font-size: 24px;
+                font-weight: 700;
+                margin: 0;
+            }
+            .header p {
+                color: rgba(255,255,255,0.8);
+                font-size: 14px;
+                margin: 8px 0 0;
+            }
+            .thumbnail {
+                width: 100%;
+                height: auto;
+                max-height: 300px;
+                object-fit: cover;
+            }
+            .content {
+                padding: 28px;
+            }
+            .audio-title {
+                font-size: 22px;
+                font-weight: 700;
+                color: #1a2a3a;
+                margin-bottom: 15px;
+            }
+            .description {
+                color: #5a6a7a;
+                font-size: 14px;
+                margin: 20px 0;
+                line-height: 1.6;
+            }
+            .btn-listen {
+                display: inline-block;
+                background: #0a66c2;
+                color: white;
+                padding: 12px 28px;
+                text-decoration: none;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 14px;
+                margin: 10px 0;
+            }
+            .btn-whatsapp {
+                display: inline-block;
+                background: #25D366;
+                color: white;
+                padding: 10px 24px;
+                text-decoration: none;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 13px;
+                margin: 5px;
+            }
+            .social-links {
+                margin: 15px 0;
+                text-align: center;
+            }
+            .footer {
+                background: #f8fafc;
+                padding: 20px;
+                text-align: center;
+                border-top: 1px solid #eef2f6;
+            }
+            .footer-text {
+                font-size: 12px;
+                color: #9aaab9;
+            }
+            .date {
+                color: #8a9aaa;
+                font-size: 12px;
+                margin-bottom: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
+                <h1>🎵 Nouvel Audio disponible</h1>
+                <p>' . htmlspecialchars($site_name) . '</p>
+            </div>
+            <img src="' . $thumbnail_url . '" alt="' . htmlspecialchars($title) . '" class="thumbnail">
+            <div class="content">
+                <div class="audio-title">' . htmlspecialchars($title) . '</div>
+                <div class="date">📅 Publié le ' . $current_date . '</div>
+                <div class="description">' . $description . '</div>
+                <div style="text-align: center;">
+                    <a href="' . $audio_url . '" class="btn-listen">🎧 Écouter ce contenu</a>
+                </div>
+            </div>
+            <div class="footer">
+                <div class="social-links">
+                    ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp" target="_blank">📱 Rejoignez notre groupe WhatsApp</a>' : '') . '
+                </div>
+                <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Votre partenaire santé naturelle</div>
+                <div class="footer-text"><a href="' . base_url() . '" style="color:#9aaab9;">Visitez notre site</a></div>
+            </div>
+        </div>
+    </body>
+    </html>';
+}
 }
