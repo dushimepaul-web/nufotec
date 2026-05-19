@@ -225,7 +225,7 @@ class Advertise_product extends MY_Controller {
                     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
                 }
                 .header {
-                    background: #0a2540;
+                    background: #0f4c3a;
                     padding: 30px 24px;
                     text-align: center;
                 }
@@ -347,7 +347,7 @@ class Advertise_product extends MY_Controller {
                 </div>
                 <div class="footer">
                     <div class="social-links">
-                        ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp">📱 Rejoignez notre groupe WhatsApp</a>' : '') . '
+                        ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp" target="_blank">📱 Rejoignez notre groupe WhatsApp</a>' : '') . '
                     </div>
                     <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>
                     <div class="footer-text"><a href="' . $site_url . '" style="color:#9aaab9;">Visitez notre site</a></div>
@@ -529,11 +529,6 @@ class Advertise_product extends MY_Controller {
                     font-size: 12px;
                     color: #9aaab9;
                 }
-                .footer-logo {
-                    max-width: 80px;
-                    margin-top: 15px;
-                    opacity: 0.7;
-                }
                 .btn-shop {
                     display: inline-block;
                     background: #0a66c2;
@@ -561,7 +556,7 @@ class Advertise_product extends MY_Controller {
             <div class="container">
                 <div class="header">
                     ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
-                    <h1>Offres du jour</h1>
+                    <h1>Offres du jour : Médecine naturelle et nutrition</h1>
                     <p>' . $current_date . '</p>
                 </div>
                 <div class="intro">
@@ -573,11 +568,10 @@ class Advertise_product extends MY_Controller {
                 </div>
                 <div class="footer">
                     <div class="social-links">
-                        ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp">📱 Rejoignez notre groupe WhatsApp</a>' : '') . '
+                        ' . ($whatsapp_link != '#' ? '<a href="' . $whatsapp_link . '" class="btn-whatsapp" target="_blank">📱 Rejoignez notre groupe WhatsApp</a>' : '') . '
                     </div>
                     <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Votre partenaire santé naturelle</div>
                     <div class="footer-text"><a href="' . $site_url . '" style="color:#9aaab9;">Visitez notre site</a></div>
-                    ' . (!empty($logo_url) ? '<div><img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="footer-logo"></div>' : '') . '
                 </div>
             </div>
         </body>
