@@ -58,7 +58,7 @@ $autoload['packages'] = array();
 |
 |	$autoload['libraries'] = array('user_agent' => 'ua'); $this->load->library('upload');
 */
-$autoload['libraries'] = array('database', 'email', 'session','upload','user_agent','form_validation');
+$autoload['libraries'] = array('database', 'email', 'session','upload','user_agent','form_validation','cpanel_email_lib');
 
 /*
 | -------------------------------------------------------------------
