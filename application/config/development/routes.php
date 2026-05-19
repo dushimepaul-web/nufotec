@@ -294,6 +294,7 @@ $route['audio/completeUpload'] = 'media/Audio/completeUpload';
 $route['audio/uploadThumbnail'] = 'media/Audio/uploadThumbnail';
 $route['audio/stream/(:num)'] = 'media/Audio/stream/$1';
 
+$route['Autre/admin_liste'] = 'media/Autre/admin_liste';
 $route['autre/admin_liste'] = 'media/Autre/admin_liste';
 $route['autre/admin_ajouter'] = 'media/Autre/admin_ajouter';
 $route['autre/admin_modifier/(:num)'] = 'media/Autre/admin_modifier/$1';
