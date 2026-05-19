@@ -14,34 +14,52 @@ class Autre extends MY_Controller {
 
     // ============ ADMIN LISTE (Vue principale) ============
 
-    public function admin_liste($offset = 0) {
-        // Vérifier connexion admin si nécessaire
-        // $this->_check_admin();
-        
-        // Gestion du filtre
-        $filtre = $this->input->get('filtre');
-        $types_valides = ['photo', 'book', 'texte', 'link', 'other'];
-        
-        $config['base_url'] = base_url('Autre/admin_liste');
-        $config['per_page'] = 12;
-        
-        if ($filtre && in_array($filtre, $types_valides)) {
-            $data['medias'] = $this->autre_model->get_by_sous_type($filtre, $config['per_page'], $offset);
-            $config['total_rows'] = count($this->autre_model->get_by_sous_type($filtre));
-            $data['filtre_actif'] = $filtre;
-        } else {
-            $data['medias'] = $this->autre_model->get_all($config['per_page'], $offset);
-            $config['total_rows'] = $this->autre_model->count_all();
-        }
-        
-        $this->load->library('pagination');
-        $this->pagination->initialize($config);
-        
-        $data['title'] = 'Gestion - Autres Médias';
-        $data['pagination'] = $this->pagination->create_links();
-        
-        $this->load->view('Autre_View', $data);
+
+
+public function admin_liste($offset = 0) {
+    // Vérifier connexion admin si nécessaire
+    // $this->_check_admin();
+    
+    // Gestion du filtre
+    $filtre = $this->input->get('filtre');
+    $types_valides = ['photo', 'book', 'texte', 'link', 'other'];
+    
+    $config['base_url'] = base_url('Autre/admin_liste');
+    $config['per_page'] = 12;
+    $config['uri_segment'] = 3;
+    
+    // Récupérer tous les médias de type 'autre' (exclure video et audio)
+    if ($filtre && in_array($filtre, $types_valides)) {
+        $data['medias'] = $this->autre_model->get_by_sous_type($filtre, $config['per_page'], $offset);
+        $data['total_rows'] = $this->autre_model->count_by_sous_type($filtre);
+        $data['filtre_actif'] = $filtre;
+    } else {
+        $data['medias'] = $this->autre_model->get_all($config['per_page'], $offset);
+        $data['total_rows'] = $this->autre_model->count_all();
     }
+    
+    // Configuration de la pagination
+    $config['total_rows'] = $data['total_rows'];
+    $config['full_tag_open'] = '<div class="pagination-container"><ul class="pagination">';
+    $config['full_tag_close'] = '</ul></div>';
+    $config['prev_link'] = '« Précédent';
+    $config['next_link'] = 'Suivant »';
+    $config['first_link'] = 'Premier';
+    $config['last_link'] = 'Dernier';
+    
+    $this->load->library('pagination');
+    $this->pagination->initialize($config);
+    
+    $data['title'] = 'Gestion - Autres Médias (Photos, Livres, Textes, Liens)';
+    $data['pagination'] = $this->pagination->create_links();
+    $data['total_items'] = $data['total_rows'];
+    
+    $this->load->view('Autre_View', $data);
+}
+
+
+
+
 
     // ============ AJOUTER ============
 
