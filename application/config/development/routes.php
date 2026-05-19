@@ -9,29 +9,68 @@ $route['default_controller'] = 'Home/Home/index';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
-
-
-
-
 // ============================================
 // CHANGEMENT DE LANGUE
 // ============================================
 $route['switch_lang/(fr|en|sw)'] = 'Home/Home/switch_lang/$1';
 
-
-// Dans routes.php
+// ============================================
+// ROUTES ADMIN
+// ============================================
 $route['Admin'] = 'Admin/index';
 $route['admin'] = 'Admin/index';
 $route['Admin/do_login'] = 'Admin/do_login';
 $route['admin/do_login'] = 'Admin/do_login';
+$route['administration'] = 'Admin/index';
 
+// ============================================
+// ROUTES ADVERTISE PRODUCT - COMPLÈTES
+// ============================================
 
-
-$route['Produits'] = 'Produits/index';
-
-
+// Routes pour le CRON et promo (sans authentification)
 $route['advertise-product/cron_daily_promo/(:any)'] = 'Advertise_product/cron_daily_promo/$1';
 $route['Advertise-product/cron_daily_promo/(:any)'] = 'Advertise_product/cron_daily_promo/$1';
+$route['advertise-product/promo'] = 'Advertise_product/promo';
+$route['Advertise-product/promo'] = 'Advertise_product/promo';
+
+// Routes CRUD principales
+$route['advertise-product'] = 'Advertise_product/index';
+$route['Advertise-product'] = 'Advertise_product/index';
+$route['advertise-product/index'] = 'Advertise_product/index';
+$route['Advertise-product/index'] = 'Advertise_product/index';
+
+// Routes CRUD - Create, Update, Delete
+$route['advertise-product/create'] = 'Advertise_product/create';
+$route['Advertise-product/create'] = 'Advertise_product/create';
+$route['advertise-product/update'] = 'Advertise_product/update';
+$route['Advertise-product/update'] = 'Advertise_product/update';
+$route['advertise-product/delete'] = 'Advertise_product/delete';
+$route['Advertise-product/delete'] = 'Advertise_product/delete';
+
+// Routes pour changer le statut
+$route['advertise-product/change-status'] = 'Advertise_product/ChangeStatus';
+$route['Advertise-product/change-status'] = 'Advertise_product/ChangeStatus';
+$route['advertise-product/change-featured'] = 'Advertise_product/ChangeFeatured';
+$route['Advertise-product/change-featured'] = 'Advertise_product/ChangeFeatured';
+
+// Route pour voir le détail d'un produit
+$route['advertise-product/view/(:any)'] = 'Advertise_product/ProductDetail/$1';
+$route['Advertise-product/view/(:any)'] = 'Advertise_product/ProductDetail/$1';
+
+// Routes pour les catégories de produits
+$route['product-categories'] = 'Advertise_product/Product_categories/index';
+$route['Product-categories'] = 'Advertise_product/Product_categories/index';
+$route['product-categories/index'] = 'Advertise_product/Product_categories/index';
+$route['product-categories/create'] = 'Advertise_product/Product_categories/create';
+$route['product-categories/update'] = 'Advertise_product/Product_categories/update';
+$route['product-categories/delete'] = 'Advertise_product/Product_categories/delete';
+$route['product-categories/view/(:num)'] = 'Advertise_product/Product_categories/view/$1';
+
+// ============================================
+// ROUTES PRODUITS
+// ============================================
+$route['Produits'] = 'Produits/index';
+$route['produits'] = 'Produits/index';
 
 // ============================================
 // ROUTES DASHBOARD
@@ -70,14 +109,6 @@ $route['Sections/browseImages'] = 'Sections/browseImages';
 $route['sections/browseImages'] = 'Sections/browseImages';
 
 // ============================================
-// ADMIN & AUTHENTIFICATION
-// ============================================
-$route['admin'] = 'Admin/index';
-$route['admin/do_login'] = 'Admin/do_login';
-
-// ============================================
-// ROUTES AUTHENTIFICATION (METTRE AVANT LA ROUTE GÉNÉRIQUE)
-// ============================================
 // ROUTES AUTHENTIFICATION (COMPLÈTES)
 // ============================================
 
@@ -94,12 +125,17 @@ $route['auth/verify_reset_code'] = 'Auth/verify_reset_code';
 $route['auth/reset_password'] = 'Auth/reset_password';
 $route['auth/resend_otp'] = 'Auth/resend_otp';
 
-// Route pour effacer les messages flash (AJAX)
+// Routes pour effacer les messages flash (AJAX)
 $route['auth/clear_flash'] = 'Auth/clear_flash';
 $route['auth/clear_flash_data'] = 'Auth/clear_flash_data';
 
 // Routes pour les tests
 $route['auth/test_email'] = 'Auth/test_email';
+
+// Routes pour vérification email
+$route['auth/verify_email_page'] = 'Auth/verify_email_page';
+$route['auth/verify_email_code'] = 'Auth/verify_email_code';
+$route['auth/resend_verification_code'] = 'Auth/resend_verification_code';
 
 // ============================================
 // ALIAS AVEC MAJUSCULE (Compatibilité)
@@ -114,6 +150,9 @@ $route['Auth/verify_reset_code'] = 'Auth/verify_reset_code';
 $route['Auth/reset_password'] = 'Auth/reset_password';
 $route['Auth/resend_otp'] = 'Auth/resend_otp';
 $route['Auth/clear_flash'] = 'Auth/clear_flash';
+$route['Auth/verify_email_page'] = 'Auth/verify_email_page';
+$route['Auth/verify_email_code'] = 'Auth/verify_email_code';
+$route['Auth/resend_verification_code'] = 'Auth/resend_verification_code';
 
 // ============================================
 // ALIAS SIMPLES (Sans préfixe auth)
@@ -126,36 +165,8 @@ $route['logout'] = 'Auth/logout';
 $route['mot-de-passe-oublie'] = 'Auth/index';
 $route['forgot-password'] = 'Auth/index';
 
-
-
-
-// Routes pour vérification email
-$route['auth/verify_email_page'] = 'Auth/verify_email_page';
-$route['auth/verify_email_code'] = 'Auth/verify_email_code';
-$route['auth/resend_verification_code'] = 'Auth/resend_verification_code';
-
-
-
 // ============================================
-// ROUTES AUTHENTIFICATION (À AJOUTER AVANT LA ROUTE GÉNÉRIQUE)
-// ============================================
-$route['Auth'] = 'Auth/index';
-$route['Auth/index'] = 'Auth/index';
-$route['Auth/login'] = 'Auth/login';
-$route['Auth/register'] = 'Auth/register';
-$route['Auth/logout'] = 'Auth/logout';
-$route['Auth/send_reset_code'] = 'Auth/send_reset_code';
-$route['Auth/reset_password'] = 'Auth/reset_password';
-
-// Pour la vue de connexion/inscription (si vous avez une vue spécifique)
-$route['connexion'] = 'Auth/index';
-$route['inscription'] = 'Auth/index';
-$route['login'] = 'Auth/index';
-$route['register'] = 'Auth/index';
-
-
-// ============================================
-// ROUTES PRODUITS
+// ROUTES PRODUITS & BOUTIQUE
 // ============================================
 $route['products'] = 'Products/index';
 $route['products/get_products_ajax'] = 'Products/get_products_ajax';
@@ -165,9 +176,7 @@ $route['product/(:any)'] = 'Products/detail/$1';
 $route['products/(:any)'] = 'Products/detail/$1';
 $route['buyers/catalogue'] = 'Products/index';
 
-// ============================================
 // ROUTES BOUTIQUE & PANIER
-// ============================================
 $route['boutique'] = 'Home/boutique/index';
 $route['boutique/categorie/(:num)'] = 'Home/boutique/categorie/$1';
 $route['boutique/categorie/(:num)/(:num)'] = 'Home/boutique/categorie/$1/$2';
@@ -191,6 +200,7 @@ $route['commande/verifier_paiement/(:num)'] = 'Home/Commande/verifier_paiement/$
 // ============================================
 $route['Medicins'] = 'Consultations/PatientForm/medicin';
 $route['patient-form'] = 'Consultations/PatientForm';
+$route['patient-form/index'] = 'Consultations/PatientForm/index';
 $route['patient-form/create'] = 'Consultations/PatientForm/create';
 $route['consultation/payment/(:any)'] = 'Consultations/Payment/index/$1';
 $route['swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
@@ -200,12 +210,8 @@ $route['update-profile'] = 'Dashboard/PatientDashboard/update_home';
 $route['patient-fallowed'] = 'Consultations/Entente/confirme';
 $route['dashboard/patientdashboard/update_profile'] = 'Dashboard/PatientDashboard/update_profile';
 
-
-
-
-
 // ============================================
-// ROUTES CONFIGURATIONS (DOIT ÊTRE AVANT LA ROUTE GÉNÉRIQUE)
+// ROUTES CONFIGURATIONS
 // ============================================
 $route['Configurations'] = 'Configurations/index';
 $route['configurations'] = 'Configurations/index';
@@ -237,9 +243,7 @@ $route['media/player/(:any)'] = 'Home/media/player/$1';
 $route['media/downloader'] = 'Home/media/downloader';
 $route['media/downloader/(:any)'] = 'Home/media/downloader/$1';
 
-// ============================================
-// ROUTES API MÉDIAS CORRIGÉES (AVEC PRÉFIXE 'api')
-// ============================================
+// ROUTES API MÉDIAS
 $route['media/apiTrackView'] = 'Home/Media/apiTrackView';
 $route['media/apiToggleLike'] = 'Home/Media/apiToggleLike';
 $route['media/apiToggleFavorite'] = 'Home/Media/apiToggleFavorite';
@@ -250,7 +254,7 @@ $route['media/apiGetStats'] = 'Home/Media/apiGetStats';
 $route['media/apiSearch'] = 'Home/Media/apiSearch';
 $route['media/apiGetWaveform/(:num)'] = 'Home/Media/apiGetWaveform/$1';
 
-// Garder aussi les anciennes routes pour compatibilité
+// Anciennes routes pour compatibilité
 $route['media/trackView'] = 'Home/Media/apiTrackView';
 $route['media/toggleLike'] = 'Home/Media/apiToggleLike';
 $route['media/toggleFavorite'] = 'Home/Media/apiToggleFavorite';
@@ -344,13 +348,13 @@ $route['broker/get_investor/(:num)'] = 'Frontend/Broker/get_investor/$1';
 $route['broker/set_password_view'] = 'Frontend/Broker/set_password_view';
 $route['broker/save_password'] = 'Frontend/Broker/save_password';
 
-
-
-
-// Investisseurs directs
+// ============================================
+// ROUTES INVESTISSEURS
+// ============================================
 $route['investor'] = 'Frontend/Investors/create';
 $route['investors/create'] = 'Frontend/Investors/create';
 $route['investors/store'] = 'Frontend/Investors/store';
+
 // ============================================
 // ROUTES SOCIAL & CHATBOT
 // ============================================
@@ -377,28 +381,12 @@ $route['users-update'] = 'Users/Users/Update';
 $route['users-delete'] = 'Users/Users/Delete';
 
 // ============================================
-// ROUTES WORKFLOW & ADVERTISE PRODUCT
+// ROUTES WORKFLOW CATEGORIES
 // ============================================
 $route['Workflow_categories'] = 'Produits/Workflow_categories/index';
 $route['Workflow_categories/Create'] = 'Produits/Workflow_categories/Create';
 $route['Workflow_categories/Delete'] = 'Produits/Workflow_categories/Delete';
 $route['Workflow_categories/Update'] = 'Produits/Workflow_categories/Update';
-
-$route['advertise-product'] = 'Advertise_product/index';
-$route['advertise-product-create'] = 'Advertise_product/create';
-$route['advertise-product-update'] = 'Advertise_product/update';
-$route['advertise-product-delete'] = 'Advertise_product/delete';
-$route['advertise-product-change-status'] = 'Advertise_product/changeStatus';
-$route['advertise-product-change-featured'] = 'Advertise_product/changeFeatured';
-$route['advertise-product/view/(:any)'] = 'Advertise_product/productDetail/$1';
-
-$route['product_categories'] = 'Advertise_product/Product_categories/index';
-$route['product_categories/create'] = 'Advertise_product/Product_categories/create';
-$route['product_categories/update'] = 'Advertise_product/Product_categories/update';
-$route['product_categories/delete'] = 'Advertise_product/Product_categories/delete';
-$route['product_categories/view/(:num)'] = 'Advertise_product/Product_categories/view/$1';
-
-
 
 // ============================================
 // ROUTES PRODUITS (DOIT ÊTRE AVANT LA ROUTE GÉNÉRIQUE)
@@ -425,10 +413,6 @@ $route['Products/delete_order'] = 'Products/delete_order';
 $route['products/delete_order'] = 'Products/delete_order';
 $route['Products/export_orders_csv'] = 'Products/export_orders_csv';
 $route['products/export_orders_csv'] = 'Products/export_orders_csv';
-
-
-
-
 
 // ============================================
 // ROUTES API
