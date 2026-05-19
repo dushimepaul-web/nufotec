@@ -10,12 +10,25 @@ class Autre_model extends CI_Model {
     }
 
     /**
-     * Récupérer tous les médias de type 'autre' (exclut video, audio)
+     * Récupérer tous les médias de type 'document', 'image' et 'autre' avec sous_type document/image
      */
     public function get_all($limit = null, $offset = 0) {
-        $this->db->where('type', 'autre');
-        $this->db->where('type !=', 'video');
-        $this->db->where('type !=', 'audio');
+        $this->db->group_start();
+            // Cas 1: type = 'document' avec sous_type NULL
+            $this->db->where('type', 'document');
+            $this->db->where('sous_type IS NULL');
+        $this->db->or_group_start();
+            // Cas 2: type = 'image' avec sous_type NULL
+            $this->db->where('type', 'image');
+            $this->db->where('sous_type IS NULL');
+        $this->db->or_group_start();
+            // Cas 3: type = 'autre' ET sous_type IN ('document', 'image')
+            $this->db->where('type', 'autre');
+            $this->db->where_in('sous_type', ['document', 'image']);
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->group_end();
+        
         $this->db->order_by('created_at', 'DESC');
         
         if ($limit) {
@@ -26,26 +39,53 @@ class Autre_model extends CI_Model {
     }
 
     /**
-     * Récupérer un média par son ID (uniquement type autre)
+     * Récupérer un média par son ID
      */
     public function get_by_id($id) {
-        return $this->db->where('id_media', $id)
-                        ->where('type', 'autre')
-                        ->where('type !=', 'video')
-                        ->where('type !=', 'audio')
-                        ->get($this->table)
-                        ->row();
+        $this->db->group_start();
+            $this->db->where('type', 'document');
+            $this->db->where('sous_type IS NULL');
+        $this->db->or_group_start();
+            $this->db->where('type', 'image');
+            $this->db->where('sous_type IS NULL');
+        $this->db->or_group_start();
+            $this->db->where('type', 'autre');
+            $this->db->where_in('sous_type', ['document', 'image']);
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->where('id_media', $id);
+        
+        return $this->db->get($this->table)->row();
     }
 
     /**
-     * Récupérer les médias par sous_type (uniquement type autre)
+     * Récupérer les médias par sous_type
      */
-    public function get_by_sous_type($sous_type, $limit = null, $offset = 0) {
-        $this->db->where('type', 'autre')
-                 ->where('sous_type', $sous_type)
-                 ->where('type !=', 'video')
-                 ->where('type !=', 'audio')
-                 ->order_by('created_at', 'DESC');
+    public function get_by_sous_type($sous_type = null, $limit = null, $offset = 0) {
+        $this->db->group_start();
+            // Cas 1: type = 'document' avec sous_type NULL ET sous_type demandé est 'document'
+            if ($sous_type == 'document') {
+                $this->db->where('type', 'document');
+                $this->db->where('sous_type IS NULL');
+            }
+        $this->db->or_group_start();
+            // Cas 2: type = 'image' avec sous_type NULL ET sous_type demandé est 'image'
+            if ($sous_type == 'image') {
+                $this->db->where('type', 'image');
+                $this->db->where('sous_type IS NULL');
+            }
+        $this->db->or_group_start();
+            // Cas 3: type = 'autre' ET sous_type = la valeur demandée
+            if ($sous_type && in_array($sous_type, ['document', 'image', 'photo', 'book', 'texte', 'link', 'other'])) {
+                $this->db->where('type', 'autre');
+                $this->db->where('sous_type', $sous_type);
+            }
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->group_end();
+        
+        $this->db->order_by('created_at', 'DESC');
         
         if ($limit) {
             $this->db->limit($limit, $offset);
@@ -55,33 +95,62 @@ class Autre_model extends CI_Model {
     }
 
     /**
-     * Compter tous les médias de type 'autre'
+     * Compter tous les médias
      */
     public function count_all() {
-        return $this->db->where('type', 'autre')
-                        ->where('type !=', 'video')
-                        ->where('type !=', 'audio')
-                        ->count_all_results($this->table);
+        $this->db->group_start();
+            $this->db->where('type', 'document');
+            $this->db->where('sous_type IS NULL');
+        $this->db->or_group_start();
+            $this->db->where('type', 'image');
+            $this->db->where('sous_type IS NULL');
+        $this->db->or_group_start();
+            $this->db->where('type', 'autre');
+            $this->db->where_in('sous_type', ['document', 'image']);
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->group_end();
+        
+        return $this->db->count_all_results($this->table);
     }
 
     /**
      * Compter les médias par sous_type
      */
-    public function count_by_sous_type($sous_type) {
-        return $this->db->where('type', 'autre')
-                        ->where('sous_type', $sous_type)
-                        ->where('type !=', 'video')
-                        ->where('type !=', 'audio')
-                        ->count_all_results($this->table);
+    public function count_by_sous_type($sous_type = null) {
+        $this->db->group_start();
+            if ($sous_type == 'document') {
+                $this->db->where('type', 'document');
+                $this->db->where('sous_type IS NULL');
+            }
+        $this->db->or_group_start();
+            if ($sous_type == 'image') {
+                $this->db->where('type', 'image');
+                $this->db->where('sous_type IS NULL');
+            }
+        $this->db->or_group_start();
+            if ($sous_type && in_array($sous_type, ['document', 'image', 'photo', 'book', 'texte', 'link', 'other'])) {
+                $this->db->where('type', 'autre');
+                $this->db->where('sous_type', $sous_type);
+            }
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->group_end();
+        
+        return $this->db->count_all_results($this->table);
     }
 
     /**
      * Insérer un nouveau média
      */
     public function insert($data) {
-        $data['type'] = 'autre';
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
+        
+        // Si le type est 'document' ou 'image' sans sous_type, on garde le type original
+        if (!isset($data['type'])) {
+            $data['type'] = 'autre';
+        }
         
         $this->db->insert($this->table, $data);
         return $this->db->insert_id();
@@ -134,11 +203,27 @@ class Autre_model extends CI_Model {
      * Obtenir les statistiques par sous_type
      */
     public function get_stats_by_sous_type() {
-        $this->db->select('sous_type, COUNT(*) as total');
-        $this->db->where('type', 'autre');
-        $this->db->where('type !=', 'video');
-        $this->db->where('type !=', 'audio');
-        $this->db->group_by('sous_type');
-        return $this->db->get($this->table)->result();
+        // Cette méthode est complexe, on va faire des requêtes séparées
+        $stats = [];
+        
+        // Pour 'document' (type=document, sous_type=NULL)
+        $this->db->where('type', 'document');
+        $this->db->where('sous_type IS NULL');
+        $stats['document'] = $this->db->count_all_results($this->table);
+        
+        // Pour 'image' (type=image, sous_type=NULL)
+        $this->db->where('type', 'image');
+        $this->db->where('sous_type IS NULL');
+        $stats['image'] = $this->db->count_all_results($this->table);
+        
+        // Pour les autres sous_types de 'autre'
+        $sous_types = ['photo', 'book', 'texte', 'link', 'other'];
+        foreach ($sous_types as $st) {
+            $this->db->where('type', 'autre');
+            $this->db->where('sous_type', $st);
+            $stats[$st] = $this->db->count_all_results($this->table);
+        }
+        
+        return $stats;
     }
 }
