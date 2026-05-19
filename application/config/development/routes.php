@@ -312,7 +312,9 @@ $route['blog/recherche'] = 'Home/blog/recherche';
 
 $route['Actualites'] = 'Actualites/index';
 
-
+$route['Home/Abonner'] = 'Home/Home/Abonner';
+$route['abonner-newsletter'] = 'Home/Home/Abonner';
+$route['newsletter/subscribe'] = 'Home/Home/Abonner';
 
 
 // ============================================
