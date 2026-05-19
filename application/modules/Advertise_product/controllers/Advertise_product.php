@@ -517,7 +517,7 @@ class Advertise_product extends MY_Controller {
                 </div>
                 <div class="products">' . $products_html . '</div>
                 <div style="text-align: center; padding: 0 20px 20px;">
-                    <a href="' . $site_url . 'advertise-product" class="btn-shop">Voir tous nos produits</a>
+                    <a href="' . $site_url . 'Products" class="btn-shop">Voir tous nos produits</a>
                 </div>
                 <div class="footer">
                     <div class="footer-text">© ' . date('Y') . ' NUFOTEC BURUNDI - Votre partenaire santé naturelle</div>
