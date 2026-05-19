@@ -775,7 +775,6 @@ if (!function_exists('format_tags')) {
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Delete/Archive Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">

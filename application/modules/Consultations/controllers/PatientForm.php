@@ -13,8 +13,7 @@ class PatientForm extends Public_Controller {
         
         $this->load->library([
             'form_validation', 
-            'session',
-            'email'
+            'session'
         ]);
         
         $this->load->helper([
@@ -27,6 +26,11 @@ class PatientForm extends Public_Controller {
         
         $this->load->model('Model');
         
+        // ============================================
+        // CHARGER LA LIBRAIRIE EMAIL cPanel
+        // ============================================
+        $this->load->library('cpanel_email_lib');
+        
         $this->upload_path = FCPATH . 'attachments/FichierPatient/';
         
         if (!is_dir($this->upload_path)) {
@@ -38,7 +42,7 @@ class PatientForm extends Public_Controller {
         // TOUTES LES MÉTHODES NÉCESSITENT UNE CONNEXION
         // ============================================
         
-        // Méthodes accessibles sans connexion (à laisser vides si tout doit être protégé)
+        // Méthodes accessibles sans connexion
         $public_methods = [
             'get_countries',  // API pour les pays (accessible sans connexion)
             'medicin',        // Liste des médecins (accessible sans connexion)
@@ -66,29 +70,20 @@ class PatientForm extends Public_Controller {
         }
     }
 
-
-
-   public function index()
+    public function index()
     {   
         // Vérifier si l'utilisateur est connecté
         $user_id = $this->session->userdata('user_id');
         
         // Si l'utilisateur n'est pas connecté, sauvegarder l'URL et rediriger
         if (!$user_id) {
-            // Sauvegarder l'URL actuelle avec un timestamp pour éviter l'écrasement
             $current_url = current_url();
-            
-            // Vérifier si un paramètre GET existe
             $query_string = $_SERVER['QUERY_STRING'];
             if (!empty($query_string)) {
                 $current_url .= '?' . $query_string;
             }
-            
             $this->session->set_userdata('login_redirect', $current_url);
-            
-            // Pour déboguer
             log_message('debug', 'PatientForm: URL sauvegardée dans session: ' . $current_url);
-            
             redirect('Auth');
             return;
         }
@@ -96,11 +91,8 @@ class PatientForm extends Public_Controller {
         // Récupérer l'utilisateur connecté
         $user = $this->getCurrentUser();
         
-        // ============================================
-        // VÉRIFIER S'IL Y A UNE CONSULTATION EN ATTENTE DE PAIEMENT
-        // ============================================
+        // Vérifier s'il y a une consultation en attente de paiement
         $patient_id = $user_id;
-        
         $pending_consultation = $this->Model->getPendingConsultationByPatient($patient_id);
         
         if ($pending_consultation) {
@@ -175,20 +167,6 @@ class PatientForm extends Public_Controller {
         }
         return null;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public function changeDoctor()
     {
@@ -472,7 +450,6 @@ class PatientForm extends Public_Controller {
 
     public function Medicin()
     {    
-        // Requête sans multilingue
         $this->db->select("
             medecins.id,
             medecins.uuid,
@@ -542,56 +519,77 @@ class PatientForm extends Public_Controller {
         return $this->db->get('medecin_horaires')->num_rows() > 0;
     }
 
+    /**
+     * Envoyer les emails de confirmation de consultation avec cPanel_email_lib
+     */
     private function _send_consultation_emails($data)
     {    
         try {
-            $this->load->library('Sendgrid_lib');
-
+            // Vérifier que la librairie est chargée
+            if (!isset($this->cpanel_email_lib) || !is_object($this->cpanel_email_lib)) {
+                log_message('error', 'cpanel_email_lib non disponible pour l\'envoi des emails de consultation');
+                return false;
+            }
+            
+            // Récupérer les informations du patient
             $this->db->select('email, nom, prenom');
             $this->db->where('id', $data['patient_id']);
-            $this->db->from('users');
-            $patient_query = $this->db->get();
-            $patient = $patient_query->row_array();
+            $patient = $this->db->get('users')->row_array();
 
+            // Récupérer les informations du médecin
             $doctor = null;
             if (!empty($data['doctor_id'])) {
                 $this->db->select('medecins.*, users.email, users.nom, users.prenom');
                 $this->db->where('medecins.id', $data['doctor_id']);
                 $this->db->from('medecins');
                 $this->db->join('users', 'users.id = medecins.user_id');
-                $doctor_query = $this->db->get();
-                $doctor = $doctor_query->row_array();
+                $doctor = $this->db->get()->row_array();
             }
 
+            // Récupérer les informations du site
             $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
+            $site_logo = $this->Model->get_setting('site_logo');
+            $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
+            
+            $message_data = [
+                'data' => $data,
+                'patient' => $patient,
+                'doctor' => $doctor,
+                'site_name' => $site_name,
+                'logo_url' => $logo_url
+            ];
 
+            // Email au patient
             if ($patient && !empty($patient['email'])) {
-                $subject = 'Your consultation request has been received - ' . $data['numero_consultation'];
-                $message = $this->_build_patient_email($data, $patient, $doctor, $site_name);
-                $result = $this->sendgrid_lib->send_email($patient['email'], $subject, $message);
-                if (!($result['status'] == 202 || $result['status'] == 200)) {
-                    log_message('error', 'SendGrid - Email to patient failed: ' . json_encode($result));
+                $subject = 'Confirmation de votre demande de consultation - N°' . $data['numero_consultation'];
+                $message = $this->_build_patient_email_cpanel($message_data);
+                $result = $this->cpanel_email_lib->send_email($patient['email'], $subject, $message);
+                if (!$result['success']) {
+                    log_message('error', 'cPanel Email - Échec envoi au patient: ' . json_encode($result));
                 }
             }
 
+            // Email au médecin
             if ($doctor && !empty($doctor['email'])) {
-                $subject = 'New consultation request - ' . $data['numero_consultation'];
-                $message = $this->_build_doctor_email($data, $patient, $doctor, $site_name);
-                $result = $this->sendgrid_lib->send_email($doctor['email'], $subject, $message);
-                if (!($result['status'] == 202 || $result['status'] == 200)) {
-                    log_message('error', 'SendGrid - Email to doctor failed: ' . json_encode($result));
+                $subject = 'Nouvelle demande de consultation - N°' . $data['numero_consultation'];
+                $message = $this->_build_doctor_email_cpanel($message_data);
+                $result = $this->cpanel_email_lib->send_email($doctor['email'], $subject, $message);
+                if (!$result['success']) {
+                    log_message('error', 'cPanel Email - Échec envoi au médecin: ' . json_encode($result));
                 }
             }
 
+            // Email à l'admin
             $admin_email = $this->Model->get_setting('admin_email', 'admin@nufotec.com');
             if (!empty($admin_email)) {
-                $subject = 'New consultation created - ' . $data['numero_consultation'];
-                $message = $this->_build_admin_email($data, $patient, $doctor, $site_name);
-                $result = $this->sendgrid_lib->send_email($admin_email, $subject, $message);
-                if (!($result['status'] == 202 || $result['status'] == 200)) {
-                    log_message('error', 'SendGrid - Email to admin failed: ' . json_encode($result));
+                $subject = 'Nouvelle consultation créée - N°' . $data['numero_consultation'];
+                $message = $this->_build_admin_email_cpanel($message_data);
+                $result = $this->cpanel_email_lib->send_email($admin_email, $subject, $message);
+                if (!$result['success']) {
+                    log_message('error', 'cPanel Email - Échec envoi à l\'admin: ' . json_encode($result));
                 }
             }
+            
             return true;
         } catch (Exception $e) {
             log_message('error', 'Exception in consultation email sending: ' . $e->getMessage());
@@ -599,175 +597,197 @@ class PatientForm extends Public_Controller {
         }
     }
 
-    private function _build_patient_email($data, $patient, $doctor, $site_name) {
-        $doctor_name = $doctor ? htmlspecialchars($doctor['prenom']) . ' ' . htmlspecialchars($doctor['nom']) : 'Not assigned yet';
+    /**
+     * Email patient version cPanel
+     */
+    private function _build_patient_email_cpanel($data)
+    {
+        $data = $data['data'];
+        $patient = $data['patient'];
+        $doctor = $data['doctor'];
+        $site_name = $data['site_name'];
+        $logo_url = $data['logo_url'];
+        
+        $doctor_name = $doctor ? htmlspecialchars($doctor['prenom']) . ' ' . htmlspecialchars($doctor['nom']) : 'À attribuer';
         $appointment_date = date('Y-m-d H:i', strtotime('+1 day'));
-        ob_start();
-        ?>
+        
+        return '
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Confirmation consultation - NUFOTEC</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                    background-color: #f4f6f9;
+                    margin: 0;
+                    padding: 20px;
+                    line-height: 1.5;
+                }
+                .container {
+                    max-width: 560px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+                }
+                .header {
+                    background: linear-gradient(135deg, #0a2540, #0f4c3a);
+                    padding: 30px 24px;
+                    text-align: center;
+                }
+                .header-logo { max-width: 100px; margin-bottom: 15px; }
+                .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
+                .header p { color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0; }
+                .content { padding: 28px; }
+                .success-icon { text-align: center; margin-bottom: 20px; }
+                .success-icon span { font-size: 50px; }
+                .title { font-size: 22px; font-weight: 700; color: #1a2a3a; margin-bottom: 15px; text-align: center; }
+                .info-box { background: #f7f9fc; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e8ecf0; }
+                .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eef2f6; }
+                .info-row:last-child { border-bottom: none; }
+                .info-label { font-weight: 600; color: #1a2a3a; }
+                .info-value { color: #5a6a7a; }
+                .btn { display: inline-block; background: #0a66c2; color: white; padding: 12px 28px; text-decoration: none; border-radius: 40px; font-weight: 600; }
+                .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #eef2f6; }
+                .footer-text { font-size: 12px; color: #9aaab9; }
+            </style>
         </head>
-        <body style="font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px; margin: 0;">
-            <div style="max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="background: #0d6efd; color: white; padding: 30px; text-align: center;">
-                    <h1 style="margin:0; font-size: 24px;">Consultation Request Received</h1>
+        <body>
+            <div class="container">
+                <div class="header">
+                    ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
+                    <h1>✅ Demande reçue</h1>
+                    <p>' . htmlspecialchars($site_name) . '</p>
                 </div>
-                <div style="padding: 30px;">
-                    <p style="font-size: 16px; color: #333;">Dear <?= htmlspecialchars($data['full_name']) ?>,</p>
-                    <p>Thank you for submitting your consultation request. We have received your information and payment.</p>
-                    <div style="background: #e7f3ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #0d6efd;">
-                        <h3 style="margin-top: 0; color: #0d6efd;">Consultation Details</h3>
-                        <p style="margin: 5px 0;"><strong>Tracking Number:</strong> <?= $data['numero_consultation'] ?></p>
-                        <p style="margin: 5px 0;"><strong>Doctor:</strong> <?= $doctor_name ?></p>
-                        <p style="margin: 5px 0;"><strong>Requested Date:</strong> <?= $appointment_date ?></p>
-                        <p style="margin: 5px 0;"><strong>Amount Paid:</strong> <?= $data['consultation_prix'] ?> <?= $data['consultation_devise'] ?></p>
-                        <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #ffc107;">Pending Confirmation</span></p>
+                <div class="content">
+                    <div class="success-icon"><span>📋</span></div>
+                    <div class="title">Votre demande de consultation a été enregistrée</div>
+                    <div class="info-box">
+                        <div class="info-row"><span class="info-label">Numéro de suivi</span><span class="info-value">' . htmlspecialchars($data['numero_consultation']) . '</span></div>
+                        <div class="info-row"><span class="info-label">Médecin</span><span class="info-value">Dr. ' . $doctor_name . '</span></div>
+                        <div class="info-row"><span class="info-label">Date demandée</span><span class="info-value">' . $appointment_date . '</span></div>
+                        <div class="info-row"><span class="info-label">Montant</span><span class="info-value">' . $data['consultation_prix'] . ' ' . $data['consultation_devise'] . '</span></div>
+                        <div class="info-row"><span class="info-label">Statut</span><span class="info-value">En attente de confirmation</span></div>
                     </div>
-                    <p><strong>What happens next?</strong></p>
-                    <ul style="line-height: 1.8;">
-                        <li>The doctor will review your request within 24 hours</li>
-                        <li>You will receive a confirmation email with the exact appointment time</li>
-                        <li>A video consultation link will be sent to you before the appointment</li>
-                        <li>Please prepare your medical documents for the consultation</li>
-                    </ul>
-                    <p style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                        <strong>Important:</strong> Keep your tracking number <strong><?= $data['numero_consultation'] ?></strong> for future reference.
-                    </p>
-                    <p>If you have any questions, please contact our support team.</p>
-                    <p>Best regards,<br><strong>The <?= htmlspecialchars($site_name) ?> Team</strong></p>
+                    <div style="text-align: center;"><a href="' . base_url('Consultations/Payment/index/' . $data['numero_consultation']) . '" class="btn">Procéder au paiement</a></div>
                 </div>
-                <div style="background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d;">
-                    <p>This is an automated message. Please do not reply to this email.</p>
-                    <p>&copy; <?= date('Y') ?> <?= htmlspecialchars($site_name) ?>. All rights reserved.</p>
+                <div class="footer">
+                    <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>
                 </div>
             </div>
         </body>
-        </html>
-        <?php
-        return ob_get_clean();
+        </html>';
     }
 
-    private function _build_doctor_email($data, $patient, $doctor, $site_name) {
-        $patient_email = $patient ? $patient['email'] : 'N/A';
+    /**
+     * Email médecin version cPanel
+     */
+    private function _build_doctor_email_cpanel($data)
+    {
+        $data = $data['data'];
+        $patient = $data['patient'];
+        $doctor = $data['doctor'];
+        $site_name = $data['site_name'];
+        $logo_url = $data['logo_url'];
+        
         $attachments_list = '';
         if (!empty($data['medical_docs'])) {
-            $attachments_list .= '<li>Medical documents: ' . count($data['medical_docs']) . ' file(s)</li>';
+            $attachments_list .= '<li>Documents médicaux: ' . count($data['medical_docs']) . ' fichier(s)</li>';
         }
         if (!empty($data['prescriptions'])) {
-            $attachments_list .= '<li>Previous prescriptions: ' . count($data['prescriptions']) . ' file(s)</li>';
+            $attachments_list .= '<li>Ordonnances: ' . count($data['prescriptions']) . ' fichier(s)</li>';
         }
-        if (empty($attachments_list)) {
-            $attachments_list = '<li>No attachments</li>';
-        }
-        ob_start();
-        ?>
+        
+        return '
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Nouvelle consultation - NUFOTEC</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+                .container { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); }
+                .header { background: linear-gradient(135deg, #0a2540, #0f4c3a); padding: 30px 24px; text-align: center; }
+                .header-logo { max-width: 100px; margin-bottom: 15px; }
+                .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
+                .content { padding: 28px; }
+                .title { font-size: 22px; font-weight: 700; color: #1a2a3a; margin-bottom: 15px; }
+                .info-box { background: #f7f9fc; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e8ecf0; }
+                .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eef2f6; }
+                .btn { display: inline-block; background: #0a66c2; color: white; padding: 12px 28px; text-decoration: none; border-radius: 40px; font-weight: 600; }
+                .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #eef2f6; }
+            </style>
         </head>
-        <body style="font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px; margin: 0;">
-            <div style="max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="background: #198754; color: white; padding: 30px; text-align: center;">
-                    <h1 style="margin:0; font-size: 24px;">New Consultation Request</h1>
+        <body>
+            <div class="container">
+                <div class="header">
+                    ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
+                    <h1>🩺 Nouvelle consultation</h1>
                 </div>
-                <div style="padding: 30px;">
-                    <p style="font-size: 16px; color: #333;">Dear <?= htmlspecialchars($doctor['prenom']) ?> <?= htmlspecialchars($doctor['nom']) ?>,</p>
-                    <p>You have received a new consultation request that requires your attention.</p>
-                    <div style="background: #d1e7dd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #198754;">
-                        <h3 style="margin-top: 0; color: #198754;">Patient Information</h3>
-                        <p style="margin: 5px 0;"><strong>Name:</strong> <?= htmlspecialchars($data['full_name']) ?></p>
-                        <p style="margin: 5px 0;"><strong>Age:</strong> <?= $data['age'] ?> years</p>
-                        <p style="margin: 5px 0;"><strong>Country:</strong> <?= htmlspecialchars($data['country']) ?></p>
-                        <p style="margin: 5px 0;"><strong>Weight:</strong> <?= $data['weight'] ?> kg</p>
-                        <p style="margin: 5px 0;"><strong>Height:</strong> <?= $data['height'] ?> cm</p>
-                        <p style="margin: 5px 0;"><strong>Patient Email:</strong> <?= htmlspecialchars($patient_email) ?></p>
+                <div class="content">
+                    <div class="title">Vous avez reçu une nouvelle demande</div>
+                    <div class="info-box">
+                        <div class="info-row"><strong>Patient:</strong> <span>' . htmlspecialchars($data['full_name']) . '</span></div>
+                        <div class="info-row"><strong>Âge:</strong> <span>' . $data['age'] . ' ans</span></div>
+                        <div class="info-row"><strong>Pays:</strong> <span>' . htmlspecialchars($data['country']) . '</span></div>
+                        <div class="info-row"><strong>Numéro de suivi:</strong> <span>' . $data['numero_consultation'] . '</span></div>
+                        <div class="info-row"><strong>Honoraires:</strong> <span>' . $data['consultation_prix'] . ' ' . $data['consultation_devise'] . '</span></div>
                     </div>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                        <h3 style="margin-top: 0; color: #333;">Consultation Details</h3>
-                        <p style="margin: 5px 0;"><strong>Tracking Number:</strong> <?= $data['numero_consultation'] ?></p>
-                        <p style="margin: 5px 0;"><strong>Consultation Fee:</strong> <?= $data['consultation_prix'] ?> <?= $data['consultation_devise'] ?></p>
-                        <p style="margin: 5px 0;"><strong>Previous Consultation:</strong> <?= ($data['previous_consultation'] == 'yes' ? 'Yes' : 'No') ?></p>
-                    </div>
-                    <div style="background: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                        <h3 style="margin-top: 0; color: #856404;">Symptoms Description</h3>
-                        <p style="margin: 0; white-space: pre-wrap;"><?= nl2br(htmlspecialchars($data['symptoms'])) ?></p>
-                    </div>
-                    <div style="background: #e7f3ff; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                        <h3 style="margin-top: 0; color: #0d6efd;">Duration</h3>
-                        <p style="margin: 0;"><?= htmlspecialchars($data['symptoms_duration'] ?: 'Not specified') ?></p>
-                    </div>
-                    <div style="margin: 20px 0;">
-                        <h3>Attached Documents:</h3>
-                        <ul style="line-height: 1.8;"><?= $attachments_list ?></ul>
-                    </div>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="<?= base_url('Dashboard/doctor_dashboard') ?>" style="background: #198754; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View in Dashboard</a>
-                    </div>
-                    <p style="background: #f8d7da; padding: 15px; border-radius: 5px; border-left: 4px solid #dc3545;">
-                        <strong>Action Required:</strong> Please confirm or propose a new time for this consultation within 24 hours.
-                    </p>
+                    <div style="margin: 20px 0;"><strong>Symptômes:</strong><p style="margin-top: 5px;">' . nl2br(htmlspecialchars($data['symptoms'])) . '</p></div>
+                    <div style="text-align: center;"><a href="' . base_url('Dashboard/doctor_dashboard') . '" class="btn">Voir dans le tableau de bord</a></div>
                 </div>
-                <div style="background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d;">
-                    <p>This is an automated message from <?= htmlspecialchars($site_name) ?>.</p>
-                    <p>&copy; <?= date('Y') ?> <?= htmlspecialchars($site_name) ?>. All rights reserved.</p>
-                </div>
+                <div class="footer"><div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . '</div></div>
             </div>
         </body>
-        </html>
-        <?php
-        return ob_get_clean();
+        </html>';
     }
 
-    private function _build_admin_email($data, $patient, $doctor, $site_name) {
-        $doctor_name = $doctor ? htmlspecialchars($doctor['prenom']) . ' ' . htmlspecialchars($doctor['nom']) : 'Not assigned';
-        $patient_email = $patient ? $patient['email'] : 'N/A';
-        ob_start();
-        ?>
+    /**
+     * Email admin version cPanel
+     */
+    private function _build_admin_email_cpanel($data)
+    {
+        $data = $data['data'];
+        $site_name = $data['site_name'];
+        $logo_url = $data['logo_url'];
+        
+        return '
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Nouvelle consultation - Admin</title>
+            <style>
+                body { font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px; }
+                .container { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; }
+                .header { background: #0a2540; padding: 20px; text-align: center; color: white; }
+                .content { padding: 28px; }
+                .info-box { background: #f7f9fc; border-radius: 12px; padding: 20px; margin: 20px 0; }
+                .btn { background: #0a66c2; color: white; padding: 12px 28px; text-decoration: none; border-radius: 40px; display: inline-block; }
+            </style>
         </head>
-        <body style="font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px; margin: 0;">
-            <div style="max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden;">
-                <div style="background: #6c757d; color: white; padding: 20px; text-align: center;">
-                    <h2 style="margin:0;">New Consultation Created</h2>
+        <body>
+            <div class="container">
+                <div class="header"><h2>📋 Nouvelle consultation créée</h2></div>
+                <div class="content">
+                    <div class="info-box">
+                        <p><strong>Numéro:</strong> ' . $data['numero_consultation'] . '</p>
+                        <p><strong>Patient:</strong> ' . htmlspecialchars($data['full_name']) . '</p>
+                        <p><strong>Montant:</strong> ' . $data['consultation_prix'] . ' ' . $data['consultation_devise'] . '</p>
+                    </div>
+                    <div style="text-align: center;"><a href="' . base_url('admin/consultations') . '" class="btn">Voir dans l\'admin</a></div>
                 </div>
-                <div style="padding: 25px;">
-                    <p><strong>Tracking Number:</strong> <?= $data['numero_consultation'] ?></p>
-                    <p><strong>Date:</strong> <?= date('Y-m-d H:i:s') ?></p>
-                    <hr style="border: none; border-top: 1px solid #dee2e6; margin: 20px 0;">
-                    <p><strong>Patient:</strong> <?= htmlspecialchars($data['full_name']) ?> (<?= htmlspecialchars($patient_email) ?>)</p>
-                    <p><strong>Doctor:</strong> <?= $doctor_name ?></p>
-                    <p><strong>Amount:</strong> <?= $data['consultation_prix'] ?> <?= $data['consultation_devise'] ?></p>
-                    <p><strong>Status:</strong> Pending</p>
-                    <p style="text-align: center; margin-top: 30px;">
-                        <a href="<?= base_url('admin/consultations') ?>" style="background: #6c757d; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">View in Admin Panel</a>
-                    </p>
-                </div>
-                <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px;">
-                    Automated notification from <?= htmlspecialchars($site_name) ?>.
-                </div>
+                <div class="footer" style="background:#f8fafc; padding:20px; text-align:center;">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . '</div>
             </div>
         </body>
-        </html>
-        <?php
-        return ob_get_clean();
-    }
-
-    public function processConfirmation() {
-        // Votre logique de traitement
-        $email_sent = $this->_send_consultation_emails($data);
-        if (!$email_sent) {
-            log_message('warning', 'Emails not sent for consultation: ' . $data['numero_consultation']);
-        }
-        redirect('consultations/entente/confirmation_success');
-        exit;
+        </html>';
     }
 }

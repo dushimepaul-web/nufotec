@@ -9,7 +9,11 @@ class Payment extends MY_Controller {
         $this->load->helper('url');
         $this->load->library('session');
         $this->load->library('form_validation');
-        $this->load->library('email');
+        
+        // ============================================
+        // CHARGER LA LIBRAIRIE EMAIL cPanel
+        // ============================================
+        $this->load->library('cpanel_email_lib');
     }
 
     /**
@@ -136,7 +140,7 @@ class Payment extends MY_Controller {
             'patient_taille'        => $consultation['taille'] ?? '?'
         ];
 
-        // Charger la vue avec header et footer
+        // Charger la vue
         $this->load->view('Payment_View', $data);
     }
 
@@ -222,7 +226,7 @@ class Payment extends MY_Controller {
             'created_at'  => date('Y-m-d H:i:s')
         ]);
 
-        // Envoyer email de confirmation
+        // Envoyer email de confirmation avec cPanel_email_lib
         $this->_send_payment_confirmation_email($consultation, $payment_method);
 
         $this->json_response(true, 'Paiement enregistré avec succès !', [
@@ -269,9 +273,15 @@ class Payment extends MY_Controller {
     }
 
     /**
-     * Envoyer l'email de confirmation de paiement
+     * Envoyer l'email de confirmation de paiement avec cPanel_email_lib
      */
     private function _send_payment_confirmation_email($consultation, $payment_method) {
+        // Vérifier que la librairie est chargée
+        if (!isset($this->cpanel_email_lib) || !is_object($this->cpanel_email_lib)) {
+            log_message('error', 'cpanel_email_lib non disponible pour l\'envoi du mail de paiement');
+            return;
+        }
+        
         $patient = $this->Model->getUserById($consultation['patient_id']);
         
         $medecin = null;
@@ -280,65 +290,179 @@ class Payment extends MY_Controller {
         }
 
         $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
+        $site_logo = $this->Model->get_setting('site_logo');
+        $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
 
         $subject = 'Confirmation de paiement - Consultation N°' . $consultation['numero_consultation'];
-
-        $message = "
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: #0f4c3a; color: white; padding: 20px; text-align: center; }
-                    .content { padding: 20px; background: #f9f9f9; }
-                    .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-                    .button { display: inline-block; padding: 10px 20px; background: #0f4c3a; color: white; text-decoration: none; border-radius: 5px; }
-                    .info { margin: 15px 0; padding: 10px; background: white; border-left: 4px solid #0f4c3a; }
-                </style>
-            </head>
-            <body>
-                <div class='container'>
-                    <div class='header'>
-                        <h2>Confirmation de paiement</h2>
-                    </div>
-                    <div class='content'>
-                        <p>Bonjour <strong>" . htmlspecialchars($patient['prenom'] . ' ' . $patient['nom']) . "</strong>,</p>
-                        <p>Nous vous confirmons que votre paiement a bien été reçu pour la consultation suivante :</p>
-                        
-                        <div class='info'>
-                            <p><strong>Numéro de consultation :</strong> " . htmlspecialchars($consultation['numero_consultation']) . "</p>
-                            <p><strong>Médecin :</strong> Dr. " . htmlspecialchars($medecin['prenom'] ?? '') . ' ' . htmlspecialchars($medecin['nom'] ?? '') . "</p>
-                            <p><strong>Montant payé :</strong> " . number_format($consultation['prix_ht'], 2) . " " . htmlspecialchars($consultation['devise']) . "</p>
-                            <p><strong>Mode de paiement :</strong> " . htmlspecialchars($payment_method) . "</p>
-                            <p><strong>Date :</strong> " . date('d/m/Y H:i') . "</p>
+        $patient_name = htmlspecialchars($patient['prenom'] . ' ' . $patient['nom']);
+        $doctor_name = htmlspecialchars($medecin['prenom'] ?? '') . ' ' . htmlspecialchars($medecin['nom'] ?? '');
+        $consultation_number = htmlspecialchars($consultation['numero_consultation']);
+        $amount = number_format($consultation['prix_ht'], 2) . ' ' . htmlspecialchars($consultation['devise']);
+        $payment_date = date('d/m/Y H:i');
+        
+        $message = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Confirmation de paiement - NUFOTEC</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                    background-color: #f4f6f9;
+                    margin: 0;
+                    padding: 20px;
+                    line-height: 1.5;
+                }
+                .container {
+                    max-width: 560px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+                }
+                .header {
+                    background: linear-gradient(135deg, #0a2540, #0f4c3a);
+                    padding: 30px 24px;
+                    text-align: center;
+                }
+                .header-logo {
+                    max-width: 100px;
+                    margin-bottom: 15px;
+                }
+                .header h1 {
+                    color: #ffffff;
+                    font-size: 24px;
+                    font-weight: 700;
+                    margin: 0;
+                }
+                .header p {
+                    color: rgba(255,255,255,0.8);
+                    font-size: 14px;
+                    margin: 8px 0 0;
+                }
+                .content {
+                    padding: 28px;
+                }
+                .success-icon {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .success-icon span {
+                    font-size: 60px;
+                }
+                .title {
+                    font-size: 22px;
+                    font-weight: 700;
+                    color: #1a2a3a;
+                    margin-bottom: 10px;
+                    text-align: center;
+                }
+                .info-box {
+                    background: #f7f9fc;
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border: 1px solid #e8ecf0;
+                }
+                .info-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 10px 0;
+                    border-bottom: 1px solid #eef2f6;
+                }
+                .info-row:last-child {
+                    border-bottom: none;
+                }
+                .info-label {
+                    font-weight: 600;
+                    color: #1a2a3a;
+                }
+                .info-value {
+                    color: #5a6a7a;
+                }
+                .btn {
+                    display: inline-block;
+                    background: #0a66c2;
+                    color: white;
+                    padding: 12px 28px;
+                    text-decoration: none;
+                    border-radius: 40px;
+                    font-weight: 600;
+                    font-size: 14px;
+                    margin: 10px 0;
+                }
+                .footer {
+                    background: #f8fafc;
+                    padding: 20px;
+                    text-align: center;
+                    border-top: 1px solid #eef2f6;
+                }
+                .footer-text {
+                    font-size: 12px;
+                    color: #9aaab9;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
+                    <h1>✅ Paiement confirmé</h1>
+                    <p>' . htmlspecialchars($site_name) . '</p>
+                </div>
+                <div class="content">
+                    <div class="success-icon"><span>✅</span></div>
+                    <div class="title">Merci pour votre confiance !</div>
+                    
+                    <div class="info-box">
+                        <div class="info-row">
+                            <span class="info-label">Numéro de consultation</span>
+                            <span class="info-value">' . $consultation_number . '</span>
                         </div>
-                        
-                        <p>Votre consultation est maintenant confirmée. Vous recevrez un email de la part du médecin pour planifier le rendez-vous.</p>
-                        
-                        <p style='text-align: center;'>
-                            <a href='" . base_url('Consultations/details/' . $consultation['id']) . "' class='button'>Voir les détails</a>
-                        </p>
-                        
-                        <p>Cordialement,<br>L'équipe " . htmlspecialchars($site_name) . "</p>
+                        <div class="info-row">
+                            <span class="info-label">Médecin</span>
+                            <span class="info-value">Dr. ' . $doctor_name . '</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Montant payé</span>
+                            <span class="info-value">' . $amount . '</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Mode de paiement</span>
+                            <span class="info-value">' . htmlspecialchars($payment_method) . '</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Date</span>
+                            <span class="info-value">' . $payment_date . '</span>
+                        </div>
                     </div>
-                    <div class='footer'>
-                        <p>Cet email est un message automatique, merci de ne pas y répondre.</p>
-                        <p>&copy; " . date('Y') . " " . htmlspecialchars($site_name) . " - Tous droits réservés.</p>
+                    
+                    <p style="margin: 15px 0; text-align: center;">
+                        Votre consultation est maintenant confirmée. Vous recevrez un email du médecin pour planifier le rendez-vous.
+                    </p>
+                    
+                    <div style="text-align: center;">
+                        <a href="' . base_url('Consultations/details/' . $consultation['id']) . '" class="btn">Voir les détails</a>
                     </div>
                 </div>
-            </body>
-            </html>
-        ";
-
-        $this->email->clear();
-        $this->email->from('noreply@nufotec.com', $site_name);
-        $this->email->to($patient['email']);
-        $this->email->subject($subject);
-        $this->email->message($message);
-        $this->email->set_mailtype('html');
+                <div class="footer">
+                    <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>
+                    <div class="footer-text"><a href="' . base_url() . '" style="color:#9aaab9;">Visitez notre site</a></div>
+                </div>
+            </div>
+        </body>
+        </html>';
         
-        if (!$this->email->send()) {
-            log_message('error', 'Échec envoi email paiement: ' . $this->email->print_debugger());
+        $result = $this->cpanel_email_lib->send_email($patient['email'], $subject, $message);
+        
+        if ($result['success']) {
+            log_message('info', 'Email de confirmation de paiement envoyé à: ' . $patient['email']);
+        } else {
+            log_message('error', 'Échec envoi email paiement à ' . $patient['email'] . ': ' . ($result['message'] ?? 'Erreur inconnue'));
         }
     }
 

@@ -309,6 +309,11 @@ $route['actualite/(:any)'] = 'Home/blog/article/$1';
 $route['blog/categorie/(:any)'] = 'Home/blog/categorie/$1';
 $route['blog/recherche'] = 'Home/blog/recherche';
 
+$route['Actualites'] = 'Actualites/index';
+
+
+
+
 // ============================================
 // ROUTES FAQ & CONTACT
 // ============================================

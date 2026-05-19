@@ -365,7 +365,6 @@
         </div>
 
     </div>
-</div>
 
 <!-- Script pour les partages sociaux -->
 <script>

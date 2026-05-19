@@ -9,6 +9,12 @@ class Entente extends MY_Controller {
         if ($this->session->userdata('logged_in') !== TRUE) {
             redirect('Admin');
         }
+        
+        // ============================================
+        // CHARGER LA LIBRAIRIE EMAIL cPanel
+        // ============================================
+        $this->load->library('cpanel_email_lib');
+        $this->load->model('Model');
     }
     
     /**
@@ -54,65 +60,64 @@ class Entente extends MY_Controller {
         $this->load->view('Entente_View', $data);
     }
 
-     //Liste des consultations confirmées
-   public function confirme()
-{
-    // Récupérer les consultations confirmées OU en cours
-    $this->db->select('
-        c.*, 
-        p.nom as patient_nom, 
-        p.prenom as patient_prenom, 
-        p.email as patient_email, 
-        p.telephone as patient_telephone,
-        u.nom as medecin_nom, 
-        u.prenom as medecin_prenom,
-        m.specialite as medecin_specialite,
-        m.id as medecin_id
-    ');
-    $this->db->from('consultations c');
-    $this->db->join('users p', 'p.id = c.patient_id', 'left');
-    $this->db->join('medecins m', 'm.id = c.medecin_id', 'left');
-    $this->db->join('users u', 'u.id = m.user_id', 'left');
-    
-    // Afficher les consultations confirmées ou en cours
-    $this->db->where_in('c.statut', ['confirmee', 'en_cours']);
-    $this->db->order_by('c.date_confirmee', 'DESC');
-    
-    $consultations = $this->db->get()->result_array();
-    
-    // Filtrer selon les permissions de l'utilisateur connecté
-    $user_id = $this->session->userdata('user_id');
-    $user_role = $this->session->userdata('role'); // à adapter selon votre système
-    
-    $filtered_consultations = [];
-    foreach ($consultations as $consultation) {
-        // Si l'utilisateur est patient, il voit uniquement ses consultations
-        if ($user_role == 'patient' && $consultation['patient_id'] != $user_id) {
-            continue;
+    //Liste des consultations confirmées
+    public function confirme()
+    {
+        // Récupérer les consultations confirmées OU en cours
+        $this->db->select('
+            c.*, 
+            p.nom as patient_nom, 
+            p.prenom as patient_prenom, 
+            p.email as patient_email, 
+            p.telephone as patient_telephone,
+            u.nom as medecin_nom, 
+            u.prenom as medecin_prenom,
+            m.specialite as medecin_specialite,
+            m.id as medecin_id
+        ');
+        $this->db->from('consultations c');
+        $this->db->join('users p', 'p.id = c.patient_id', 'left');
+        $this->db->join('medecins m', 'm.id = c.medecin_id', 'left');
+        $this->db->join('users u', 'u.id = m.user_id', 'left');
+        
+        // Afficher les consultations confirmées ou en cours
+        $this->db->where_in('c.statut', ['confirmee', 'en_cours']);
+        $this->db->order_by('c.date_confirmee', 'DESC');
+        
+        $consultations = $this->db->get()->result_array();
+        
+        // Filtrer selon les permissions de l'utilisateur connecté
+        $user_id = $this->session->userdata('user_id');
+        $user_role = $this->session->userdata('role');
+        
+        $filtered_consultations = [];
+        foreach ($consultations as $consultation) {
+            if ($user_role == 'patient' && $consultation['patient_id'] != $user_id) {
+                continue;
+            }
+            if ($user_role == 'medecin' && $consultation['medecin_id'] != $user_id) {
+                continue;
+            }
+            $filtered_consultations[] = $consultation;
         }
-        // Si l'utilisateur est médecin, il voit uniquement ses consultations
-        if ($user_role == 'medecin' && $consultation['medecin_id'] != $user_id) {
-            continue;
-        }
-        $filtered_consultations[] = $consultation;
+        
+        $data['consultations'] = $filtered_consultations;
+        
+        // Récupérer les patients pour le formulaire de création
+        $this->db->where('type_utilisateur', 'patient');
+        $this->db->where('is_active', 1);
+        $data['patients'] = $this->db->get('users')->result_array();
+        
+        // Récupérer les médecins pour le formulaire de création
+        $this->db->select('m.*, u.nom, u.prenom, u.email, u.photo');
+        $this->db->from('medecins m');
+        $this->db->join('users u', 'u.id = m.user_id');
+        $this->db->where('u.is_active', 1);
+        $data['medecins'] = $this->db->get()->result_array();
+        
+        $this->load->view('allowed_View', $data);
     }
     
-    $data['consultations'] = $filtered_consultations;
-    
-    // Récupérer les patients pour le formulaire de création
-    $this->db->where('type_utilisateur', 'patient');
-    $this->db->where('is_active', 1);
-    $data['patients'] = $this->db->get('users')->result_array();
-    
-    // Récupérer les médecins pour le formulaire de création
-    $this->db->select('m.*, u.nom, u.prenom, u.email, u.photo');
-    $this->db->from('medecins m');
-    $this->db->join('users u', 'u.id = m.user_id');
-    $this->db->where('u.is_active', 1);
-    $data['medecins'] = $this->db->get()->result_array();
-    
-    $this->load->view('allowed_View', $data);
-}
     /**
      * Changer le statut d'une consultation
      */
@@ -177,7 +182,7 @@ class Entente extends MY_Controller {
     }
 
     /**
-     * Traitement de la confirmation - Génère room_id pour votre système vidéo
+     * Traitement de la confirmation - Génère room_id
      */
     private function processConfirmation($consultation, &$data)
     {
@@ -197,29 +202,25 @@ class Entente extends MY_Controller {
         $data['date_debut'] = $date_debut;
         $data['date_fin'] = $date_fin;
         
-        // Génération du room_id pour VOTRE système de vidéoconférence
+        // Génération du room_id
         $room_id = $this->generateRoomId($consultation);
         $data['room_id'] = $room_id;
-        
-        // URL de votre propre système de vidéoconférence
         $data['room_url'] = base_url('Videocall?room=' . $room_id);
         
-        // Envoi email de confirmation
+        // Envoi email de confirmation avec cPanel
         return $this->notifyPatientConfirmation($consultation, $room_id, $date_debut);
     }
 
     /**
-     * Génération d'un ID de salle unique (8 caractères format: XXXX-XXXX)
+     * Génération d'un ID de salle unique
      */
     private function generateRoomId($consultation)
     {
         do {
-            // Format: 4 caractères - 4 caractères (ex: AB12-CD34)
             $part1 = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 4);
             $part2 = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 4);
             $room_id = $part1 . '-' . $part2;
             
-            // Vérifier unicité dans la base
             $exists = $this->Model->readOne('consultations', ['room_id' => $room_id]);
         } while ($exists);
         
@@ -313,11 +314,9 @@ class Entente extends MY_Controller {
        
         $is_authorized = false;
         
-        // Médecin : vérifier qu'il est le médecin assigné
         if ($user_type === 'medecin' && $consultation['medecin_id'] == $doctor['id']) {
             $is_authorized = true;
         } 
-        // Patient : vérifier qu'il est le patient assigné
         elseif ($user_type === 'patient' && $consultation['patient_id'] == $user_id) {
             $is_authorized = true;
         }
@@ -379,58 +378,18 @@ class Entente extends MY_Controller {
         return $patient;
     }
 
-    
     /**
- * Envoyer email de confirmation avec SendGrid
- */
-private function notifyPatientConfirmation($consultation, $room_id, $date_confirmee)
-{
-    try {
-        $patient = $this->getPatientEmail($consultation['patient_id']);
-        
-        if (!$patient || empty($patient['email'])) {
-            throw new Exception('Email patient non trouvé pour l\'ID: ' . $consultation['patient_id']);
-        }
-        
-        $patient_email = $patient['email'];
-        if (!filter_var($patient_email, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception('Email patient invalide: ' . $patient_email);
-        }
-        
-        $patient_nom = $consultation['patient_prenom'] . ' ' . $consultation['patient_nom'];
-        $medecin_nom = $consultation['medecin_prenom'] . ' ' . $consultation['medecin_nom'];
-        $date_formatee = date('d/m/Y à H:i', strtotime($date_confirmee));
-        
-        // NOUVELLE URL : Joinconsultation avec paramètres room et user
-        $join_url = base_url('Joinconsultation/index?room=' . $room_id . '&user=' . $consultation['patient_id']);
-        
-        $subject = 'Votre téléconsultation est confirmée - ' . $consultation['numero_consultation'];
-        $message = $this->buildConfirmationEmail($patient_nom, $medecin_nom, $date_formatee, $join_url, $room_id, $consultation);
-        
-        // Charger et utiliser SendGrid
-        $this->load->library('Sendgrid_lib');
-        $result = $this->sendgrid_lib->send_email($patient_email, $subject, $message);
-        
-        $sent = ($result['status'] == 202 || $result['status'] == 200);
-        
-        if (!$sent) {
-            log_message('error', 'Échec envoi email confirmation SendGrid: ' . json_encode($result));
-        }
-        
-        return $sent;
-        
-    } catch (Exception $e) {
-        log_message('error', 'Erreur envoi email confirmation: ' . $e->getMessage());
-        return false;
-    }
-}
-
-    /**
-     * Envoyer email de refus avec SendGrid
+     * Envoyer email de confirmation avec cPanel_email_lib
      */
-    private function notifyPatientRefusal($consultation, $motif)
+    private function notifyPatientConfirmation($consultation, $room_id, $date_confirmee)
     {
         try {
+            // Vérifier la librairie
+            if (!isset($this->cpanel_email_lib) || !is_object($this->cpanel_email_lib)) {
+                log_message('error', 'cpanel_email_lib non disponible pour l\'envoi de confirmation');
+                return false;
+            }
+            
             $patient = $this->getPatientEmail($consultation['patient_id']);
             
             if (!$patient || empty($patient['email'])) {
@@ -443,21 +402,70 @@ private function notifyPatientConfirmation($consultation, $room_id, $date_confir
             }
             
             $patient_nom = $consultation['patient_prenom'] . ' ' . $consultation['patient_nom'];
+            $medecin_nom = $consultation['medecin_prenom'] . ' ' . $consultation['medecin_nom'];
+            $date_formatee = date('d/m/Y à H:i', strtotime($date_confirmee));
             
-            $subject = 'Demande de téléconsultation - ' . $consultation['numero_consultation'];
-            $message = $this->buildRefusalEmail($patient_nom, $motif, $consultation);
+            $join_url = base_url('Joinconsultation/index?room=' . $room_id . '&user=' . $consultation['patient_id']);
             
-            // Charger et utiliser SendGrid
-            $this->load->library('Sendgrid_lib');
-            $result = $this->sendgrid_lib->send_email($patient_email, $subject, $message);
+            // Récupérer les informations du site
+            $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
+            $site_logo = $this->Model->get_setting('site_logo');
+            $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
             
-            $sent = ($result['status'] == 202 || $result['status'] == 200);
+            $subject = 'Votre téléconsultation est confirmée - ' . $consultation['numero_consultation'];
+            $message = $this->buildConfirmationEmailCpanel($patient_nom, $medecin_nom, $date_formatee, $join_url, $room_id, $consultation, $site_name, $logo_url);
             
-            if (!$sent) {
-                log_message('error', 'Échec envoi email refus SendGrid: ' . json_encode($result));
+            $result = $this->cpanel_email_lib->send_email($patient_email, $subject, $message);
+            
+            if (!$result['success']) {
+                log_message('error', 'Échec envoi email confirmation cPanel: ' . json_encode($result));
+                return false;
             }
             
-            return $sent;
+            return true;
+            
+        } catch (Exception $e) {
+            log_message('error', 'Erreur envoi email confirmation: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Envoyer email de refus avec cPanel_email_lib
+     */
+    private function notifyPatientRefusal($consultation, $motif)
+    {
+        try {
+            if (!isset($this->cpanel_email_lib) || !is_object($this->cpanel_email_lib)) {
+                log_message('error', 'cpanel_email_lib non disponible pour l\'envoi de refus');
+                return false;
+            }
+            
+            $patient = $this->getPatientEmail($consultation['patient_id']);
+            
+            if (!$patient || empty($patient['email'])) {
+                throw new Exception('Email patient non trouvé pour l\'ID: ' . $consultation['patient_id']);
+            }
+            
+            $patient_email = $patient['email'];
+            if (!filter_var($patient_email, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception('Email patient invalide: ' . $patient_email);
+            }
+            
+            $patient_nom = $consultation['patient_prenom'] . ' ' . $consultation['patient_nom'];
+            $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
+            
+            $subject = 'Demande de téléconsultation - ' . $consultation['numero_consultation'];
+            $message = $this->buildRefusalEmailCpanel($patient_nom, $motif, $consultation, $site_name);
+            
+            $result = $this->cpanel_email_lib->send_email($patient_email, $subject, $message);
+            
+            if (!$result['success']) {
+                log_message('error', 'Échec envoi email refus cPanel: ' . json_encode($result));
+                return false;
+            }
+            
+            return true;
             
         } catch (Exception $e) {
             log_message('error', 'Erreur envoi email refus: ' . $e->getMessage());
@@ -466,300 +474,130 @@ private function notifyPatientConfirmation($consultation, $room_id, $date_confir
     }
 
     /**
-     * Construction de l'email de confirmation
+     * Construction de l'email de confirmation version cPanel
      */
-    private function buildConfirmationEmail($patient_nom, $medecin_nom, $date_formatee, $join_url, $room_id, $consultation)
+    private function buildConfirmationEmailCpanel($patient_nom, $medecin_nom, $date_formatee, $join_url, $room_id, $consultation, $site_name, $logo_url)
     {
-        $site_name = $this->Model->get_setting('site_name', 'AGF');
-        $site_logo = $this->Model->get_setting('site_logo', 'logo.png');
-        $logo_url = base_url('attachments/Configurations/' . $site_logo);
-        $site_phone = $this->Model->get_setting('site_phone', '+243 XXX XXX XXX');
-        
-        return "
+        return '
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Confirmation de téléconsultation</title>
             <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
                 body {
-                    font-family: 'Inter', Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                    background-color: #f4f6f9;
                     margin: 0;
-                    padding: 0;
-                    background: #f4f7fb;
+                    padding: 20px;
+                    line-height: 1.5;
                 }
                 .container {
-                    max-width: 600px;
-                    margin: 20px auto;
-                    background: white;
+                    max-width: 560px;
+                    margin: 0 auto;
+                    background: #ffffff;
                     border-radius: 16px;
                     overflow: hidden;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
                 }
                 .header {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 30px;
+                    background: linear-gradient(135deg, #0a2540, #0f4c3a);
+                    padding: 30px 24px;
                     text-align: center;
                 }
-                .logo {
-                    max-width: 120px;
-                    margin-bottom: 15px;
-                }
-                .content {
-                    padding: 30px;
-                }
-                .success-badge {
-                    background: #e6f7e6;
-                    color: #28a745;
-                    padding: 10px 20px;
-                    border-radius: 50px;
-                    display: inline-block;
-                    font-weight: 600;
-                    margin-bottom: 20px;
-                }
-                .info-card {
-                    background: #f8f9fa;
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin: 20px 0;
-                    border-left: 4px solid #667eea;
-                }
-                .info-row {
-                    display: flex;
-                    margin-bottom: 10px;
-                    padding: 8px 0;
-                    border-bottom: 1px solid #dee2e6;
-                }
-                .info-label {
-                    width: 120px;
-                    font-weight: 600;
-                    color: #555;
-                }
-                .info-value {
-                    flex: 1;
-                    color: #333;
-                }
-                .join-button {
-                    display: inline-block;
-                    padding: 15px 40px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 50px;
-                    font-weight: 600;
-                    margin: 20px 0;
-                    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-                }
-                .room-code {
-                    background: #2d3748;
-                    color: #48bb78;
-                    font-family: 'Courier New', monospace;
-                    padding: 15px;
-                    border-radius: 8px;
-                    font-size: 18px;
-                    letter-spacing: 2px;
-                    margin: 15px 0;
-                }
-                .tips-box {
-                    background: #fff3cd;
-                    border: 1px solid #ffeeba;
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
-                }
-                .footer {
-                    text-align: center;
-                    padding: 20px;
-                    background: #f8f9fa;
-                    color: #6c757d;
-                    font-size: 12px;
-                }
+                .header-logo { max-width: 100px; margin-bottom: 15px; }
+                .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
+                .content { padding: 28px; }
+                .success-badge { background: #e8f5e9; color: #2e7d32; padding: 8px 16px; border-radius: 50px; display: inline-block; font-weight: 600; margin-bottom: 20px; }
+                .info-box { background: #f7f9fc; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e8ecf0; }
+                .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eef2f6; }
+                .info-row:last-child { border-bottom: none; }
+                .info-label { font-weight: 600; color: #1a2a3a; }
+                .info-value { color: #5a6a7a; }
+                .btn { display: inline-block; background: #0a66c2; color: white; padding: 12px 28px; text-decoration: none; border-radius: 40px; font-weight: 600; margin: 15px 0; }
+                .room-code { background: #0a2540; color: #48bb78; font-family: monospace; padding: 15px; border-radius: 8px; text-align: center; font-size: 18px; letter-spacing: 2px; margin: 15px 0; }
+                .tips-box { background: #fff8e1; border-left: 4px solid #ffc107; padding: 16px; margin: 20px 0; border-radius: 8px; }
+                .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #eef2f6; }
+                .footer-text { font-size: 12px; color: #9aaab9; }
             </style>
         </head>
         <body>
-            <div class='container'>
-                <div class='header'>
-                    <img src='{$logo_url}' alt='{$site_name}' class='logo'>
-                    <h1 style='margin: 10px 0;'>Téléconsultation Confirmée</h1>
+            <div class="container">
+                <div class="header">
+                    ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
+                    <h1>✓ Téléconsultation Confirmée</h1>
                 </div>
-                
-                <div class='content'>
-                    <div style='text-align: center;'>
-                        <span class='success-badge'>✓ RENDEZ-VOUS CONFIRMÉ</span>
+                <div class="content">
+                    <div style="text-align: center;"><span class="success-badge">RENDEZ-VOUS CONFIRMÉ</span></div>
+                    <p>Bonjour <strong>' . htmlspecialchars($patient_nom) . '</strong>,</p>
+                    <p>Votre téléconsultation avec le <strong>Dr ' . htmlspecialchars($medecin_nom) . '</strong> a été confirmée.</p>
+                    <div class="info-box">
+                        <div class="info-row"><span class="info-label">Date et heure</span><span class="info-value"><strong>' . $date_formatee . '</strong></span></div>
+                        <div class="info-row"><span class="info-label">Médecin</span><span class="info-value">Dr ' . htmlspecialchars($medecin_nom) . '</span></div>
+                        <div class="info-row"><span class="info-label">N° Consultation</span><span class="info-value">' . htmlspecialchars($consultation['numero_consultation']) . '</span></div>
+                        <div class="info-row"><span class="info-label">Code salle</span><span class="info-value"><strong>' . $room_id . '</strong></span></div>
                     </div>
-                    
-                    <p>Bonjour <strong>" . htmlspecialchars($patient_nom) . "</strong>,</p>
-                    
-                    <p>Votre téléconsultation avec le <strong>Dr " . htmlspecialchars($medecin_nom) . "</strong> a été confirmée.</p>
-                    
-                    <div class='info-card'>
-                        <h3 style='margin-top: 0; color: #667eea;'>Détails du rendez-vous</h3>
-                        
-                        <div class='info-row'>
-                            <div class='info-label'>Date et heure</div>
-                            <div class='info-value'><strong>" . $date_formatee . "</strong></div>
-                        </div>
-                        
-                        <div class='info-row'>
-                            <div class='info-label'>Médecin</div>
-                            <div class='info-value'>Dr " . htmlspecialchars($medecin_nom) . "</div>
-                        </div>
-                        
-                        <div class='info-row'>
-                            <div class='info-label'>N° Consultation</div>
-                            <div class='info-value'>" . htmlspecialchars($consultation['numero_consultation']) . "</div>
-                        </div>
-                        
-                        <div class='info-row'>
-                            <div class='info-label'>Code salle</div>
-                            <div class='info-value'><strong>" . $room_id . "</strong></div>
-                        </div>
-                    </div>
-                    
-                    <div style='text-align: center; margin: 30px 0;'>
-                        <a href='" . $join_url . "' class='join-button'>
-                            🎥 REJOINDRE LA TÉLÉCONSULTATION
-                        </a>
-                        
-                        <div class='room-code'>
-                            <span style='color: #a0aec0;'>Code à partager : </span>
-                            <strong>" . $room_id . "</strong>
-                        </div>
-                    </div>
-                    
-                    <div class='tips-box'>
-                        <h4 style='margin-top: 0; color: #856404;'>Conseils pour une consultation réussie</h4>
-                        <ul style='margin-bottom: 0; padding-left: 20px;'>
+                    <div style="text-align: center;"><a href="' . $join_url . '" class="btn">🎥 REJOINDRE LA TÉLÉCONSULTATION</a></div>
+                    <div class="room-code"><span style="color:#a0aec0;">Code à partager : </span><strong>' . $room_id . '</strong></div>
+                    <div class="tips-box">
+                        <strong>📋 Conseils pour une consultation réussie</strong>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
                             <li>Testez votre caméra et microphone avant le rendez-vous</li>
                             <li>Utilisez Chrome, Firefox ou Safari pour une meilleure expérience</li>
-                            <li>Assurez-vous d'avoir une connexion internet stable</li>
-                            <li>Connectez-vous 5 minutes avant l'heure prévue</li>
-                            <li>Choisissez un endroit calme et bien éclairé</li>
+                            <li>Assurez-vous d\'avoir une connexion internet stable</li>
+                            <li>Connectez-vous 5 minutes avant l\'heure prévue</li>
                         </ul>
                     </div>
-                    
-                    <p style='margin-top: 20px;'>
-                        Si vous rencontrez des difficultés techniques, contactez-nous au 
-                        <strong>" . $site_phone . "</strong>.
-                    </p>
                 </div>
-                
-                <div class='footer'>
-                    <p>© " . date('Y') . " " . $site_name . " - Tous droits réservés</p>
-                    <p>Ce message est automatique, merci de ne pas y répondre directement.</p>
+                <div class="footer">
+                    <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>
+                    <div class="footer-text"><a href="' . base_url() . '" style="color:#9aaab9;">Visitez notre site</a></div>
                 </div>
             </div>
         </body>
-        </html>";
+        </html>';
     }
 
     /**
-     * Construction de l'email de refus
+     * Construction de l'email de refus version cPanel
      */
-    private function buildRefusalEmail($patient_nom, $motif, $consultation)
+    private function buildRefusalEmailCpanel($patient_nom, $motif, $consultation, $site_name)
     {
-        $site_name = $this->Model->get_setting('site_name', 'AGF');
-        $site_phone = $this->Model->get_setting('site_phone', '+243 XXX XXX XXX');
-        
-        return "
+        return '
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Demande de téléconsultation</title>
             <style>
-                body {
-                    font-family: 'Inter', Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    margin: 0;
-                    padding: 0;
-                    background: #f4f7fb;
-                }
-                .container {
-                    max-width: 600px;
-                    margin: 20px auto;
-                    background: white;
-                    border-radius: 16px;
-                    overflow: hidden;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-                }
-                .header {
-                    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-                    color: white;
-                    padding: 30px;
-                    text-align: center;
-                }
-                .content {
-                    padding: 30px;
-                }
-                .warning-box {
-                    background: #fff3cd;
-                    border: 1px solid #ffeeba;
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
-                }
-                .motif-box {
-                    background: #f8f9fa;
-                    border-left: 4px solid #e53e3e;
-                    padding: 20px;
-                    margin: 20px 0;
-                    border-radius: 0 8px 8px 0;
-                }
-                .footer {
-                    text-align: center;
-                    padding: 20px;
-                    background: #f8f9fa;
-                    color: #6c757d;
-                    font-size: 12px;
-                }
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+                .container { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); }
+                .header { background: linear-gradient(135deg, #c62828, #d32f2f); padding: 30px 24px; text-align: center; }
+                .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
+                .content { padding: 28px; }
+                .motif-box { background: #f7f9fc; border-left: 4px solid #d32f2f; padding: 20px; margin: 20px 0; border-radius: 8px; }
+                .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #eef2f6; }
+                .footer-text { font-size: 12px; color: #9aaab9; }
             </style>
         </head>
         <body>
-            <div class='container'>
-                <div class='header'>
-                    <h1 style='margin: 0;'>Demande de Téléconsultation</h1>
+            <div class="container">
+                <div class="header"><h1>Demande de Téléconsultation</h1></div>
+                <div class="content">
+                    <p>Bonjour <strong>' . htmlspecialchars($patient_nom) . '</strong>,</p>
+                    <p>Nous regrettons de vous informer que votre demande de téléconsultation <strong>N° ' . htmlspecialchars($consultation['numero_consultation']) . '</strong> n\'a pas pu être acceptée.</p>
+                    <div class="motif-box"><strong>Motif du refus</strong><br>' . nl2br(htmlspecialchars($motif)) . '</div>
+                    <p>Vous pouvez prendre un nouveau rendez-vous ou nous contacter pour plus d\'informations.</p>
+                    <p>Cordialement,<br><strong>' . htmlspecialchars($site_name) . '</strong></p>
                 </div>
-                
-                <div class='content'>
-                    <p>Bonjour <strong>" . htmlspecialchars($patient_nom) . "</strong>,</p>
-                    
-                    <p>Nous regrettons de vous informer que votre demande de téléconsultation 
-                    <strong>N° " . htmlspecialchars($consultation['numero_consultation']) . "</strong> 
-                    n'a pas pu être acceptée.</p>
-                    
-                    <div class='motif-box'>
-                        <h3 style='margin-top: 0; color: #e53e3e;'>Motif du refus</h3>
-                        <p style='margin-bottom: 0;'>" . nl2br(htmlspecialchars($motif)) . "</p>
-                    </div>
-                    
-                    <div class='warning-box'>
-                        <h4 style='margin-top: 0; color: #856404;'>Prochaines étapes</h4>
-                        <p>Vous pouvez :</p>
-                        <ul style='margin-bottom: 0;'>
-                            <li>Prendre un nouveau rendez-vous à une autre date</li>
-                            <li>Nous contacter par téléphone pour plus d'informations</li>
-                            <li>Consulter un autre médecin disponible</li>
-                        </ul>
-                    </div>
-                    
-                    <p>Pour toute question, n'hésitez pas à nous contacter au <strong>" . $site_phone . "</strong>.</p>
-                    
-                    <p>Cordialement,<br><strong>" . $site_name . "</strong></p>
-                </div>
-                
-                <div class='footer'>
-                    <p>© " . date('Y') . " " . $site_name . " - Tous droits réservés</p>
-                </div>
+                <div class="footer"><div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div></div>
             </div>
         </body>
-        </html>";
+        </html>';
     }
 
     /**
@@ -778,7 +616,6 @@ private function notifyPatientConfirmation($consultation, $room_id, $date_confir
             return;
         }
         
-        // Calculer durée
         $debut = strtotime($consultation['date_debut']);
         $fin = time();
         $duree_minutes = round(($fin - $debut) / 60);
