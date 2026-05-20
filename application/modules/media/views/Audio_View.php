@@ -160,7 +160,10 @@ if (!function_exists('get_quality_badge_audio')) {
                             $quality_info  = get_quality_badge_audio($value['bitrate'] ?? ($meta['analysis']['bitrate'] ?? 0));
                             $thumb_url     = base_url('assets/images/audio-placeholder.jpg');
                             if (!empty($value['miniature'])) {
-                                $thumb_url = (strpos($value['miniature'], 'http') === 0) ? $value['miniature'] : base_url($value['miniature']);
+                                $is_remote = (strpos($value['miniature'], 'http') === 0);
+                                if ($is_remote || file_exists(FCPATH . $value['miniature'])) {
+                                    $thumb_url = $is_remote ? $value['miniature'] : base_url($value['miniature']);
+                                }
                             }
                             $js_title = htmlspecialchars($value['titre'] ?? 'Sans titre', ENT_QUOTES, 'UTF-8');
                         ?>
@@ -278,7 +281,10 @@ if (!function_exists('get_quality_badge_audio')) {
                                                             <div class="card-body">
                                                                 <div class="row">
                                                                     <div class="col-md-5">
-                                                                        <?php $cur = $value['miniature'] ?? ''; $disp = $cur ? base_url($cur) : base_url('assets/images/audio-placeholder.jpg'); ?>
+                                                                        <?php 
+                                                                         $cur = $value['miniature'] ?? ''; 
+                                                                         $disp = (!empty($cur) && (strpos($cur, 'http') === 0 || file_exists(FCPATH . $cur))) ? base_url($cur) : base_url('assets/images/audio-placeholder.jpg'); 
+                                                                        ?>
                                                                         <img src="<?= $disp ?>" class="rounded w-100" style="height:120px;object-fit:cover;" id="currentThumb<?= $value['id_media'] ?>"
                                                                              onerror="this.src='<?= base_url('assets/images/audio-placeholder.jpg') ?>'">
                                                                         <?php if (!empty($meta['thumbnails'])): ?>
@@ -323,7 +329,7 @@ if (!function_exists('get_quality_badge_audio')) {
                                                             </div>
                                                             <div class="col-md-6 mb-3">
                                                                 <label class="form-label fw-bold">Date</label>
-                                                                <input type="date" class="form-control" name="date_media" value="<?= $value['date_media'] ?? '' ?>">
+                                                                <input type="date" class="form-control" name="date_media" value="<?= (!empty($value['date_media']) && $value['date_media'] !== '0000-00-00') ? $value['date_media'] : '' ?>">
                                                             </div>
                                                         </div>
                                                         <div class="mb-3">
@@ -382,7 +388,6 @@ if (!function_exists('get_quality_badge_audio')) {
         </div>
 
     </div><!-- fin page-content -->
-</div><!-- fin page-wrapper -->
 
 <!-- ==================== MODAL UPLOAD ==================== -->
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">

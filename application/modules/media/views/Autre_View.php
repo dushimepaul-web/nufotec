@@ -294,7 +294,7 @@
             <?= form_close() ?>
         </div>
     </div>
-</div>
+
 
 <!-- ==================== MODAL MODIFIER ==================== -->
 <div class="modal fade" id="modalModifier" tabindex="-1" aria-hidden="true">

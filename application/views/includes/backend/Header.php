@@ -44,6 +44,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     <link rel="stylesheet" href="<?= base_url() ?>assets/backend/sass/bordered-theme.css">
 
     <title><?= $this->Model->get_setting('site_name', 'AGF Phytomed') ?></title>
+    <!-- jQuery (chargé dans le Head pour éviter les erreurs d'initialisation dans les vues) -->
+    <script src="<?= base_url() ?>assets/backend/js/jquery.min.js"></script>
 </head>
 
 <body>

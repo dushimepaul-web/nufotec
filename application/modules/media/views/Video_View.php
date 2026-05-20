@@ -389,7 +389,7 @@ if (!function_exists('extract_youtube_id')) {
                 </div>
             </div>
         </div>
-    </div>
+   
 
     <!-- Upload Modal -->
     <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">

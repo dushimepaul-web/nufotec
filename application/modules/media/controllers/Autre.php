@@ -265,22 +265,22 @@ public function admin_liste($offset = 0) {
     }
 
     private function _prepare_data() {
-        $titre = $this->input->post('titre');
-        $id = $this->input->post('id_media');
-        
-        return [
-            'titre' => $titre,
-            'type'= $this->input->post('sous_type'),
-            'slug' => $this->autre_model->generate_slug($titre, $id),
-            'sous_type' => $this->input->post('sous_type'),
-            'description' => $this->input->post('description'),
-            'categorie' => $this->input->post('categorie'),
-            'est_actif' => $this->input->post('est_actif') ? 1 : 0,
-            'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
-            'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
-            'is_for_website' => $this->input->post('is_for_website') ? 1 : 0,
-        ];
-    }
+    $titre = $this->input->post('titre');
+    $id = $this->input->post('id_media');
+    
+    return [
+        'titre' => $titre,
+        'type' => $this->input->post('sous_type'), // ✅ corrigé ici
+        'slug' => $this->autre_model->generate_slug($titre, $id),
+        'sous_type' => $this->input->post('sous_type'),
+        'description' => $this->input->post('description'),
+        'categorie' => $this->input->post('categorie'),
+        'est_actif' => $this->input->post('est_actif') ? 1 : 0,
+        'a_partager_reseaux' => $this->input->post('a_partager_reseaux') ? 1 : 0,
+        'is_for_whatsapp' => $this->input->post('is_for_whatsapp') ? 1 : 0,
+        'is_for_website' => $this->input->post('is_for_website') ? 1 : 0,
+    ];
+}
 
     private function _upload_fichier() {
         $ref_folder = FCPATH . 'attachments/autre/files/';

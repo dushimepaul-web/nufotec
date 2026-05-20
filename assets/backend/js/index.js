@@ -72,8 +72,10 @@ $(function () {
     }
   };
 
-  var chart = new ApexCharts(document.querySelector("#chart1"), options);
-  chart.render();
+  if (document.querySelector("#chart1")) {
+    var chart = new ApexCharts(document.querySelector("#chart1"), options);
+    chart.render();
+  }
 
 
 
@@ -159,8 +161,10 @@ $(function () {
     labels: ['Active Users'],
   };
 
-  var chart = new ApexCharts(document.querySelector("#chart2"), options);
-  chart.render();
+  if (document.querySelector("#chart2")) {
+    var chart = new ApexCharts(document.querySelector("#chart2"), options);
+    chart.render();
+  }
 
 
 
@@ -255,8 +259,10 @@ $(function () {
     }
   };
 
-  var chart = new ApexCharts(document.querySelector("#chart3"), options);
-  chart.render();
+  if (document.querySelector("#chart3")) {
+    var chart = new ApexCharts(document.querySelector("#chart3"), options);
+    chart.render();
+  }
 
 
     
@@ -330,8 +336,10 @@ $(function () {
     }
   };
 
-  var chart = new ApexCharts(document.querySelector("#chart4"), options);
-  chart.render();
+  if (document.querySelector("#chart4")) {
+    var chart = new ApexCharts(document.querySelector("#chart4"), options);
+    chart.render();
+  }
 
 
 
@@ -405,8 +413,10 @@ $(function () {
     }
   };
 
-  var chart = new ApexCharts(document.querySelector("#chart5"), options);
-  chart.render();
+  if (document.querySelector("#chart5")) {
+    var chart = new ApexCharts(document.querySelector("#chart5"), options);
+    chart.render();
+  }
 
 
 
@@ -492,8 +502,10 @@ $(function () {
     }
   };
 
-  var chart = new ApexCharts(document.querySelector("#chart6"), options);
-  chart.render();
+  if (document.querySelector("#chart6")) {
+    var chart = new ApexCharts(document.querySelector("#chart6"), options);
+    chart.render();
+  }
 
 
 
@@ -545,8 +557,10 @@ var options = {
   }]
 };
 
-var chart = new ApexCharts(document.querySelector("#chart7"), options);
-chart.render();
+if (document.querySelector("#chart7")) {
+    var chart = new ApexCharts(document.querySelector("#chart7"), options);
+    chart.render();
+  }
 
 
 
@@ -612,8 +626,10 @@ chart.render();
   }
 };
 
-var chart = new ApexCharts(document.querySelector("#chart8"), options);
-chart.render();
+if (document.querySelector("#chart8")) {
+    var chart = new ApexCharts(document.querySelector("#chart8"), options);
+    chart.render();
+  }
 
 
 
@@ -678,8 +694,10 @@ chart.render();
   }
 };
 
-var chart = new ApexCharts(document.querySelector("#chart9"), options);
-chart.render();
+if (document.querySelector("#chart9")) {
+    var chart = new ApexCharts(document.querySelector("#chart9"), options);
+    chart.render();
+  }
 
 
 
