@@ -2112,8 +2112,16 @@ document.addEventListener('click', function(e) {
     }
 });
 
+
+
+
+
+
+
+
+
 // ============================================
-// GESTION DU BOUTON DE LANGUE PERSONNALISÉ (DESKTOP)
+// GESTION DU BOUTON DE LANGUE PERSONNALISÉ - VERSION CORRIGÉE
 // ============================================
 
 // Éléments DOM
@@ -2127,8 +2135,11 @@ const savedLang = localStorage.getItem('preferred_language');
 const savedFlag = localStorage.getItem('preferred_flag');
 const savedLabel = localStorage.getItem('preferred_label');
 
-// Appliquer la langue sauvegardée au chargement
+// Appliquer la langue sauvegardée au chargement (sauf si c'est le français par défaut)
 if (savedLang && savedFlag && savedLabel && savedLang !== 'fr') {
+    // Supprimer l'ancien cookie googtrans s'il existe
+    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Définir le nouveau cookie
     document.cookie = `googtrans=/fr/${savedLang}; path=/; max-age=31536000`;
 }
 
@@ -2152,7 +2163,7 @@ if (langBtn) {
     });
 }
 
-// Fonction améliorée avec nettoyage complet
+// Fonction de changement de langue améliorée - SANS RELOAD IMMÉDIAT
 function changeLanguage(langCode, flagCode, label) {
     // Mise à jour UI
     if (currentLangFlag && currentLangLabel) {
@@ -2160,67 +2171,159 @@ function changeLanguage(langCode, flagCode, label) {
         currentLangLabel.textContent = label;
     }
     
-    // Sauvegarde
+    // Sauvegarde dans localStorage
     localStorage.setItem('preferred_language', langCode);
     localStorage.setItem('preferred_flag', flagCode);
     localStorage.setItem('preferred_label', label);
     
-    // Nettoyage complet des cookies googtrans
+    // IMPORTANT: Nettoyer complètement les cookies googtrans existants
     const cookies = document.cookie.split(';');
     for (let cookie of cookies) {
         if (cookie.trim().startsWith('googtrans=')) {
             const cookieName = cookie.trim().split('=')[0];
+            // Supprimer sur tous les paths possibles
             document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
             document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
         }
     }
     
-    // Réinitialiser l'élément Google Translate
+    // Définir le nouveau cookie pour Google Translate
+    if (langCode !== 'fr') {
+        document.cookie = `googtrans=/fr/${langCode}; path=/; max-age=31536000`;
+    } else {
+        // Pour revenir au français, on supprime juste le cookie
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+    
+    // Forcer le rechargement de l'élément Google Translate
     const googleTranslateElement = document.getElementById('google_translate_element');
     if (googleTranslateElement) {
         googleTranslateElement.innerHTML = '';
     }
     
-    // Recharger Google Translate API
+    // Recharger la traduction sans recharger la page si possible
     if (typeof google !== 'undefined' && google.translate) {
-        // Attendre un peu pour la réinitialisation
-        setTimeout(() => {
-            window.location.reload();
-        }, 100);
+        // Réinitialiser le framework Google Translate
+        if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+            // Attendre un court instant puis recharger la page
+            setTimeout(function() {
+                window.location.reload();
+            }, 50);
+        } else {
+            setTimeout(function() {
+                window.location.reload();
+            }, 50);
+        }
     } else {
-        window.location.reload();
+        setTimeout(function() {
+            window.location.reload();
+        }, 50);
     }
 }
-
-
 
 // Ajouter les événements de clic sur chaque option de langue desktop
 document.querySelectorAll('.lang-option-custom').forEach(option => {
     option.addEventListener('click', function(event) {
+        event.preventDefault();
         event.stopPropagation();
         const langCode = this.getAttribute('data-lang');
         const flagCode = this.getAttribute('data-flag');
         const label = this.getAttribute('data-label');
         changeLanguage(langCode, flagCode, label);
+        
+        // Fermer le dropdown après clic
+        if (langDropdown) langDropdown.classList.remove('active');
     });
 });
 
 // Ajouter les événements de clic sur les options de langue du menu mobile
 document.querySelectorAll('.mobile-lang-option').forEach(option => {
     option.addEventListener('click', function(event) {
+        event.preventDefault();
         event.stopPropagation();
         const langCode = this.getAttribute('data-lang');
         const flagCode = this.getAttribute('data-flag');
         const label = this.getAttribute('data-label');
         changeLanguage(langCode, flagCode, label);
+        
+        // Fermer le menu mobile après sélection
+        const mobileNavPanel = document.getElementById('mobileNavPanel');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        if (mobileNavPanel) mobileNavPanel.classList.remove('active');
+        if (mobileOverlay) mobileOverlay.classList.remove('active');
+        document.body.style.overflow = '';
     });
 });
 
 // Mettre à jour l'affichage du bouton avec la langue sauvegardée
-if (savedLang && savedFlag && savedLabel && currentLangFlag && currentLangLabel) {
+if (savedLang && savedFlag && savedLabel && currentLangFlag && currentLangLabel && savedLang !== 'fr') {
     currentLangFlag.src = `https://flagcdn.com/w20/${savedFlag}.png`;
     currentLangLabel.textContent = savedLabel;
 }
+
+// ============================================
+// CORRECTION POUR LE PROBLÈME DE LANGUE QUI REVIENT EN FRANÇAIS
+// ============================================
+// Ce script force la vérification de la langue sauvegardée après le chargement
+document.addEventListener('DOMContentLoaded', function() {
+    const savedLanguage = localStorage.getItem('preferred_language');
+    const savedFlagCode = localStorage.getItem('preferred_flag');
+    const savedLabelText = localStorage.getItem('preferred_label');
+    
+    if (savedLanguage && savedLanguage !== 'fr') {
+        // Vérifier si le cookie googtrans est correctement défini
+        const hasGoogtrans = document.cookie.indexOf('googtrans=/fr/' + savedLanguage) !== -1;
+        
+        if (!hasGoogtrans) {
+            // Recréer le cookie si nécessaire
+            document.cookie = `googtrans=/fr/${savedLanguage}; path=/; max-age=31536000`;
+            
+            // Recharger si Google Translate n'a pas appliqué la traduction
+            setTimeout(function() {
+                if (document.querySelector('html').getAttribute('lang') !== savedLanguage) {
+                    window.location.reload();
+                }
+            }, 500);
+        }
+    }
+});
+
+// Supprimer la barre Google Translate immédiatement
+setInterval(function() {
+    var banner = document.querySelector('.goog-te-banner-frame');
+    if (banner) {
+        banner.style.display = 'none';
+        banner.style.visibility = 'hidden';
+        banner.style.height = '0';
+        if (banner.parentNode) {
+            banner.parentNode.removeChild(banner);
+        }
+    }
+    document.body.style.marginTop = '0';
+    document.body.style.top = '0';
+    document.body.style.position = 'relative';
+}, 100);
+
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        document.body.style.marginTop = '0';
+        document.body.style.top = '0';
+        document.body.style.position = 'relative';
+        var banner = document.querySelector('.goog-te-banner-frame');
+        if (banner && banner.parentNode) {
+            banner.parentNode.removeChild(banner);
+        }
+    }, 500);
+});
+
+
+
+
+
+
+
+
+
 
 // ============================================
 // SOUS-MENUS MOBILES
