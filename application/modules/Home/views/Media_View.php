@@ -1351,7 +1351,7 @@ function createMediaCard($media, $lang) {
     
     $duration = $media['duration_formatted'] ?? '0:00';
     $title = htmlspecialchars($media['titre'] ?? 'Sans titre');
-    $channel = htmlspecialchars($media['credits'] ?? $media['categorie'] ?? 'Chaîne inconnue');
+    $channel = htmlspecialchars($media['credits'] ?? $media['categorie'] ?? 'NUFOTEC BURUNDI');
     $views = number_format($media['views_count'] ?? 0);
     
     return '
