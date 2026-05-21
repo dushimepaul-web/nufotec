@@ -217,8 +217,10 @@ body { top:0!important; margin-top:0!important; }
 .nuf-search-item:hover { background:var(--light); padding-left:18px; }
 .nuf-search-item i { color:var(--primary); font-size:15px; width:18px; }
 
+
+
 /* Actions */
-.nuf-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.nuf-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left: auto; }
 .nuf-action-btn {
   display:flex; align-items:center; justify-content:center; gap:5px;
   padding:9px; border-radius:var(--r-sm); border:none; background:transparent;
@@ -226,6 +228,8 @@ body { top:0!important; margin-top:0!important; }
   text-decoration:none; position:relative; transition:var(--tr);
   flex-shrink:0;
 }
+
+
 .nuf-action-btn:hover { background:var(--primary-ltr); color:var(--primary); }
 .nuf-action-btn i { font-size:21px; color:var(--primary); transition:color var(--tr); }
 .nuf-action-btn:hover i { color:var(--accent); }
