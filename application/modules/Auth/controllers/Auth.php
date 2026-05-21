@@ -182,7 +182,7 @@ class Auth extends Public_Controller {
             // Rediriger vers la page de vérification
             redirect('auth/verify_email_page');
         } else {
-            $this->session->set_flashdata('register_error', 'Compte créé mais erreur lors de l\'envoi de l\'email de vérification. Veuillez contacter l\'administrateur.');
+            $this->session->set_flashdata('register_error', 'Compte créé mais erreur lors de l\'envoi de l\'email de vérification. Veuillez contacter l\'administrateur sur nufotecburundi2026@gmail.com.');
             redirect('Auth?register=1');
         }
     } else {

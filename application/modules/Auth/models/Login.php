@@ -29,7 +29,7 @@ class Login extends CI_Model {
 
     // Vérifier si compte actif
     if (isset($user['is_active']) && $user['is_active'] != 1) {
-        return ['success' => false, 'message' => 'Votre compte est désactivé. Veuillez contacter l\'administrateur.'];
+        return ['success' => false, 'message' => 'Votre compte est désactivé. Veuillez contacter l\'administrateur sur nufotecburundi2026@gmail.com.'];
     }
 
     // Vérifier si email vérifié (optionnel - vous pouvez commenter cette ligne en développement)
