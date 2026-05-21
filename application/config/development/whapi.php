@@ -11,7 +11,7 @@ $config['whapi'] = array(
     'retry_attempts' => 3,
     'retry_delay' => 2000,
     'rate_limit_delay' => 1000,
-    'webhook_secret' => 'nufotecburundi2026',
+    'webhook_secret' => '',
     'media_storage_path' => FCPATH . 'uploads/whatsapp_media/',
     'tmp_path' => FCPATH . 'tmp/'
 );
