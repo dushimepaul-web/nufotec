@@ -7,9 +7,6 @@ class Inbox_model extends CI_Model {
         parent::__construct();
     }
     
-    /**
-     * Ajoute des messages à l'inbox des participants
-     */
     public function add_to_inbox($queue_id, $participants, $media_data) {
         $batch_data = [];
         foreach ($participants as $participant) {
@@ -19,9 +16,7 @@ class Inbox_model extends CI_Model {
                 'message_content' => $media_data['message'] ?? $media_data['caption'] ?? null,
                 'media_type' => $media_data['media_type'] ?? 'text',
                 'media_url' => $media_data['media_url'] ?? null,
-                'local_media_path' => $media_data['local_media_path'] ?? null,  // NOUVEAU
-                'media_caption' => $media_data['media_caption'] ?? null,
-                'media_filename' => $media_data['media_filename'] ?? null,
+                'local_media_path' => $media_data['local_media_path'] ?? null,
                 'status' => 'pending',
                 'retries' => 0
             ];
@@ -33,9 +28,6 @@ class Inbox_model extends CI_Model {
         return false;
     }
     
-    /**
-     * Récupère les messages inbox en attente
-     */
     public function get_pending_inbox_messages($limit = 20) {
         $this->db->where('status', 'pending');
         $this->db->order_by('id', 'ASC');
@@ -43,9 +35,6 @@ class Inbox_model extends CI_Model {
         return $this->db->get('messages_inbox')->result();
     }
     
-    /**
-     * Récupère les messages inbox en attente avec lock
-     */
     public function get_pending_inbox_messages_locked($limit = 20) {
         $sql = "SELECT * FROM messages_inbox 
                 WHERE status = 'pending' 
@@ -55,9 +44,6 @@ class Inbox_model extends CI_Model {
         return $this->db->query($sql, [$limit])->result();
     }
     
-    /**
-     * Met à jour le statut d'un message inbox
-     */
     public function update_status($id, $status, $error = null) {
         $data = ['status' => $status];
         if ($status == 'sent') {
@@ -69,13 +55,5 @@ class Inbox_model extends CI_Model {
         }
         $this->db->where('id', $id);
         return $this->db->update('messages_inbox', $data);
-    }
-    
-    /**
-     * Récupère les messages inbox par queue_id
-     */
-    public function get_by_queue_id($queue_id) {
-        $this->db->where('queue_id', $queue_id);
-        return $this->db->get('messages_inbox')->result();
     }
 }

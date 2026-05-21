@@ -7,92 +7,91 @@ class Participant_model extends CI_Model {
         parent::__construct();
     }
     
-    /**
-     * Récupère tous les participants uniques (non bloqués)
-     */
     public function get_all_unique_participants() {
-        $sql = "SELECT DISTINCT participant_phone, MAX(participant_name) as participant_name 
-                FROM participants_whatsapp 
+        $sql = "SELECT DISTINCT phone as participant_phone, MAX(name) as participant_name 
+                FROM whatsapp_participants 
                 WHERE is_blocked = 0 
-                GROUP BY participant_phone";
+                GROUP BY phone";
         return $this->db->query($sql)->result();
     }
     
-    /**
-     * Récupère les participants d'un groupe spécifique
-     */
     public function get_group_participants($groupe_id) {
         $this->db->where('groupe_id', $groupe_id);
         $this->db->where('is_blocked', 0);
-        return $this->db->get('participants_whatsapp')->result();
+        return $this->db->get('whatsapp_participants')->result();
     }
     
-    /**
-     * Ajoute ou met à jour un participant
-     */
     public function upsert_participant($groupe_id, $phone, $name) {
         $this->db->where('groupe_id', $groupe_id);
-        $this->db->where('participant_phone', $phone);
-        $exists = $this->db->get('participants_whatsapp')->row();
+        $this->db->where('phone', $phone);
+        $exists = $this->db->get('whatsapp_participants')->row();
         
         if ($exists) {
             $this->db->where('id', $exists->id);
-            return $this->db->update('participants_whatsapp', [
-                'participant_name' => $name,
-                'last_active' => date('Y-m-d H:i:s')
+            return $this->db->update('whatsapp_participants', [
+                'name' => $name,
+                'updated_at' => date('Y-m-d H:i:s')
             ]);
         } else {
-            return $this->db->insert('participants_whatsapp', [
+            return $this->db->insert('whatsapp_participants', [
                 'groupe_id' => $groupe_id,
-                'participant_phone' => $phone,
-                'participant_name' => $name,
-                'joined_at' => date('Y-m-d H:i:s')
+                'phone' => $phone,
+                'name' => $name,
+                'created_at' => date('Y-m-d H:i:s')
             ]);
         }
     }
     
-    /**
-     * Vérifie si un utilisateur est bloqué
-     */
     public function is_blocked($phone) {
-        $this->db->where('participant_phone', $phone);
+        $this->db->where('phone', $phone);
         $this->db->where('is_blocked', 1);
-        return $this->db->get('participants_whatsapp')->num_rows() > 0;
+        return $this->db->get('whatsapp_participants')->num_rows() > 0;
     }
     
-    /**
-     * Incrémente le compteur de violations et bloque si nécessaire
-     * @return bool True si l'utilisateur a été bloqué
-     */
     public function increment_violation($phone) {
-        $this->db->where('participant_phone', $phone);
-        $participant = $this->db->get('participants_whatsapp')->row();
+        $this->db->where('phone', $phone);
+        $participant = $this->db->get('whatsapp_participants')->row();
         
         $violations = ($participant->violation_count ?? 0) + 1;
         
-        $this->db->where('participant_phone', $phone);
-        $this->db->update('participants_whatsapp', ['violation_count' => $violations]);
+        $this->db->where('phone', $phone);
+        $this->db->update('whatsapp_participants', ['violation_count' => $violations]);
         
-        // Bloquer après 3 violations
         if ($violations >= 3) {
-            $this->db->where('participant_phone', $phone);
-            $this->db->update('participants_whatsapp', ['is_blocked' => 1]);
-            return true;
+            $this->db->where('phone', $phone);
+            $this->db->update('whatsapp_participants', ['is_blocked' => 1]);
+            return true; // Bloqué
         }
         return false;
     }
     
-    /**
-     * Journalise une violation
-     */
-    public function log_violation($phone, $violation_type, $message_content, $message_id, $groupe_id) {
+    public function log_violation($phone, $violation_type, $message_content, $groupe_id) {
         $this->db->insert('violations_log', [
             'phone_number' => $phone,
             'violation_type' => $violation_type,
             'message_content' => $message_content,
-            'message_id' => $message_id,
             'groupe_id' => $groupe_id,
             'created_at' => date('Y-m-d H:i:s')
         ]);
+    }
+    
+    public function get_blocked_users() {
+        $this->db->where('is_blocked', 1);
+        return $this->db->get('whatsapp_participants')->result();
+    }
+    
+    public function block_participant($id) {
+        $this->db->where('id', $id);
+        return $this->db->update('whatsapp_participants', ['is_blocked' => 1]);
+    }
+    
+    public function unblock_participant($id) {
+        $this->db->where('id', $id);
+        return $this->db->update('whatsapp_participants', ['is_blocked' => 0, 'violation_count' => 0]);
+    }
+    
+    public function reset_violations($id) {
+        $this->db->where('id', $id);
+        return $this->db->update('whatsapp_participants', ['violation_count' => 0]);
     }
 }

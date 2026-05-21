@@ -16,40 +16,17 @@ class WhatsApp_Whapi {
     
     public function __construct() {
         $this->CI =& get_instance();
-        
-        // CHARGER LA CONFIGURATION CORRECTEMENT
-        $this->CI->config->load('whapi', TRUE);
         $whapi_config = $this->CI->config->item('whapi');
         
-        // VÉRIFIER QUE LA CONFIGURATION EXISTE
-        if (!$whapi_config) {
-            log_message('error', 'Configuration whapi non trouvée');
-            // Valeurs par défaut pour éviter l'erreur
-            $this->api_key = '';
-            $this->base_url = 'https://gate.whapi.cloud';
-            $this->timeout = 60;
-            $this->debug = false;
-            $this->retry_attempts = 3;
-            $this->retry_delay = 2000;
-            $this->rate_limit_delay = 1000;
-            return;
-        }
-        
-        // Assigner les valeurs avec vérification
-        $this->api_key = isset($whapi_config['api_key']) ? $whapi_config['api_key'] : '';
-        $this->base_url = isset($whapi_config['base_url']) ? rtrim($whapi_config['base_url'], '/') : 'https://gate.whapi.cloud';
-        $this->timeout = isset($whapi_config['timeout']) ? $whapi_config['timeout'] : 60;
-        $this->debug = isset($whapi_config['debug']) ? $whapi_config['debug'] : false;
-        $this->retry_attempts = isset($whapi_config['retry_attempts']) ? $whapi_config['retry_attempts'] : 3;
-        $this->retry_delay = isset($whapi_config['retry_delay']) ? $whapi_config['retry_delay'] : 2000;
-        $this->rate_limit_delay = isset($whapi_config['rate_limit_delay']) ? $whapi_config['rate_limit_delay'] : 1000;
-        
-        if ($this->debug) {
-            log_message('debug', 'WhatsApp_Whapi initialisé avec base_url: ' . $this->base_url);
-        }
+        $this->api_key = $whapi_config['api_key'];
+        $this->base_url = rtrim($whapi_config['base_url'], '/');
+        $this->timeout = $whapi_config['timeout'] ?? 60;
+        $this->debug = $whapi_config['debug'] ?? false;
+        $this->retry_attempts = $whapi_config['retry_attempts'] ?? 3;
+        $this->retry_delay = $whapi_config['retry_delay'] ?? 2000;
+        $this->rate_limit_delay = $whapi_config['rate_limit_delay'] ?? 1000;
     }
     
-    // ... le reste de vos méthodes (send_text, send_image, etc.) restent identiques
     public function send_text($to, $message, $options = []) {
         $payload = [
             'to' => $this->format_number($to),
@@ -113,6 +90,20 @@ class WhatsApp_Whapi {
         return $this->request('POST', '/messages/send', $payload);
     }
     
+    public function send_location($to, $latitude, $longitude, $name = null, $address = null) {
+        $payload = [
+            'to' => $this->format_number($to),
+            'type' => 'location',
+            'location' => [
+                'latitude' => $latitude,
+                'longitude' => $longitude
+            ]
+        ];
+        if ($name) $payload['location']['name'] = $name;
+        if ($address) $payload['location']['address'] = $address;
+        return $this->request('POST', '/messages/send', $payload);
+    }
+    
     public function react_to_message($message_id, $emoji) {
         return $this->request('POST', '/messages/' . $message_id . '/react', ['emoji' => $emoji]);
     }
@@ -122,12 +113,18 @@ class WhatsApp_Whapi {
         return $response['success'] ? ($response['data']['groups'] ?? []) : [];
     }
     
+    public function get_group_participants($group_id) {
+        $response = $this->request('GET', '/groups/' . $group_id . '/participants');
+        return $response['success'] ? ($response['data']['participants'] ?? []) : [];
+    }
+    
     public function download_media($media_url, $destination_path) {
         $ch = curl_init($media_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         $data = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
@@ -151,12 +148,8 @@ class WhatsApp_Whapi {
     }
     
     private function request($method, $endpoint, $data = null) {
-        if (empty($this->api_key)) {
-            log_message('error', 'API Key Whapi non configurée');
-            return ['success' => false, 'error' => 'API Key non configurée'];
-        }
-        
         $attempt = 0;
+        
         while ($attempt < $this->retry_attempts) {
             $attempt++;
             
@@ -170,6 +163,7 @@ class WhatsApp_Whapi {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             
             if ($method === 'POST') {
                 curl_setopt($ch, CURLOPT_POST, true);
@@ -181,10 +175,13 @@ class WhatsApp_Whapi {
             $error = curl_error($ch);
             curl_close($ch);
             
+            $this->last_response = $response;
+            
             if ($this->debug) {
                 log_message('debug', "Whapi API [$method $endpoint] - HTTP $http_code");
             }
             
+            // Succès
             if ($http_code >= 200 && $http_code < 300) {
                 return [
                     'success' => true,
@@ -193,7 +190,9 @@ class WhatsApp_Whapi {
                 ];
             }
             
+            // Erreurs critiques : ne pas réessayer
             if (in_array($http_code, [401, 403, 404])) {
+                $this->last_error = $error ?: $response;
                 return [
                     'success' => false,
                     'error' => "HTTP $http_code: " . ($error ?: $response),
@@ -201,23 +200,30 @@ class WhatsApp_Whapi {
                 ];
             }
             
+            // Rate limiting
             if ($http_code === 429) {
                 $retry_after = $this->rate_limit_delay * $attempt;
+                if (preg_match('/Retry-After:\s*(\d+)/i', $response, $matches)) {
+                    $retry_after = (int)$matches[1];
+                }
                 sleep(min($retry_after, 60));
                 continue;
             }
             
+            // Erreurs 5xx : réessai avec backoff exponentiel
             if ($http_code >= 500 && $http_code < 600) {
                 $wait = min(pow(2, $attempt) * 1000, 30000);
                 usleep($wait * 1000);
                 continue;
             }
             
+            // Autres erreurs
             if ($attempt < $this->retry_attempts) {
                 usleep($this->retry_delay * 1000 * $attempt);
                 continue;
             }
             
+            $this->last_error = $error ?: $response;
             return [
                 'success' => false,
                 'error' => $error ?: $response,

@@ -7,26 +7,24 @@ class Group_model extends CI_Model {
         parent::__construct();
     }
     
-    /**
-     * Récupère tous les groupes actifs
-     */
     public function get_active_groups() {
         $this->db->where('actif', 1);
         $this->db->order_by('nom', 'ASC');
         return $this->db->get('groupes_whatsapp')->result();
     }
     
-    /**
-     * Vérifie si un groupe existe
-     */
+    public function get_active_groups_except($exclude_groupe_id) {
+        $this->db->where('actif', 1);
+        $this->db->where('groupe_id !=', $exclude_groupe_id);
+        $this->db->order_by('nom', 'ASC');
+        return $this->db->get('groupes_whatsapp')->result();
+    }
+    
     public function group_exists($groupe_id) {
         $this->db->where('groupe_id', $groupe_id);
         return $this->db->get('groupes_whatsapp')->num_rows() > 0;
     }
     
-    /**
-     * Ajoute ou met à jour un groupe
-     */
     public function upsert_group($groupe_id, $nom = null, $description = null) {
         $this->db->where('groupe_id', $groupe_id);
         $exists = $this->db->get('groupes_whatsapp')->row();
@@ -48,9 +46,6 @@ class Group_model extends CI_Model {
         }
     }
     
-    /**
-     * Désactive un groupe
-     */
     public function disable_group($groupe_id) {
         $this->db->where('groupe_id', $groupe_id);
         return $this->db->update('groupes_whatsapp', ['actif' => 0]);
