@@ -1133,6 +1133,15 @@ function googleTranslateElementInit(){
     });
   });
 
+
+
+
+
+
+
+
+
+
   /* ---------------------------------------------------------------
      RECHERCHE
   --------------------------------------------------------------- */
@@ -1177,24 +1186,44 @@ function googleTranslateElementInit(){
       });
   }
 
-  function renderSearch(data, q) {
+function renderSearch(data, q) {
     var html = '';
+    var baseUrl = '<?= rtrim(base_url(), '/') ?>';
+    
     ['produits','actualites','pages'].forEach(function (key) {
-      if (data[key] && data[key].length > 0) {
-        var labels = { produits:'Produits', actualites:'Actualités', pages:'Pages' };
-        var icons  = { produits:'bi-box-seam', actualites:'bi-newspaper', pages:'bi-file-text' };
-        html += '<div class="nuf-search-cat">' + labels[key] + '</div>';
-        data[key].slice(0, 4).forEach(function (item) {
-          html += '<a href="<?= base_url() ?>' + (item.slug || '') + '" class="nuf-search-item">'
-            + '<i class="bi ' + icons[key] + '"></i>'
-            + '<div><div style="font-weight:600;">' + esc(item.titre) + '</div>'
-            + '<div style="font-size:12px;color:var(--gray);">' + esc((item.extrait||'').slice(0,50)) + '</div></div>'
-            + '</a>';
-        });
-      }
+        if (data[key] && data[key].length > 0) {
+            var labels = { produits:'Produits', actualites:'Actualités', pages:'Pages' };
+            var icons  = { produits:'bi-box-seam', actualites:'bi-newspaper', pages:'bi-file-text' };
+            
+            html += '<div class="nuf-search-cat">' + labels[key] + '</div>';
+            
+            data[key].slice(0, 4).forEach(function (item) {
+                var url = '';
+                var slug = item.slug || item.id || '';
+                
+                // Déterminer l'URL selon le type
+                if (key === 'produits') {
+                    url = baseUrl + '/product/' + slug;
+                } else if (key === 'actualites') {
+                    url = baseUrl + '/actualite/' + slug;
+                } else if (key === 'pages') {
+                    url = baseUrl + '/' + slug;
+                }
+                
+                html += '<a href="' + url + '" class="nuf-search-item">'
+                    + '<i class="bi ' + icons[key] + '"></i>'
+                    + '<div><div style="font-weight:600;">' + esc(item.titre) + '</div>'
+                    + '<div style="font-size:12px;color:var(--gray);">' + esc((item.extrait || item.description || '').slice(0,50)) + '</div></div>'
+                    + '</a>';
+            });
+        }
     });
+    
     searchResults.innerHTML = html || '<div style="padding:20px;text-align:center;">Aucun résultat pour « ' + esc(q) + ' »</div>';
-  }
+}
+
+
+
 
   function esc(s) {
     if (!s) return '';
