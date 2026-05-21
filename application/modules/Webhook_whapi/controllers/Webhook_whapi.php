@@ -9,64 +9,34 @@ class Webhook_whapi extends MX_Controller {
         $this->load->helper('whapi');
     }
     
-    public function index($token = null)
+public function index($token = null)
 {
     header('Content-Type: application/json');
 
-    try {
+    // Logger TOUT ce qui arrive pour diagnostic
+    $raw = file_get_contents('php://input');
+    $headers = getallheaders();
+    
+    log_message('error', '=== WEBHOOK RECU ===');
+    log_message('error', 'METHOD: ' . $_SERVER['REQUEST_METHOD']);
+    log_message('error', 'RAW BODY: ' . $raw);
+    log_message('error', 'HEADERS: ' . json_encode($headers));
+    log_message('error', 'GET PARAMS: ' . json_encode($_GET));
 
-        // =========================
-        // 1. TOKEN CHECK
-        // =========================
-        $url_token = $token ?? $this->input->get('token');
-        $header_token = $this->input->get_request_header('X-Webhook-Token', true);
-        $expected_token = $this->whapi_library->get_setting('webhook_token');
+    // Répondre immédiatement
+    http_response_code(200);
+    echo json_encode(['status' => 'ok']);
 
-        if ($url_token !== $expected_token && $header_token !== $expected_token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'unauthorized']);
-            return;
-        }
+    if (function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request();
+    }
 
-        // =========================
-        // 2. READ PAYLOAD SAFE
-        // =========================
-        $raw = file_get_contents('php://input');
-        $payload = json_decode($raw, true);
-
-        if (!$payload) {
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'ignored',
-                'reason' => 'empty payload'
-            ]);
-            return;
-        }
-
-        // =========================
-        // 3. QUICK RESPONSE (IMPORTANT)
-        // =========================
-        http_response_code(200);
-        echo json_encode(['status' => 'accepted']);
-
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
-        // =========================
-        // 4. BACKGROUND PROCESSING
-        // =========================
+    // Suite du traitement...
+    $payload = json_decode($raw, true);
+    if ($payload) {
         $this->process_webhook($payload);
-
-    } catch (Exception $e) {
-
-        log_message('error', $e->getMessage());
-
-        http_response_code(200);
-        echo json_encode(['status' => 'error']);
     }
 }
-
 
 
     
