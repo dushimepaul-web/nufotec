@@ -9,85 +9,53 @@ class Webhook_whapi extends MX_Controller {
         $this->load->helper('whapi');
     }
     
-   public function index($token = null)
+    public function index($token = null)
 {
-    // ⚡ Réponse rapide HTTP (important pour Whapi)
     header('Content-Type: application/json');
 
     try {
 
-        // ==============================
-        // 1. TOKEN CHECK (SAFE + CLEAN)
-        // ==============================
-        $url_token = $token ?? $this->input->get('token', true);
+        // =========================
+        // 1. TOKEN CHECK
+        // =========================
+        $url_token = $token ?? $this->input->get('token');
         $header_token = $this->input->get_request_header('X-Webhook-Token', true);
         $expected_token = $this->whapi_library->get_setting('webhook_token');
 
         if ($url_token !== $expected_token && $header_token !== $expected_token) {
-            log_message('error', 'Webhook token invalid');
-
             http_response_code(401);
             echo json_encode(['error' => 'unauthorized']);
             return;
         }
 
-        // ==============================
-        // 2. READ RAW INPUT (SAFE)
-        // ==============================
+        // =========================
+        // 2. READ PAYLOAD SAFE
+        // =========================
         $raw = file_get_contents('php://input');
-
-        if (empty($raw)) {
-            // Whapi peut envoyer ping vide → ne pas considérer comme erreur critique
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'ok',
-                'message' => 'empty payload ignored'
-            ]);
-            return;
-        }
-
-        // ==============================
-        // 3. TRY JSON DECODE SAFE
-        // ==============================
         $payload = json_decode($raw, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-
-            log_message('error', 'Invalid JSON: ' . $raw);
-
-            // fallback form-data
-            $payload = !empty($_POST) ? $_POST : null;
-        }
-
-        // ==============================
-        // 4. FINAL FALLBACK
-        // ==============================
         if (!$payload) {
             http_response_code(200);
             echo json_encode([
                 'status' => 'ignored',
-                'reason' => 'no valid payload',
-                'raw' => $raw
+                'reason' => 'empty payload'
             ]);
             return;
         }
 
-        // ==============================
-        // 5. QUICK ACK (IMPORTANT WHAPI)
-        // ==============================
+        // =========================
+        // 3. QUICK RESPONSE (IMPORTANT)
+        // =========================
         http_response_code(200);
-        echo json_encode([
-            'status' => 'accepted'
-        ]);
+        echo json_encode(['status' => 'accepted']);
 
-        // Libère la réponse immédiatement
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         }
 
-        // ==============================
-        // 6. ASYNC PROCESSING
-        // ==============================
+        // =========================
+        // 4. BACKGROUND PROCESSING
+        // =========================
         $this->process_webhook($payload);
 
     } catch (Exception $e) {
@@ -95,14 +63,11 @@ class Webhook_whapi extends MX_Controller {
         log_message('error', $e->getMessage());
 
         http_response_code(200);
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'internal handler error'
-        ]);
+        echo json_encode(['status' => 'error']);
     }
 }
-    
-  
+
+
 
     
     private function process_webhook($payload) {
