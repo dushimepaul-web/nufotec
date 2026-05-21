@@ -18,11 +18,7 @@ class Cron_whapi extends MY_Controller {
      * Traite la queue de diffusion vers les groupes
      */
     public function process_queue() {
-        // Sécurité: CLI uniquement ou token secret
-        if (php_sapi_name() !== 'cli' && $this->input->get('token') !== 'nufotecburundi2026') {
-            show_404();
-            return;
-        }
+       
         
         set_time_limit(0);
         
