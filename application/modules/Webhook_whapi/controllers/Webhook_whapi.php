@@ -2,161 +2,143 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Webhook_whapi extends MX_Controller {
-    
+
     public function __construct() {
         parent::__construct();
         $this->load->library('whapi_library');
         $this->load->helper('whapi');
     }
-    
-    public function index($token = null) {  // ← CRUCIAL : $token = null
-        
-        // Vérification unique du token (URL ou Header)
-        $url_token = $token ?? $this->input->get('token');
-        $header_token = $this->input->get_request_header('X-Webhook-Token', true);
-        $expected_token = $this->whapi_library->get_setting('webhook_token');
-        
-        $is_valid = ($url_token === $expected_token) || ($header_token === $expected_token);
-        
-        if (!$is_valid) {
-            log_message('error', "Token invalide - URL: $url_token, Header: $header_token, Attendu: $expected_token");
-            
-            $this->output->set_status_header(401);
-            echo json_encode(['error' => 'Invalid webhook token']);
-            return;
-        }
-        
-        // Récupérer le payload
-        $payload = json_decode(file_get_contents('php://input'), true);
-        
-        if (!$payload) {
-            $this->output->set_status_header(400);
-            echo json_encode(['error' => 'Invalid payload']);
-            return;
-        }
-        
-        // Traiter le webhook
-        $result = $this->process_webhook($payload);
-        
-        $this->output
-            ->set_content_type('application/json')
-            ->set_output(json_encode($result));
-    }
-    
-  
 
-    
-    private function process_webhook($payload) {
-        // Extraire les données
-        $message_type = $payload['type'] ?? 'unknown';
-        $group_id = $payload['chat']['id'] ?? null;
-        $sender = $payload['from']['phone'] ?? null;
-        $message_text = $payload['text'] ?? '';
-        $message_id = $payload['id'] ?? null;
-        
-        // Détecter les médias
-        $has_media = false;
-        $media_url = null;
-        $media_type = null;
-        
-        if (isset($payload['media'])) {
-            $has_media = true;
-            $media_url = $payload['media']['url'] ?? null;
-            $media_type = $payload['media']['type'] ?? null;
+    public function index($token = null) {
+
+        // ⚡ 1. Réponse immédiate (CRITIQUE POUR WHAPI)
+        http_response_code(200);
+        header('Content-Type: application/json');
+
+        // ⚡ capture rapide payload
+        $rawPayload = file_get_contents('php://input');
+
+        if (!$rawPayload) {
+            echo json_encode(['status' => 'empty']);
+            return;
         }
-        
-        // Vérifier si c'est un message entrant dans un groupe cible (pas le maître)
-        $master_group_id = $this->whapi_library->get_setting('master_group_id');
-        
-        if ($group_id !== $master_group_id) {
-            // C'est un message dans un groupe cible - Appliquer les règles de sécurité
-            $is_admin = $this->whapi_library->is_group_admin($group_id, $sender);
-            
-            if (!$is_admin) {
-                // Supprimer les médias et liens des non-admins dans TOUS les groupes
-                if ($has_media) {
-                    $this->whapi_library->delete_message($message_id);
-                    $this->db->insert('whatsapp_security_logs', [
-                        'group_id' => $group_id,
-                        'sender' => $sender,
-                        'action_type' => 'auto_deleted_media',
-                        'reason' => 'Non-admin sent media in target group',
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                    return ['status' => 'deleted', 'reason' => 'media_not_allowed'];
-                }
-                
-                if (contains_link($message_text)) {
-                    $this->whapi_library->delete_message($message_id);
-                    $this->db->insert('whatsapp_security_logs', [
-                        'group_id' => $group_id,
-                        'sender' => $sender,
-                        'action_type' => 'auto_deleted_link',
-                        'reason' => 'Non-admin sent link in target group',
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                    return ['status' => 'deleted', 'reason' => 'link_not_allowed'];
-                }
-            }
-            
-            // Log simple du message (texte autorisé)
-            log_whatsapp(null, null, $sender, $message_text, $message_type, 'received');
-            return ['status' => 'logged', 'type' => 'target_group_message'];
+
+        // ⚡ 2. décodage safe
+        $payload = json_decode($rawPayload, true);
+
+        if (!$payload) {
+            echo json_encode(['status' => 'invalid_json']);
+            return;
         }
-        
-        // Ici, c'est le GROUPE MAÎTRE - Traiter la diffusion
-        // Déterminer la cible
-        $target_type = 'both';
-        if (strpos($message_text, '#groupe') === 0) {
-            $target_type = 'group';
-            $message_text = trim(substr($message_text, 7));
-        } elseif (strpos($message_text, '#inbox') === 0) {
-            $target_type = 'inbox';
-            $message_text = trim(substr($message_text, 6));
-        } elseif (strpos($message_text, '#template:') === 0) {
-            // Support des templates
-            preg_match('/#template:([a-zA-Z0-9_]+)/', $message_text, $matches);
-            $template_name = $matches[1] ?? null;
-            if ($template_name) {
-                $template = $this->db->get_where('whatsapp_templates', ['name' => $template_name])->row();
-                if ($template) {
-                    $message_text = $template->content;
-                    // Extraire les variables si présentes
-                    if (preg_match('/\|\|(.*)/', $message_text, $var_matches)) {
-                        $vars = explode(',', $var_matches[1]);
-                        // Traitement des variables...
+
+        // ⚡ 3. validation token ultra rapide
+        $url_token = $token ?? $this->input->get('token');
+        $expected_token = $this->whapi_library->get_setting('webhook_token');
+
+        if ($url_token !== $expected_token) {
+            log_message('error', 'Webhook token invalid');
+
+            echo json_encode(['error' => 'unauthorized']);
+            return;
+        }
+
+        // ⚡ 4. PUSH IMMÉDIAT EN QUEUE (IMPORTANT)
+        $this->load->library('redis');
+
+        $this->redis->lpush('whapi:webhook:queue', json_encode($payload));
+
+        // ⚡ 5. IMPORTANT : répondre AVANT traitement
+        echo json_encode([
+            'status' => 'accepted'
+        ]);
+
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+
+        // ⚠️ 6. traitement ASYNC (après réponse)
+        $this->process_async($payload);
+    }
+
+    private function process_async($payload)
+    {
+        try {
+
+            $message_type = $payload['type'] ?? 'unknown';
+            $group_id = $payload['chat']['id'] ?? null;
+            $sender = $payload['from']['phone'] ?? null;
+            $message_text = $payload['text'] ?? '';
+            $message_id = $payload['id'] ?? null;
+
+            // ⚡ MEDIA detection
+            $has_media = isset($payload['media']);
+
+            // ⚡ MASTER GROUP CHECK
+            $master_group_id = $this->whapi_library->get_setting('master_group_id');
+
+            // =========================
+            // 1. TARGET GROUP LOGIC
+            // =========================
+            if ($group_id !== $master_group_id) {
+
+                $is_admin = $this->whapi_library->is_group_admin($group_id, $sender);
+
+                if (!$is_admin) {
+
+                    if ($has_media) {
+                        // ⚠️ IMPORTANT: ne PAS bloquer webhook si delete fail
+                        @$this->whapi_library->delete_message($message_id);
+                    }
+
+                    if (function_exists('contains_link') && contains_link($message_text)) {
+                        @$this->whapi_library->delete_message($message_id);
                     }
                 }
+
+                // log rapide
+                $this->db->insert('whatsapp_logs', [
+                    'group_id' => $group_id,
+                    'sender' => $sender,
+                    'message' => $message_text,
+                    'type' => 'received',
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+
+                return;
             }
-            $message_text = preg_replace('/#template:[a-zA-Z0-9_]+\s*/', '', $message_text);
+
+            // =========================
+            // 2. MASTER GROUP = BROADCAST
+            // =========================
+
+            $target_type = 'both';
+
+            if (strpos($message_text, '#groupe') === 0) {
+                $target_type = 'group';
+                $message_text = trim(substr($message_text, 7));
+            }
+
+            if (strpos($message_text, '#inbox') === 0) {
+                $target_type = 'inbox';
+                $message_text = trim(substr($message_text, 6));
+            }
+
+            // ⚡ CLEAN MESSAGE
+            if (function_exists('sanitize_message')) {
+                $message_text = sanitize_message($message_text);
+            }
+
+            // ⚡ PUSH BROADCAST QUEUE (IMPORTANT)
+            $this->db->insert('whatsapp_queue', [
+                'message' => $message_text,
+                'sender' => $sender,
+                'target_type' => $target_type,
+                'status' => 'pending',
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+        } catch (Exception $e) {
+            log_message('error', $e->getMessage());
         }
-        
-        // Nettoyer le message
-        $message_text = sanitize_message($message_text);
-        
-        // Préparer les données
-        $message_data = [
-            'type' => $message_type,
-            'text' => $message_text,
-            'group_id' => $group_id,
-            'sender' => $sender,
-            'message_id' => $message_id,
-            'target_type' => $target_type,
-            'has_media' => $has_media,
-            'media_url' => $media_url,
-            'media_type' => $media_type
-        ];
-        
-        // Log
-        log_whatsapp(null, null, $sender, $message_text, $message_type, 'received');
-        
-        // Distribuer
-        $distribution_result = $this->whapi_library->distribute_message($message_data, $sender);
-        
-        return [
-            'status' => 'processed',
-            'target_type' => $target_type,
-            'distribution' => $distribution_result
-        ];
     }
 }
