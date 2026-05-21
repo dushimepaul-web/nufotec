@@ -5,12 +5,7 @@ function has_link($text) {
     $patterns = [
         '/https?:\/\//i',
         '/www\.[a-z0-9\.\-]+/i',
-        '/\.(com|org|net|fr|cm|info|biz|io|app|dev|co)/i',
-        '/t\.me\//i',
-        '/wa\.me\//i',
-        '/bit\.ly\//i',
-        '/tinyurl\./i',
-        '/short\.link\//i'
+        '/\.(com|org|net|fr|cm|info|biz)/i'
     ];
     
     foreach ($patterns as $pattern) {

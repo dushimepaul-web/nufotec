@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Cron_whapi extends MY_Controller {
+class Cron_whapi extends CI_Controller {
     
     private $antiban;
     private $whatsapp_whapi;
@@ -14,11 +14,11 @@ class Cron_whapi extends MY_Controller {
         $this->whatsapp_whapi = new WhatsApp_Whapi();
     }
     
-    /**
-     * Traite la queue de diffusion vers les groupes
-     */
     public function process_queue() {
-       
+        if (php_sapi_name() !== 'cli' && $this->input->get('token') !== 'YOUR_SECRET_TOKEN') {
+            show_404();
+            return;
+        }
         
         set_time_limit(0);
         
@@ -42,20 +42,15 @@ class Cron_whapi extends MY_Controller {
         }
         
         if (!$this->antiban->can_send($message->sender_number)) {
-            // Reporter le message
-            $new_time = date('Y-m-d H:i:s', strtotime('+5 minutes'));
-            $this->db->where('id', $message->id);
-            $this->db->update('wa_messages_queue', ['scheduled_at' => $new_time]);
+            $this->Queue_model->update_status($message->id, 'pending', 'Rate limit exceeded');
             return;
         }
         
         $this->Queue_model->update_status($message->id, 'processing');
         
-        // Récupérer les destinataires (sans exclusion car déjà gérée dans le webhook)
         $recipients = $this->Queue_model->get_recipients_by_target_type($message);
         $all_success = true;
         
-        // Envoi vers les groupes
         foreach ($recipients['groups'] as $group) {
             $is_media = ($message->media_type != 'text');
             $this->antiban->smart_delay($is_media);
@@ -63,10 +58,11 @@ class Cron_whapi extends MY_Controller {
             $result = $this->send_message_by_type($group->groupe_id, $message);
             
             if ($result['success']) {
+                $this->Queue_model->log_broadcast($message->id, 'group', $group->groupe_id, 'sent');
                 $this->Queue_model->increment_sent_count($message->id);
             } else {
                 $all_success = false;
-                log_message('error', "Échec envoi groupe {$group->groupe_id}: " . ($result['error'] ?? 'Unknown'));
+                $this->Queue_model->log_broadcast($message->id, 'group', $group->groupe_id, 'failed', $result['error'] ?? 'Unknown error');
             }
         }
         
@@ -76,9 +72,7 @@ class Cron_whapi extends MY_Controller {
     }
     
     private function send_message_by_type($to, $message) {
-        $media_url = !empty($message->local_media_path) 
-            ? base_url($message->local_media_path) 
-            : $message->media_url;
+        $media_url = !empty($message->local_media_path) ? base_url($message->local_media_path) : $message->media_url;
         
         switch($message->media_type) {
             case 'text':
@@ -98,11 +92,8 @@ class Cron_whapi extends MY_Controller {
         }
     }
     
-    /**
-     * Traite la queue inbox (messages privés)
-     */
     public function process_inbox() {
-        if (php_sapi_name() !== 'cli' && $this->input->get('token') !== 'YOUR_SECRET_CRON_TOKEN') {
+        if (php_sapi_name() !== 'cli' && $this->input->get('token') !== 'YOUR_SECRET_TOKEN') {
             show_404();
             return;
         }
@@ -119,14 +110,13 @@ class Cron_whapi extends MY_Controller {
             
             $this->antiban->smart_delay(true);
             
-            $media_url = !empty($inbox->local_media_path) 
-                ? base_url($inbox->local_media_path) 
-                : $inbox->media_url;
+            $media_url = !empty($inbox->local_media_path) ? base_url($inbox->local_media_path) : $inbox->media_url;
             
             $result = $this->send_inbox_message_by_type($inbox->participant_phone, $inbox, $media_url);
             
             if ($result['success']) {
                 $this->Inbox_model->update_status($inbox->id, 'sent');
+                $this->Queue_model->log_broadcast($inbox->queue_id, 'inbox', $inbox->participant_phone, 'sent');
                 $this->Queue_model->increment_sent_count($inbox->queue_id);
             } else {
                 $this->Inbox_model->update_status($inbox->id, 'pending', $result['error'] ?? 'Unknown error');
@@ -143,13 +133,13 @@ class Cron_whapi extends MY_Controller {
             case 'text':
                 return $this->whatsapp_whapi->send_text($to, $inbox->message_content);
             case 'image':
-                return $this->whatsapp_whapi->send_image($to, $media_url, $inbox->message_content);
+                return $this->whatsapp_whapi->send_image($to, $media_url, $inbox->media_caption);
             case 'video':
-                return $this->whatsapp_whapi->send_video($to, $media_url, $inbox->message_content);
+                return $this->whatsapp_whapi->send_video($to, $media_url, $inbox->media_caption);
             case 'audio':
                 return $this->whatsapp_whapi->send_audio($to, $media_url);
             case 'document':
-                return $this->whatsapp_whapi->send_document($to, $media_url, 'document', $inbox->message_content);
+                return $this->whatsapp_whapi->send_document($to, $media_url, $inbox->media_filename, $inbox->media_caption);
             case 'sticker':
                 return $this->whatsapp_whapi->send_sticker($to, $media_url);
             default:

@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $config['whapi'] = array(
     'api_key' => 'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw',
-    'base_url' => 'https://gate.whapi.cloud/',
+    'base_url' => 'https://gate.whapi.cloud',
     'timeout' => 60,
     'upload_timeout' => 120,
     'debug' => true,
@@ -16,24 +16,16 @@ $config['whapi'] = array(
     'tmp_path' => FCPATH . 'tmp/'
 );
 
-// NUMÉROS ADMIN (format international complet)
 $config['admin_numbers'] = ['25779666439'];
 
-// Types autorisés pour les MEMBRES (SEULEMENT texte)
 $config['allowed_for_members'] = ['text'];
 
-// Patterns de liens bloqués
 $config['blocked_patterns'] = [
     '/https?:\/\//i',
     '/www\.[a-z0-9\.\-]+/i',
-    '/\.(com|org|net|fr|cm|info|biz|io|app|dev)/i',
-    '/t\.me\//i',
-    '/wa\.me\//i',
-    '/bit\.ly\//i',
-    '/tinyurl\./i'
+    '/\.(com|org|net|fr|cm|info|biz)/i'
 ];
 
-// Paramètres anti-ban
 $config['antiban'] = [
     'min_delay_micro' => 500000,
     'max_delay_micro' => 1500000,

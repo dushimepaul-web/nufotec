@@ -16,9 +16,12 @@ class Inbox_model extends CI_Model {
                 'message_content' => $media_data['message'] ?? $media_data['caption'] ?? null,
                 'media_type' => $media_data['media_type'] ?? 'text',
                 'media_url' => $media_data['media_url'] ?? null,
+                'media_caption' => $media_data['caption'] ?? null,
+                'media_filename' => $media_data['filename'] ?? null,
                 'local_media_path' => $media_data['local_media_path'] ?? null,
                 'status' => 'pending',
-                'retries' => 0
+                'retries' => 0,
+                'created_at' => date('Y-m-d H:i:s')
             ];
         }
         
@@ -55,5 +58,10 @@ class Inbox_model extends CI_Model {
         }
         $this->db->where('id', $id);
         return $this->db->update('messages_inbox', $data);
+    }
+    
+    public function get_by_queue_id($queue_id) {
+        $this->db->where('queue_id', $queue_id);
+        return $this->db->get('messages_inbox')->result();
     }
 }

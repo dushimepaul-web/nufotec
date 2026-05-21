@@ -59,6 +59,14 @@ class AntiBan {
         $this->last_send_time = microtime(true);
     }
     
+    public function typing_delay($message_length) {
+        $chars_per_sec = rand(50, 150);
+        $delay = $message_length / $chars_per_sec;
+        if ($delay > 0.1 && $delay < 10) {
+            usleep($delay * 1000000);
+        }
+    }
+    
     public function can_send($phone_number = null) {
         $hour_ago = date('Y-m-d H:i:s', strtotime('-1 hour'));
         
@@ -76,5 +84,17 @@ class AntiBan {
             $delay = rand((int)$this->settings['batch_interval'] - 10, (int)$this->settings['batch_interval'] + 10);
             sleep(max(5, $delay));
         }
+    }
+    
+    public function reset_counter() {
+        $this->message_count = 0;
+    }
+    
+    public function get_stats() {
+        return [
+            'message_count' => $this->message_count,
+            'last_send_time' => $this->last_send_time,
+            'settings' => $this->settings
+        ];
     }
 }
