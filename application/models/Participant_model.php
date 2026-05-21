@@ -1,183 +1,98 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/**
- * Modèle pour gérer les participants WhatsApp
- * Synchronisation automatique avec l'API Whapi
- */
 class Participant_model extends CI_Model {
-    
-    protected $table = 'whatsapp_participants';
     
     public function __construct() {
         parent::__construct();
-        $this->load->database();
     }
     
     /**
-     * ✅ Sauvegarder ou mettre à jour un participant (UPSERT)
-     * Appelé automatiquement à chaque synchronisation
+     * Récupère tous les participants uniques (non bloqués)
      */
-    public function sauvegarder($data) {
-        // Vérifier si le participant existe déjà
-        $exists = $this->db->where([
-            'groupe_id' => $data['groupe_id'],
-            'phone' => $data['phone']
-        ])->get($this->table)->row();
-        
-        $now = date('Y-m-d H:i:s');
-        
-        $insert_data = [
-            'groupe_id' => $data['groupe_id'],
-            'phone' => $data['phone'],
-            'phone_formatted' => $data['phone_formatted'] ?? $this->format_phone($data['phone']),
-            'rank' => $data['rank'] ?? 'member',
-            'is_admin' => in_array($data['rank'] ?? '', ['creator', 'admin']) ? 1 : 0,
-            'is_creator' => ($data['rank'] ?? '') === 'creator' ? 1 : 0,
-            'profile_name' => $data['profile_name'] ?? null,
-            'synced_at' => $now
-        ];
+    public function get_all_unique_participants() {
+        $sql = "SELECT DISTINCT participant_phone, MAX(participant_name) as participant_name 
+                FROM participants_whatsapp 
+                WHERE is_blocked = 0 
+                GROUP BY participant_phone";
+        return $this->db->query($sql)->result();
+    }
+    
+    /**
+     * Récupère les participants d'un groupe spécifique
+     */
+    public function get_group_participants($groupe_id) {
+        $this->db->where('groupe_id', $groupe_id);
+        $this->db->where('is_blocked', 0);
+        return $this->db->get('participants_whatsapp')->result();
+    }
+    
+    /**
+     * Ajoute ou met à jour un participant
+     */
+    public function upsert_participant($groupe_id, $phone, $name) {
+        $this->db->where('groupe_id', $groupe_id);
+        $this->db->where('participant_phone', $phone);
+        $exists = $this->db->get('participants_whatsapp')->row();
         
         if ($exists) {
-            // Mise à jour
-            $this->db->where([
-                'groupe_id' => $data['groupe_id'],
-                'phone' => $data['phone']
-            ])->update($this->table, $insert_data);
-            
-            return ['action' => 'updated', 'id' => $exists->id];
-        } else {
-            // Insertion
-            $this->db->insert($this->table, $insert_data);
-            return ['action' => 'inserted', 'id' => $this->db->insert_id()];
-        }
-    }
-    
-    /**
-     * ✅ Synchroniser tous les participants d'un groupe
-     * Supprime les anciens participants qui ne sont plus dans le groupe
-     */
-    public function synchroniser_groupe($groupe_id, $participants) {
-        $now = date('Y-m-d H:i:s');
-        $phones_actuels = [];
-        $stats = ['inserted' => 0, 'updated' => 0, 'deleted' => 0];
-        
-        // Insérer/mettre à jour chaque participant
-        foreach ($participants as $p) {
-            $phones_actuels[] = $p['phone'];
-            
-            $result = $this->sauvegarder([
-                'groupe_id' => $groupe_id,
-                'phone' => $p['phone'],
-                'phone_formatted' => $p['number_formatted'] ?? null,
-                'rank' => $p['rank'] ?? 'member',
-                'profile_name' => $p['profile_name'] ?? null
+            $this->db->where('id', $exists->id);
+            return $this->db->update('participants_whatsapp', [
+                'participant_name' => $name,
+                'last_active' => date('Y-m-d H:i:s')
             ]);
-            
-            $stats[$result['action']]++;
+        } else {
+            return $this->db->insert('participants_whatsapp', [
+                'groupe_id' => $groupe_id,
+                'participant_phone' => $phone,
+                'participant_name' => $name,
+                'joined_at' => date('Y-m-d H:i:s')
+            ]);
         }
+    }
+    
+    /**
+     * Vérifie si un utilisateur est bloqué
+     */
+    public function is_blocked($phone) {
+        $this->db->where('participant_phone', $phone);
+        $this->db->where('is_blocked', 1);
+        return $this->db->get('participants_whatsapp')->num_rows() > 0;
+    }
+    
+    /**
+     * Incrémente le compteur de violations et bloque si nécessaire
+     * @return bool True si l'utilisateur a été bloqué
+     */
+    public function increment_violation($phone) {
+        $this->db->where('participant_phone', $phone);
+        $participant = $this->db->get('participants_whatsapp')->row();
         
-        // Supprimer les participants qui ne sont plus dans le groupe
-        if (!empty($phones_actuels)) {
-            $this->db->where('groupe_id', $groupe_id);
-            $this->db->where_not_in('phone', $phones_actuels);
-            $stats['deleted'] = $this->db->delete($this->table);
+        $violations = ($participant->violation_count ?? 0) + 1;
+        
+        $this->db->where('participant_phone', $phone);
+        $this->db->update('participants_whatsapp', ['violation_count' => $violations]);
+        
+        // Bloquer après 3 violations
+        if ($violations >= 3) {
+            $this->db->where('participant_phone', $phone);
+            $this->db->update('participants_whatsapp', ['is_blocked' => 1]);
+            return true;
         }
-        
-        // ✅ CORRECTION: Mettre à jour le timestamp du groupe (colonne 'groupe_id' pas 'id_groupe')
-        $this->db->where('groupe_id', $groupe_id)
-                 ->update('groupes_whatsapp', ['updated_at' => $now]);
-        
-        return $stats;
+        return false;
     }
     
     /**
-     * ✅ Récupérer les participants d'un groupe
+     * Journalise une violation
      */
-    public function get_by_groupe($groupe_id, $filters = []) {
-        $this->db->where('groupe_id', $groupe_id);
-        
-        if (!empty($filters['rank'])) {
-            $this->db->where('rank', $filters['rank']);
-        }
-        
-        if (!empty($filters['is_admin'])) {
-            $this->db->where('is_admin', 1);
-        }
-        
-        return $this->db->order_by('is_creator', 'DESC')
-                       ->order_by('is_admin', 'DESC')
-                       ->order_by('phone')
-                       ->get($this->table)
-                       ->result();
+    public function log_violation($phone, $violation_type, $message_content, $message_id, $groupe_id) {
+        $this->db->insert('violations_log', [
+            'phone_number' => $phone,
+            'violation_type' => $violation_type,
+            'message_content' => $message_content,
+            'message_id' => $message_id,
+            'groupe_id' => $groupe_id,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
     }
-    
-    /**
-     * ✅ Récupérer un participant par numéro
-     */
-    public function get_by_phone($phone) {
-        return $this->db->where('phone', $phone)
-                       ->or_where('phone_formatted', $phone)
-                       ->get($this->table)
-                       ->row();
-    }
-    
-    /**
-     * ✅ Rechercher un participant dans tous les groupes
-     */
-    public function rechercher($query) {
-        $this->db->like('phone', $query);
-        $this->db->or_like('phone_formatted', $query);
-        $this->db->or_like('profile_name', $query);
-        
-        return $this->db->get($this->table)->result();
-    }
-    
-    /**
-     * ✅ Statistiques des participants
-     */
-    public function get_stats() {
-        return [
-            'total' => $this->db->count_all($this->table),
-            'admins' => $this->db->where('is_admin', 1)->count_all_results($this->table),
-            'creators' => $this->db->where('is_creator', 1)->count_all_results($this->table),
-            'groupes_uniques' => $this->db->select('COUNT(DISTINCT groupe_id) as count')->get($this->table)->row()->count
-        ];
-    }
-    
-    /**
-     * ✅ Nettoyer les anciennes synchronisations (>30 jours)
-     */
-    public function cleanup($jours = 30) {
-        $date_limit = date('Y-m-d H:i:s', strtotime("-$jours days"));
-        
-        $this->db->where('synced_at <', $date_limit);
-        return $this->db->delete($this->table);
-    }
-    
-    /**
-     * Helper: Formater un numéro de téléphone
-     */
-    private function format_phone($phone) {
-        $phone = str_replace(['@s.whatsapp.net', '@c.us'], '', $phone);
-        if (preg_match('/^\d{10,15}$/', $phone)) {
-            return '+' . $phone;
-        }
-        return $phone;
-    }
-
-    /**
- * ✅ Récupérer tous les participants avec info groupe
- */
-public function get_all_participants() {
-    $this->db->select('p.*, g.nom as groupe_name');
-    $this->db->from($this->table . ' p');
-    $this->db->join('groupes_whatsapp g', 'g.groupe_id = p.groupe_id', 'left');
-    $this->db->order_by('p.groupe_id', 'ASC');
-    $this->db->order_by('p.is_creator', 'DESC');
-    $this->db->order_by('p.is_admin', 'DESC');
-    $this->db->order_by('p.profile_name', 'ASC');
-    
-    return $this->db->get()->result();
-}
 }

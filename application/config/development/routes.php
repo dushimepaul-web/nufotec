@@ -431,6 +431,19 @@ $route['products/export_orders_csv'] = 'Products/export_orders_csv';
 $route['Api/investors/Save'] = 'Investors/Save';
 $route['api/investors/Save'] = 'Investors/Save';
 
+
+
+
+
+
+
+
+
+$route['Whatsapp'] = 'Whatsapp/index';
+$route['Webhook_whapi'] = 'Webhook_whapi/index';
+
+
+
 // ============================================
 // RECHERCHE
 // ============================================

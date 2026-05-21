@@ -90,33 +90,43 @@ class Advertise_product extends MY_Controller {
         return $slug;
     }
 
-    private function sendEmails($emails, $subject, $message, $context = 'general')
-    {
-        $success_count = 0;
-        $error_count = 0;
-        $max_emails = 50;
-        $email_count = 0;
-        
-        foreach ($emails as $email) {
-            if ($email_count >= $max_emails) {
-                log_message('warning', "Limite d'emails atteinte ({$max_emails}) pour le contexte: {$context}");
-                break;
-            }
-            
-            $result = $this->cpanel_email_lib->send_email($email, $subject, $message);
-            if ($result['success']) {
-                $success_count++;
-            } else {
-                $error_count++;
-                log_message('error', "Échec d'envoi à {$email} pour {$context} : " . print_r($result, true));
-            }
-            $email_count++;
+   private function sendEmails($emails, $subject, $message, $context = 'general')
+{
+    $success_count = 0;
+    $error_count = 0;
+    
+    // Désactiver la limite de temps d'exécution pour les envois massifs
+    set_time_limit(0);
+    
+    foreach ($emails as $email) {
+        $result = $this->cpanel_email_lib->send_email($email, $subject, $message);
+        if ($result['success']) {
+            $success_count++;
+        } else {
+            $error_count++;
+            // Optionnel: enregistrer les erreurs dans un fichier
+            $this->_log_email_error($email, $result, $context);
         }
         
-        log_message('info', "Emails envoyés pour {$context} : {$success_count} succès, {$error_count} échecs");
-        
-        return array('success' => $success_count, 'error' => $error_count);
+        // Petite pause pour éviter la surcharge du serveur (0.1 seconde)
+        usleep(100000); // 0.1 secondes
     }
+    
+    // Enregistrer le résumé
+    error_log("Résumé envoi {$context} : {$success_count}/" . count($emails) . " succès, {$error_count} échecs");
+    
+    return array('success' => $success_count, 'error' => $error_count);
+}
+
+// Méthode helper pour logger les erreurs
+private function _log_email_error($email, $result, $context)
+{
+    $log_file = FCPATH . 'application/logs/email_errors_' . date('Y-m-d') . '.log';
+    $message = date('Y-m-d H:i:s') . " - {$context} - {$email} - " . print_r($result, true) . PHP_EOL;
+    file_put_contents($log_file, $message, FILE_APPEND);
+}
+
+
 
     private function getAllEmails()
     {

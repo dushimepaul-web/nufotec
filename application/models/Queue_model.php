@@ -7,18 +7,16 @@ class Queue_model extends CI_Model {
         parent::__construct();
     }
     
-    /**
-     * Ajoute un message à la queue
-     */
     public function add_to_queue($data) {
         $queue_data = [
             'message' => $data['message'] ?? null,
             'sender_number' => $data['sender_number'],
             'sender_name' => $data['sender_name'] ?? null,
             'is_admin' => $data['is_admin'] ?? 0,
-            'broadcast_type' => $data['broadcast_type'] ?? 'both',
+            'target_type' => $data['target_type'] ?? 'both',
             'media_type' => $data['media_type'] ?? 'text',
             'media_url' => $data['media_url'] ?? null,
+            'local_media_path' => $data['local_media_path'] ?? null,
             'media_caption' => $data['media_caption'] ?? null,
             'media_filename' => $data['media_filename'] ?? null,
             'status' => 'pending',
@@ -33,9 +31,6 @@ class Queue_model extends CI_Model {
         return $this->db->insert_id();
     }
     
-    /**
-     * Récupère les messages en attente
-     */
     public function get_pending_messages($limit = 5) {
         $this->db->where('status', 'pending')
                  ->where('scheduled_at <=', date('Y-m-d H:i:s'))
@@ -44,9 +39,15 @@ class Queue_model extends CI_Model {
         return $this->db->get('wa_messages_queue')->result();
     }
     
-    /**
-     * Met à jour le statut d'un message
-     */
+    public function get_pending_messages_locked($limit = 5) {
+        $sql = "SELECT * FROM wa_messages_queue 
+                WHERE status = 'pending' AND scheduled_at <= NOW() 
+                ORDER BY id ASC 
+                LIMIT ? 
+                FOR UPDATE SKIP LOCKED";
+        return $this->db->query($sql, [$limit])->result();
+    }
+    
     public function update_status($id, $status, $error = null) {
         $data = ['status' => $status];
         if ($status == 'sent') {
@@ -60,18 +61,12 @@ class Queue_model extends CI_Model {
         return $this->db->update('wa_messages_queue', $data);
     }
     
-    /**
-     * Incrémente le compteur d'envois réussis
-     */
     public function increment_sent_count($id) {
         $this->db->set('sent_count', 'sent_count+1', FALSE);
         $this->db->where('id', $id);
         return $this->db->update('wa_messages_queue');
     }
     
-    /**
-     * Journalise un broadcast
-     */
     public function log_broadcast($queue_id, $recipient_type, $recipient_id, $status, $error = null) {
         $this->db->insert('broadcast_logs', [
             'queue_id' => $queue_id,
@@ -81,5 +76,27 @@ class Queue_model extends CI_Model {
             'error_message' => $error,
             'sent_at' => date('Y-m-d H:i:s')
         ]);
+    }
+    
+    public function get_recipients_by_target_type($message) {
+        $recipients = [
+            'groups' => [],
+            'participants' => []
+        ];
+        
+        if ($message->target_type == 'groups' || $message->target_type == 'both') {
+            $this->db->where('actif', 1);
+            $recipients['groups'] = $this->db->get('groupes_whatsapp')->result();
+        }
+        
+        if ($message->target_type == 'inbox' || $message->target_type == 'both') {
+            $sql = "SELECT DISTINCT participant_phone, MAX(participant_name) as participant_name 
+                    FROM participants_whatsapp 
+                    WHERE is_blocked = 0 
+                    GROUP BY participant_phone";
+            $recipients['participants'] = $this->db->query($sql)->result();
+        }
+        
+        return $recipients;
     }
 }
