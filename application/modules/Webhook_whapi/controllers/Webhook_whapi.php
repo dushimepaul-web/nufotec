@@ -24,27 +24,46 @@ class Webhook_whapi extends MY_Controller {
     }
     
     public function index() {
-        // PAS DE VÉRIFICATION DE SÉCURITÉ !
+        // ============================================
+        // RÉPONSE POUR LA MÉTHODE GET (vérification Whapi)
+        // ============================================
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'status' => 'ok',
+                'message' => 'Webhook is active and ready',
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+            return;
+        }
         
+        // ============================================
+        // TRAITEMENT POUR LA MÉTHODE POST (messages réels)
+        // ============================================
         $input = json_decode(file_get_contents('php://input'), true);
         
+        // Si pas de données, répondre no_data
         if (!$input) {
             echo json_encode(['status' => 'no_data']);
             return;
         }
         
-        log_message('info', 'Webhook Whapi reçu');
+        // Log pour debug
+        log_message('info', 'Webhook Whapi reçu: ' . json_encode($input));
         
+        // Traiter les messages
         if (isset($input['messages']) && is_array($input['messages'])) {
             foreach ($input['messages'] as $message) {
                 $this->process_message($message);
             }
         }
         
+        // Traiter les status
         if (isset($input['statuses'])) {
             $this->process_statuses($input['statuses']);
         }
         
+        // Toujours répondre ok à Whapi
         echo json_encode(['status' => 'ok']);
     }
     
