@@ -14,17 +14,31 @@ class WhatsApp_Whapi {
     private $last_response = null;
     private $last_error = null;
     
-    public function __construct() {
+    public function __construct($config = array()) {
         $this->CI =& get_instance();
+        
+        // Charger la configuration whapi si elle existe
         $whapi_config = $this->CI->config->item('whapi');
         
-        $this->api_key = $whapi_config['api_key'];
-        $this->base_url = rtrim($whapi_config['base_url'], '/');
-        $this->timeout = $whapi_config['timeout'] ?? 60;
-        $this->debug = $whapi_config['debug'] ?? false;
-        $this->retry_attempts = $whapi_config['retry_attempts'] ?? 3;
-        $this->retry_delay = $whapi_config['retry_delay'] ?? 2000;
-        $this->rate_limit_delay = $whapi_config['rate_limit_delay'] ?? 1000;
+        // Si la configuration n'existe pas, charger le fichier manuellement
+        if ($whapi_config === null) {
+            $this->CI->config->load('whapi', TRUE);
+            $whapi_config = $this->CI->config->item('whapi');
+        }
+        
+        // Valeurs par défaut en cas d'absence de configuration
+        $this->api_key = $whapi_config['api_key'] ?? ($config['api_key'] ?? 'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw');
+        $this->base_url = rtrim($whapi_config['base_url'] ?? ($config['base_url'] ?? 'https://gate.whapi.cloud'), '/');
+        $this->timeout = $whapi_config['timeout'] ?? ($config['timeout'] ?? 60);
+        $this->debug = $whapi_config['debug'] ?? ($config['debug'] ?? false);
+        $this->retry_attempts = $whapi_config['retry_attempts'] ?? ($config['retry_attempts'] ?? 3);
+        $this->retry_delay = $whapi_config['retry_delay'] ?? ($config['retry_delay'] ?? 2000);
+        $this->rate_limit_delay = $whapi_config['rate_limit_delay'] ?? ($config['rate_limit_delay'] ?? 1000);
+        
+        // Vérification de la clé API
+        if (empty($this->api_key)) {
+            log_message('error', 'WhatsApp_Whapi: API Key non configurée dans config/whapi.php');
+        }
     }
     
     public function send_text($to, $message, $options = []) {
@@ -117,8 +131,7 @@ class WhatsApp_Whapi {
         return $this->request('POST', '/messages/' . $message_id . '/react', ['emoji' => $emoji]);
     }
     
-    // ============ MÉTHODES DE SYNCHRONISATION (NOUVELLES) ============
-    
+    // MÉTHODES DE SYNCHRONISATION
     public function get_groups() {
         $response = $this->request('GET', '/groups');
         if ($response['success'] && isset($response['data']['groups'])) {
@@ -179,6 +192,16 @@ class WhatsApp_Whapi {
     private function request($method, $endpoint, $data = null) {
         $attempt = 0;
         
+        // Vérifier que la clé API est présente
+        if (empty($this->api_key)) {
+            log_message('error', 'WhatsApp_Whapi: Tentative d\'appel API sans clé API');
+            return [
+                'success' => false,
+                'error' => 'API Key non configurée',
+                'http_code' => 401
+            ];
+        }
+        
         while ($attempt < $this->retry_attempts) {
             $attempt++;
             
@@ -192,6 +215,8 @@ class WhatsApp_Whapi {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
             
             if ($method === 'POST') {
                 curl_setopt($ch, CURLOPT_POST, true);

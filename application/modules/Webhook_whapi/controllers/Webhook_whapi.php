@@ -5,15 +5,37 @@ class Webhook_whapi extends MY_Controller {
     
     public function __construct() {
         parent::__construct();
-        $this->load->library('WhatsApp_Whapi');
-        $this->load->model(['Group_model', 'Participant_model', 'Queue_model', 'Inbox_model']);
+        
+        // Charger les modèles
+        $this->load->model('Group_model');
+        $this->load->model('Participant_model');
+        $this->load->model('Queue_model');
+        $this->load->model('Inbox_model');
         $this->load->helper('whatsapp');
+        
+        // Charger la configuration whapi avant la library
+        if ($this->config->item('whapi') === null) {
+            $this->config->load('whapi', TRUE);
+        }
+        
+        // Charger la library après la config
+        $this->load->library('WhatsApp_Whapi');
+        $this->load->library('AntiBan');
     }
     
     public function index() {
-        // Vérification du token secret
-        $headers = getallheaders();
-        $received_token = $headers['X-Whapi-Token'] ?? $this->input->get_request_header('X-Whapi-Token');
+        // Récupérer les headers de manière compatible
+        $received_token = '';
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+            $received_token = $headers['X-Whapi-Token'] ?? '';
+        }
+        
+        // Alternative si getallheaders n'existe pas
+        if (empty($received_token)) {
+            $received_token = $this->input->get_request_header('X-Whapi-Token');
+        }
+        
         $expected_token = $this->config->item('whapi')['webhook_secret'] ?? '';
         
         if (!$expected_token || $received_token !== $expected_token) {
@@ -72,7 +94,11 @@ class Webhook_whapi extends MY_Controller {
         $is_valid = $this->validate_message($message_type, $media_data, $is_admin);
         
         if (!$is_valid) {
-            $this->whatsapp_whapi->react_to_message($message['id'], '🚫');
+            try {
+                $this->whatsapp_whapi->react_to_message($message['id'], '🚫');
+            } catch (Exception $e) {
+                log_message('error', 'Erreur reaction: ' . $e->getMessage());
+            }
             $this->handle_violation($sender, $message_type, $media_data, $chat_id);
             log_message('info', "Violation de {$sender}: type={$message_type}");
             return;
@@ -96,7 +122,7 @@ class Webhook_whapi extends MY_Controller {
     }
     
     private function download_media_locally($url, $type) {
-        $storage_path = $this->config->item('whapi')['media_storage_path'];
+        $storage_path = $this->config->item('whapi')['media_storage_path'] ?? FCPATH . 'uploads/whatsapp_media/';
         if (!is_dir($storage_path)) mkdir($storage_path, 0755, true);
         
         $ext = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
@@ -153,8 +179,10 @@ class Webhook_whapi extends MY_Controller {
         
         $text = $media_data['message'] ?? '';
         $blocked_patterns = $this->config->item('blocked_patterns');
-        foreach ($blocked_patterns as $pattern) {
-            if (preg_match($pattern, $text)) return false;
+        if (is_array($blocked_patterns)) {
+            foreach ($blocked_patterns as $pattern) {
+                if (preg_match($pattern, $text)) return false;
+            }
         }
         return true;
     }
