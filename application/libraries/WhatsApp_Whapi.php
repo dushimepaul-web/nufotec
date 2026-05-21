@@ -16,15 +16,41 @@ class WhatsApp_Whapi {
     
     public function __construct() {
         $this->CI =& get_instance();
+        
+        // CHARGER LA CONFIGURATION CORRECTEMENT
         $whapi_config = $this->CI->config->item('whapi');
         
-        $this->api_key = $whapi_config['api_key'];
-        $this->base_url = rtrim($whapi_config['base_url'], '/');
-        $this->timeout = $whapi_config['timeout'] ?? 60;
-        $this->debug = $whapi_config['debug'] ?? false;
-        $this->retry_attempts = $whapi_config['retry_attempts'] ?? 3;
-        $this->retry_delay = $whapi_config['retry_delay'] ?? 2000;
-        $this->rate_limit_delay = $whapi_config['rate_limit_delay'] ?? 1000;
+        // Si la configuration n'existe pas, charger le fichier
+        if (!$whapi_config) {
+            $this->CI->config->load('whapi', TRUE);
+            $whapi_config = $this->CI->config->item('whapi');
+        }
+        
+        // VALEURS PAR DÉFAUT POUR ÉVITER LES ERREURS
+        if ($whapi_config && is_array($whapi_config)) {
+            $this->api_key = isset($whapi_config['api_key']) ? $whapi_config['api_key'] : '';
+            $this->base_url = isset($whapi_config['base_url']) ? rtrim($whapi_config['base_url'], '/') : 'https://gate.whapi.cloud';
+            $this->timeout = isset($whapi_config['timeout']) ? $whapi_config['timeout'] : 60;
+            $this->debug = isset($whapi_config['debug']) ? $whapi_config['debug'] : false;
+            $this->retry_attempts = isset($whapi_config['retry_attempts']) ? $whapi_config['retry_attempts'] : 3;
+            $this->retry_delay = isset($whapi_config['retry_delay']) ? $whapi_config['retry_delay'] : 2000;
+            $this->rate_limit_delay = isset($whapi_config['rate_limit_delay']) ? $whapi_config['rate_limit_delay'] : 1000;
+        } else {
+            // Configuration par défaut si fichier absent
+            $this->api_key = '';
+            $this->base_url = 'https://gate.whapi.cloud';
+            $this->timeout = 60;
+            $this->debug = false;
+            $this->retry_attempts = 3;
+            $this->retry_delay = 2000;
+            $this->rate_limit_delay = 1000;
+        }
+        
+        // Log de débogage
+        if ($this->debug) {
+            log_message('debug', 'WhatsApp_Whapi initialisé - Base URL: ' . $this->base_url);
+            log_message('debug', 'API Key configurée: ' . (empty($this->api_key) ? 'NON' : 'OUI'));
+        }
     }
     
     public function send_text($to, $message, $options = []) {
@@ -104,8 +130,27 @@ class WhatsApp_Whapi {
         return $this->request('POST', '/messages/send', $payload);
     }
     
+    public function send_contact($to, $contacts) {
+        $payload = [
+            'to' => $this->format_number($to),
+            'type' => 'contacts',
+            'contacts' => $contacts
+        ];
+        return $this->request('POST', '/messages/send', $payload);
+    }
+    
     public function react_to_message($message_id, $emoji) {
         return $this->request('POST', '/messages/' . $message_id . '/react', ['emoji' => $emoji]);
+    }
+    
+    public function get_status() {
+        $response = $this->request('GET', '/status');
+        return $response['success'] ? ($response['data'] ?? []) : [];
+    }
+    
+    public function is_connected() {
+        $status = $this->get_status();
+        return isset($status['connected']) && $status['connected'] === true;
     }
     
     public function get_groups() {
@@ -127,12 +172,19 @@ class WhatsApp_Whapi {
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         $data = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
         curl_close($ch);
         
         if ($http_code === 200 && $data) {
+            $dir = dirname($destination_path);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
             file_put_contents($destination_path, $data);
             return true;
         }
+        
+        log_message('error', "Download media failed: HTTP $http_code - " . $curl_error);
         return false;
     }
     
@@ -148,17 +200,30 @@ class WhatsApp_Whapi {
     }
     
     private function request($method, $endpoint, $data = null) {
+        // Vérifier que la clé API est configurée
+        if (empty($this->api_key)) {
+            log_message('error', 'WhatsApp_Whapi: API Key non configurée');
+            return [
+                'success' => false,
+                'error' => 'API Key non configurée',
+                'http_code' => 0
+            ];
+        }
+        
         $attempt = 0;
         
         while ($attempt < $this->retry_attempts) {
             $attempt++;
             
-            $ch = curl_init($this->base_url . $endpoint);
+            $url = $this->base_url . $endpoint;
+            $ch = curl_init($url);
+            
             $headers = [
                 'Authorization: Bearer ' . $this->api_key,
                 'Content-Type: application/json',
                 'Accept: application/json'
             ];
+            
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
@@ -167,7 +232,12 @@ class WhatsApp_Whapi {
             
             if ($method === 'POST') {
                 curl_setopt($ch, CURLOPT_POST, true);
-                if ($data) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+                if ($data) {
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+                }
+            } elseif ($method === 'GET' && $data) {
+                $url .= '?' . http_build_query($data);
+                curl_setopt($ch, CURLOPT_URL, $url);
             }
             
             $response = curl_exec($ch);
@@ -183,9 +253,10 @@ class WhatsApp_Whapi {
             
             // Succès
             if ($http_code >= 200 && $http_code < 300) {
+                $decoded = json_decode($response, true);
                 return [
                     'success' => true,
-                    'data' => json_decode($response, true),
+                    'data' => $decoded,
                     'http_code' => $http_code
                 ];
             }
@@ -203,6 +274,7 @@ class WhatsApp_Whapi {
             // Rate limiting
             if ($http_code === 429) {
                 $retry_after = $this->rate_limit_delay * $attempt;
+                // Chercher Retry-After dans les headers
                 if (preg_match('/Retry-After:\s*(\d+)/i', $response, $matches)) {
                     $retry_after = (int)$matches[1];
                 }
