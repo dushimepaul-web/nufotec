@@ -441,6 +441,7 @@ $route['api/investors/Save'] = 'Investors/Save';
 
 $route['Whatsapp'] = 'Whatsapp/index';
 $route['Webhook_whapi'] = 'Webhook_whapi/index';
+$route['Sync_whapi'] = 'Sync_whapi/index';
 
 
 

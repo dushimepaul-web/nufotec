@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Cron_whapi extends CI_Controller {
+class Cron_whapi extends MY_Controller {
     
     private $antiban;
     private $whatsapp_whapi;
