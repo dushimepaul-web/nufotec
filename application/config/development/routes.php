@@ -439,9 +439,85 @@ $route['api/investors/Save'] = 'Investors/Save';
 
 
 
-$route['Whatsapp'] = 'Whatsapp/index';
-$route['Webhook_whapi'] = 'Webhook_whapi/index';
-$route['Sync_whapi'] = 'Sync_whapi/index';
+
+
+// Route pour les statuts de messages (optionnel)
+$route['webhook/status'] = 'Webhook_whapi/status';
+
+
+// Route avec token optionnel dans l'URL
+$route['webhook/whatsapp/(:any)'] = 'Webhook_whapi/Webhook_whapi/index/$1';
+$route['webhook/whatsapp'] = 'Webhook_whapi/Webhook_whapi/index';
+
+// ==============================================
+// CRON ROUTES (Execution automatique)
+// ==============================================
+// Traitement de la file d'attente
+$route['cron/process-queue'] = 'Cron_whapi/process_queue';
+$route['cron/process-queue/(:any)'] = 'Cron_whapi/process_queue/$1';
+
+// Réessayer les messages échoués
+$route['cron/retry-failed'] = 'Cron_whapi/retry_failed';
+
+// Nettoyage des logs
+$route['cron/cleanup'] = 'Cron_whapi/cleanup_logs';
+$route['cron/cleanup/(:any)'] = 'Cron_whapi/cleanup_logs/$1';
+
+// Monitoring système
+$route['cron/monitor'] = 'Cron_whapi/monitor_whatsapp';
+
+// Anti-spam
+$route['cron/antispam'] = 'Cron_whapi/anti_spam_control';
+
+// Optimisation base de données
+$route['cron/optimize'] = 'Cron_whapi/optimize_database';
+
+// ==============================================
+// SYNC ROUTES (Synchronisation)
+// ==============================================
+// Synchronisation complète
+$route['cron/sync'] = 'Sync_whapi/sync_all';
+$route['sync/all'] = 'Sync_whapi/sync_all';
+
+// Synchronisation groupes uniquement
+$route['cron/sync-groups'] = 'Sync_whapi/sync_groups';
+$route['sync/groups'] = 'Sync_whapi/sync_groups';
+
+// Synchronisation participants
+$route['cron/sync-participants'] = 'Sync_whapi/sync_participants';
+$route['sync/participants'] = 'Sync_whapi/sync_participants';
+
+// Nettoyage groupes supprimés
+$route['sync/cleanup'] = 'Sync_whapi/cleanup_deleted_groups';
+
+
+
+
+// ==============================================
+// API ROUTES (Pour appels externes)
+// ==============================================
+// API Status
+$route['api/status'] = 'api/status/index';
+$route['api/health'] = 'api/status/health';
+
+// API pour envoyer des messages (authentifié)
+$route['api/send'] = 'api/messages/send';
+$route['api/send/text'] = 'api/messages/send_text';
+$route['api/send/media'] = 'api/messages/send_media';
+
+// API pour la queue
+$route['api/queue/stats'] = 'api/queue/stats';
+$route['api/queue/clear'] = 'api/queue/clear';
+
+// ==============================================
+// ROUTES DE TEST (À désactiver en production)
+// ==============================================
+$route['test/webhook'] = 'test/webhook/index';
+$route['test/connection'] = 'test/connection/index';
+$route['test/sync'] = 'test/sync/index';
+
+
+
 
 
 

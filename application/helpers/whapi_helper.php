@@ -1,174 +1,135 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-use GuzzleHttp\Client;
-
-/**
- * Whapi.Cloud Helper pour CodeIgniter 3
- * Envoi de messages WhatsApp vers des groupes via l'API Whapi.Cloud
- */
-
-/**
- * Effectue une requête vers l'API Whapi.Cloud
- *
- * @param string $method Méthode HTTP (GET, POST, etc.)
- * @param string $endpoint Endpoint de l'API (ex: /messages/text)
- * @param array $data Données à envoyer (pour POST)
- * @return array|false Réponse décodée ou false en cas d'erreur
- */
-function _whapi_request($method, $endpoint, $data = [])
-{
-    $CI =& get_instance();
-    $token = $CI->config->item('whapi_token');
-    $base_url = $CI->config->item('whapi_base_url');
-
-    if (empty($token)) {
-        log_message('error', 'Whapi: Token API non configuré');
-        return false;
-    }
-
-    try {
-        $client = new Client([
-            'base_uri' => $base_url,
-            'timeout'  => 30,
-        ]);
-
-        $options = [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Type'  => 'application/json',
-                'Accept'        => 'application/json',
-            ],
-        ];
-
-        if (!empty($data) && $method === 'POST') {
-            $options['json'] = $data;
+if (!function_exists('format_phone')) {
+    function format_phone($phone) {
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (substr($phone, 0, 1) == '0') {
+            $phone = '62' . substr($phone, 1);
         }
-
-        $response = $client->request($method, $endpoint, $options);
-        $body = $response->getBody()->getContents();
-        return json_decode($body, true);
-
-    } catch (Exception $e) {
-        log_message('error', 'Whapi API Error: ' . $e->getMessage());
-        return false;
-    }
-}
-
-/**
- * Envoie un message texte à un groupe WhatsApp
- *
- * @param string $group_id ID du groupe (sans @g.us)
- * @param string $message Contenu du message
- * @return array|false Réponse de l'API ou false
- */
-function send_whapi_text($group_id, $message)
-{
-    $endpoint = '/messages/text';
-    $data = [
-        'to'   => $group_id . '@g.us',
-        'body' => $message,
-    ];
-    return _whapi_request('POST', $endpoint, $data);
-}
-
-/**
- * Envoie une image à un groupe WhatsApp
- *
- * @param string $group_id ID du groupe
- * @param string $image_url URL publique de l'image
- * @param string $caption Légende (optionnel)
- * @return array|false
- */
-function send_whapi_image($group_id, $image_url, $caption = '')
-{
-    $endpoint = '/messages/image';
-    $data = [
-        'to'    => $group_id . '@g.us',
-        'media' => $image_url,
-        'body'  => $caption,
-    ];
-    return _whapi_request('POST', $endpoint, $data);
-}
-
-/**
- * Envoie une vidéo à un groupe WhatsApp
- *
- * @param string $group_id ID du groupe
- * @param string $video_url URL publique de la vidéo
- * @param string $caption Légende
- * @return array|false
- */
-function send_whapi_video($group_id, $video_url, $caption = '')
-{
-    $endpoint = '/messages/video';
-    $data = [
-        'to'    => $group_id . '@g.us',
-        'media' => $video_url,
-        'body'  => $caption,
-    ];
-    return _whapi_request('POST', $endpoint, $data);
-}
-
-/**
- * Envoie un document (PDF, etc.) à un groupe WhatsApp
- *
- * @param string $group_id ID du groupe
- * @param string $document_url URL publique du document
- * @param string $filename Nom du fichier (optionnel)
- * @return array|false
- */
-function send_whapi_document($group_id, $document_url, $filename = '')
-{
-    $endpoint = '/messages/document';
-    $data = [
-        'to'       => $group_id . '@g.us',
-        'media'    => $document_url,
-        'filename' => $filename,
-    ];
-    return _whapi_request('POST', $endpoint, $data);
-}
-
-/**
- * Récupère la liste des groupes WhatsApp connectés
- *
- * @return array|false Liste des groupes ou false
- */
-function get_whapi_groups()
-{
-    $endpoint = '/groups';
-    return _whapi_request('GET', $endpoint);
-}
-
-/**
- * Envoie un message à plusieurs groupes à la fois
- *
- * @param array $group_ids Liste des IDs de groupes
- * @param string $message Contenu du message
- * @param string $media_url URL du média (optionnel)
- * @param string $media_type Type de média (image, video, document)
- * @return array Résultats par groupe
- */
-function send_whapi_bulk_to_groups($group_ids, $message, $media_url = null, $media_type = 'text')
-{
-    $results = [];
-    foreach ($group_ids as $group_id) {
-        switch ($media_type) {
-            case 'image':
-                $result = send_whapi_image($group_id, $media_url, $message);
-                break;
-            case 'video':
-                $result = send_whapi_video($group_id, $media_url, $message);
-                break;
-            case 'document':
-                $result = send_whapi_document($group_id, $media_url);
-                break;
-            default:
-                $result = send_whapi_text($group_id, $message);
+        if (substr($phone, 0, 1) != '6') {
+            $phone = '62' . $phone;
         }
-        $results[$group_id] = $result;
-        // Petit délai pour éviter la surcharge
-        usleep(500000); // 0.5 seconde
+        return $phone;
     }
-    return $results;
+}
+
+if (!function_exists('random_delay')) {
+    function random_delay($min = 5, $max = 15) {
+        $delay = rand($min, $max);
+        usleep($delay * 1000000);
+        return $delay;
+    }
+}
+
+if (!function_exists('smart_delay')) {
+    function smart_delay() {
+        $hour = date('H');
+        
+        // Délais intelligents selon l'heure
+        if ($hour >= 22 || $hour < 6) {
+            // Nuit : plus lent (15-30 secondes)
+            $delay = rand(15, 30);
+        } elseif ($hour >= 12 && $hour <= 14) {
+            // Heure de pointe : moyen (8-20 secondes)
+            $delay = rand(8, 20);
+        } else {
+            // Journée normale : standard (5-15 secondes)
+            $delay = rand(5, 15);
+        }
+        
+        // Variation aléatoire ±20%
+        $variation = $delay * (rand(-20, 20) / 100);
+        $final_delay = max(3, $delay + $variation);
+        
+        usleep($final_delay * 1000000);
+        return $final_delay;
+    }
+}
+
+if (!function_exists('sanitize_message')) {
+    function sanitize_message($message) {
+        $message = strip_tags($message);
+        $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+        $message = preg_replace('/[^\x20-\x7E\x0A\x0D]/', '', $message);
+        return trim($message);
+    }
+}
+
+if (!function_exists('contains_link')) {
+    function contains_link($message) {
+        $pattern = '/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(\/\S*)?)/';
+        return preg_match($pattern, $message);
+    }
+}
+
+if (!function_exists('contains_mention')) {
+    function contains_mention($message) {
+        return preg_match('/@[a-zA-Z0-9]+/', $message);
+    }
+}
+
+if (!function_exists('contains_phone')) {
+    function contains_phone($message) {
+        return preg_match('/[0-9]{10,}/', $message);
+    }
+}
+
+if (!function_exists('log_whatsapp')) {
+    function log_whatsapp($order_request_id, $product_id, $phone_number, $message_content, $message_type, $status, $error_message = null) {
+        $CI = &get_instance();
+        $data = array(
+            'order_request_id' => $order_request_id,
+            'product_id' => $product_id,
+            'phone_number' => format_phone($phone_number),
+            'message_content' => $message_content,
+            'message_type' => $message_type,
+            'status' => $status,
+            'error_message' => $error_message,
+            'sent_at' => date('Y-m-d H:i:s')
+        );
+        return $CI->db->insert('whatsapp_logs', $data);
+    }
+}
+
+if (!function_exists('media_type_detect')) {
+    function media_type_detect($file_path) {
+        $mime_types = array(
+            'image' => array('image/jpeg', 'image/png', 'image/gif', 'image/webp'),
+            'video' => array('video/mp4', 'video/webm', 'video/quicktime'),
+            'audio' => array('audio/mpeg', 'audio/ogg', 'audio/wav'),
+            'document' => array('application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+            'sticker' => array('image/webp')
+        );
+        
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file_path);
+        finfo_close($finfo);
+        
+        foreach ($mime_types as $type => $mimes) {
+            if (in_array($mime, $mimes)) {
+                return $type;
+            }
+        }
+        return 'document';
+    }
+}
+
+if (!function_exists('is_admin_number')) {
+    function is_admin_number($phone) {
+        $CI = &get_instance();
+        $CI->load->library('whapi_library');
+        $admins = $CI->whapi_library->get_setting('admin_numbers');
+        $admin_numbers = json_decode($admins, true) ?: [];
+        return in_array(format_phone($phone), $admin_numbers);
+    }
+}
+
+if (!function_exists('parse_template')) {
+    function parse_template($content, $variables = []) {
+        foreach ($variables as $key => $value) {
+            $content = str_replace('{{' . $key . '}}', $value, $content);
+        }
+        return $content;
+    }
 }
