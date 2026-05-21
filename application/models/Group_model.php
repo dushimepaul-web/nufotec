@@ -23,7 +23,7 @@ class Group_model extends CI_Model {
         return $this->db->get('groupes_whatsapp')->num_rows() > 0;
     }
     
-    public function upsert_group($groupe_id, $nom = null, $description = null, $participant_count = null) {
+    public function upsert_group($groupe_id, $nom = null, $description = null) {
         $this->db->where('groupe_id', $groupe_id);
         $exists = $this->db->get('groupes_whatsapp')->row();
         
@@ -33,7 +33,6 @@ class Group_model extends CI_Model {
         ];
         if ($nom) $data['nom'] = $nom;
         if ($description) $data['description'] = $description;
-        if ($participant_count !== null) $data['participant_count'] = $participant_count;
         
         if ($exists) {
             $this->db->where('id', $exists->id);
@@ -45,28 +44,13 @@ class Group_model extends CI_Model {
         }
     }
     
-    public function update_participant_count($groupe_id, $count) {
+    public function toggle_status($groupe_id, $actif) {
         $this->db->where('groupe_id', $groupe_id);
-        return $this->db->update('groupes_whatsapp', ['participant_count' => $count]);
-    }
-    
-    public function update_last_sync($groupe_id) {
-        $this->db->where('groupe_id', $groupe_id);
-        return $this->db->update('groupes_whatsapp', ['last_sync_at' => date('Y-m-d H:i:s')]);
-    }
-    
-    public function disable_group($groupe_id) {
-        $this->db->where('groupe_id', $groupe_id);
-        return $this->db->update('groupes_whatsapp', ['actif' => 0]);
+        return $this->db->update('groupes_whatsapp', ['actif' => $actif ? 1 : 0]);
     }
     
     public function delete_group($groupe_id) {
         $this->db->where('groupe_id', $groupe_id);
         return $this->db->delete('groupes_whatsapp');
-    }
-    
-    public function toggle_status($groupe_id, $actif) {
-        $this->db->where('groupe_id', $groupe_id);
-        return $this->db->update('groupes_whatsapp', ['actif' => $actif]);
     }
 }

@@ -48,18 +48,6 @@ class Queue_model extends CI_Model {
         return $this->db->query($sql, [$limit])->result();
     }
     
-    public function get_processing_messages() {
-        $this->db->where('status', 'processing');
-        return $this->db->get('wa_messages_queue')->result();
-    }
-    
-    public function get_failed_messages($limit = 50) {
-        $this->db->where('status', 'failed');
-        $this->db->order_by('id', 'DESC');
-        $this->db->limit($limit);
-        return $this->db->get('wa_messages_queue')->result();
-    }
-    
     public function update_status($id, $status, $error = null) {
         $data = ['status' => $status];
         if ($status == 'sent') {
@@ -79,6 +67,47 @@ class Queue_model extends CI_Model {
         return $this->db->update('wa_messages_queue');
     }
     
+    public function log_broadcast($queue_id, $recipient_type, $recipient_id, $status, $error = null) {
+        $this->db->insert('broadcast_logs', [
+            'queue_id' => $queue_id,
+            'recipient_type' => $recipient_type,
+            'recipient_id' => $recipient_id,
+            'status' => $status,
+            'error_message' => $error,
+            'sent_at' => date('Y-m-d H:i:s')
+        ]);
+    }
+    
+    public function get_recipients_by_target_type($message) {
+        $recipients = ['groups' => [], 'participants' => []];
+        
+        if ($message->target_type == 'groups' || $message->target_type == 'both') {
+            $this->db->where('actif', 1);
+            $recipients['groups'] = $this->db->get('groupes_whatsapp')->result();
+        }
+        
+        if ($message->target_type == 'inbox' || $message->target_type == 'both') {
+            $sql = "SELECT DISTINCT phone, MAX(name) as name 
+                    FROM whatsapp_participants 
+                    WHERE is_blocked = 0 
+                    GROUP BY phone";
+            $recipients['participants'] = $this->db->query($sql)->result();
+        }
+        
+        return $recipients;
+    }
+    
+    public function get_processing_messages() {
+        $this->db->where('status', 'processing');
+        return $this->db->get('wa_messages_queue')->result();
+    }
+    
+    public function get_failed_messages($limit = 50) {
+        $this->db->where('status', 'failed');
+        $this->db->limit($limit);
+        return $this->db->get('wa_messages_queue')->result();
+    }
+    
     public function retry_message($queue_id) {
         $this->db->where('id', $queue_id);
         return $this->db->update('wa_messages_queue', [
@@ -91,38 +120,5 @@ class Queue_model extends CI_Model {
     public function cancel_message($queue_id) {
         $this->db->where('id', $queue_id);
         return $this->db->update('wa_messages_queue', ['status' => 'cancelled']);
-    }
-    
-    public function log_broadcast($queue_id, $recipient_type, $recipient_id, $status, $error = null) {
-        $this->db->insert('broadcast_logs', [
-            'queue_id' => $queue_id,
-            'recipient_type' => $recipient_type,
-            'recipient_id' => $recipient_id,
-            'status' => $status,
-            'error_message' => $error,
-            'sent_at' => ($status == 'sent') ? date('Y-m-d H:i:s') : null,
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
-    }
-    
-    public function get_recipients_by_target_type($message) {
-        $recipients = [
-            'groups' => [],
-            'participants' => []
-        ];
-        
-        if ($message->target_type == 'groups' || $message->target_type == 'both') {
-            $this->db->where('actif', 1);
-            $recipients['groups'] = $this->db->get('groupes_whatsapp')->result();
-        }
-        
-        if ($message->target_type == 'inbox' || $message->target_type == 'both') {
-            $sql = "SELECT DISTINCT participant_phone, participant_name 
-                    FROM whatsapp_participants 
-                    WHERE is_blocked = 0";
-            $recipients['participants'] = $this->db->query($sql)->result();
-        }
-        
-        return $recipients;
     }
 }

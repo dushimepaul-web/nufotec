@@ -11,21 +11,27 @@ $config['whapi'] = array(
     'retry_attempts' => 3,
     'retry_delay' => 2000,
     'rate_limit_delay' => 1000,
-    'webhook_secret' => '',
+    'webhook_secret' => 'nufotecburundi2026',
     'media_storage_path' => FCPATH . 'uploads/whatsapp_media/',
     'tmp_path' => FCPATH . 'tmp/'
 );
 
-$config['admin_numbers'] = ['25779666439'];
+// NUMÉROS ADMIN (votre numéro WhatsApp)
+$config['admin_numbers'] = ['25779666439', '25768863945'];
 
+// Types autorisés pour les membres (SEULEMENT TEXTE)
 $config['allowed_for_members'] = ['text'];
 
+// Patterns bloqués pour les membres (liens)
 $config['blocked_patterns'] = [
     '/https?:\/\//i',
     '/www\.[a-z0-9\.\-]+/i',
-    '/\.(com|org|net|fr|cm|info|biz)/i'
+    '/\.(com|org|net|fr|cm|info|biz|io|ai)/i',
+    '/wa\.me\//i',
+    '/chat\.whatsapp\.com\//i'
 ];
 
+// Paramètres Anti-Ban
 $config['antiban'] = [
     'min_delay_micro' => 500000,
     'max_delay_micro' => 1500000,
