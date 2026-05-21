@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Webhook_whapi extends MY_Controller {
+class Webhook_whapi extends CI_Controller {
     
     public function __construct() {
         parent::__construct();
@@ -13,37 +13,18 @@ class Webhook_whapi extends MY_Controller {
         $this->load->model('Inbox_model');
         $this->load->helper('whatsapp');
         
-        // Charger la configuration whapi avant la library
+        // Charger la configuration
         if ($this->config->item('whapi') === null) {
             $this->config->load('whapi', TRUE);
         }
         
-        // Charger la library après la config
+        // Charger les libraries
         $this->load->library('WhatsApp_Whapi');
         $this->load->library('AntiBan');
     }
     
     public function index() {
-        // Récupérer les headers de manière compatible
-        $received_token = '';
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            $received_token = $headers['X-Whapi-Token'] ?? '';
-        }
-        
-        // Alternative si getallheaders n'existe pas
-        if (empty($received_token)) {
-            $received_token = $this->input->get_request_header('X-Whapi-Token');
-        }
-        
-        $expected_token = $this->config->item('whapi')['webhook_secret'] ?? '';
-        
-        if (!$expected_token || $received_token !== $expected_token) {
-            log_message('error', 'Webhook appelé avec token invalide');
-            $this->output->set_status_header(401);
-            echo json_encode(['status' => 'unauthorized']);
-            return;
-        }
+        // PAS DE VÉRIFICATION DE SÉCURITÉ !
         
         $input = json_decode(file_get_contents('php://input'), true);
         
@@ -119,20 +100,6 @@ class Webhook_whapi extends MY_Controller {
             $this->broadcast_to_all($media_data, $sender, $sender_name, $target_type);
             log_message('info', "Broadcast admin depuis {$sender} vers {$target_type}");
         }
-    }
-    
-    private function download_media_locally($url, $type) {
-        $storage_path = $this->config->item('whapi')['media_storage_path'] ?? FCPATH . 'uploads/whatsapp_media/';
-        if (!is_dir($storage_path)) mkdir($storage_path, 0755, true);
-        
-        $ext = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-        $filename = uniqid() . '.' . ($ext ?: 'bin');
-        $local_file = $storage_path . $filename;
-        
-        if ($this->whatsapp_whapi->download_media($url, $local_file)) {
-            return 'uploads/whatsapp_media/' . $filename;
-        }
-        return null;
     }
     
     private function extract_media_content($message, $type) {
