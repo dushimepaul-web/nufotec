@@ -179,52 +179,6 @@
     </div>
 </footer>
 
-<!-- Mobile Sticky Footer (App Style) -->
-<div class="mobile-sticky-footer d-lg-none">
-    <a href="<?= base_url() ?>" class="sticky-nav-item <?= (current_url() == base_url()) ? 'active' : '' ?>">
-        <i class="bi bi-house-door-fill"></i>
-        <span>Accueil</span>
-    </a>
-    <a href="<?= base_url('Products') ?>" class="sticky-nav-item">
-        <i class="bi bi-shop"></i>
-        <span>Boutique</span>
-    </a>
-    <a href="<?= base_url('Medicins') ?>" class="sticky-nav-item">
-        <i class="bi bi-camera-video"></i>
-        <span>Téléconsultation</span>
-    </a>
-    <a href="<?= base_url('#') ?>" class="sticky-nav-item">
-        <i class="bi bi-graph-up-arrow"></i>
-        <span>Investir</span>
-    </a>
-    <a href="<?= base_url('media') ?>" class="sticky-nav-item">
-        <i class="bi bi-collection"></i>
-        <span>Médias</span>
-    </a>
-    
-    <?php
-    // Récupération des données utilisateur
-    $logged_in = $this->session->userdata('logged_in') === TRUE;
-    $user_photo = $this->session->userdata('photo');
-    
-    $account_url = $logged_in ? base_url('home-patient') : base_url('Auth');
-    $account_label = $logged_in ? 'Mon compte' : 'Se connecter';
-    ?>
-    
-    <!-- Lien Compte (mobile) -->
-    <a href="<?= $account_url ?>" class="sticky-nav-item" title="<?= $account_label ?>">
-        <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH . 'attachments/Users/' . $user_photo)): ?>
-            <div class="sticky-avatar-mini">
-                <img src="<?= base_url('attachments/Users/' . $user_photo) ?>" alt="Avatar" class="avatar-img">
-            </div>
-        <?php elseif ($logged_in): ?>
-            <img src="<?= base_url('assets/img/default-avatar.png') ?>" alt="Avatar" class="avatar default-avatar">
-        <?php else: ?>
-            <i class="bi bi-person-circle"></i>
-        <?php endif; ?>
-        <span><?= $account_label ?></span>
-    </a>
-</div>
 
 <!-- Footer Styles -->
 <style>

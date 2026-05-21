@@ -1025,7 +1025,7 @@ function googleTranslateElementInit(){
     <li><a href="<?= base_url() ?>" class="nuf-bottom-link"><i class="bi bi-house-door"></i><span>Accueil</span></a></li>
     <li><a href="<?= base_url('Products') ?>" class="nuf-bottom-link"><i class="bi bi-box-seam"></i><span>Boutique</span></a></li>
     <li><a href="<?= base_url('Medicins') ?>" class="nuf-bottom-link"><i class="bi bi-camera-video"></i><span>Consult.</span></a></li>
-    <li><a href="<?= base_url('Home/Contact') ?>" class="nuf-bottom-link"><i class="bi bi-envelope"></i><span>Contact</span></a></li>
+    <li><a href="<?= base_url('media') ?>" class="nuf-bottom-link"><i class="bi bi-collection-play"></i><span>media</span></a></li>
     <li>
       <a href="<?= $logged_in ? base_url('home-patient') : base_url('auth') ?>" class="nuf-bottom-link">
         <i class="bi bi-person"></i><span><?= $logged_in ? 'Compte' : 'Connexion' ?></span>
