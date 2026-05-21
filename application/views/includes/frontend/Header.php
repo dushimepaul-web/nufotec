@@ -153,12 +153,15 @@ body { top:0!important; margin-top:0!important; }
   max-width:1400px; margin:0 auto;
   height:100%; padding:0 20px;
   display:flex; align-items:center; gap:14px;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 /* Brand */
 .nuf-brand {
   display:flex; align-items:center; gap:10px;
   text-decoration:none; flex-shrink:0;
+  order: 1;
 }
 .nuf-brand-logo {
   width:44px; height:44px; border-radius:var(--r-sm);
@@ -182,7 +185,7 @@ body { top:0!important; margin-top:0!important; }
 
 /* Search */
 .nuf-search {
-  flex:1; max-width:460px; position:relative; transition:var(--tr);
+  flex:1; max-width:460px; position:relative; transition:var(--tr); margin: 0 auto; order: 2;
 }
 .nuf-search-input {
   width:100%; height:40px;
@@ -220,7 +223,7 @@ body { top:0!important; margin-top:0!important; }
 
 
 /* Actions */
-.nuf-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left: auto; }
+.nuf-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left: auto; order:3; }
 .nuf-action-btn {
   display:flex; align-items:center; justify-content:center; gap:5px;
   padding:9px; border-radius:var(--r-sm); border:none; background:transparent;
@@ -606,7 +609,7 @@ body { top:0!important; margin-top:0!important; }
 </head>
 <body>
 
-<!-- LOADER -->
+<!-- LOADER 
 <div class="nuf-loader" id="nufLoader">
   <div class="nuf-loader-ring">
     <div class="nuf-loader-ring-track"></div>
@@ -615,7 +618,7 @@ body { top:0!important; margin-top:0!important; }
          alt="NUFOTEC" onerror="this.src='<?= base_url('assets/images/logo.png') ?>'">
   </div>
   <div class="nuf-loader-text"><?= $this->Model->get_setting('site_name','NUFOTEC BURUNDI') ?></div>
-</div>
+</div>-->
 
 <!-- GOOGLE TRANSLATE (caché) -->
 <div id="google_translate_element" style="display:none;"></div>
@@ -889,13 +892,21 @@ function googleTranslateElementInit(){
 <div class="nuf-overlay" id="nufOverlay"></div>
 <div class="nuf-panel" id="nufPanel">
 
-  <div class="nuf-panel-head">
+ <div class="nuf-panel-head">
     <button class="nuf-panel-close" id="nufPanelClose"><i class="bi bi-x-lg"></i></button>
     <div class="nuf-panel-user">
-      <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH.'attachments/Users/'.$user_photo)): ?>
-        <img src="<?= base_url('attachments/Users/'.$user_photo) ?>" alt="Avatar" class="nuf-panel-avatar">
+      <?php if ($logged_in): ?>
+        <?php if (!empty($user_photo) && file_exists(FCPATH.'attachments/Users/'.$user_photo)): ?>
+          <img src="<?= base_url('attachments/Users/'.$user_photo) ?>" alt="Avatar" class="nuf-panel-avatar">
+        <?php else: ?>
+          <div class="nuf-panel-avatar" style="display: flex; align-items: center; justify-content: center;">
+            <?= $initials ?>
+          </div>
+        <?php endif; ?>
       <?php else: ?>
-        <div class="nuf-panel-avatar"><?= $initials ?></div>
+        <div class="nuf-panel-avatar" style="display: flex; align-items: center; justify-content: center; background: transparent; border: 2px solid var(--accent);">
+          <i class="bi bi-person-circle" style="font-size: 32px; color: var(--accent);"></i>
+        </div>
       <?php endif; ?>
       <div class="nuf-panel-userinfo">
         <h4><?= $logged_in ? htmlspecialchars($user_name) : 'Bienvenue' ?></h4>
@@ -1059,7 +1070,7 @@ function googleTranslateElementInit(){
 
   /* ---------------------------------------------------------------
      LOADER
-  --------------------------------------------------------------- */
+  --------------------------------------------------------------- 
   window.addEventListener('load', function () {
     var loader = document.getElementById('nufLoader');
     if (loader) {
@@ -1069,7 +1080,7 @@ function googleTranslateElementInit(){
       }, 600);
     }
   });
-
+*/
   /* ---------------------------------------------------------------
      HEADER SCROLL
   --------------------------------------------------------------- */
