@@ -11,16 +11,22 @@ class Webhook_whapi extends MX_Controller {
     }
 
     public function index($token = null) {
+        // Lire le payload AVANT tout output
         $raw_input = file_get_contents('php://input');
         $input     = json_decode($raw_input, true);
 
         // ==============================================
-        // CORRECTION CRITIQUE : répondre 200 OK IMMÉDIATEMENT
-        // avant tout traitement pour éviter le ETIMEDOUT.
-        // CodeIgniter bufferise la sortie via set_output(),
-        // donc Whapi ne reçoit le 200 qu'à la fin de l'exécution.
-        // On bypass CI et on flush manuellement ici.
+        // CORRECTION : LiteSpeed/CI bufferise tout.
+        // On désactive le buffer CI, on vide tout ce qui
+        // pourrait être en attente, puis on envoie notre 200.
         // ==============================================
+
+        // Vider tout buffer ouvert par CI ou LiteSpeed
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        // Envoyer la réponse 200 immédiatement
         http_response_code(200);
         header('Content-Type: application/json');
         header('Connection: close');
@@ -30,19 +36,17 @@ class Webhook_whapi extends MX_Controller {
         header('Content-Length: ' . strlen($response_body));
         echo $response_body;
 
-        // Vider tous les buffers de sortie et fermer la connexion
-        if (ob_get_level()) {
-            ob_end_flush();
-        }
+        // Flush et fermer la connexion côté client
+        ob_start();
+        ob_end_flush();
         flush();
 
-        // À partir d'ici, le client (Whapi) a reçu sa réponse 200.
-        // On continue le traitement en arrière-plan.
         if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request(); // Pour PHP-FPM : libère la connexion immédiatement
+            fastcgi_finish_request();
         }
 
-        // Payload vide : rien à traiter
+        // --- Traitement en arrière-plan ---
+
         if (!$input) {
             log_message('error', 'Webhook: payload vide');
             return;
@@ -64,17 +68,14 @@ class Webhook_whapi extends MX_Controller {
     }
 
     private function process_message($payload) {
-        // ==============================================
-        // 1. IGNORER LES MESSAGES DU BOT (fromMe)
-        // ==============================================
+
+        // 1. Ignorer messages du bot
         if (!empty($payload['fromMe']) || !empty($payload['isFromMe'])) {
             log_message('debug', 'Webhook: message du bot ignoré');
             return;
         }
 
-        // ==============================================
-        // 2. EXTRAIRE LES DONNÉES
-        // ==============================================
+        // 2. Extraire les données
         $message_type = $payload['type'] ?? 'unknown';
         $message_id   = $payload['id'] ?? null;
 
@@ -110,13 +111,12 @@ class Webhook_whapi extends MX_Controller {
         }
 
         // Médias
-        $media_types   = ['image', 'video', 'audio', 'document', 'sticker'];
-        $has_media     = in_array($message_type, $media_types);
-        $media_url     = null;
-        $media_caption = null;
+        $media_types = ['image', 'video', 'audio', 'document', 'sticker'];
+        $has_media   = in_array($message_type, $media_types);
+        $media_url   = null;
 
         if ($has_media && isset($payload[$message_type])) {
-            $media_url     = $payload[$message_type]['url'] ?? $payload[$message_type]['link'] ?? null;
+            $media_url    = $payload[$message_type]['url'] ?? $payload[$message_type]['link'] ?? null;
             $media_caption = $payload[$message_type]['caption'] ?? null;
             if ($media_caption) {
                 $message_text = $media_caption;
@@ -128,28 +128,26 @@ class Webhook_whapi extends MX_Controller {
             return;
         }
 
-        $message_text = sanitize_message($message_text);
+        $message_text  = sanitize_message($message_text);
+        $sender_clean  = format_phone($sender);
 
-        // ==============================================
-        // 3. VÉRIFIER BLACKLIST
-        // ==============================================
+        // 3. Vérifier blacklist
         $is_blacklisted = $this->db
-            ->where('phone_number', format_phone($sender))
+            ->where('phone_number', $sender_clean)
             ->get('whatsapp_blacklist')
             ->num_rows() > 0;
 
         if ($is_blacklisted) {
-            log_message('info', "Webhook: message ignoré - $sender est blacklisté");
+            log_message('info', "Webhook: $sender est blacklisté");
             return;
         }
 
-        // ==============================================
-        // 4. DÉTECTER SI ADMIN
-        // ==============================================
+        // 4. Détecter si admin
+        // — Via la liste admin_numbers en settings
         $admin_numbers = json_decode($this->whapi_library->get_setting('admin_numbers') ?? '[]', true) ?: [];
-        $sender_clean  = format_phone($sender);
         $is_admin      = in_array($sender_clean, $admin_numbers);
 
+        // — Via la table whatsapp_participants (admin groupe)
         if (!$is_admin && $is_group && $chat_id) {
             $is_admin = $this->db
                 ->where('groupe_id', $chat_id)
@@ -159,17 +157,13 @@ class Webhook_whapi extends MX_Controller {
                 ->num_rows() > 0;
         }
 
-        // ==============================================
-        // 5. SYNC GROUPE ET PARTICIPANT
-        // ==============================================
+        // 5. Sync groupe et participant
         if ($is_group && $chat_id) {
             $this->_upsert_group($chat_id, $payload['chat']['name'] ?? $payload['chatName'] ?? null);
             $this->_upsert_participant($chat_id, $sender, $payload['pushName'] ?? $payload['notifyName'] ?? null);
         }
 
-        // ==============================================
-        // 6. RÈGLES DE SÉCURITÉ POUR NON-ADMINS
-        // ==============================================
+        // 6. Règles sécurité pour non-admins
         $master_group_id = $this->whapi_library->get_setting('master_group_id');
         $is_master_group = ($chat_id === $master_group_id);
 
@@ -195,18 +189,15 @@ class Webhook_whapi extends MX_Controller {
                 if ($message_id) {
                     $this->whapi_library->delete_message($message_id);
                 }
-
                 $this->db->insert('whatsapp_security_logs', [
                     'group_id'    => $chat_id,
-                    'sender'      => format_phone($sender),
+                    'sender'      => $sender_clean,
                     'action_type' => $violation_reason,
                     'reason'      => 'Message supprimé automatiquement - non-admin',
                     'created_at'  => date('Y-m-d H:i:s')
                 ]);
-
                 $this->_increment_violation($sender);
-
-                log_message('info', "Webhook: violation $violation_reason de $sender dans " . ($chat_id ?? 'prive'));
+                log_message('info', "Webhook: violation $violation_reason de $sender");
                 return;
             }
 
@@ -214,11 +205,9 @@ class Webhook_whapi extends MX_Controller {
             return;
         }
 
-        // ==============================================
-        // 7. ADMIN - TRAITEMENT DU BROADCAST
-        // ==============================================
+        // 7. Admin — broadcast depuis le groupe maître uniquement
         if (!$is_master_group) {
-            log_message('debug', "Webhook: message admin dans groupe cible, pas de broadcast");
+            log_message('debug', "Webhook: admin hors groupe maître, pas de broadcast");
             return;
         }
 
@@ -247,47 +236,32 @@ class Webhook_whapi extends MX_Controller {
         log_whatsapp(null, null, $sender, $message_text, $message_type, 'received');
 
         $message_data = [
-            'type'       => $message_type,
-            'text'       => $message_text,
-            'group_id'   => $chat_id,
-            'sender'     => $sender,
-            'message_id' => $message_id,
-            'target_type'=> $target_type,
-            'has_media'  => $has_media,
-            'media_url'  => $media_url,
-            'media_type' => $message_type
+            'type'        => $message_type,
+            'text'        => $message_text,
+            'group_id'    => $chat_id,
+            'sender'      => $sender,
+            'message_id'  => $message_id,
+            'target_type' => $target_type,
+            'has_media'   => $has_media,
+            'media_url'   => $media_url,
+            'media_type'  => $message_type
         ];
 
+        // CORRECTION : distribute_message est public dans Whapi_library
+        // La vérification is_group_admin est faite ICI dans le contrôleur,
+        // donc on passe directement à la distribution (pas de double vérification)
         $result = $this->whapi_library->distribute_message($message_data, $sender);
 
-        log_message('info', "Webhook: broadcast admin $sender vers $target_type - " . json_encode($result));
+        log_message('info', "Webhook: broadcast $sender vers $target_type - " . json_encode($result));
     }
 
-    private function process_statuses($statuses) {
-        if (!is_array($statuses)) return;
-
-        foreach ($statuses as $status) {
-            $message_id  = $status['id'] ?? null;
-            $status_type = $status['type'] ?? null;
-
-            if ($message_id) {
-                $this->db->where('message_id', $message_id);
-                $this->db->update('whatsapp_queue', [
-                    'delivery_status' => $status_type,
-                    'updated_at'      => date('Y-m-d H:i:s')
-                ]);
-            }
-        }
-    }
-
-    // ==============================================
-    // MÉTHODES PRIVÉES
-    // ==============================================
+    // -----------------------------------------------
+    // Méthodes privées utilitaires
+    // -----------------------------------------------
 
     private function _upsert_group($groupe_id, $nom = null) {
         $exists = $this->db->get_where('groupes_whatsapp', ['groupe_id' => $groupe_id])->row();
-
-        $data = ['groupe_id' => $groupe_id, 'updated_at' => date('Y-m-d H:i:s')];
+        $data   = ['groupe_id' => $groupe_id, 'updated_at' => date('Y-m-d H:i:s')];
         if ($nom) $data['nom'] = $nom;
 
         if ($exists) {
@@ -301,12 +275,10 @@ class Webhook_whapi extends MX_Controller {
 
     private function _upsert_participant($groupe_id, $phone, $name = null) {
         $phone_formatted = format_phone($phone);
-
         $exists = $this->db
             ->where('groupe_id', $groupe_id)
             ->where('phone_formatted', $phone_formatted)
-            ->get('whatsapp_participants')
-            ->row();
+            ->get('whatsapp_participants')->row();
 
         $data = [
             'groupe_id'       => $groupe_id,
@@ -327,26 +299,25 @@ class Webhook_whapi extends MX_Controller {
 
     private function _increment_violation($phone) {
         $phone_formatted = format_phone($phone);
-
-        $participant = $this->db
+        $participant     = $this->db
             ->where('phone_formatted', $phone_formatted)
-            ->get('whatsapp_participants')
-            ->row();
+            ->get('whatsapp_participants')->row();
 
         if (!$participant) return;
 
         $new_count = ($participant->violation_count ?? 0) + 1;
+        $this->db->where('phone_formatted', $phone_formatted)
+                 ->update('whatsapp_participants', ['violation_count' => $new_count]);
 
-        $this->db->where('phone_formatted', $phone_formatted);
-        $this->db->update('whatsapp_participants', ['violation_count' => $new_count]);
-
-        // Blacklist automatique après 5 violations
         if ($new_count >= 5) {
-            $this->db->insert('whatsapp_blacklist', [
-                'phone_number' => $phone_formatted,
-                'reason'       => 'Auto-blacklist: 5 violations',
-                'created_at'   => date('Y-m-d H:i:s')
-            ]);
+            $already = $this->db->get_where('whatsapp_blacklist', ['phone_number' => $phone_formatted])->row();
+            if (!$already) {
+                $this->db->insert('whatsapp_blacklist', [
+                    'phone_number' => $phone_formatted,
+                    'reason'       => 'Auto-blacklist: 5 violations',
+                    'created_at'   => date('Y-m-d H:i:s')
+                ]);
+            }
             log_message('info', "Webhook: $phone auto-blacklisté après $new_count violations");
         }
     }

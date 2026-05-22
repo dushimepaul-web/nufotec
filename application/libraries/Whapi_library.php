@@ -376,31 +376,9 @@ class Whapi_library {
         $target_type = $message_data['target_type'] ?? 'both';
         $distributed_to = [];
 
+        // Les vérifications admin/sécurité sont faites dans le contrôleur webhook.
+        // distribute_message() ne reçoit QUE des messages déjà validés (admin, groupe maître).
         $is_master_group = ($message_data['group_id'] === $this->master_group_id);
-        $is_admin        = $this->is_group_admin($message_data['group_id'], $sender_phone);
-
-        if (!$is_admin) {
-            if ($message_data['has_media']) {
-                $this->log_security_event($message_data['group_id'], $sender_phone, 'unauthorized_media', 'Non-admin tried to send media');
-                $this->delete_message($message_data['message_id']);
-                return ['error' => 'Non-admins cannot send media in any group'];
-            }
-            if (contains_link($message_data['text'])) {
-                $this->log_security_event($message_data['group_id'], $sender_phone, 'unauthorized_link', 'Non-admin tried to send link');
-                $this->delete_message($message_data['message_id']);
-                return ['error' => 'Non-admins cannot send links in any group'];
-            }
-            if (contains_mention($message_data['text'])) {
-                $this->log_security_event($message_data['group_id'], $sender_phone, 'unauthorized_mention', 'Non-admin tried to mention someone');
-                $this->delete_message($message_data['message_id']);
-                return ['error' => 'Non-admins cannot use mentions'];
-            }
-            if (contains_phone($message_data['text'])) {
-                $this->log_security_event($message_data['group_id'], $sender_phone, 'unauthorized_phone', 'Non-admin tried to share phone number');
-                $this->delete_message($message_data['message_id']);
-                return ['error' => 'Non-admins cannot share phone numbers'];
-            }
-        }
 
         if (!$is_master_group) {
             return ['success' => true, 'type' => 'group_message', 'action' => 'allowed'];
@@ -444,7 +422,7 @@ class Whapi_library {
         return ['success' => true, 'distributed_to' => $distributed_to];
     }
 
-    private function is_group_admin($group_id, $phone) {
+    public function is_group_admin($group_id, $phone) {
         $this->CI->db->where('groupe_id', $group_id);
         $this->CI->db->where('phone_formatted', format_phone($phone));
         $this->CI->db->where('is_admin', 1);
