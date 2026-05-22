@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NUFOTEC — Guide d'installation WhatsApp Bot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg:        #0a0c0f;
+    --bg2:       #111318;
+    --bg3:       #181c23;
+    --border:    #1e2530;
+    --border2:   #2a3340;
+    --green:     #00e676;
+    --green-dim: #00c85a;
+    --green-bg:  #00e67610;
+    --amber:     #ffb300;
+    --amber-bg:  #ffb30010;
+    --red:       #ff4444;
+    --red-bg:    #ff444410;
+    --blue:      #4db8ff;
+    --blue-bg:   #4db8ff0d;
+    --text:      #e8eaf0;
+    --text2:     #8892a4;
+    --text3:     #4a5568;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .layout { display: flex; min-height: 100vh; }
+
+  nav {
+    width: 260px;
+    min-width: 260px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo .brand {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--green);
+  }
+  .nav-logo .sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-top: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .nav-section {
+    padding: 20px 16px 8px;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 400;
+    border-radius: 6px;
+    margin: 1px 8px;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  nav a:hover, nav a.active {
+    background: var(--green-bg);
+    color: var(--green);
+  }
+  nav a .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+  nav a.active .dot, nav a:hover .dot { background: var(--green); }
+
+  nav a .num {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg3);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1;
+    max-width: 820px;
+    padding: 48px 52px 80px;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    margin-bottom: 52px;
+    padding-bottom: 36px;
+    border-bottom: 1px solid var(--border);
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-bg);
+    border: 1px solid #00e67630;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  h1 {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  h1 span { color: var(--green); }
+  .header-desc { color: var(--text2); font-size: 15px; max-width: 560px; }
+
+  /* ── SECTIONS ── */
+  section {
+    margin-bottom: 56px;
+    scroll-margin-top: 32px;
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 20px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2 .step-num {
+    width: 32px; height: 32px;
+    background: var(--green-bg);
+    border: 1px solid #00e67640;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 28px 0 10px;
+    font-family: var(--mono);
+  }
+
+  p { color: var(--text2); margin-bottom: 12px; }
+  strong { color: var(--text); font-weight: 600; }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 12px 0 20px;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .code-lang {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--green); border-color: var(--green); }
+  pre {
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .cm { color: var(--text3); }      /* commentaire */
+  .ck { color: var(--blue); }       /* keyword/clé */
+  .cv { color: var(--green); }      /* valeur/string */
+  .cc { color: var(--amber); }      /* commande shell */
+  .cw { color: #ff7043; }           /* warning/important */
+
+  /* ── CALLOUTS ── */
+  .callout {
+    display: flex;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin: 16px 0;
+    font-size: 13.5px;
+  }
+  .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .callout p { margin: 0; }
+  .callout.info  { background: var(--blue-bg);  border: 1px solid #4db8ff25; color: #93c8f0; }
+  .callout.warn  { background: var(--amber-bg); border: 1px solid #ffb30030; color: #d4a044; }
+  .callout.danger{ background: var(--red-bg);   border: 1px solid #ff444425; color: #e07070; }
+  .callout.ok    { background: var(--green-bg); border: 1px solid #00e67625; color: #60c870; }
+
+  /* ── TABLES ── */
+  .tbl-wrap { overflow-x: auto; margin: 14px 0 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border2);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  td:first-child { font-family: var(--mono); font-size: 12.5px; color: var(--green); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #ffffff04; }
+
+  /* ── FILE TREE ── */
+  .file-tree {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 2;
+    margin: 12px 0 20px;
+  }
+  .ft-dir { color: var(--blue); }
+  .ft-file { color: var(--text2); }
+  .ft-main { color: var(--green); font-weight: 600; }
+  .ft-comment { color: var(--text3); }
+
+  /* ── STEPS ── */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step-item {
+    display: flex;
+    gap: 20px;
+    padding-bottom: 28px;
+    position: relative;
+  }
+  .step-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 15px; top: 34px;
+    width: 1px;
+    height: calc(100% - 14px);
+    background: var(--border2);
+  }
+  .step-circle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text3);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .step-circle.done { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .step-body { flex: 1; padding-top: 4px; }
+  .step-title { font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+  /* ── CMD COMMANDS TABLE ── */
+  .cmd-grid { display: grid; gap: 10px; margin: 14px 0; }
+  .cmd-row {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .cmd-tag {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    color: var(--amber);
+    padding: 3px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cmd-desc { color: var(--text2); font-size: 13.5px; }
+  .cmd-desc strong { color: var(--text); }
+
+  /* ── STATUS BADGES ── */
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin: 0 2px;
+  }
+  .tag.g { background: var(--green-bg); color: var(--green); border: 1px solid #00e67630; }
+  .tag.a { background: var(--amber-bg); color: var(--amber); border: 1px solid #ffb30030; }
+  .tag.r { background: var(--red-bg);   color: var(--red);   border: 1px solid #ff444425; }
+  .tag.b { background: var(--blue-bg);  color: var(--blue);  border: 1px solid #4db8ff25; }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    color: var(--text2); font-size: 14px;
+  }
+  .checklist li::before {
+    content: '✓';
+    color: var(--green);
+    font-family: var(--mono);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    nav { display: none; }
+    main { padding: 28px 20px 60px; }
+    h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
+<nav>
+  <div class="nav-logo">
+    <div class="brand">NUFOTEC</div>
+    <div class="sub">WhatsApp Bot · v2.0</div>
+  </div>
+
+  <div class="nav-section">Démarrage</div>
+  <a href="#prerequis"><span class="dot"></span> Prérequis</a>
+  <a href="#fichiers"><span class="dot"></span> Fichiers</a>
+  <a href="#bdd"><span class="dot"></span> Base de données</a>
+
+  <div class="nav-section">Configuration</div>
+  <a href="#config"><span class="dot"></span> Paramètres PHP</a>
+  <a href="#whapi"><span class="dot"></span> Configurer Whapi</a>
+  <a href="#admins"><span class="dot"></span> Définir les admins</a>
+
+  <div class="nav-section">Déploiement</div>
+  <a href="#serveur"><span class="dot"></span> Mettre en ligne</a>
+  <a href="#cron"><span class="dot"></span> Worker & Cron</a>
+  <a href="#test"><span class="dot"></span> Tester</a>
+
+  <div class="nav-section">Utilisation</div>
+  <a href="#commandes"><span class="dot"></span> Commandes admin</a>
+  <a href="#securite"><span class="dot"></span> Sécurité auto</a>
+  <a href="#templates"><span class="dot"></span> Templates</a>
+
+  <div class="nav-section">Maintenance</div>
+  <a href="#logs"><span class="dot"></span> Logs & Monitoring</a>
+  <a href="#depannage"><span class="dot"></span> Dépannage</a>
+</nav>
+
+<!-- ══════════════════ CONTENU ══════════════════ -->
+<main>
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="badge">Documentation complète</div>
+    <h1>Guide d'installation<br><span>WhatsApp Bot</span></h1>
+    <p class="header-desc">De zéro au déploiement en production — configuration, base de données, Whapi, cron et utilisation quotidienne.</p>
+  </div>
+
+
+  <!-- ══ 1. PRÉREQUIS ══ -->
+  <section id="prerequis">
+    <h2><span class="step-num">1</span> Prérequis</h2>
+    <p>Avant de commencer, vérifiez que votre serveur dispose de :</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Composant</th><th>Version minimum</th><th>Vérifier</th></tr>
+        <tr><td>PHP</td><td>8.1+</td><td><code>php -v</code></td></tr>
+        <tr><td>MySQL / MariaDB</td><td>5.7+ / 10.3+</td><td><code>mysql --version</code></td></tr>
+        <tr><td>Extension PDO MySQL</td><td>activée</td><td><code>php -m | grep pdo</code></td></tr>
+        <tr><td>Extension cURL</td><td>activée</td><td><code>php -m | grep curl</code></td></tr>
+        <tr><td>HTTPS</td><td>certificat SSL valide</td><td>Whapi exige HTTPS</td></tr>
+        <tr><td>Compte Whapi</td><td>actif + numéro connecté</td><td>gate.whapi.cloud</td></tr>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠️</span>
+      <p><strong>Whapi exige HTTPS.</strong> Votre webhook doit être accessible via une URL <code>https://</code>. Un certificat Let's Encrypt gratuit suffit. Sans SSL, Whapi refusera d'envoyer les événements.</p>
+    </div>
+  </section>
+
+
+  <!-- ══ 2. FICHIERS ══ -->
+  <section id="fichiers">
+    <h2><span class="step-num">2</span> Fichiers à déployer</h2>
+    <p>Vous avez reçu <strong>2 fichiers PHP</strong> et <strong>1 fichier SQL</strong>. Structure attendue sur le serveur :</p>
+
+    <div class="file-tree">
+      <span class="ft-dir">/var/www/html/</span><br>
+      &nbsp;&nbsp;├── <span class="ft-main">webhook.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-comment">← reçoit les messages Whapi</span><br>
+      &nbsp;&nbsp;├── <span class="ft-main">queue_worker.php</span>&nbsp;<span class="ft-comment">← envoie les messages en attente</span><br>
+      &nbsp;&nbsp;└── <span class="ft-dir">logs/</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="ft-file">webhook.log</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-comment">← créé automatiquement</span>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <p>Le dossier <code>logs/</code> doit être créable par le serveur web. Lancez : <code>mkdir -p logs && chmod 775 logs</code> depuis le dossier racine.</p>
+    </div>
+  </section>
+
+
+  <!-- ══ 3. BASE DE DONNÉES ══ -->
+  <section id="bdd">
+    <h2><span class="step-num">3</span> Base de données</h2>
+    <p>Importez le schéma SQL. Toutes les tables sont créées avec <code>IF NOT EXISTS</code> — vous pouvez relancer l'import sans risque.</p>
+
+    <h3>Créer la base et l'utilisateur</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL — phpMyAdmin ou terminal</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm">-- Se connecter en root</span>
+<span class="cc">mysql -u root -p</span>
+
+<span class="cm">-- Créer la base</span>
+<span class="ck">CREATE DATABASE</span> <span class="cv">nufotec_db</span> CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+<span class="cm">-- Créer l'utilisateur</span>
+<span class="ck">CREATE USER</span> <span class="cv">'nufotec_user'</span>@<span class="cv">'localhost'</span> IDENTIFIED BY <span class="cv">'MotDePasse_Fort_123!'</span>;
+
+<span class="cm">-- Donner les droits</span>
+<span class="ck">GRANT ALL PRIVILEGES ON</span> nufotec_db.* <span class="ck">TO</span> <span class="cv">'nufotec_user'</span>@<span class="cv">'localhost'</span>;
+<span class="ck">FLUSH PRIVILEGES</span>;</pre>
+    </div>
+
+    <h3>Importer le schéma</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cc">mysql -u nufotec_user -p nufotec_db &lt; database.sql</span></pre>
+    </div>
+
+    <p>Via <strong>phpMyAdmin</strong> : Sélectionner la base → onglet <em>Importer</em> → choisir <code>database.sql</code> → Exécuter.</p>
+
+    <div class="callout ok">
+      <span class="callout-icon">✅</span>
+      <p>Après l'import, vous devez voir <strong>11 tables</strong> : <code>groupes_whatsapp</code>, <code>whatsapp_blacklist</code>, <code>whatsapp_inbox</code>, <code>whatsapp_logs</code>, <code>whatsapp_media</code>, <code>whatsapp_participants</code>, <code>whatsapp_queue</code>, <code>whatsapp_rate_limits</code>, <code>whatsapp_security_logs</code>, <code>whatsapp_settings</code>, <code>whatsapp_templates</code>.</p>
+    </div>
+  </section>
+
+
+  <!-- ══ 4. CONFIGURATION PHP ══ -->
+  <section id="config">
+    <h2><span class="step-num">4</span> Configuration des fichiers PHP</h2>
+    <p>Ouvrez <strong>webhook.php</strong> et <strong>queue_worker.php</strong> et modifiez les lignes en haut de chaque fichier :</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">PHP — webhook.php &amp; queue_worker.php (début du fichier)</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm">// ── Base de données ────────────────────────────</span>
+<span class="ck">define</span>(<span class="cv">'DB_HOST'</span>,  <span class="cv">'localhost'</span>);
+<span class="ck">define</span>(<span class="cv">'DB_USER'</span>,  <span class="cw">'nufotec_user'</span>);      <span class="cm">// ← votre utilisateur MySQL</span>
+<span class="ck">define</span>(<span class="cv">'DB_PASS'</span>,  <span class="cw">'MotDePasse_Fort_123!'</span>); <span class="cm">// ← votre mot de passe MySQL</span>
+<span class="ck">define</span>(<span class="cv">'DB_NAME'</span>,  <span class="cv">'nufotec_db'</span>);
+
+<span class="cm">// ── Whapi ───────────────────────────────────────</span>
+<span class="ck">define</span>(<span class="cv">'API_TOKEN'</span>,    <span class="cw">'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw'</span>); <span class="cm">// votre token Whapi</span>
+<span class="ck">define</span>(<span class="cv">'API_URL'</span>,      <span class="cv">'https://gate.whapi.cloud/'</span>);
+<span class="ck">define</span>(<span class="cv">'MASTER_GROUP'</span>, <span class="cw">'254743031262-1528423768@g.us'</span>);    <span class="cm">// ID du groupe maître</span>
+<span class="ck">define</span>(<span class="cv">'WEBHOOK_TOKEN'</span>, <span class="cv">''</span>);  <span class="cm">// laisser vide ou mettre un secret</span></pre>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠️</span>
+      <p><strong>Changez ces valeurs dans les DEUX fichiers</strong> (<code>webhook.php</code> et <code>queue_worker.php</code>). Ils sont indépendants et chacun a sa propre section de configuration en haut.</p>
+    </div>
+
+    <h3>Comment trouver l'ID du groupe maître ?</h3>
+    <p>Envoyez n'importe quel message depuis le groupe WhatsApp vers votre webhook, puis regardez dans <code>whatsapp_logs</code> — la colonne <code>phone_number</code> pour les messages de groupes contient l'ID au format <code>XXXXXXXXX-XXXXXXXXXX@g.us</code>. Ou activez les logs DEBUG et cherchez <code>chatId</code>.</p>
+  </section>
+
+
+  <!-- ══ 5. WHAPI ══ -->
+  <section id="whapi">
+    <h2><span class="step-num">5</span> Configurer Whapi</h2>
+
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-circle done">1</div>
+        <div class="step-body">
+          <div class="step-title">Se connecter sur gate.whapi.cloud</div>
+          <p>Rendez-vous sur votre tableau de bord Whapi et sélectionnez le canal (channel) correspondant à votre numéro WhatsApp.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle done">2</div>
+        <div class="step-body">
+          <div class="step-title">Copier votre token API</div>
+          <p>Dans <em>Settings → API Token</em>, copiez votre token et collez-le dans <code>define('API_TOKEN', '...')</code> dans les deux fichiers PHP.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle done">3</div>
+        <div class="step-body">
+          <div class="step-title">Configurer le Webhook URL</div>
+          <p>Dans <em>Settings → Webhooks</em>, ajoutez l'URL de votre webhook :</p>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">URL webhook</span></div>
+            <pre><span class="cv">https://votre-domaine.com/webhook.php</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle done">4</div>
+        <div class="step-body">
+          <div class="step-title">Activer les événements</div>
+          <p>Cochez au minimum ces événements dans Whapi :</p>
+          <ul class="checklist">
+            <li><strong>message</strong> — messages entrants (obligatoire)</li>
+            <li><strong>group_participants_update</strong> — ajout/retrait membres</li>
+            <li><strong>message:status</strong> — statut de livraison (optionnel)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle done">5</div>
+        <div class="step-body">
+          <div class="step-title">Tester la connexion</div>
+          <p>Cliquez sur <em>"Test Webhook"</em> dans Whapi. Votre serveur doit répondre <span class="tag g">200 OK</span>. Si vous obtenez <span class="tag r">timeout</span>, vérifiez que l'URL est accessible publiquement.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══ 6. ADMINS ══ -->
+  <section id="admins">
+    <h2><span class="step-num">6</span> Définir les administrateurs</h2>
+    <p>Les admins peuvent envoyer des broadcasts depuis le groupe maître. Ils ne sont jamais soumis aux règles de sécurité.</p>
+
+    <h3>Via phpMyAdmin</h3>
+    <p>Dans la table <code>whatsapp_settings</code>, trouvez la ligne <code>admin_numbers</code> et éditez <code>setting_value</code> :</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">JSON — valeur de admin_numbers</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm">// Un seul admin</span>
+<span class="cv">["25779666439"]</span>
+
+<span class="cm">// Plusieurs admins</span>
+<span class="cv">["25779666439", "25761234567", "25778901234"]</span></pre>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <p>Les numéros sont au format <strong>international sans le +</strong> (indicatif pays + numéro). Burundi = <code>257XXXXXXXX</code>. Les membres admins du groupe dans WhatsApp sont aussi reconnus automatiquement via la table <code>whatsapp_participants</code>.</p>
+    </div>
+
+    <h3>Via SQL</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="ck">UPDATE</span> whatsapp_settings
+<span class="ck">SET</span> setting_value = <span class="cv">'["25779666439","25761234567"]'</span>
+<span class="ck">WHERE</span> setting_key = <span class="cv">'admin_numbers'</span>;</pre>
+    </div>
+  </section>
+
+
+  <!-- ══ 7. SERVEUR ══ -->
+  <section id="serveur">
+    <h2><span class="step-num">7</span> Mettre en ligne</h2>
+
+    <h3>Option A — FTP / SFTP</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Terminal SFTP</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cc">sftp user@votre-serveur</span>
+<span class="cc">put webhook.php /var/www/html/webhook.php</span>
+<span class="cc">put queue_worker.php /var/www/html/queue_worker.php</span></pre>
+    </div>
+
+    <h3>Option B — cPanel File Manager</h3>
+    <p>Connectez-vous à cPanel → <em>Gestionnaire de fichiers</em> → naviguez vers <code>public_html/</code> → bouton <em>Charger</em> → sélectionnez les deux fichiers PHP.</p>
+
+    <h3>Option C — Git</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Terminal SSH</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cc">ssh user@votre-serveur</span>
+<span class="cc">cd /var/www/html</span>
+<span class="cc">git clone https://github.com/votre-repo/nufotec-bot.git .</span></pre>
+    </div>
+
+    <h3>Permissions des fichiers</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Terminal SSH</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cc">cd /var/www/html</span>
+<span class="cm"># Créer le dossier logs</span>
+<span class="cc">mkdir -p logs</span>
+<span class="cc">chmod 775 logs</span>
+
+<span class="cm"># Permissions PHP correctes</span>
+<span class="cc">chmod 644 webhook.php queue_worker.php</span>
+
+<span class="cm"># Vérifier que PHP peut écrire les logs</span>
+<span class="cc">chown www-data:www-data logs/</span>   <span class="cm"># Apache/Nginx Ubuntu</span>
+<span class="cm"># OU</span>
+<span class="cc">chown nginx:nginx logs/</span>            <span class="cm"># Nginx CentOS</span></pre>
+    </div>
+  </section>
+
+
+  <!-- ══ 8. CRON ══ -->
+  <section id="cron">
+    <h2><span class="step-num">8</span> Worker &amp; Cron</h2>
+    <p>Le <strong>queue_worker.php</strong> lit la table <code>whatsapp_queue</code> et envoie les messages en attente. Il doit tourner régulièrement.</p>
+
+    <h3>Méthode 1 — Cron (recommandé pour hébergements mutualisés)</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Crontab — crontab -e</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm"># Exécuter toutes les minutes</span>
+<span class="cv">* * * * * php /var/www/html/queue_worker.php >> /dev/null 2>&1</span>
+
+<span class="cm"># Ou avec chemin PHP explicite si nécessaire</span>
+<span class="cv">* * * * * /usr/bin/php8.1 /var/www/html/queue_worker.php >> /dev/null 2>&1</span></pre>
+    </div>
+
+    <p>Via <strong>cPanel</strong> : Aller dans <em>Tâches Cron</em> → Toutes les minutes → commande : <code>php /home/VOTRE_USER/public_html/queue_worker.php</code></p>
+
+    <h3>Méthode 2 — Mode daemon (VPS/dédié, diffusion instantanée)</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Terminal SSH</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm"># Lancer en arrière-plan</span>
+<span class="cc">nohup php /var/www/html/queue_worker.php --daemon &amp;</span>
+
+<span class="cm"># Voir s'il tourne</span>
+<span class="cc">ps aux | grep queue_worker</span>
+
+<span class="cm"># L'arrêter</span>
+<span class="cc">kill $(pgrep -f queue_worker.php)</span></pre>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <p>Le worker a un <strong>verrou automatique</strong> — si deux instances se lancent en même temps (ex. cron toutes les minutes + daemon), la deuxième s'arrête immédiatement sans erreur.</p>
+    </div>
+  </section>
+
+
+  <!-- ══ 9. TEST ══ -->
+  <section id="test">
+    <h2><span class="step-num">9</span> Tester le déploiement</h2>
+
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-circle">1</div>
+        <div class="step-body">
+          <div class="step-title">Vérifier que le webhook répond</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">Terminal</span></div>
+            <pre><span class="cc">curl -I https://votre-domaine.com/webhook.php</span>
+<span class="cm"># Attendu: HTTP/2 200</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle">2</div>
+        <div class="step-body">
+          <div class="step-title">Envoyer un message test via Whapi</div>
+          <p>Dans le tableau de bord Whapi → <em>Test Webhook</em>. Vérifiez ensuite <code>logs/webhook.log</code> — vous devez voir une ligne <span class="tag g">INFO</span> <code>Webhook reçu</code>.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle">3</div>
+        <div class="step-body">
+          <div class="step-title">Tester la sécurité</div>
+          <p>Depuis un numéro <strong>non admin</strong>, envoyez un lien dans le groupe. Le bot doit :</p>
+          <ul class="checklist">
+            <li>Supprimer le message en moins de 2 secondes</li>
+            <li>Envoyer un message d'avertissement dans le groupe</li>
+            <li>Créer une ligne dans <code>whatsapp_security_logs</code></li>
+          </ul>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle">4</div>
+        <div class="step-body">
+          <div class="step-title">Tester un broadcast</div>
+          <p>Depuis le groupe maître, envoyez : <code>#groupe Bonjour à tous !</code></p>
+          <p>Vérifiez que des lignes apparaissent dans <code>whatsapp_queue</code> avec le statut <span class="tag a">pending</span>. Après le passage du worker, elles passent à <span class="tag g">completed</span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ══ 10. COMMANDES ADMIN ══ -->
+  <section id="commandes">
+    <h2><span class="step-num">—</span> Commandes admin</h2>
+    <p>Toutes les commandes s'envoient <strong>uniquement depuis le groupe maître</strong>. Un message normal (sans commande) diffuse vers tout le monde.</p>
+
+    <div class="cmd-grid">
+      <div class="cmd-row">
+        <span class="cmd-tag">#groupe Texte</span>
+        <span class="cmd-desc">Diffuse <strong>uniquement vers les groupes</strong> listés dans <code>groupes_whatsapp</code> où <code>actif=1</code></span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-tag">#inbox Texte</span>
+        <span class="cmd-desc">Diffuse <strong>uniquement en messages privés</strong> vers les contacts dans <code>whatsapp_inbox</code> où <code>is_blacklisted=0</code></span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-tag">#tous Texte</span>
+        <span class="cmd-desc">Diffuse vers <strong>groupes + contacts privés</strong> (comportement par défaut sans commande)</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-tag">#template:nom</span>
+        <span class="cmd-desc">Utilise le contenu du template enregistré dans <code>whatsapp_templates</code> avec ce nom. Ex: <code>#template:bienvenue</code></span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-tag">#template:promo Texte</span>
+        <span class="cmd-desc">Template + texte supplémentaire ajouté après. Ex: <code>#template:promo Valable jusqu'au 31 mai !</code></span>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <p>Les <strong>médias</strong> (images, vidéos) envoyés depuis le groupe maître sont aussi broadcastés. Le texte de la légende est utilisé comme message texte si présent.</p>
+    </div>
+  </section>
+
+
+  <!-- ══ 11. SÉCURITÉ ══ -->
+  <section id="securite">
+    <h2><span class="step-num">—</span> Sécurité automatique</h2>
+    <p>Pour chaque message d'un <strong>membre non-admin</strong> dans un groupe surveillé :</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Contenu détecté</th><th>Action immédiate</th><th>Compteur</th></tr>
+        <tr><td>media_non_autorise</td><td>Suppression + avertissement</td><td>+1</td></tr>
+        <tr><td>lien_non_autorise</td><td>Suppression + avertissement</td><td>+1</td></tr>
+        <tr><td>mention_non_autorisee</td><td>Suppression + avertissement</td><td>+1</td></tr>
+        <tr><td>numero_non_autorise</td><td>Suppression + avertissement</td><td>+1</td></tr>
+        <tr><td>5 infractions cumulées</td><td>Blacklist automatique</td><td>—</td></tr>
+      </table>
+    </div>
+
+    <h3>Modifier le seuil de blacklist automatique</h3>
+    <p>Dans <code>webhook.php</code>, ligne :</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">PHP</span></div>
+      <pre><span class="ck">define</span>(<span class="cv">'VIOLATION_LIMIT'</span>, <span class="cw">5</span>);  <span class="cm">// ← changer ce nombre</span></pre>
+    </div>
+
+    <h3>Blacklister manuellement un numéro</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="ck">INSERT INTO</span> whatsapp_blacklist (phone_number, reason, created_at)
+<span class="ck">VALUES</span> (<span class="cv">'25778901234'</span>, <span class="cv">'Spam manuel'</span>, <span class="ck">NOW</span>());</pre>
+    </div>
+
+    <h3>Retirer quelqu'un de la blacklist</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="ck">DELETE FROM</span> whatsapp_blacklist <span class="ck">WHERE</span> phone_number = <span class="cv">'25778901234'</span>;</pre>
+    </div>
+  </section>
+
+
+  <!-- ══ 12. TEMPLATES ══ -->
+  <section id="templates">
+    <h2><span class="step-num">—</span> Templates de messages</h2>
+    <p>Les templates sont stockés dans la table <code>whatsapp_templates</code>. Vous pouvez les gérer directement via phpMyAdmin.</p>
+
+    <h3>Templates inclus par défaut</h3>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Nom</th><th>Commande</th><th>Contenu</th></tr>
+        <tr><td>bienvenue</td><td><code>#template:bienvenue</code></td><td>Bienvenue {{name}} ! Merci de nous rejoindre.</td></tr>
+        <tr><td>promo</td><td><code>#template:promo</code></td><td>🔥 PROMO : {{discount}}% de réduction sur {{product}}</td></tr>
+        <tr><td>rappel</td><td><code>#template:rappel</code></td><td>📅 Rappel : {{event}} demain à {{time}}</td></tr>
+        <tr><td>regles</td><td><code>#template:regles</code></td><td>📋 Règles du groupe (liste complète)</td></tr>
+      </table>
+    </div>
+
+    <h3>Ajouter un template</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="ck">INSERT INTO</span> whatsapp_templates (name, content, category, created_at)
+<span class="ck">VALUES</span> (
+  <span class="cv">'fermeture'</span>,
+  <span class="cv">'🔒 Attention, nos bureaux sont fermés du {{date_debut}} au {{date_fin}}.'</span>,
+  <span class="cv">'info'</span>,
+  <span class="ck">NOW</span>()
+);</pre>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ══ 13. LOGS ══ -->
+  <section id="logs">
+    <h2><span class="step-num">—</span> Logs &amp; Monitoring</h2>
+
+    <h3>Suivre les logs en temps réel</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Terminal SSH</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm"># Logs en direct</span>
+<span class="cc">tail -f /var/www/html/logs/webhook.log</span>
+
+<span class="cm"># Voir seulement les erreurs</span>
+<span class="cc">grep "\[ERROR\]" /var/www/html/logs/webhook.log | tail -20</span>
+
+<span class="cm"># Compter les violations aujourd'hui</span>
+<span class="cc">grep "Violation" /var/www/html/logs/webhook.log | grep $(date +%Y-%m-%d) | wc -l</span></pre>
+    </div>
+
+    <h3>Surveiller la queue via SQL</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm">-- État de la queue</span>
+<span class="ck">SELECT</span> status, <span class="ck">COUNT</span>(*) AS total
+<span class="ck">FROM</span> whatsapp_queue
+<span class="ck">GROUP BY</span> status;
+
+<span class="cm">-- Messages en attente</span>
+<span class="ck">SELECT</span> * <span class="ck">FROM</span> whatsapp_queue
+<span class="ck">WHERE</span> status = <span class="cv">'pending'</span>
+<span class="ck">ORDER BY</span> created_at <span class="ck">DESC</span> <span class="ck">LIMIT</span> 10;
+
+<span class="cm">-- Violations récentes</span>
+<span class="ck">SELECT</span> sender, action_type, reason, created_at
+<span class="ck">FROM</span> whatsapp_security_logs
+<span class="ck">ORDER BY</span> created_at <span class="ck">DESC</span> <span class="ck">LIMIT</span> 20;</pre>
+    </div>
+
+    <h3>Mettre la queue en pause</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm">-- Mettre en pause</span>
+<span class="ck">UPDATE</span> whatsapp_settings <span class="ck">SET</span> setting_value = <span class="cv">'1'</span> <span class="ck">WHERE</span> setting_key = <span class="cv">'queue_paused'</span>;
+
+<span class="cm">-- Reprendre</span>
+<span class="ck">UPDATE</span> whatsapp_settings <span class="ck">SET</span> setting_value = <span class="cv">'0'</span> <span class="ck">WHERE</span> setting_key = <span class="cv">'queue_paused'</span>;</pre>
+    </div>
+
+    <h3>Régler les délais d'envoi (anti-ban)</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+      <pre><span class="cm">-- Délai minimum entre 2 envois (secondes)</span>
+<span class="ck">UPDATE</span> whatsapp_settings <span class="ck">SET</span> setting_value = <span class="cv">'3'</span>  <span class="ck">WHERE</span> setting_key = <span class="cv">'delay_min'</span>;
+
+<span class="cm">-- Délai maximum entre 2 envois (secondes)</span>
+<span class="ck">UPDATE</span> whatsapp_settings <span class="ck">SET</span> setting_value = <span class="cv">'8'</span>  <span class="ck">WHERE</span> setting_key = <span class="cv">'delay_max'</span>;
+
+<span class="cm">-- Nombre de tentatives avant échec définitif</span>
+<span class="ck">UPDATE</span> whatsapp_settings <span class="ck">SET</span> setting_value = <span class="cv">'3'</span>  <span class="ck">WHERE</span> setting_key = <span class="cv">'max_retries'</span>;</pre>
+    </div>
+  </section>
+
+
+  <!-- ══ 14. DÉPANNAGE ══ -->
+  <section id="depannage">
+    <h2><span class="step-num">—</span> Dépannage</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Problème</th><th>Cause probable</th><th>Solution</th></tr>
+        <tr>
+          <td>Whapi renvoie timeout</td>
+          <td>Webhook ne répond pas assez vite</td>
+          <td>Le fichier répond en &lt;1ms. Vérifier que l'URL est bien publique via <code>curl -I https://...</code></td>
+        </tr>
+        <tr>
+          <td>Messages non supprimés</td>
+          <td>Token API invalide ou expiré</td>
+          <td>Vérifier <code>API_TOKEN</code> dans webhook.php, le comparer avec le tableau Whapi</td>
+        </tr>
+        <tr>
+          <td>DB connection failed dans les logs</td>
+          <td>Mauvais identifiants MySQL</td>
+          <td>Vérifier <code>DB_USER</code>, <code>DB_PASS</code>, <code>DB_NAME</code> et que l'utilisateur a les droits</td>
+        </tr>
+        <tr>
+          <td>Admin non reconnu</td>
+          <td>Numéro mal formaté dans admin_numbers</td>
+          <td>Format sans <code>+</code> et sans espace : <code>["25779666439"]</code></td>
+        </tr>
+        <tr>
+          <td>Queue reste en pending</td>
+          <td>Worker ne tourne pas</td>
+          <td>Vérifier le cron : <code>crontab -l</code>. Lancer manuellement : <code>php queue_worker.php</code></td>
+        </tr>
+        <tr>
+          <td>Webhook reçoit mais n'agit pas</td>
+          <td>MASTER_GROUP incorrect</td>
+          <td>Vérifier l'ID dans les logs (<code>chatId</code>) et le comparer à la constante</td>
+        </tr>
+        <tr>
+          <td>Logs vides</td>
+          <td>Dossier logs/ sans permission</td>
+          <td><code>chmod 775 logs/ && chown www-data:www-data logs/</code></td>
+        </tr>
+        <tr>
+          <td>Erreur 500</td>
+          <td>Extension PDO ou cURL manquante</td>
+          <td><code>php -m | grep -E "pdo|curl"</code> — installer si absent</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>Activer les logs DEBUG</h3>
+    <p>Dans <code>webhook.php</code>, dans la fonction <code>wlog()</code>, changez le niveau minimum :</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">PHP</span></div>
+      <pre><span class="cm">// Ligne à trouver dans la fonction wlog()</span>
+<span class="ck">if</span> (($levels[$level] ?? 1) < <span class="cw">0</span>) <span class="ck">return</span>;  <span class="cm">// ← mettre 0 pour voir DEBUG</span>
+<span class="cm">// (valeur normale = 1 pour INFO et au-dessus)</span></pre>
+    </div>
+
+    <div class="callout ok">
+      <span class="callout-icon">✅</span>
+      <p><strong>Checklist finale avant mise en production :</strong> HTTPS actif · DB importée · Identifiants MySQL corrects · API_TOKEN Whapi correct · MASTER_GROUP correct · admin_numbers renseigné · Cron configuré · Dossier logs/ accessible en écriture.</p>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copié !';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(() => {
+      btn.textContent = 'Copier';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+
+// Highlight nav active on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('nav a[href^="#"]');
+const observer  = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector('nav a[href="#' + e.target.id + '"]');
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
