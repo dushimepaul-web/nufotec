@@ -65,7 +65,8 @@ if (!function_exists('contains_link')) {
 
 if (!function_exists('contains_mention')) {
     function contains_mention($message) {
-        return preg_match('/@[a-zA-Z0-9]+/', $message);
+        // Mentions WhatsApp: @nom ou @+2547...
+        return preg_match('/@[a-zA-Z0-9_+]+/', $message);
     }
 }
 
@@ -132,4 +133,25 @@ if (!function_exists('parse_template')) {
         }
         return $content;
     }
+
+    // AJOUTER ces 2 fonctions manquantes
+
+if (!function_exists('generate_queue_id')) {
+    function generate_queue_id() {
+        return uniqid('queue_', true);
+    }
+}
+
+if (!function_exists('log_whatsapp_security')) {
+    function log_whatsapp_security($group_id, $sender, $action_type, $reason) {
+        $CI = &get_instance();
+        return $CI->db->insert('whatsapp_security_logs', [
+            'group_id' => $group_id,
+            'sender' => format_phone($sender),
+            'action_type' => $action_type,
+            'reason' => $reason,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+    }
+}
 }
