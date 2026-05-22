@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Webhook_whapi extends MX_Controller {
+class Webhook_whapi extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
@@ -10,106 +10,52 @@ class Webhook_whapi extends MX_Controller {
         $this->load->helper('whapi');
     }
 
-    public function index($token = null)
+
+
+public function index($token = null)
 {
-    try {
-
-        // =========================
-        // 1. RÉPONSE IMMÉDIATE
-        // =========================
-        ignore_user_abort(true);
-        set_time_limit(0);
-
-        http_response_code(200);
-
-        header('Content-Type: application/json');
-
-        $response = json_encode([
-            'success' => true
-        ]);
-
-        header('Content-Length: ' . strlen($response));
-
-        echo $response;
-
-        // Vider le buffer correctement
-        if (ob_get_level() > 0) {
-            ob_end_flush();
-        }
-
-        flush();
-
-        // Pour Nginx + PHP-FPM
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
-        // =========================
-        // 2. VÉRIFICATION TOKEN
-        // =========================
-        $headers = function_exists('getallheaders')
-            ? getallheaders()
-            : [];
-
-        $header_token = $headers['X-Whapi-Token'] ?? '';
-        $url_token    = $token ?? $this->input->get('token');
-
-        $expected_token = $this->whapi_library
-            ->get_setting('webhook_token');
-
-        if (
-            !empty($expected_token)
-            && $header_token !== $expected_token
-            && $url_token !== $expected_token
-        ) {
-
-            log_message(
-                'error',
-                'Webhook token invalide'
-            );
-
-            return;
-        }
-
-        // =========================
-        // 3. PAYLOAD
-        // =========================
-        $raw = file_get_contents('php://input');
-
-        if (empty($raw)) {
-            log_message('info', 'Payload vide');
-            return;
-        }
-
-        $payload = json_decode($raw, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-
-            log_message(
-                'error',
-                'JSON invalide : ' . json_last_error_msg()
-            );
-
-            return;
-        }
-
-        // LOG DEBUG
-        log_message('debug', 'Webhook RAW: ' . $raw);
-
-        // =========================
-        // 4. TRAITEMENT
-        // =========================
-        $this->process_webhook($payload);
-
-    } catch (Throwable $e) {
-
-        log_message(
-            'error',
-            'Webhook fatal error: ' . $e->getMessage()
-        );
+    // Recevoir le webhook de Whapi
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input) {
+        echo json_encode(['status' => 'no_data']);
+        return;
     }
+    
+    // Vérification du token (optionnelle si configurée)
+    if ($token || $this->input->get('token')) {
+        $url_token = $token ?? $this->input->get('token');
+        $expected_token = $this->whapi_library->get_setting('webhook_token');
+        
+        if (!empty($expected_token) && $url_token !== $expected_token) {
+            log_message('error', 'Webhook token invalide');
+            echo json_encode(['status' => 'invalid_token']);
+            return;
+        }
+    }
+    
+    // Log pour debug
+    log_message('info', 'Webhook Whapi reçu');
+    
+    // Traitement des messages entrants (structure Whapi)
+    if (isset($input['messages']) && is_array($input['messages'])) {
+        foreach ($input['messages'] as $message) {
+            $this->process_message($message);
+        }
+    }
+    
+    // Alternative: structure directe (payload sans wrapper 'messages')
+    if (isset($input['type']) || isset($input['from'])) {
+        $this->process_webhook($input);
+    }
+    
+    // Traitement des statuts
+    if (isset($input['statuses'])) {
+        $this->process_statuses($input['statuses']);
+    }
+    
+    echo json_encode(['status' => 'ok']);
 }
-
     private function process_webhook($payload) {
 
         // --------------------------------------------------

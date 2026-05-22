@@ -446,8 +446,8 @@ $route['webhook/status'] = 'Webhook_whapi/status';
 
 
 // Route avec token optionnel dans l'URL
-$route['webhook/whatsapp/(:any)'] = 'Webhook_whapi/Webhook_whapi/index/$1';
-$route['webhook/whatsapp'] = 'Webhook_whapi/Webhook_whapi/index';
+$route['webhook/whatsapp/(:any)'] = 'Webhook_whapi/index/$1';
+$route['webhook/whatsapp'] = 'Webhook_whapi/index';
 
 // ==============================================
 // CRON ROUTES (Execution automatique)
