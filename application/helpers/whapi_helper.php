@@ -25,23 +25,18 @@ if (!function_exists('random_delay')) {
 if (!function_exists('smart_delay')) {
     function smart_delay() {
         $hour = date('H');
-        
-        // Délais intelligents selon l'heure
+
         if ($hour >= 22 || $hour < 6) {
-            // Nuit : plus lent (15-30 secondes)
             $delay = rand(15, 30);
         } elseif ($hour >= 12 && $hour <= 14) {
-            // Heure de pointe : moyen (8-20 secondes)
             $delay = rand(8, 20);
         } else {
-            // Journée normale : standard (5-15 secondes)
             $delay = rand(5, 15);
         }
-        
-        // Variation aléatoire ±20%
+
         $variation = $delay * (rand(-20, 20) / 100);
         $final_delay = max(3, $delay + $variation);
-        
+
         usleep($final_delay * 1000000);
         return $final_delay;
     }
@@ -51,7 +46,7 @@ if (!function_exists('sanitize_message')) {
     function sanitize_message($message) {
         $message = strip_tags($message);
         $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
-        $message = preg_replace('/[^\x20-\x7E\x0A\x0D]/', '', $message);
+        $message = preg_replace('/[^\x20-\x7E\x0A\x0D\xC0-\xFF]/', '', $message);
         return trim($message);
     }
 }
@@ -65,7 +60,6 @@ if (!function_exists('contains_link')) {
 
 if (!function_exists('contains_mention')) {
     function contains_mention($message) {
-        // Mentions WhatsApp: @nom ou @+2547...
         return preg_match('/@[a-zA-Z0-9_+]+/', $message);
     }
 }
@@ -81,13 +75,13 @@ if (!function_exists('log_whatsapp')) {
         $CI = &get_instance();
         $data = array(
             'order_request_id' => $order_request_id,
-            'product_id' => $product_id,
-            'phone_number' => format_phone($phone_number),
-            'message_content' => $message_content,
-            'message_type' => $message_type,
-            'status' => $status,
-            'error_message' => $error_message,
-            'sent_at' => date('Y-m-d H:i:s')
+            'product_id'       => $product_id,
+            'phone_number'     => format_phone($phone_number),
+            'message_content'  => $message_content,
+            'message_type'     => $message_type,
+            'status'           => $status,
+            'error_message'    => $error_message,
+            'sent_at'          => date('Y-m-d H:i:s')
         );
         return $CI->db->insert('whatsapp_logs', $data);
     }
@@ -96,17 +90,17 @@ if (!function_exists('log_whatsapp')) {
 if (!function_exists('media_type_detect')) {
     function media_type_detect($file_path) {
         $mime_types = array(
-            'image' => array('image/jpeg', 'image/png', 'image/gif', 'image/webp'),
-            'video' => array('video/mp4', 'video/webm', 'video/quicktime'),
-            'audio' => array('audio/mpeg', 'audio/ogg', 'audio/wav'),
+            'image'    => array('image/jpeg', 'image/png', 'image/gif', 'image/webp'),
+            'video'    => array('video/mp4', 'video/webm', 'video/quicktime'),
+            'audio'    => array('audio/mpeg', 'audio/ogg', 'audio/wav'),
             'document' => array('application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
-            'sticker' => array('image/webp')
+            'sticker'  => array('image/webp')
         );
-        
+
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file_path);
+        $mime  = finfo_file($finfo, $file_path);
         finfo_close($finfo);
-        
+
         foreach ($mime_types as $type => $mimes) {
             if (in_array($mime, $mimes)) {
                 return $type;
@@ -120,11 +114,15 @@ if (!function_exists('is_admin_number')) {
     function is_admin_number($phone) {
         $CI = &get_instance();
         $CI->load->library('whapi_library');
-        $admins = $CI->whapi_library->get_setting('admin_numbers');
-        $admin_numbers = json_decode($admins, true) ?: [];
+        $admins         = $CI->whapi_library->get_setting('admin_numbers');
+        $admin_numbers  = json_decode($admins, true) ?: [];
         return in_array(format_phone($phone), $admin_numbers);
     }
 }
+
+// CORRECTION BUG : les accolades de parse_template étaient mal fermées,
+// ce qui imbriquait generate_queue_id et log_whatsapp_security à l'intérieur
+// du bloc if (!function_exists('parse_template')) — erreur fatale PHP.
 
 if (!function_exists('parse_template')) {
     function parse_template($content, $variables = []) {
@@ -133,8 +131,7 @@ if (!function_exists('parse_template')) {
         }
         return $content;
     }
-
-    // AJOUTER ces 2 fonctions manquantes
+} // ← accolade fermante du if parse_template
 
 if (!function_exists('generate_queue_id')) {
     function generate_queue_id() {
@@ -146,12 +143,11 @@ if (!function_exists('log_whatsapp_security')) {
     function log_whatsapp_security($group_id, $sender, $action_type, $reason) {
         $CI = &get_instance();
         return $CI->db->insert('whatsapp_security_logs', [
-            'group_id' => $group_id,
-            'sender' => format_phone($sender),
+            'group_id'    => $group_id,
+            'sender'      => format_phone($sender),
             'action_type' => $action_type,
-            'reason' => $reason,
-            'created_at' => date('Y-m-d H:i:s')
+            'reason'      => $reason,
+            'created_at'  => date('Y-m-d H:i:s')
         ]);
     }
-}
 }

@@ -547,11 +547,6 @@ $config['modules_locations'] = array(
 
 
 
-// Whapi.Cloud API Token
-// Whapi.Cloud Configuration
-$config['whapi_token'] = 'VOTRE_TOKEN_API_ICI'; // Remplacez par votre vrai token
-$config['whapi_base_url'] = 'https://gate.whapi.cloud'; // URL de base de l'API
-
 
 $config['zapier_webhook_url'] = 'https://hooks.zapier.com/hooks/catch/123456/abcde';
 
