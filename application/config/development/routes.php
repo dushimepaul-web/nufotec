@@ -441,11 +441,8 @@ $route['api/investors/Save'] = 'Investors/Save';
 
 
 
-// Route pour les statuts de messages (optionnel)
-$route['webhook/status'] = 'Webhook_whapi/status';
-$route['webhook/whatsapp']        = 'webhook_whapi/index';
-$route['webhook/whatsapp/(:any)'] = 'webhook_whapi/index/$1';
-
+$route['webhook/whatsapp']        = 'Webhook_whapi/Webhook_whapi/index';
+$route['webhook/whatsapp/(:any)'] = 'Webhook_whapi/Webhook_whapi/index/$1';
 // ==============================================
 // CRON ROUTES (Execution automatique)
 // ==============================================
