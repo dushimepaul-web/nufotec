@@ -7,6 +7,39 @@
  */
 declare(strict_types=1);
 
+// ── Capture TOUTES les erreurs PHP → retourne JSON si AJAX ──────
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
+set_exception_handler(function(Throwable $e) {
+    if (isset($_GET['ajax'])) {
+        http_response_code(200); // on garde 200 pour que le JS reçoive la réponse
+        header('Content-Type: application/json');
+        echo json_encode([
+            'ok'    => false,
+            'msg'   => '[PHP Exception] ' . $e->getMessage(),
+            'file'  => basename($e->getFile()),
+            'line'  => $e->getLine(),
+        ]);
+        exit;
+    }
+    // Hors AJAX : afficher l'erreur dans la page
+    echo '<pre style="background:#1a0010;color:#ff6b8a;padding:20px;font-size:13px;">';
+    echo htmlspecialchars('[' . get_class($e) . '] ' . $e->getMessage() . "\n");
+    echo htmlspecialchars('Fichier: ' . $e->getFile() . ' ligne ' . $e->getLine());
+    echo '</pre>';
+    exit;
+});
+
+set_error_handler(function(int $errno, string $msg, string $file, int $line): bool {
+    // Convertit les erreurs PHP en exceptions pour être capturées par set_exception_handler
+    if (error_reporting() & $errno) {
+        throw new \ErrorException($msg, $errno, $errno, $file, $line);
+    }
+    return false;
+});
+
 // ── Configuration ────────────────────────────────────────────
 define('DB_HOST',    'localhost');
 define('DB_USER',    'nufotec_nufotec');
@@ -182,6 +215,33 @@ if ($authed && isset($_GET['ajax'])) {
         $status = $_GET['status'] ?? 'completed';
         dbx("DELETE FROM whatsapp_queue WHERE status=?",[$status]);
         echo json_encode(['ok'=>true]);
+        exit;
+    }
+
+    // Diagnostic DB (accès public pour déboguer le 500)
+    if ($act === 'diag') {
+        $diag = [];
+        // Test 1 : extension PDO
+        $diag['pdo_loaded']   = extension_loaded('pdo');
+        $diag['pdo_mysql']    = extension_loaded('pdo_mysql');
+        $diag['php_version']  = PHP_VERSION;
+        // Test 2 : connexion DB
+        try {
+            $pdo = new PDO(
+                'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8mb4',
+                DB_USER, DB_PASS,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+            $diag['db_connect'] = 'OK';
+            // Test 3 : tables accessibles
+            $tables = [];
+            $st = $pdo->query("SHOW TABLES");
+            while ($r = $st->fetch(PDO::FETCH_NUM)) $tables[] = $r[0];
+            $diag['tables'] = $tables;
+        } catch (\PDOException $e) {
+            $diag['db_connect'] = 'ERREUR: ' . $e->getMessage();
+        }
+        echo json_encode(['ok'=>true,'diag'=>$diag]);
         exit;
     }
 
