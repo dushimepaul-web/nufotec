@@ -1,5 +1,7 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
-include VIEWPATH . 'includes/backend/Header.php';
+ include VIEWPATH.'includes/backend/Header.php'; 
+ include VIEWPATH.'includes/backend/Sidebar.php'; 
+ include VIEWPATH.'includes/backend/Topheader.php'; 
 
 /* ─── Helpers PHP locaux ─────────────────────────────────── */
 function fbu(float $v, int $dec = 0): string {
@@ -114,15 +116,12 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <style>
-/* ════════════════════════════════════════════════
-   DESIGN SYSTEM – NUFOTEC DARK-TEAL INDUSTRIAL
-   ════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap');
+
 
 :root {
-  --c-bg:       #050E1A;
-  --c-surface:  #0A1929;
-  --c-card:     #0D2136;
+  --c-bg:       #236f40;
+  --c-surface:  #0a952f;
+  --c-card:     #055983;
   --c-border:   rgba(255,255,255,.07);
   --c-text:     #E2EAF4;
   --c-muted:    #6B8BAD;
@@ -392,7 +391,6 @@ h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; }
 </style>
 
 
-<?php include VIEWPATH . 'includes/backend/Sidebar.php'; ?>
 <div class="page-wrapper">
 <div class="page-content">
 
