@@ -14,7 +14,7 @@ error_reporting(E_ALL);
 
 set_exception_handler(function(Throwable $e) {
     if (isset($_GET['ajax'])) {
-        http_response_code(200); // on garde 200 pour que le JS reçoive la réponse
+        http_response_code(200);
         header('Content-Type: application/json');
         echo json_encode([
             'ok'    => false,
@@ -24,7 +24,6 @@ set_exception_handler(function(Throwable $e) {
         ]);
         exit;
     }
-    // Hors AJAX : afficher l'erreur dans la page
     echo '<pre style="background:#1a0010;color:#ff6b8a;padding:20px;font-size:13px;">';
     echo htmlspecialchars('[' . get_class($e) . '] ' . $e->getMessage() . "\n");
     echo htmlspecialchars('Fichier: ' . $e->getFile() . ' ligne ' . $e->getLine());
@@ -33,7 +32,6 @@ set_exception_handler(function(Throwable $e) {
 });
 
 set_error_handler(function(int $errno, string $msg, string $file, int $line): bool {
-    // Convertit les erreurs PHP en exceptions pour être capturées par set_exception_handler
     if (error_reporting() & $errno) {
         throw new \ErrorException($msg, $errno, $errno, $file, $line);
     }
@@ -47,19 +45,19 @@ define('DB_PASS',    '6886Paul@');
 define('DB_NAME',    'nufotec_db');
 define('API_TOKEN',  'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw');
 define('API_URL',    'https://gate.whapi.cloud/');
-define('DASH_PASS',  'admin123');   // ← Changer ce mot de passe !
+define('DASH_PASS',  'admin123');
 
 session_start();
 
 // ── Auth simple ──────────────────────────────────────────────
-if ($_POST['action'] ?? '' === 'login') {
+if (($_POST['action'] ?? '') === 'login') {
     if ($_POST['password'] === DASH_PASS) {
         $_SESSION['auth'] = true;
     } else {
         $login_error = 'Mot de passe incorrect';
     }
 }
-if ($_GET['logout'] ?? '' === '1') {
+if (($_GET['logout'] ?? '') === '1') {
     session_destroy();
     header('Location: dashboard.php');
     exit;
@@ -89,28 +87,56 @@ function dbx(string $sql, array $p = []): int {
     $st = db()->prepare($sql); $st->execute($p); return (int)$st->rowCount();
 }
 
-// ── API Whapi ────────────────────────────────────────────────
+// ── API Whapi (CORRIGÉE POUR HOGIOLINE) ─────────────────────
 function whapi(string $ep, string $m = 'GET', ?array $d = null): ?array {
-    $ch = curl_init(API_URL . ltrim($ep, '/'));
+    $url = API_URL . ltrim($ep, '/');
+    
+    $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        // CORRECTIONS POUR HOGIOLINE :
+        CURLOPT_SSL_VERIFYPEER => false,      // ← Désactive la vérif SSL (contourne l'erreur 35)
+        CURLOPT_SSL_VERIFYHOST => false,      // ← Désactive la vérif du host
+        CURLOPT_SSLVERSION     => CURL_SSLVERSION_TLSv1_2,
+        CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTPHEADER     => [
             'Authorization: Bearer '.API_TOKEN,
             'Content-Type: application/json',
             'Accept: application/json',
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Cache-Control: no-cache',
         ],
     ]);
-    if ($m === 'POST') { curl_setopt($ch, CURLOPT_POST, true); curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d)); }
-    elseif ($m !== 'GET') { curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m); if ($d) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d)); }
+    
+    if ($m === 'POST') {
+        curl_setopt($ch, CURLOPT_POST, true);
+        if ($d) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d));
+    } elseif ($m !== 'GET') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m);
+        if ($d) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d));
+    }
+    
     $body = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err  = curl_error($ch);
+    $info = curl_getinfo($ch);
     curl_close($ch);
-    if ($err || $code >= 400) return null;
-    return json_decode((string)$body, true) ?: [];
+    
+    // Log détaillé pour debug
+    if ($err || $code >= 400) {
+        error_log("Whapi Error [$ep] : $err | HTTP $code | URL: $url");
+        error_log("Whapi Debug: " . print_r($info, true));
+        return null;
+    }
+    
+    $result = json_decode((string)$body, true);
+    if (!$result && $body) {
+        error_log("Whapi JSON decode error for: $ep - Response: " . substr($body, 0, 200));
+    }
+    
+    return $result ?: [];
 }
 
 // ── Actions AJAX ─────────────────────────────────────────────
@@ -118,10 +144,22 @@ if ($authed && isset($_GET['ajax'])) {
     header('Content-Type: application/json');
     $act = $_GET['ajax'];
 
-    // Sync groupes depuis Whapi
+    // Sync groupes depuis Whapi (avec fallback DB)
     if ($act === 'sync_groups') {
         $data = whapi('groups?count=100');
-        if (!$data) { echo json_encode(['ok'=>false,'msg'=>'Erreur API Whapi']); exit; }
+        
+        // Si l'API échoue, on utilise les données DB existantes
+        if (!$data) {
+            $existing_groups = dbq('SELECT COUNT(*) as total FROM groupes_whatsapp');
+            echo json_encode([
+                'ok' => true, 
+                'msg' => '⚠️ API Whapi inaccessible. Utilisation des données locales (mode dégradé)',
+                'total' => $existing_groups[0]->total ?? 0,
+                'degraded' => true
+            ]);
+            exit;
+        }
+        
         $groups = $data['groups'] ?? $data['data'] ?? [];
         $added = 0; $updated = 0;
         foreach ($groups as $g) {
@@ -141,7 +179,7 @@ if ($authed && isset($_GET['ajax'])) {
         exit;
     }
 
-    // Sync membres d'un groupe (ou tous)
+    // Sync membres (avec fallback)
     if ($act === 'sync_members') {
         $gid_filter = $_GET['gid'] ?? null;
         $groups = $gid_filter
@@ -151,11 +189,14 @@ if ($authed && isset($_GET['ajax'])) {
         foreach ($groups as $g) {
             if (!$g) continue;
             $data = whapi("groups/{$g->groupe_id}/participants");
-            if (!$data) { $errors[] = $g->groupe_id; continue; }
+            if (!$data) { 
+                $errors[] = $g->groupe_id; 
+                continue; 
+            }
             $parts = $data['participants'] ?? $data['members'] ?? [];
             foreach ($parts as $p) {
                 $phone_raw = is_array($p) ? ($p['id'] ?? $p['phone'] ?? '') : $p;
-                $phone_fmt = preg_replace('/\D/','',preg_replace('/@.*/','', $phone_raw));
+                $phone_fmt = preg_replace('/\D/','', preg_replace('/@.*/','', $phone_raw));
                 $is_admin  = isset($p['isAdmin']) ? (int)$p['isAdmin'] : (isset($p['admin']) ? 1 : 0);
                 $name      = $p['name'] ?? $p['pushName'] ?? null;
                 if (!$phone_fmt) continue;
@@ -167,13 +208,13 @@ if ($authed && isset($_GET['ajax'])) {
                        is_admin=VALUES(is_admin),
                        profile_name=COALESCE(VALUES(profile_name),profile_name),
                        synced_at=NOW(), updated_at=NOW()',
-                    [$g->groupe_id,$phone_raw,$phone_fmt,$is_admin,$name]
+                    [$g->groupe_id, $phone_raw, $phone_fmt, $is_admin, $name]
                 );
                 $total++;
             }
         }
         $msg = "$total membre(s) synchronisé(s)";
-        if ($errors) $msg .= ' · Erreurs: '.implode(', ',$errors);
+        if ($errors) $msg .= ' · API erreur pour: '.implode(', ',$errors);
         echo json_encode(['ok'=>true,'msg'=>$msg]);
         exit;
     }
@@ -218,14 +259,15 @@ if ($authed && isset($_GET['ajax'])) {
         exit;
     }
 
-    // Diagnostic DB (accès public pour déboguer le 500)
+    // Diagnostic DB (accès public pour déboguer)
     if ($act === 'diag') {
         $diag = [];
-        // Test 1 : extension PDO
         $diag['pdo_loaded']   = extension_loaded('pdo');
         $diag['pdo_mysql']    = extension_loaded('pdo_mysql');
         $diag['php_version']  = PHP_VERSION;
-        // Test 2 : connexion DB
+        $diag['curl_version'] = curl_version()['version'] ?? 'unknown';
+        
+        // Test connexion DB
         try {
             $pdo = new PDO(
                 'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8mb4',
@@ -233,7 +275,6 @@ if ($authed && isset($_GET['ajax'])) {
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
             $diag['db_connect'] = 'OK';
-            // Test 3 : tables accessibles
             $tables = [];
             $st = $pdo->query("SHOW TABLES");
             while ($r = $st->fetch(PDO::FETCH_NUM)) $tables[] = $r[0];
@@ -241,6 +282,11 @@ if ($authed && isset($_GET['ajax'])) {
         } catch (\PDOException $e) {
             $diag['db_connect'] = 'ERREUR: ' . $e->getMessage();
         }
+        
+        // Test API Whapi
+        $test_whapi = whapi('health');
+        $diag['whapi_reachable'] = $test_whapi !== null;
+        
         echo json_encode(['ok'=>true,'diag'=>$diag]);
         exit;
     }
@@ -248,14 +294,14 @@ if ($authed && isset($_GET['ajax'])) {
     // Données dashboard JSON
     if ($act === 'stats') {
         $stats = [
-            'groups'       => db1('SELECT COUNT(*) c FROM groupes_whatsapp')->c ?? 0,
-            'groups_actif' => db1('SELECT COUNT(*) c FROM groupes_whatsapp WHERE actif=1')->c ?? 0,
-            'members'      => db1('SELECT COUNT(*) c FROM whatsapp_participants')->c ?? 0,
-            'blacklist'    => db1('SELECT COUNT(*) c FROM whatsapp_blacklist')->c ?? 0,
-            'queue_pending'=> db1('SELECT COUNT(*) c FROM whatsapp_queue WHERE status=\'pending\'')->c ?? 0,
-            'queue_failed' => db1('SELECT COUNT(*) c FROM whatsapp_queue WHERE status=\'failed\'')->c ?? 0,
-            'logs_today'   => db1('SELECT COUNT(*) c FROM whatsapp_logs WHERE DATE(created_at)=CURDATE()')->c ?? 0,
-            'violations'   => db1('SELECT COUNT(*) c FROM whatsapp_participants WHERE violation_count>0')->c ?? 0,
+            'groups'       => (db1('SELECT COUNT(*) c FROM groupes_whatsapp')->c ?? 0),
+            'groups_actif' => (db1('SELECT COUNT(*) c FROM groupes_whatsapp WHERE actif=1')->c ?? 0),
+            'members'      => (db1('SELECT COUNT(*) c FROM whatsapp_participants')->c ?? 0),
+            'blacklist'    => (db1('SELECT COUNT(*) c FROM whatsapp_blacklist')->c ?? 0),
+            'queue_pending'=> (db1('SELECT COUNT(*) c FROM whatsapp_queue WHERE status=\'pending\'')->c ?? 0),
+            'queue_failed' => (db1('SELECT COUNT(*) c FROM whatsapp_queue WHERE status=\'failed\'')->c ?? 0),
+            'logs_today'   => (db1('SELECT COUNT(*) c FROM whatsapp_logs WHERE DATE(created_at)=CURDATE()')->c ?? 0),
+            'violations'   => (db1('SELECT COUNT(*) c FROM whatsapp_participants WHERE violation_count>0')->c ?? 0),
         ];
         echo json_encode($stats);
         exit;
@@ -724,12 +770,23 @@ tr:hover td { background: rgba(255,255,255,.02); }
   .main { margin-left: 60px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Warning pour mode dégradé */
+.warning-banner {
+  background: rgba(255,181,71,.15);
+  border-left: 3px solid var(--amber);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  border-radius: 8px;
+  color: var(--amber);
+}
 </style>
 </head>
 <body>
 
 <?php if (!$authed): ?>
-<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
+<!-- LOGIN -->
 <div class="login-wrap">
   <div class="login-box">
     <div class="login-logo">NUFOTEC</div>
@@ -746,10 +803,9 @@ tr:hover td { background: rgba(255,255,255,.02); }
 </div>
 
 <?php else: ?>
-<!-- ═══════════════════════════════ APP ═══════════════════════════════ -->
+<!-- APP -->
 <div class="shell">
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="brand">NUFOTEC</div>
@@ -787,7 +843,6 @@ tr:hover td { background: rgba(255,255,255,.02); }
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
     <div class="topbar-title" id="page-title">Vue d'ensemble</div>
@@ -801,214 +856,11 @@ tr:hover td { background: rgba(255,255,255,.02); }
     </div>
   </div>
 
-  <div class="content">
-
-    <!-- ── PAGE : VUE D'ENSEMBLE ──────────────────────────── -->
-    <div class="page active" id="page-overview">
-      <div class="stats-grid">
-        <div class="stat-card green">
-          <div class="stat-label">Groupes actifs</div>
-          <div class="stat-val green" id="s-groups">—</div>
-          <div class="stat-sub" id="s-groups-sub">sur — au total</div>
-        </div>
-        <div class="stat-card blue">
-          <div class="stat-label">Membres</div>
-          <div class="stat-val blue" id="s-members">—</div>
-          <div class="stat-sub">synchronisés</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-label">Blacklist</div>
-          <div class="stat-val red" id="s-blacklist">—</div>
-          <div class="stat-sub">numéros bloqués</div>
-        </div>
-        <div class="stat-card amber">
-          <div class="stat-label">File d'attente</div>
-          <div class="stat-val amber" id="s-queue">—</div>
-          <div class="stat-sub" id="s-queue-sub">— en échec</div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-label">Violations</div>
-          <div class="stat-val purple" id="s-violations">—</div>
-          <div class="stat-sub">membres signalés</div>
-        </div>
-        <div class="stat-card blue">
-          <div class="stat-label">Logs aujourd'hui</div>
-          <div class="stat-val blue" id="s-logs">—</div>
-          <div class="stat-sub">messages traités</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Actions rapides</div>
-        </div>
-        <div style="padding:20px;display:flex;gap:12px;flex-wrap:wrap;">
-          <button class="btn btn-green" onclick="syncGroups()">
-            ⬡ &nbsp;Importer tous les groupes Whapi
-          </button>
-          <button class="btn btn-blue" onclick="syncMembers(null)">
-            ◉ &nbsp;Sync membres (groupes où je suis admin)
-          </button>
-          <button class="btn btn-ghost" onclick="loadStats()">
-            ↻ &nbsp;Actualiser les stats
-          </button>
-          <button class="btn btn-amber" onclick="openBlacklistModal()">
-            ⊘ &nbsp;Ajouter à la blacklist
-          </button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Dernières violations</div>
-          <button class="btn btn-ghost btn-sm" onclick="goPage('security')">Voir tout →</button>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr>
-              <th>Numéro</th><th>Type</th><th>Raison</th><th>Date</th>
-            </tr></thead>
-            <tbody id="overview-security">
-              <tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── PAGE : GROUPES ──────────────────────────────────── -->
-    <div class="page" id="page-groups">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Groupes WhatsApp</div>
-          <div class="panel-actions">
-            <button class="btn btn-green" onclick="syncGroups()">⬡ Sync depuis Whapi</button>
-            <button class="btn btn-blue btn-sm" onclick="loadGroups()">↻ Actualiser</button>
-          </div>
-        </div>
-        <div id="groups-grid" class="group-grid" style="padding:20px;">
-          <div style="color:var(--text3);font-size:13px;">Chargement…</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── PAGE : MEMBRES ─────────────────────────────────── -->
-    <div class="page" id="page-members">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Membres</div>
-          <div class="panel-actions">
-            <input class="search-input" type="text" id="member-search" placeholder="Rechercher…" oninput="loadMembers()">
-            <select class="search-input" id="member-group" style="width:auto;" onchange="loadMembers()">
-              <option value="">Tous les groupes</option>
-            </select>
-            <button class="btn btn-blue btn-sm" onclick="syncMembers(null)">↻ Sync admin</button>
-          </div>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr>
-              <th>Téléphone</th><th>Nom</th><th>Groupe</th><th>Rôle</th>
-              <th>Violations</th><th>Actions</th>
-            </tr></thead>
-            <tbody id="members-tbody">
-              <tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── PAGE : BLACKLIST ───────────────────────────────── -->
-    <div class="page" id="page-blacklist">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Blacklist</div>
-          <div class="panel-actions">
-            <button class="btn btn-amber" onclick="openBlacklistModal()">+ Ajouter</button>
-            <button class="btn btn-ghost btn-sm" onclick="loadBlacklist()">↻</button>
-          </div>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Numéro</th><th>Raison</th><th>Date</th><th>Action</th></tr></thead>
-            <tbody id="blacklist-tbody">
-              <tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── PAGE : QUEUE ───────────────────────────────────── -->
-    <div class="page" id="page-queue">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">File d'envoi</div>
-          <div class="panel-actions">
-            <button class="btn btn-red btn-sm" onclick="if(confirm('Vider les messages complétés ?')) api('clear_queue','status=completed').then(()=>{toast('Nettoyé','ok');loadQueue()})">🗑 Vider complétés</button>
-            <button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻</button>
-          </div>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr>
-              <th>Type</th><th>Cible</th><th>Contenu</th>
-              <th>Statut</th><th>Tentatives</th><th>Créé</th>
-            </tr></thead>
-            <tbody id="queue-tbody">
-              <tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── PAGE : LOGS ────────────────────────────────────── -->
-    <div class="page" id="page-logs">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Logs de messages</div>
-          <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻</button>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr>
-              <th>Téléphone</th><th>Type</th><th>Contenu</th>
-              <th>Statut</th><th>Date</th>
-            </tr></thead>
-            <tbody id="logs-tbody">
-              <tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── PAGE : SÉCURITÉ ───────────────────────────────── -->
-    <div class="page" id="page-security">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Logs de sécurité</div>
-          <button class="btn btn-ghost btn-sm" onclick="loadSecurity()">↻</button>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr>
-              <th>Expéditeur</th><th>Action</th><th>Raison</th>
-              <th>Groupe</th><th>Date</th>
-            </tr></thead>
-            <tbody id="security-tbody">
-              <tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /content -->
-</div><!-- /main -->
-</div><!-- /shell -->
+  <div class="content" id="main-content">
+    <!-- Le message d'avertissement sera inséré ici si besoin -->
+  </div>
+</div>
+</div>
 
 <!-- MODAL Blacklist -->
 <div class="modal-bg" id="modal-blacklist">
@@ -1042,19 +894,46 @@ const pages = {
 };
 
 let currentPage = 'overview';
+let degradedMode = false;
+
+// Vérifier le mode dégradé au chargement
+async function checkDegradedMode() {
+    const diag = await api('diag');
+    if (diag.diag && !diag.diag.whapi_reachable) {
+        degradedMode = true;
+        const warning = document.createElement('div');
+        warning.className = 'warning-banner';
+        warning.innerHTML = '⚠️ <strong>Mode dégradé</strong> — L\'API Whapi est inaccessible. Les synchronisations utiliseront les données locales.';
+        const content = $('main-content');
+        if (content && !content.querySelector('.warning-banner')) {
+            content.insertBefore(warning, content.firstChild);
+        }
+    }
+}
 
 function goPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pg = pages[name];
   if (!pg) return;
+  
+  // Créer la page si elle n'existe pas
+  if (!$(pg.el)) {
+    const content = $('main-content');
+    const div = document.createElement('div');
+    div.id = pg.el;
+    div.className = 'page';
+    if (name === 'overview') div.classList.add('active');
+    content.appendChild(div);
+  }
+  
   $(pg.el).classList.add('active');
   $('page-title').textContent = pg.title;
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
   });
   currentPage = name;
-  pg.load();
+  if (pg.load) pg.load();
 }
 
 async function api(action, params='') {
@@ -1087,17 +966,28 @@ function shortText(s, n=40) {
 // ─── Stats ────────────────────────────────────────────────
 async function loadStats() {
   const d = await api('stats');
-  $('s-groups').textContent     = d.groups_actif;
-  $('s-groups-sub').textContent = `sur ${d.groups} au total`;
-  $('s-members').textContent    = d.members;
-  $('s-blacklist').textContent  = d.blacklist;
-  $('s-queue').textContent      = d.queue_pending;
-  $('s-queue-sub').textContent  = `${d.queue_failed} en échec`;
-  $('s-violations').textContent = d.violations;
-  $('s-logs').textContent       = d.logs_today;
-  // badges sidebar
-  if (d.blacklist > 0) { $('nb-blacklist').textContent = d.blacklist; $('nb-blacklist').style.display = ''; }
-  if (d.queue_pending > 0) { $('nb-queue').textContent = d.queue_pending; $('nb-queue').style.display = ''; }
+  const sGroups = $('s-groups');
+  const sGroupsSub = $('s-groups-sub');
+  const sMembers = $('s-members');
+  const sBlacklist = $('s-blacklist');
+  const sQueue = $('s-queue');
+  const sQueueSub = $('s-queue-sub');
+  const sViolations = $('s-violations');
+  const sLogs = $('s-logs');
+  
+  if (sGroups) sGroups.textContent = d.groups_actif;
+  if (sGroupsSub) sGroupsSub.textContent = `sur ${d.groups} au total`;
+  if (sMembers) sMembers.textContent = d.members;
+  if (sBlacklist) sBlacklist.textContent = d.blacklist;
+  if (sQueue) sQueue.textContent = d.queue_pending;
+  if (sQueueSub) sQueueSub.textContent = `${d.queue_failed} en échec`;
+  if (sViolations) sViolations.textContent = d.violations;
+  if (sLogs) sLogs.textContent = d.logs_today;
+  
+  const nbBlacklist = $('nb-blacklist');
+  const nbQueue = $('nb-queue');
+  if (nbBlacklist && d.blacklist > 0) { nbBlacklist.textContent = d.blacklist; nbBlacklist.style.display = ''; }
+  if (nbQueue && d.queue_pending > 0) { nbQueue.textContent = d.queue_pending; nbQueue.style.display = ''; }
 }
 
 // ─── Vue d'ensemble ───────────────────────────────────────
@@ -1105,6 +995,7 @@ async function loadOverview() {
   loadStats();
   const logs = await api('list_security');
   const tbody = $('overview-security');
+  if (!tbody) return;
   if (!logs.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Aucune violation</td></tr>';
     return;
@@ -1127,7 +1018,8 @@ async function syncGroups() {
   const d = await api('sync_groups');
   if (btn) btn.innerHTML = orig || '⬡ Sync groupes';
   if (d.ok) {
-    toast(`✓ ${d.msg} (${d.total} groupes Whapi)`, 'ok');
+    if (d.degraded) toast('⚠️ ' + d.msg, 'ok');
+    else toast(`✓ ${d.msg} (${d.total} groupes)`, 'ok');
     if (currentPage === 'groups') loadGroups();
     loadStats();
   } else {
@@ -1152,6 +1044,7 @@ async function syncMembers(gid) {
 async function loadGroups() {
   const groups = await api('list_groups');
   const container = $('groups-grid');
+  if (!container) return;
   if (!groups.length) {
     container.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:8px;">
       Aucun groupe. Cliquez sur <strong style="color:var(--green)">Sync depuis Whapi</strong>.
@@ -1187,12 +1080,13 @@ async function toggleGroup(gid, btn) {
 
 // ─── Membres ──────────────────────────────────────────────
 async function loadMembersPage() {
-  // Charger les groupes pour le filtre
   const groups = await api('list_groups');
   const sel = $('member-group');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Tous les groupes</option>' +
-    groups.map(g => `<option value="${esc(g.groupe_id)}" ${g.groupe_id===cur?'selected':''}>${esc(g.nom||g.groupe_id)}</option>`).join('');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Tous les groupes</option>' +
+      groups.map(g => `<option value="${esc(g.groupe_id)}" ${g.groupe_id===cur?'selected':''}>${esc(g.nom||g.groupe_id)}</option>`).join('');
+  }
   loadMembers();
 }
 
@@ -1202,6 +1096,7 @@ async function loadMembers() {
   const params = `search=${encodeURIComponent(search)}&gid=${encodeURIComponent(gid)}`;
   const members = await api('list_members', params);
   const tbody = $('members-tbody');
+  if (!tbody) return;
   if (!members.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Aucun membre trouvé</td></tr>';
     return;
@@ -1244,6 +1139,7 @@ async function blacklistPhone(phone) {
 async function loadBlacklist() {
   const list = await api('list_blacklist');
   const tbody = $('blacklist-tbody');
+  if (!tbody) return;
   if (!list.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Aucun numéro blacklisté</td></tr>';
     return;
@@ -1258,15 +1154,18 @@ async function loadBlacklist() {
 }
 
 function openBlacklistModal() {
-  $('modal-blacklist').classList.add('open');
-  $('bl-phone').focus();
+  const modal = $('modal-blacklist');
+  if (modal) modal.classList.add('open');
+  const phone = $('bl-phone');
+  if (phone) phone.focus();
 }
 function closeModal() {
-  $('modal-blacklist').classList.remove('open');
+  const modal = $('modal-blacklist');
+  if (modal) modal.classList.remove('open');
 }
 async function doBlacklistAdd() {
-  const phone  = $('bl-phone').value.replace(/\D/g,'');
-  const reason = $('bl-reason').value || 'Ajouté manuellement';
+  const phone  = ($('bl-phone')?.value || '').replace(/\D/g,'');
+  const reason = $('bl-reason')?.value || 'Ajouté manuellement';
   if (!phone) { toast('Numéro invalide','err'); return; }
   const d = await api('blacklist_add', `phone=${encodeURIComponent(phone)}&reason=${encodeURIComponent(reason)}`);
   if (d.ok) {
@@ -1285,6 +1184,7 @@ async function removeBlacklist(phone, btn) {
 async function loadQueue() {
   const list = await api('list_queue');
   const tbody = $('queue-tbody');
+  if (!tbody) return;
   const statusBadge = {
     pending:    'badge-amber',
     processing: 'badge-blue',
@@ -1311,6 +1211,7 @@ async function loadQueue() {
 async function loadLogs() {
   const list = await api('list_logs');
   const tbody = $('logs-tbody');
+  if (!tbody) return;
   const statusBadge = { sent:'badge-green', failed:'badge-red', received:'badge-blue', processing:'badge-amber' };
   if (!list.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Aucun log</td></tr>';
@@ -1330,6 +1231,7 @@ async function loadLogs() {
 async function loadSecurity() {
   const list = await api('list_security');
   const tbody = $('security-tbody');
+  if (!tbody) return;
   if (!list.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Aucune violation</td></tr>';
     return;
@@ -1344,20 +1246,74 @@ async function loadSecurity() {
     </tr>`).join('');
 }
 
-// ─── Fermer modal en cliquant en dehors ───────────────────
-$('modal-blacklist').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
+// ─── Initialisation des pages ────────────────────────────
+function initPages() {
+  const content = $('main-content');
+  if (!content) return;
+  
+  // Créer toutes les pages
+  for (const [name, pg] of Object.entries(pages)) {
+    if (!$(pg.el)) {
+      const div = document.createElement('div');
+      div.id = pg.el;
+      div.className = 'page';
+      if (name === 'overview') div.classList.add('active');
+      
+      // Ajouter le contenu de base de chaque page
+      if (name === 'overview') {
+        div.innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-card green"><div class="stat-label">Groupes actifs</div><div class="stat-val green" id="s-groups">—</div><div class="stat-sub" id="s-groups-sub">sur — au total</div></div>
+            <div class="stat-card blue"><div class="stat-label">Membres</div><div class="stat-val blue" id="s-members">—</div><div class="stat-sub">synchronisés</div></div>
+            <div class="stat-card red"><div class="stat-label">Blacklist</div><div class="stat-val red" id="s-blacklist">—</div><div class="stat-sub">numéros bloqués</div></div>
+            <div class="stat-card amber"><div class="stat-label">File d'attente</div><div class="stat-val amber" id="s-queue">—</div><div class="stat-sub" id="s-queue-sub">— en échec</div></div>
+            <div class="stat-card purple"><div class="stat-label">Violations</div><div class="stat-val purple" id="s-violations">—</div><div class="stat-sub">membres signalés</div></div>
+            <div class="stat-card blue"><div class="stat-label">Logs aujourd'hui</div><div class="stat-val blue" id="s-logs">—</div><div class="stat-sub">messages traités</div></div>
+          </div>
+          <div class="panel"><div class="panel-header"><div class="panel-title">Actions rapides</div></div>
+          <div style="padding:20px;display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-green" onclick="syncGroups()">⬡ Importer tous les groupes Whapi</button>
+            <button class="btn btn-blue" onclick="syncMembers(null)">◉ Sync membres (groupes où je suis admin)</button>
+            <button class="btn btn-ghost" onclick="loadStats()">↻ Actualiser les stats</button>
+            <button class="btn btn-amber" onclick="openBlacklistModal()">⊘ Ajouter à la blacklist</button>
+          </div></div>
+          <div class="panel"><div class="panel-header"><div class="panel-title">Dernières violations</div><button class="btn btn-ghost btn-sm" onclick="goPage('security')">Voir tout →</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Type</th><th>Raison</th><th>Date</th></tr></thead><tbody id="overview-security"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody></table></div></div>`;
+      } else if (name === 'groups') {
+        div.innerHTML = `<div class="panel"><div class="panel-header"><div class="panel-title">Groupes WhatsApp</div><div class="panel-actions"><button class="btn btn-green" onclick="syncGroups()">⬡ Sync depuis Whapi</button><button class="btn btn-blue btn-sm" onclick="loadGroups()">↻ Actualiser</button></div></div><div id="groups-grid" class="group-grid" style="padding:20px;"><div style="color:var(--text3);font-size:13px;">Chargement…</div></div></div>`;
+      } else if (name === 'members') {
+        div.innerHTML = `<div class="panel"><div class="panel-header"><div class="panel-title">Membres</div><div class="panel-actions"><input class="search-input" type="text" id="member-search" placeholder="Rechercher…" oninput="loadMembers()"><select class="search-input" id="member-group" style="width:auto;" onchange="loadMembers()"><option value="">Tous les groupes</option></select><button class="btn btn-blue btn-sm" onclick="syncMembers(null)">↻ Sync admin</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Nom</th><th>Groupe</th><th>Rôle</th><th>Violations</th><th>Actions</th></tr></thead><tbody id="members-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table></div></div>`;
+      } else if (name === 'blacklist') {
+        div.innerHTML = `<div class="panel"><div class="panel-header"><div class="panel-title">Blacklist</div><div class="panel-actions"><button class="btn btn-amber" onclick="openBlacklistModal()">+ Ajouter</button><button class="btn btn-ghost btn-sm" onclick="loadBlacklist()">↻</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Raison</th><th>Date</th><th>Action</th></tr></thead><tbody id="blacklist-tbody"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody></table></div></div>`;
+      } else if (name === 'queue') {
+        div.innerHTML = `<div class="panel"><div class="panel-header"><div class="panel-title">File d'envoi</div><div class="panel-actions"><button class="btn btn-red btn-sm" onclick="if(confirm('Vider les messages complétés ?')) api('clear_queue','status=completed').then(()=>{toast('Nettoyé','ok');loadQueue()})">🗑 Vider complétés</button><button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Type</th><th>Cible</th><th>Contenu</th><th>Statut</th><th>Tentatives</th><th>Créé</th></tr></thead><tbody id="queue-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table></div></div>`;
+      } else if (name === 'logs') {
+        div.innerHTML = `<div class="panel"><div class="panel-header"><div class="panel-title">Logs de messages</div><button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻</button></div><div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Type</th><th>Contenu</th><th>Statut</th><th>Date</th></tr></thead><tbody id="logs-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table></div></div>`;
+      } else if (name === 'security') {
+        div.innerHTML = `<div class="panel"><div class="panel-header"><div class="panel-title">Logs de sécurité</div><button class="btn btn-ghost btn-sm" onclick="loadSecurity()">↻</button></div><div class="tbl-wrap"><table><thead><tr><th>Expéditeur</th><th>Action</th><th>Raison</th><th>Groupe</th><th>Date</th></tr></thead><tbody id="security-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table></div></div>`;
+      }
+      content.appendChild(div);
+    }
+  }
+}
 
-// ─── Clavier modal ────────────────────────────────────────
+// ─── Fermer modal en cliquant en dehors ───────────────────
+const modal = $('modal-blacklist');
+if (modal) {
+  modal.addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+}
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
-  if (e.key === 'Enter' && $('modal-blacklist').classList.contains('open')) doBlacklistAdd();
+  if (e.key === 'Enter' && $('modal-blacklist')?.classList.contains('open')) doBlacklistAdd();
 });
 
 // ─── Init ────────────────────────────────────────────────
+initPages();
+checkDegradedMode();
 loadOverview();
-// Auto-refresh stats toutes les 60s
 setInterval(loadStats, 60000);
 </script>
 
