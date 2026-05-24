@@ -30,7 +30,7 @@ if (!hash_equals(PROCESSOR_SECRET, $secret)) {
 // ============================================================
 define('DB_HOST',    'localhost');
 define('DB_USER',    'nufotec_nufotec');     // ← changer
-define('DB_PASS',    'root123');              // ← changer
+define('DB_PASS',    '6886Paul@');              // ← changer
 define('DB_NAME',    'nufotec_db');
 
 define('API_TOKEN',    'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw');

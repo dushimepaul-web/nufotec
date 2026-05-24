@@ -43,7 +43,7 @@ set_error_handler(function(int $errno, string $msg, string $file, int $line): bo
 // ── Configuration ────────────────────────────────────────────
 define('DB_HOST',    'localhost');
 define('DB_USER',    'nufotec_nufotec');
-define('DB_PASS',    'root123');
+define('DB_PASS',    '6886Paul@');
 define('DB_NAME',    'nufotec_db');
 define('API_TOKEN',  'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw');
 define('API_URL',    'https://gate.whapi.cloud/');
