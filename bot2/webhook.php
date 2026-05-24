@@ -17,7 +17,7 @@ set_time_limit(30);
 // ============================================================
 define('WEBHOOK_TOKEN', '');          // laisser vide si non utilisé
 define('PROCESSOR_URL', 'https://nufotec.com/bot2/process.php');
-define('PROCESSOR_SECRET', 'CHANGE_MOI_secret_interne_xK9z');
+define('PROCESSOR_SECRET', 'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw');
 define('LOG_FILE',     __DIR__ . '/webhook.log');
 define('LOG_MAX_BYTES', 5 * 1024 * 1024);
 
