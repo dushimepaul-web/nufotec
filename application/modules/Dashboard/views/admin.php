@@ -110,12 +110,7 @@ $recent_activities = $recent_activities ?? [];
 $system_health     = $system_health     ?? [];
 $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Dashboard Admin – NUFOTEC</title>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <style>
@@ -148,13 +143,7 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: var(--c-bg);
-  color: var(--c-text);
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-}
+
 
 /* ── Layout ── */
 .db-wrap    { display: flex; min-height: 100vh; }
@@ -402,9 +391,10 @@ h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; }
 .phase-item:last-child { border-bottom: none; }
 </style>
 
-<div class="db-wrap">
+
 <?php include VIEWPATH . 'includes/backend/Sidebar.php'; ?>
-<div class="db-content">
+<div class="page-wrapper">
+<div class="page-content">
 
 <!-- ═══════════════════ EN-TÊTE ═══════════════════ -->
 <div class="db-header">
