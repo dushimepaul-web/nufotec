@@ -515,115 +515,79 @@ if ($act === 'sync_members') {
         exit;
     }
 
-    // ── upload_media — Télécharger un fichier local et l'envoyer à Whapi `/media`
-    if ($act === 'upload_media') {
-        if (empty($_FILES['file'])) {
-            echo json_encode(['ok' => false, 'msg' => 'Aucun fichier fourni']);
-            exit;
-        }
-        
-        $file = $_FILES['file'];
-        $tmpPath = $file['tmp_name'];
-        $fileName = $file['name'];
-        $mimeType = $file['type'];
-        
-        // Uploader vers Whapi
-        $url = API_URL . 'media';
-        $ch = curl_init($url);
-        $cfile = new CURLFile($tmpPath, $mimeType, $fileName);
-        
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 45,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => [
-                'media' => $cfile
-            ],
-            CURLOPT_HTTPHEADER     => [
-                'Authorization: Bearer ' . API_TOKEN,
-            ],
-        ]);
-        
-        $body = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-        
-        if ($err || $code >= 400) {
-            echo json_encode(['ok' => false, 'msg' => 'Erreur lors de l\'envoi à Whapi: ' . ($err ?: $body), 'code' => $code]);
-            exit;
-        }
-        
-        $res = json_decode($body, true);
-        $mediaId = $res['media_id'] ?? $res['id'] ?? null;
-        
-        if ($mediaId) {
-            // Enregistrer dans whatsapp_media pour historique local
-            dbx('INSERT INTO whatsapp_media (media_type, file_name, file_size, mime_type, uploaded_at) VALUES (?, ?, ?, ?, NOW())', [
-                explode('/', $mimeType)[0] ?? 'document',
-                $fileName,
-                $file['size'],
-                $mimeType
-            ]);
-            
-            echo json_encode(['ok' => true, 'media_id' => $mediaId, 'filename' => $fileName, 'mime_type' => $mimeType]);
-        } else {
-            echo json_encode(['ok' => false, 'msg' => 'Impossible d\'obtenir le media_id de Whapi', 'response' => $res]);
-        }
-        exit;
-    }
-
-    // ── BROADCAST : envoyer message/audio/image/tous (Version améliorée avec file d'attente spécifique)
+    // ── BROADCAST : envoyer message/audio/image/tous
     if ($act==='broadcast') {
         $raw      = file_get_contents('php://input');
         $payload  = json_decode($raw,true)??[];
         $msg_text = trim($payload['text']??'');
         $media_url= trim($payload['media_url']??'');
-        $media_type=trim($payload['media_type']??'');  // image|audio|video|document|voice|sticker
-        $targets  = $payload['targets']??'groups';     // groups|inbox|both OU array de cibles [{type: "group", id: "..."}]
-        $sent=0;
+        $media_type=trim($payload['media_type']??'');  // image|audio|video|document
+        $targets  = $payload['targets']??'groups';     // groups|inbox|both
+        $errors=[]; $sent=0;
 
-        if (is_array($targets)) {
-            // Mode spécifique : liste de cibles choisies individuellement
-            foreach ($targets as $t) {
-                $type = $t['type'] ?? '';
-                $id = $t['id'] ?? '';
-                if ($type === 'group') {
-                    dbx('INSERT INTO whatsapp_queue (target_type,target_id,message_type,message_data,media_url,status,priority,created_at)
-                         VALUES (\'group\',?,?,?,?,\'pending\',1,NOW())',
-                        [$id,$media_type?:'text',$msg_text,$media_url]);
-                    $sent++;
-                } elseif ($type === 'contact') {
-                    $phone_fmt = preg_replace('/\D+/','',$id);
-                    dbx('INSERT INTO whatsapp_queue (target_type,phone_number,message_type,message_data,media_url,status,priority,created_at)
-                         VALUES (\'inbox\',?,?,?,?,\'pending\',2,NOW())',
-                        [$phone_fmt,$media_type?:'text',$msg_text,$media_url]);
-                    $sent++;
+        // Construire le corps du message Whapi
+        $buildMsg = function(string $to) use ($msg_text,$media_url,$media_type): ?array {
+            if ($media_url && $media_type) {
+                // Message avec média (+ texte optionnel)
+                $body = ['to'=>$to];
+                if ($media_type==='image') {
+                    $body['image']=['link'=>$media_url];
+                    if($msg_text) $body['caption']=$msg_text;
+                } elseif ($media_type==='audio') {
+                    $body['audio']=['link'=>$media_url];
+                } elseif ($media_type==='video') {
+                    $body['video']=['link'=>$media_url];
+                    if($msg_text) $body['caption']=$msg_text;
+                } elseif ($media_type==='document') {
+                    $body['document']=['link'=>$media_url,'filename'=>basename($media_url)];
+                    if($msg_text) $body['caption']=$msg_text;
                 }
+                return $body;
+            } elseif ($msg_text) {
+                return ['to'=>$to,'body'=>$msg_text];
             }
-        } else {
-            // Mode général classique : 'groups' | 'inbox' | 'both'
-            if ($targets==='groups' || $targets==='both') {
-                $groups = dbq('SELECT groupe_id FROM groupes_whatsapp WHERE actif=1');
-                foreach ($groups as $g) {
-                    dbx('INSERT INTO whatsapp_queue (target_type,target_id,message_type,message_data,media_url,status,priority,created_at)
-                         VALUES (\'group\',?,?,?,?,\'pending\',1,NOW())',
-                        [$g->groupe_id,$media_type?:'text',$msg_text,$media_url]);
-                    $sent++;
-                }
+            return null;
+        };
+
+        $sendTo = function(string $to, string $type) use ($buildMsg,&$sent,&$errors): void {
+            $ep = $type==='text' ? 'messages/text' : "messages/{$type}";
+            // Déterminer l'endpoint correct
+            $body = $buildMsg($to);
+            if (!$body) return;
+            $ep = isset($body['image']) ? 'messages/image'
+                : (isset($body['audio']) ? 'messages/audio'
+                : (isset($body['video']) ? 'messages/video'
+                : (isset($body['document']) ? 'messages/document'
+                : 'messages/text')));
+            $r = whapi($ep,'POST',$body);
+            if ($r && !isset($r['error'])) $sent++;
+            else $errors[] = $to;
+            usleep(500000); // 0.5s délai anti-spam
+        };
+
+        // Envoyer aux groupes actifs
+        if ($targets==='groups' || $targets==='both') {
+            $groups = dbq('SELECT groupe_id FROM groupes_whatsapp WHERE actif=1');
+            foreach ($groups as $g) {
+                // Mettre en queue pour traitement asynchrone
+                dbx('INSERT INTO whatsapp_queue (target_type,target_id,message_type,message_data,media_url,status,priority,created_at)
+                     VALUES (?,?,?,?,?,\'pending\',1,NOW())',
+                    ['group',$g->groupe_id,$media_type?:'text',$msg_text,$media_url]);
+                $sent++;
             }
-            if ($targets==='inbox' || $targets==='both') {
-                $phones = dbq('SELECT DISTINCT phone_formatted FROM whatsapp_participants WHERE phone_formatted!=\'\'');
-                foreach ($phones as $p) {
-                    dbx('INSERT INTO whatsapp_queue (target_type,phone_number,message_type,message_data,media_url,status,priority,created_at)
-                         VALUES (\'inbox\',?,?,?,?,\'pending\',2,NOW())',
-                        [$p->phone_formatted,$media_type?:'text',$msg_text,$media_url]);
-                    $sent++;
-                }
+        }
+        // Envoyer dans inbox de tous les membres
+        if ($targets==='inbox' || $targets==='both') {
+            $phones = dbq('SELECT DISTINCT phone_formatted FROM whatsapp_participants WHERE phone_formatted!=\'\'');
+            foreach ($phones as $p) {
+                dbx('INSERT INTO whatsapp_queue (target_type,phone_number,message_type,message_data,media_url,status,priority,created_at)
+                     VALUES (?,?,?,?,?,\'pending\',2,NOW())',
+                    ['inbox',$p->phone_formatted,$media_type?:'text',$msg_text,$media_url]);
+                $sent++;
             }
         }
 
-        echo json_encode(['ok'=>true,'msg'=>"$sent message(s) mis en file d'attente avec succès",'errors'=>0]);
+        echo json_encode(['ok'=>true,'msg'=>"$sent message(s) mis en file",'errors'=>count($errors)]);
         exit;
     }
 
@@ -1035,369 +999,7 @@ tr:hover td{background:rgba(37,211,102,.04);}
 .warn-banner{
   background:rgba(255,149,0,.1);border-left:4px solid var(--amber);
   padding:10px 16px;margin-bottom:16px;font-size:13px;border-radius:8px;color:#804800;
-
-/* ── WHATSAPP CHAT BROADCAST UI ── */
-.wa-chat-container {
-  display: flex;
-  flex-direction: column;
-  background-color: #efeae2;
-  background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
-  background-repeat: repeat;
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.08);
-  height: 620px;
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  margin-bottom: 20px;
-  position: relative;
 }
-.wa-chat-header {
-  background-color: #f0f2f5;
-  border-bottom: 1.5px solid #e1e3e6;
-  padding: 12px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 5;
-}
-.wa-chat-header-title {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--wa-green-dd);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.wa-target-tabs {
-  display: flex;
-  background: #e3e6eb;
-  padding: 3px;
-  border-radius: 8px;
-  width: fit-content;
-}
-.wa-target-tab {
-  padding: 6px 16px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--text2);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.wa-target-tab.active {
-  background: white;
-  color: var(--wa-green-dd);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.wa-chat-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 16px;
-  z-index: 2;
-}
-.wa-bubble-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-self: flex-end;
-  max-width: 65%;
-  min-width: 250px;
-  animation: waBubbleIn 0.25s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
-}
-@keyframes waBubbleIn {
-  from { transform: translateY(12px) scale(0.98); opacity: 0; }
-  to { transform: none; opacity: 1; }
-}
-.wa-msg-bubble {
-  background-color: #d9fdd3;
-  color: #111b21;
-  border-radius: 8px;
-  border-top-right-radius: 0;
-  padding: 8px 10px 6px;
-  box-shadow: 0 1px 1.5px rgba(0,0,0,0.12);
-  font-size: 14.2px;
-  position: relative;
-  word-break: break-word;
-}
-.wa-msg-bubble::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: -8px;
-  width: 0;
-  height: 0;
-  border: 4px solid transparent;
-  border-left-color: #d9fdd3;
-  border-top-color: #d9fdd3;
-}
-.wa-msg-media-preview {
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 6px;
-  background: rgba(0,0,0,0.03);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-.wa-msg-media-preview img, .wa-msg-media-preview video {
-  max-height: 200px;
-  object-fit: cover;
-  width: 100%;
-}
-.wa-msg-doc-preview {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(0,0,0,0.04);
-  border-radius: 6px;
-  padding: 10px;
-  border: 1px solid rgba(0,0,0,0.05);
-}
-.wa-msg-doc-icon {
-  font-size: 26px;
-  color: #7f66ff;
-}
-.wa-msg-doc-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.wa-msg-doc-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #111b21;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.wa-msg-doc-size {
-  font-size: 11px;
-  color: #667781;
-}
-.wa-msg-voice-preview {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px;
-}
-.wa-voice-play-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #3b4a54;
-  transition: transform 0.1s;
-}
-.wa-voice-play-btn:active { transform: scale(0.92); }
-.wa-voice-wave {
-  flex: 1;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  gap: 2.5px;
-}
-.wa-wave-bar {
-  flex: 1;
-  height: 60%;
-  background: #8696a0;
-  border-radius: 20px;
-  transition: background 0.2s, height 0.1s;
-}
-.wa-wave-bar.active { background: #00a884; }
-.wa-voice-time {
-  font-size: 11px;
-  color: #667781;
-  font-family: var(--mono);
-  min-width: 32px;
-}
-.wa-msg-meta {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #667781;
-  margin-top: 4px;
-  text-align: right;
-}
-.wa-chat-input-bar {
-  background-color: #f0f2f5;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 5;
-  border-top: 1px solid rgba(0,0,0,0.05);
-}
-.wa-action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 22px;
-  color: #54656f;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  border-radius: 50%;
-  transition: background 0.15s, color 0.15s;
-}
-.wa-action-btn:hover {
-  background: rgba(0,0,0,0.05);
-  color: #111b21;
-}
-.wa-input-container {
-  flex: 1;
-  background: white;
-  border-radius: 20px;
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-}
-.wa-textarea-input {
-  width: 100%;
-  border: none;
-  outline: none;
-  resize: none;
-  font-family: var(--font);
-  font-size: 14.5px;
-  color: #111b21;
-  background: transparent;
-  line-height: 20px;
-  max-height: 120px;
-}
-.wa-textarea-input::placeholder { color: #8696a0; }
-.wa-recording-panel {
-  flex: 1;
-  display: none;
-  align-items: center;
-  justify-content: space-between;
-  background: white;
-  border-radius: 20px;
-  padding: 8px 16px;
-  animation: waRecFadeIn 0.2s ease;
-}
-@keyframes waRecFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.wa-rec-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #ff3b30;
-  font-size: 13.5px;
-  font-weight: 700;
-}
-.wa-rec-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: #ff3b30;
-  animation: waBlink 1s infinite alternate;
-}
-@keyframes waBlink { from { opacity: 0.2; } to { opacity: 1; } }
-.wa-rec-timer {
-  font-size: 14px;
-  font-weight: 700;
-  color: #3b4a54;
-  font-family: var(--mono);
-}
-.wa-attach-menu {
-  position: absolute;
-  bottom: 66px;
-  left: 16px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
-  padding: 12px;
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 50;
-  animation: waAttachIn 0.2s cubic-bezier(0.1, 0.8, 0.2, 1);
-}
-@keyframes waAttachIn { from { transform: scale(0.8) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
-.wa-attach-menu.show { display: flex; }
-.wa-attach-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 13.5px;
-  font-weight: 800;
-  color: #3b4a54;
-  transition: background 0.15s;
-}
-.wa-attach-item:hover { background: #f0f2f5; }
-.wa-attach-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 16px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.wa-icon-doc { background-color: #7f66ff; }
-.wa-icon-img { background-color: #007aff; }
-.wa-icon-audio { background-color: #ff9500; }
-.wa-icon-video { background-color: #00bfa5; }
-
-.wa-msg-loading {
-  position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 5;
-  border-radius: 6px;
-}
-.wa-msg-loading .spin {
-  width: 24px;
-  height: 24px;
-  border-width: 3px;
-}
-.wa-targets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-  padding: 10px 0;
-  max-height: 120px;
-  overflow-y: auto;
-  border-top: 1px solid #e1e3e6;
-  margin-top: 8px;
-}
-.wa-target-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #d1d7db;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  transition: all 0.15s;
-  user-select: none;
-}
-.wa-target-checkbox:hover { border-color: var(--wa-green); background: #f8f9fa; }
-.wa-target-checkbox input { cursor: pointer; }
-.wa-target-checkbox.selected { border-color: var(--wa-green); background: rgba(37, 211, 102, 0.08); color: var(--wa-green-dd); }
 
 /* ── SETTINGS ────────────────────────────────────── */
 .settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:16px;}
@@ -1651,194 +1253,134 @@ async function loadStats() {
   if(nq&&d.queue_pending>0){nq.textContent=d.queue_pending;nq.style.display='';}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ─── BROADCAST — Interface complète avec tous les types de messages
 function buildBroadcast() { return `
-<!-- Conteneur global de type WhatsApp -->
-<div class="wa-chat-container">
+<div class="broadcast-panel">
+  <h2>📢 Centre de Diffusion</h2>
+  <p>Envoyez des messages texte, images, audios, vidéos, documents, stickers, sondages, contacts, localisation et stories.</p>
   
-  <!-- En-tête avec sélection des cibles de diffusion -->
-  <div class="wa-chat-header">
-    <div class="wa-chat-header-title">
-      <span>📢</span> Centre de Diffusion WhatsApp (Interface WhatsApp Web)
-    </div>
-    
-    <!-- Choix Cible -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div class="wa-target-tabs">
-        <button class="wa-target-tab active" onclick="switchBroadcastTab('groups')" id="tab-groups">👥 Groupes Actifs</button>
-        <button class="wa-target-tab" onclick="switchBroadcastTab('inbox')" id="tab-inbox">💬 Contacts (Inbox)</button>
-        <button class="wa-target-tab" onclick="switchBroadcastTab('both')" id="tab-both">📢 Les deux</button>
-      </div>
-      
-      <div style="display:flex; align-items:center; gap:8px;">
-        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:700; color:var(--text2);">
-          <input type="checkbox" id="bc-simulate"> 🎮 Mode simulation (test)
-        </label>
-        <button class="btn btn-dark btn-sm" onclick="doAdvancedBroadcast()" style="padding:6px 14px; font-size:12px;">
-          🚀 Lancer la diffusion
-        </button>
-      </div>
-    </div>
-
-    <!-- Sélecteurs dynamiques (multi-select list) -->
-    <div id="broadcast-groups">
-      <div style="font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">📌 Groupes actifs concernés (décochez pour exclure) :</div>
-      <div class="wa-targets-grid" id="wa-groups-list">
-        <!-- Rempli dynamiquement -->
-      </div>
-    </div>
-    
-    <div id="broadcast-inbox" style="display:none;">
-      <div style="font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">📞 Contacts inbox concernés (décochez pour exclure) :</div>
-      <div class="wa-targets-grid" id="wa-contacts-list">
-        <!-- Rempli dynamiquement -->
-      </div>
-      <div style="margin-top:8px;">
-        <input type="text" id="bc-custom-phone" class="setting-input" placeholder="Ajouter un numéro spécifique (ex: 25779666439)" style="font-size:11px; padding:6px 10px; width:280px; display:inline-block; margin-bottom:0;">
-        <button class="btn btn-ghost btn-sm" onclick="addCustomPhoneTarget()" style="padding: 5px 10px;">+ Ajouter cible</button>
-      </div>
+  <!-- Onglets de sélection de cible -->
+  <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,.2); padding-bottom:10px; flex-wrap:wrap;">
+    <button class="media-tab active" onclick="switchBroadcastTab('groups')" id="tab-groups">👥 Groupes</button>
+    <button class="media-tab" onclick="switchBroadcastTab('inbox')" id="tab-inbox">💬 Contacts</button>
+    <button class="media-tab" onclick="switchBroadcastTab('both')" id="tab-both">📢 Groupes + Contacts</button>
+  </div>
+  
+  <!-- Zone Groupes -->
+  <div id="broadcast-groups">
+    <div style="margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📌 Sélectionner les groupes</label>
+      <select id="bc-group-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff; margin-top:5px;">
+        <option value="all">📋 Tous les groupes actifs</option>
+      </select>
     </div>
   </div>
-
-  <!-- Corps de chat virtuel (Wallpaper WhatsApp) -->
-  <div class="wa-chat-body" id="wa-chat-body">
-    
-    <!-- Bulle de prévisualisation du message -->
-    <div class="wa-bubble-wrapper" id="wa-bubble-preview-wrapper" style="display:none;">
-      <div class="wa-msg-bubble">
-        
-        <!-- Chargement / Uploading state overlay -->
-        <div class="wa-msg-loading" id="wa-bubble-loading" style="display:none;">
-          <span class="spin"></span>
-        </div>
-
-        <!-- Aperçu Média (Image / Vidéo) -->
-        <div class="wa-msg-media-preview" id="wa-preview-media-box" style="display:none;">
-          <img id="wa-preview-img" src="" style="display:none;">
-          <video id="wa-preview-video" src="" controls style="display:none;"></video>
-        </div>
-
-        <!-- Aperçu Document -->
-        <div class="wa-msg-doc-preview" id="wa-preview-doc-box" style="display:none;">
-          <div class="wa-msg-doc-icon">📄</div>
-          <div class="wa-msg-doc-info">
-            <span class="wa-msg-doc-name" id="wa-preview-doc-name">document.pdf</span>
-            <span class="wa-msg-doc-size" id="wa-preview-doc-size">0 KB</span>
-          </div>
-        </div>
-
-        <!-- Aperçu Enregistrement vocal -->
-        <div class="wa-msg-voice-preview" id="wa-preview-voice-box" style="display:none;">
-          <button class="wa-voice-play-btn" type="button" onclick="togglePreviewVoiceAudio(event)" id="wa-preview-voice-btn">▶</button>
-          <div class="wa-voice-wave">
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-            <div class="wa-wave-bar"></div>
-          </div>
-          <span class="wa-voice-time" id="wa-preview-voice-time">0:00</span>
-        </div>
-
-        <!-- Texte du message -->
-        <div id="wa-preview-text" style="white-space:pre-wrap;">Votre message ici...</div>
-
-        <!-- Meta info (Heure + encoche) -->
-        <div class="wa-msg-meta">
-          <span id="wa-preview-time">12:00</span>
-          <span style="color:#53bdeb; font-size:14px; font-weight:bold;">✓✓</span>
-        </div>
-      </div>
+  
+  <!-- Zone Contacts -->
+  <div id="broadcast-inbox" style="display:none;">
+    <div style="margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📞 Sélectionner les contacts</label>
+      <select id="bc-contact-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff; margin-top:5px;">
+        <option value="all">📋 Tous les contacts</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📱 Ou entrer un numéro spécifique</label>
+      <input type="text" id="bc-custom-phone" class="broadcast-input" placeholder="+257XXXXXXXXX" style="width:100%; margin-top:5px;">
     </div>
   </div>
-
-  <!-- Menu flottant pièces jointes -->
-  <div class="wa-attach-menu" id="wa-attach-menu">
-    <div class="wa-attach-item" onclick="triggerFileInput('document')">
-      <div class="wa-attach-icon wa-icon-doc">📄</div>
-      <span>Document</span>
+  
+  <!-- Type de message -->
+  <div style="margin-top:20px;">
+    <label style="font-size:12px; font-weight:700; opacity:0.8;">🎯 TYPE DE MESSAGE</label>
+    <select id="message-type-select" class="broadcast-select" style="width:100%; margin-top:5px;" onchange="changeMessageType()">
+      <option value="text">💬 Texte simple</option>
+      <option value="link_preview">🔗 Texte avec aperçu de lien</option>
+      <option value="image">🖼 Image</option>
+      <option value="video">🎥 Vidéo</option>
+      <option value="audio">🎵 Audio</option>
+      <option value="voice">🎤 Message vocal</option>
+      <option value="document">📑 Document</option>
+      <option value="sticker">🎭 Sticker</option>
+      <option value="gif">🎬 GIF</option>
+      <option value="location">📍 Localisation</option>
+      <option value="contact">👤 Contact</option>
+      <option value="poll">📊 Sondage</option>
+      <option value="story">📖 Story</option>
+    </select>
+  </div>
+  
+  <!-- Zone message texte -->
+  <div id="message-text-area" style="margin-top:15px;">
+    <textarea class="broadcast-textarea" id="bc-text" placeholder="Votre message ici…" rows="4"></textarea>
+  </div>
+  
+  <!-- Zone média (URL) -->
+  <div id="message-media-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="url" id="bc-media-url" placeholder="URL du fichier (https://...)" style="width:100%;">
+    <div style="font-size:11px; opacity:0.6; margin-top:4px;">⚠️ L'URL doit être accessible publiquement</div>
+  </div>
+  
+  <!-- Zone localisation -->
+  <div id="message-location-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="text" id="bc-lat" placeholder="Latitude" style="width:48%; display:inline-block; margin-right:4%;">
+    <input class="broadcast-input" type="text" id="bc-lng" placeholder="Longitude" style="width:48%; display:inline-block;">
+    <input class="broadcast-input" type="text" id="bc-location-name" placeholder="Nom du lieu" style="width:100%; margin-top:8px;">
+    <input class="broadcast-input" type="text" id="bc-address" placeholder="Adresse" style="width:100%; margin-top:8px;">
+  </div>
+  
+  <!-- Zone sondage -->
+  <div id="message-poll-area" style="margin-top:15px; display:none;">
+    <div id="poll-options">
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input class="broadcast-input" type="text" placeholder="Option 1" style="flex:1;" value="Oui">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input class="broadcast-input" type="text" placeholder="Option 2" style="flex:1;" value="Non">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
+      </div>
     </div>
-    <div class="wa-attach-item" onclick="triggerFileInput('image')">
-      <div class="wa-attach-icon wa-icon-img">🖼</div>
-      <span>Photos & Vidéos</span>
-    </div>
-    <div class="wa-attach-item" onclick="triggerFileInput('audio')">
-      <div class="wa-attach-icon wa-icon-audio">🎵</div>
-      <span>Audio</span>
+    <button class="btn btn-ghost btn-sm" onclick="addPollOption()" style="margin-top:5px;">+ Ajouter une option</button>
+    <div style="margin-top:10px;">
+      <label style="font-size:11px;">Nombre de choix possibles:</label>
+      <select id="poll-selectable" class="broadcast-select" style="width:auto; display:inline-block; margin-left:10px;">
+        <option value="1">1 choix</option>
+        <option value="2">2 choix</option>
+        <option value="3">3 choix</option>
+        <option value="4">4 choix</option>
+      </select>
     </div>
   </div>
-
-  <!-- Caché : Inputs fichiers réels -->
-  <input type="file" id="wa-file-input-doc" style="display:none;" onchange="handleFileSelected(this, 'document')">
-  <input type="file" id="wa-file-input-img" accept="image/*,video/*" style="display:none;" onchange="handleFileSelected(this, 'image')">
-  <input type="file" id="wa-file-input-audio" accept="audio/*" style="display:none;" onchange="handleFileSelected(this, 'audio')">
-
-  <!-- Barre de saisie style WhatsApp -->
-  <div class="wa-chat-input-bar">
-    
-    <!-- Bouton "+" pièce jointe -->
-    <button class="wa-action-btn" type="button" onclick="toggleAttachMenu(event)">+</button>
-    
-    <!-- Bouton émoji (esthétique) -->
-    <button class="wa-action-btn" type="button" onclick="toast('Émojis bientôt disponibles !','warn')">😀</button>
-
-    <!-- Zone de texte normale -->
-    <div class="wa-input-container" id="wa-input-container">
-      <textarea class="wa-textarea-input" id="bc-text" placeholder="Entrez un message" rows="1" oninput="updateBubbleText()"></textarea>
+  
+  <!-- Zone contact -->
+  <div id="message-contact-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="text" id="bc-contact-name" placeholder="Nom du contact" style="width:100%;">
+    <input class="broadcast-input" type="text" id="bc-contact-number" placeholder="Numéro du contact" style="width:100%; margin-top:8px;">
+  </div>
+  
+  <!-- Options -->
+  <div class="broadcast-row" style="margin-top:15px;">
+    <div style="flex:1;">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="bc-simulate">
+        <span style="font-size:12px;">🎮 Mode simulation (test sans envoyer)</span>
+      </label>
     </div>
-
-    <!-- Zone d'enregistrement vocal (Masquée par défaut) -->
-    <div class="wa-recording-panel" id="wa-rec-panel">
-      <div class="wa-rec-indicator">
-        <div class="wa-rec-dot"></div>
-        <span>Enregistrement...</span>
-      </div>
-      <div class="wa-rec-timer" id="wa-rec-timer">0:00</div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-red btn-sm btn-icon" onclick="cancelAudioRecording()" title="Annuler">🗑</button>
-        <button class="btn btn-green btn-sm btn-icon" onclick="stopAudioRecording()" title="Terminer">✔️</button>
-      </div>
-    </div>
-
-    <!-- Bouton micro (WhatsApp Action) -->
-    <button class="wa-action-btn" id="wa-mic-btn" type="button" onclick="toggleVoiceRecord()" style="color:#00a884;" title="Enregistrer un vocal">🎤</button>
+  </div>
+  
+  <div class="broadcast-actions" style="margin-top:20px;">
+    <button class="btn-send" onclick="doAdvancedBroadcast()">
+      <span>📤</span> Envoyer la diffusion
+    </button>
+    <span class="send-status" id="bc-status"></span>
   </div>
 </div>
 
 <!-- Aperçu des sélections -->
 <div class="panel" style="margin-top:16px;">
   <div class="panel-header">
-    <div class="panel-title">📋 Récapitulatif de la diffusion</div>
+    <div class="panel-title">📋 Récapitulatif</div>
     <button class="btn btn-ghost btn-sm" onclick="refreshSelections()">↻ Rafraîchir</button>
   </div>
   <div id="selection-preview" style="padding:16px; font-size:12px; color:var(--text2);">
@@ -1848,490 +1390,228 @@ function buildBroadcast() { return `
 
 <div class="panel">
   <div class="panel-header">
-    <div class="panel-title">📤 Derniers envois en file d'attente</div>
+    <div class="panel-title">📤 Derniers envois</div>
     <button class="btn btn-ghost btn-sm" onclick="goPage('queue')">Voir tout →</button>
   </div>
-  <div class="tbl-wrap">
-  <table>
-    <thead><tr><th>Type</th><th>Cible</th><th>Statut</th><th>Date</th></tr></thead>
+  <div class="tbl-wrap"></tr>
+    <thead>汽<th>Type</th><th>Cible</th><th>Statut</th><th>Date</th></tr></thead>
     <tbody id="bc-queue"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody>
-  </table>
-  </div>
+  </table></div>
 </div>
 `; }
 
-// ─── WHATSAPP BROADCAST CONTROLLER ────────────────────────
-let currentBroadcastTab = 'groups';
-let selectedFileType = 'text'; // text | image | video | audio | document | voice
-let uploadedMediaId = '';
-let selectedFile = null;
-
-// Enregistrement Audio
-let mediaRecorder = null;
-let audioChunks = [];
-let recordingInterval = null;
-let recordingSeconds = 0;
-let recordedAudioBlob = null;
-let voicePlayer = null;
-let waveAnimInterval = null;
-
-function updateBubbleText() {
-    const text = document.getElementById('bc-text')?.value || '';
-    const previewText = document.getElementById('wa-preview-text');
-    const previewWrapper = document.getElementById('wa-bubble-preview-wrapper');
+function changeMessageType() {
+    const type = document.getElementById('message-type-select')?.value;
     
-    if (previewText) {
-        previewText.textContent = text;
-        previewText.style.display = text.trim() ? 'block' : 'none';
-    }
+    // Masquer toutes les zones
+    document.getElementById('message-text-area').style.display = 'none';
+    document.getElementById('message-media-area').style.display = 'none';
+    document.getElementById('message-location-area').style.display = 'none';
+    document.getElementById('message-poll-area').style.display = 'none';
+    document.getElementById('message-contact-area').style.display = 'none';
     
-    // Afficher/Masquer la bulle en fonction du contenu
-    if (previewWrapper) {
-        const hasContent = text.trim() || uploadedMediaId || recordedAudioBlob;
-        previewWrapper.style.display = hasContent ? 'flex' : 'none';
-        
-        // Faire défiler vers le bas du chat
-        const chatBody = document.getElementById('wa-chat-body');
-        if (chatBody) {
-            chatBody.scrollTop = chatBody.scrollHeight;
-        }
-    }
-    
-    // Mettre à jour l'heure de la bulle
-    const timeSpan = document.getElementById('wa-preview-time');
-    if (timeSpan) {
-        const now = new Date();
-        timeSpan.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    }
-    
-    // Modifier l'icône du micro en bouton envoyer s'il y a du texte ou un média
-    const micBtn = document.getElementById('wa-mic-btn');
-    if (micBtn) {
-        const hasPayload = text.trim() || uploadedMediaId || recordedAudioBlob;
-        if (hasPayload) {
-            micBtn.innerHTML = '✈️';
-            micBtn.title = 'Envoyer la diffusion';
-            micBtn.style.color = '#0084ff';
-            micBtn.onclick = () => doAdvancedBroadcast();
-        } else {
-            micBtn.innerHTML = '🎤';
-            micBtn.title = 'Enregistrer un vocal';
-            micBtn.style.color = '#00a884';
-            micBtn.onclick = () => toggleVoiceRecord();
-        }
+    // Afficher la zone appropriée
+    if (type === 'text' || type === 'link_preview') {
+        document.getElementById('message-text-area').style.display = 'block';
+    } else if (type === 'image' || type === 'video' || type === 'audio' || type === 'voice' || 
+               type === 'document' || type === 'sticker' || type === 'gif' || type === 'story') {
+        document.getElementById('message-text-area').style.display = 'block';
+        document.getElementById('message-media-area').style.display = 'block';
+    } else if (type === 'location') {
+        document.getElementById('message-location-area').style.display = 'block';
+    } else if (type === 'poll') {
+        document.getElementById('message-poll-area').style.display = 'block';
+    } else if (type === 'contact') {
+        document.getElementById('message-contact-area').style.display = 'block';
     }
 }
 
-// Menu Pièces Jointes
-function toggleAttachMenu(e) {
-    e.stopPropagation();
-    document.getElementById('wa-attach-menu').classList.toggle('show');
+function addPollOption() {
+    const container = document.getElementById('poll-options');
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.gap = '8px';
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+        <input class="broadcast-input" type="text" placeholder="Option ${container.children.length + 1}" style="flex:1;">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
+    `;
+    container.appendChild(div);
 }
 
-// Fermer le menu lors de clic externe
-document.addEventListener('click', () => {
-    document.getElementById('wa-attach-menu')?.classList.remove('show');
-});
-
-function triggerFileInput(type) {
-    document.getElementById(`wa-file-input-${type}`).click();
-}
-
-async function handleFileSelected(input, type) {
-    if (!input.files || input.files.length === 0) return;
-    
-    const file = input.files[0];
-    selectedFile = file;
-    selectedFileType = type;
-    
-    // Afficher la bulle et l'état de chargement
-    document.getElementById('wa-bubble-preview-wrapper').style.display = 'flex';
-    document.getElementById('wa-bubble-loading').style.display = 'flex';
-    
-    // Cacher les autres aperçus médias
-    document.getElementById('wa-preview-media-box').style.display = 'none';
-    document.getElementById('wa-preview-doc-box').style.display = 'none';
-    document.getElementById('wa-preview-voice-box').style.display = 'none';
-    
-    // Créer un aperçu local
-    if (type === 'image') {
-        const previewImg = document.getElementById('wa-preview-img');
-        const previewVideo = document.getElementById('wa-preview-video');
-        const mediaBox = document.getElementById('wa-preview-media-box');
-        
-        mediaBox.style.display = 'block';
-        if (file.type.startsWith('image/')) {
-            previewImg.src = URL.createObjectURL(file);
-            previewImg.style.display = 'block';
-            previewVideo.style.display = 'none';
-        } else {
-            previewVideo.src = URL.createObjectURL(file);
-            previewVideo.style.display = 'block';
-            previewImg.style.display = 'none';
-            selectedFileType = 'video'; // Ajuster au type vidéo
-        }
-    } else if (type === 'document') {
-        document.getElementById('wa-preview-doc-box').style.display = 'flex';
-        document.getElementById('wa-preview-doc-name').textContent = file.name;
-        document.getElementById('wa-preview-doc-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
-    } else if (type === 'audio') {
-        document.getElementById('wa-preview-doc-box').style.display = 'flex';
-        document.getElementById('wa-preview-doc-name').textContent = file.name;
-        document.getElementById('wa-preview-doc-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
-    }
-    
-    updateBubbleText();
-    
-    // Envoyer le fichier au serveur
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    try {
-        const res = await fetch('?ajax=upload_media', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        
-        if (data.ok) {
-            uploadedMediaId = data.media_id;
-            toast(`📎 Fichier ${file.name} téléversé avec succès !`, 'ok');
-        } else {
-            toast('Erreur de téléversement : ' + data.msg, 'err');
-            cancelFileSelection();
-        }
-    } catch (e) {
-        toast('Erreur réseau lors du téléversement', 'err');
-        cancelFileSelection();
-    } finally {
-        document.getElementById('wa-bubble-loading').style.display = 'none';
-        updateBubbleText();
-    }
-}
-
-function cancelFileSelection() {
-    selectedFile = null;
-    uploadedMediaId = '';
-    selectedFileType = 'text';
-    document.getElementById('wa-preview-media-box').style.display = 'none';
-    document.getElementById('wa-preview-doc-box').style.display = 'none';
-    document.getElementById('wa-preview-voice-box').style.display = 'none';
-    updateBubbleText();
-}
-
-// Enregistrement vocal (Microphone)
-async function toggleVoiceRecord() {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        stopAudioRecording();
-        return;
-    }
-    
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        
-        mediaRecorder.ondataavailable = e => {
-            audioChunks.push(e.data);
-        };
-        
-        mediaRecorder.onstop = async () => {
-            recordedAudioBlob = new Blob(audioChunks, { type: 'audio/ogg;codecs=opus' });
-            
-            // Fermer les pistes du micro
-            stream.getTracks().forEach(track => track.stop());
-            
-            // Afficher l'aperçu vocal
-            document.getElementById('wa-preview-voice-box').style.display = 'flex';
-            document.getElementById('wa-preview-voice-time').textContent = formatTime(recordingSeconds);
-            document.getElementById('wa-bubble-preview-wrapper').style.display = 'flex';
-            
-            // Lancer le téléversement du fichier audio enregistré
-            document.getElementById('wa-bubble-loading').style.display = 'flex';
-            
-            const file = new File([recordedAudioBlob], "recording.ogg", { type: "audio/ogg" });
-            const formData = new FormData();
-            formData.append('file', file);
-            selectedFileType = 'voice';
-            
-            try {
-                const res = await fetch('?ajax=upload_media', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                
-                if (data.ok) {
-                    uploadedMediaId = data.media_id;
-                    toast('🎤 Message vocal enregistré et prêt !', 'ok');
-                } else {
-                    toast('Erreur de téléversement du vocal : ' + data.msg, 'err');
-                }
-            } catch (e) {
-                toast('Erreur réseau vocal', 'err');
-            } finally {
-                document.getElementById('wa-bubble-loading').style.display = 'none';
-                updateBubbleText();
-            }
-        };
-        
-        // Lancer l'enregistrement
-        mediaRecorder.start();
-        
-        // Interface Enregistrement
-        document.getElementById('wa-input-container').style.display = 'none';
-        document.getElementById('wa-rec-panel').style.display = 'flex';
-        document.getElementById('wa-mic-btn').innerHTML = '⏹️';
-        document.getElementById('wa-mic-btn').style.color = '#ff3b30';
-        
-        recordingSeconds = 0;
-        document.getElementById('wa-rec-timer').textContent = '0:00';
-        recordingInterval = setInterval(() => {
-            recordingSeconds++;
-            document.getElementById('wa-rec-timer').textContent = formatTime(recordingSeconds);
-        }, 1000);
-        
-    } catch (err) {
-        console.error(err);
-        toast('Accès micro refusé ou non supporté', 'err');
-    }
-}
-
-function cancelAudioRecording() {
-    if (mediaRecorder) {
-        mediaRecorder.onstop = null; // Ne pas générer de bulle
-        mediaRecorder.stop();
-        mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    }
-    cleanupRecordingUI();
-    recordedAudioBlob = null;
-    uploadedMediaId = '';
-    selectedFileType = 'text';
-    document.getElementById('wa-preview-voice-box').style.display = 'none';
-    updateBubbleText();
-}
-
-function stopAudioRecording() {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        clearInterval(recordingInterval);
-        mediaRecorder.stop();
-        cleanupRecordingUI();
-    }
-}
-
-function cleanupRecordingUI() {
-    clearInterval(recordingInterval);
-    document.getElementById('wa-input-container').style.display = 'flex';
-    document.getElementById('wa-rec-panel').style.display = 'none';
-    document.getElementById('wa-mic-btn').innerHTML = '🎤';
-    document.getElementById('wa-mic-btn').style.color = '#00a884';
-}
-
-function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return m + ':' + s.toString().padStart(2, '0');
-}
-
-// Lecteur vocal preview
-function togglePreviewVoiceAudio(e) {
-    e.stopPropagation();
-    const btn = document.getElementById('wa-preview-voice-btn');
-    if (!voicePlayer && recordedAudioBlob) {
-        voicePlayer = new Audio(URL.createObjectURL(recordedAudioBlob));
-        voicePlayer.onended = () => {
-            btn.textContent = '▶';
-            clearInterval(waveAnimInterval);
-            resetVoiceWaves();
-        };
-        voicePlayer.ontimeupdate = () => {
-            document.getElementById('wa-preview-voice-time').textContent = formatTime(voicePlayer.currentTime);
-            updateVoiceWaveActive(voicePlayer.currentTime / voicePlayer.duration);
-        };
-    }
-    
-    if (voicePlayer.paused) {
-        voicePlayer.play();
-        btn.textContent = '⏸';
-        startVoiceWavesAnimation();
+function removePollOption(btn) {
+    const container = document.getElementById('poll-options');
+    if (container.children.length > 2) {
+        btn.closest('div').remove();
     } else {
-        voicePlayer.pause();
-        btn.textContent = '▶';
-        clearInterval(waveAnimInterval);
+        toast('Un sondage doit avoir au moins 2 options', 'warn');
     }
 }
 
-function startVoiceWavesAnimation() {
-    const bars = document.querySelectorAll('.wa-wave-bar');
-    clearInterval(waveAnimInterval);
-    waveAnimInterval = setInterval(() => {
-        bars.forEach(bar => {
-            if (!bar.classList.contains('active')) {
-                bar.style.height = (30 + Math.random() * 70) + '%';
-            }
-        });
-    }, 120);
-}
+let currentBroadcastTab = 'groups';
 
-function updateVoiceWaveActive(progress) {
-    const bars = document.querySelectorAll('.wa-wave-bar');
-    const activeCount = Math.floor(progress * bars.length);
-    bars.forEach((bar, idx) => {
-        if (idx <= activeCount) {
-            bar.classList.add('active');
-            bar.style.height = '60%'; // Stabiliser la barre lue
-        } else {
-            bar.classList.remove('active');
-        }
-    });
-}
-
-function resetVoiceWaves() {
-    const bars = document.querySelectorAll('.wa-wave-bar');
-    bars.forEach(bar => {
-        bar.classList.remove('active');
-        bar.style.height = '60%';
-    });
-}
-
-// Onglets Cibles de diffusion
 async function switchBroadcastTab(tab) {
     currentBroadcastTab = tab;
-    document.querySelectorAll('.wa-target-tab').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('#tab-groups, #tab-inbox, #tab-both').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
     
     document.getElementById('broadcast-groups').style.display = (tab === 'groups' || tab === 'both') ? 'block' : 'none';
     document.getElementById('broadcast-inbox').style.display = (tab === 'inbox' || tab === 'both') ? 'block' : 'none';
     
-    updatePreview();
-}
-
-// Charger et afficher les sélections de groupes/contacts (styled checkboxes)
-let customPhoneTargets = [];
-
-function addCustomPhoneTarget() {
-    const inp = document.getElementById('bc-custom-phone');
-    const phone = inp.value.trim().replace(/\D/g, '');
-    if (phone.length < 6) {
-        toast('Numéro invalide (trop court)', 'err');
-        return;
-    }
-    if (customPhoneTargets.includes(phone)) {
-        toast('Numéro déjà ajouté', 'warn');
-        return;
-    }
-    customPhoneTargets.push(phone);
-    inp.value = '';
-    renderContactsList();
-}
-
-function renderContactsList() {
-    const cont = document.getElementById('wa-contacts-list');
-    if (!cont) return;
-    
-    // Charger la liste complète des contacts
-    api('list_members', '').then(members => {
-        const uniquePhones = [...new Map(members.map(m => [m.phone_formatted, m])).values()];
-        
-        let html = '';
-        // Cibles personnalisées d'abord
-        customPhoneTargets.forEach(p => {
-            html += `
-            <label class="wa-target-checkbox selected" onclick="toggleCheckboxStyle(this)">
-                <input type="checkbox" checked value="${esc(p)}" data-type="contact">
-                <span>📱 Custom: ${esc(p)}</span>
-            </label>
-            `;
-        });
-        
-        // Contacts existants
-        uniquePhones.slice(0, 100).forEach(c => {
-            const name = c.profile_name || c.phone_formatted;
-            html += `
-            <label class="wa-target-checkbox selected" onclick="toggleCheckboxStyle(this)">
-                <input type="checkbox" checked value="${esc(c.phone_formatted)}" data-type="contact">
-                <span>👤 ${esc(short(name, 22))}</span>
-            </label>
-            `;
-        });
-        cont.innerHTML = html || '<div style="color:var(--text3); font-size:12px; padding:10px;">Aucun contact trouvé</div>';
-        updatePreview();
-    });
-}
-
-function toggleCheckboxStyle(lbl) {
-    // Petit délai pour laisser le navigateur basculer l'état du checkbox
-    setTimeout(() => {
-        const chk = lbl.querySelector('input');
-        if (chk) {
-            if (chk.checked) lbl.classList.add('selected');
-            else lbl.classList.remove('selected');
-        }
-        updatePreview();
-    }, 50);
+    await refreshSelections();
 }
 
 async function refreshSelections() {
     const groups = await api('list_groups');
-    const groupsList = document.getElementById('wa-groups-list');
-    if (groupsList) {
-        groupsList.innerHTML = groups.filter(g => g.actif == 1).map(g => `
-            <label class="wa-target-checkbox selected" onclick="toggleCheckboxStyle(this)">
-                <input type="checkbox" checked value="${esc(g.groupe_id)}" data-type="group">
-                <span>👥 ${esc(short(g.nom, 20))} (${g.nb_membres})</span>
-            </label>
-        `).join('') || '<div style="color:var(--text3); font-size:12px; padding:10px;">Aucun groupe actif. Allez dans l\'onglet Groupes.</div>';
+    const groupSelect = document.getElementById('bc-group-select');
+    if (groupSelect) {
+        groupSelect.innerHTML = '<option value="all">📋 Tous les groupes actifs</option>' +
+            groups.filter(g => g.actif == 1).map(g => `<option value="${esc(g.groupe_id)}">${esc(g.nom)} (${g.nb_membres} membres)</option>`).join('');
     }
     
-    renderContactsList();
+    const members = await api('list_members', '');
+    const uniquePhones = [...new Map(members.map(m => [m.phone_formatted, m])).values()];
+    const contactSelect = document.getElementById('bc-contact-select');
+    if (contactSelect) {
+        contactSelect.innerHTML = '<option value="all">📋 Tous les contacts</option>' +
+            uniquePhones.slice(0, 100).map(c => `<option value="${esc(c.phone_formatted)}">${esc(c.profile_name || c.phone_formatted)}</option>`).join('');
+    }
+    
+    const stats = await api('stats');
+    document.getElementById('stat-groups')?.setAttribute('data-value', stats.groups_actif);
+    document.getElementById('stat-contacts')?.setAttribute('data-value', stats.members);
+    
+    updatePreview();
 }
 
 async function updatePreview() {
     const preview = document.getElementById('selection-preview');
     if (!preview) return;
     
-    let activeGroups = 0;
-    let activeContacts = 0;
+    let selectedGroups = [];
+    let selectedPhones = [];
+    const messageType = document.getElementById('message-type-select')?.value || 'text';
     
     if (currentBroadcastTab === 'groups' || currentBroadcastTab === 'both') {
-        activeGroups = Array.from(document.querySelectorAll('#wa-groups-list input:checked')).length;
+        const groupSelect = document.getElementById('bc-group-select');
+        const selected = Array.from(groupSelect?.selectedOptions || []).map(opt => opt.value);
+        const allGroups = await api('list_groups');
+        if (selected.includes('all') || selected.length === 0) {
+            selectedGroups = allGroups.filter(g => g.actif == 1);
+        } else {
+            selectedGroups = allGroups.filter(g => selected.includes(g.groupe_id));
+        }
     }
+    
     if (currentBroadcastTab === 'inbox' || currentBroadcastTab === 'both') {
-        activeContacts = Array.from(document.querySelectorAll('#wa-contacts-list input:checked')).length;
+        const customPhone = document.getElementById('bc-custom-phone')?.value.trim();
+        if (customPhone) selectedPhones.push(customPhone);
+        const contactSelect = document.getElementById('bc-contact-select');
+        const selected = Array.from(contactSelect?.selectedOptions || []).map(opt => opt.value);
+        if (selected.includes('all') && !customPhone) {
+            const members = await api('list_members', '');
+            selectedPhones = [...new Map(members.map(m => [m.phone_formatted, m])).keys()];
+        } else if (!selected.includes('all')) {
+            selectedPhones.push(...selected);
+        }
     }
     
     preview.innerHTML = `
-        <div style="display:flex; gap:24px; flex-wrap:wrap; font-weight:700;">
-            <div>🎯 Type de message: <span class="badge badge-teal" style="font-size:12px;">${selectedFileType}</span></div>
-            <div>👥 Groupes sélectionnés: <span class="badge badge-blue" style="font-size:12px;">${activeGroups}</span></div>
-            <div>📱 Contacts sélectionnés: <span class="badge badge-dark" style="font-size:12px;">${activeContacts}</span></div>
-            <div>📊 Destinataires totaux: <span class="badge badge-green" style="font-size:12px;">${activeGroups + activeContacts}</span></div>
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <div><strong>🎯 Type:</strong> ${messageType}</div>
+            <div><strong>👥 Groupes:</strong> ${selectedGroups.length}</div>
+            <div><strong>💬 Contacts:</strong> ${selectedPhones.length}</div>
+            <div><strong>📊 Total destinataires:</strong> ${selectedGroups.length + selectedPhones.length}</div>
         </div>
+        ${selectedGroups.length > 0 ? `<div style="margin-top:8px;"><small>Groupes: ${selectedGroups.slice(0,3).map(g => g.nom).join(', ')}${selectedGroups.length > 3 ? '...' : ''}</small></div>` : ''}
+        ${selectedPhones.length > 0 ? `<div style="margin-top:4px;"><small>Contacts: ${selectedPhones.slice(0,3).join(', ')}${selectedPhones.length > 3 ? '...' : ''}</small></div>` : ''}
     `;
 }
 
 async function doAdvancedBroadcast() {
+    const messageType = document.getElementById('message-type-select')?.value;
     const text = document.getElementById('bc-text')?.value?.trim() || '';
+    const mediaUrl = document.getElementById('bc-media-url')?.value?.trim() || '';
     const simulate = document.getElementById('bc-simulate')?.checked || false;
     
-    // Rassembler les cibles sélectionnées
+    // Récupérer les cibles
     let targets = [];
     
     if (currentBroadcastTab === 'groups' || currentBroadcastTab === 'both') {
-        const checkedGroups = Array.from(document.querySelectorAll('#wa-groups-list input:checked')).map(i => i.value);
-        checkedGroups.forEach(gid => {
-            targets.push({ type: 'group', id: gid });
-        });
+        const groupSelect = document.getElementById('bc-group-select');
+        const selected = Array.from(groupSelect?.selectedOptions || []).map(opt => opt.value);
+        const allGroups = await api('list_groups');
+        let groups = [];
+        if (selected.includes('all') || selected.length === 0) {
+            groups = allGroups.filter(g => g.actif == 1);
+        } else {
+            groups = allGroups.filter(g => selected.includes(g.groupe_id));
+        }
+        targets.push(...groups.map(g => ({ type: 'group', id: g.groupe_id })));
     }
     
     if (currentBroadcastTab === 'inbox' || currentBroadcastTab === 'both') {
-        const checkedContacts = Array.from(document.querySelectorAll('#wa-contacts-list input:checked')).map(i => i.value);
-        checkedContacts.forEach(phone => {
-            targets.push({ type: 'contact', id: phone });
-        });
+        const customPhone = document.getElementById('bc-custom-phone')?.value.trim();
+        if (customPhone) targets.push({ type: 'contact', id: customPhone });
+        const contactSelect = document.getElementById('bc-contact-select');
+        const selected = Array.from(contactSelect?.selectedOptions || []).map(opt => opt.value);
+        if (selected.includes('all') && !customPhone) {
+            const members = await api('list_members', '');
+            const uniquePhones = [...new Map(members.map(m => [m.phone_formatted, m])).keys()];
+            targets.push(...uniquePhones.map(p => ({ type: 'contact', id: p })));
+        } else if (!selected.includes('all')) {
+            targets.push(...selected.map(p => ({ type: 'contact', id: p })));
+        }
     }
     
     if (targets.length === 0) {
+        toast('Aucun destinataire sélectionné', 'err');
+        return;
+    }
+    
+    const st = document.getElementById('bc-status');
+    if (st) {
+        st.style.display = 'inline';
+        st.textContent = `Préparation de l'envoi à ${targets.length} destinataire(s)...`;
+    }
+    
+    let sent = 0;
+    let failed = 0;
+    
+    for (const target of targets) {
+        let to = target.type === 'group' ? target.id : target.id.replace(/\D/g, '');
+        let payload = {
+            to: to,
+            text: text,
+            media_url: mediaUrl,
+            message_type: messageType,
+            simulate: simulate
+        };
+        
+        // Ajouter les champs spécifiques
+        if (messageType === 'location') {
+            payload.latitude = document.getElementById('bc-lat')?.value;
+            payload.longitude = document.getElementById('bc-lng')?.value;
+            payload.location_name = document.getElementById('bc-location-name')?.value;
+            payload.address = document.getElementById('bc-address')?.value;
+        }
+        
+        if (messageType === 'poll') {
+            const options = Array.from(document.querySelectorAll('#poll-options input')).map(i => i.value).filter(v => v.trim());
+            payload.poll_options = options;
+            payload.selectable_count = parseInt(document.getElementById('poll-selectable')?.value || 1);
+        }
+        
+        if (messageType === 'contact') {
+            payload.contact_name = document.getElementById('bc-contact-name')?.value;
+            payload.contact_number = document.getElementById('bc-contact-number')?.value;
+        }
+        
+        const d = await apiPost('send_message', payload);
+        if (d.ok) sent++; else failed++;
+        
+        await new Promise(r => setTimeout(r, 500));
+        
         if (st) st.textContent = `Progression: ${sent + failed}/${targets.length}...`;
     }
     
