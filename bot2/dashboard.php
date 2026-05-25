@@ -60,13 +60,17 @@ function dbq(string $sql, array $p=[]): array { $s=db()->prepare($sql);$s->execu
 function db1(string $sql, array $p=[]): ?object { $s=db()->prepare($sql);$s->execute($p);$r=$s->fetch();return $r?:null; }
 function dbx(string $sql, array $p=[]): int { $s=db()->prepare($sql);$s->execute($p);return (int)$s->rowCount(); }
 
-// ── Whapi API ─────────────────────────────────────────────
+
+
+
+
+// ── Whapi API améliorée avec support de tous les endpoints
 function whapi(string $ep, string $m='GET', ?array $d=null): ?array {
     $url = API_URL.ltrim($ep,'/');
     $ch = curl_init($url);
     curl_setopt_array($ch,[
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 25,
+        CURLOPT_TIMEOUT        => 30,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
@@ -76,7 +80,7 @@ function whapi(string $ep, string $m='GET', ?array $d=null): ?array {
             'Authorization: Bearer '.API_TOKEN,
             'Content-Type: application/json',
             'Accept: application/json',
-            'User-Agent: Mozilla/5.0',
+            'User-Agent: NUFOTEC-WhatsApp/1.0',
         ],
     ]);
     if ($m==='POST') { curl_setopt($ch,CURLOPT_POST,true); if($d) curl_setopt($ch,CURLOPT_POSTFIELDS,json_encode($d)); }
@@ -85,14 +89,151 @@ function whapi(string $ep, string $m='GET', ?array $d=null): ?array {
     $code = curl_getinfo($ch,CURLINFO_HTTP_CODE);
     $err  = curl_error($ch);
     curl_close($ch);
-    if ($err || $code>=400) { error_log("Whapi [$ep] err=$err code=$code"); return null; }
+    if ($err || $code>=400) { 
+        error_log("Whapi [$ep] err=$err code=$code body=$body"); 
+        return null; 
+    }
     return json_decode((string)$body,true) ?: [];
 }
+
+
+
+
+
+
+
 
 // ── AJAX ──────────────────────────────────────────────────
 if ($authed && isset($_GET['ajax'])) {
     header('Content-Type: application/json');
     $act = $_GET['ajax'];
+
+// ── send_message — Envoyer n'importe quel type de message
+if ($act === 'send_message') {
+    $raw = file_get_contents('php://input');
+    $payload = json_decode($raw, true) ?? [];
+    
+    $to = trim($payload['to'] ?? '');
+    $msg_text = trim($payload['text'] ?? '');
+    $media_url = trim($payload['media_url'] ?? '');
+    $message_type = trim($payload['message_type'] ?? 'text');
+    $caption = trim($payload['caption'] ?? $msg_text);
+    
+    if (empty($to)) {
+        echo json_encode(['ok' => false, 'msg' => 'Destinataire requis']);
+        exit;
+    }
+    
+    // Nettoyer le numéro
+    $to_clean = preg_replace('/\D+/', '', $to);
+    if (strlen($to_clean) < 6 && !str_contains($to, '@g.us')) {
+        $to_clean = $to_clean . '@s.whatsapp.net';
+    }
+    
+    $body = ['to' => $to_clean];
+    $endpoint = 'messages/text';
+    
+    // Construire le message selon le type
+    switch ($message_type) {
+        case 'text':
+            $endpoint = 'messages/text';
+            $body['body'] = $msg_text;
+            break;
+        case 'link_preview':
+            $endpoint = 'messages/link_preview';
+            $body['body'] = $msg_text;
+            $body['preview'] = true;
+            break;
+        case 'image':
+            $endpoint = 'messages/image';
+            $body['image'] = ['link' => $media_url];
+            if ($caption) $body['caption'] = $caption;
+            break;
+        case 'video':
+            $endpoint = 'messages/video';
+            $body['video'] = ['link' => $media_url];
+            if ($caption) $body['caption'] = $caption;
+            break;
+        case 'audio':
+            $endpoint = 'messages/audio';
+            $body['audio'] = ['link' => $media_url];
+            break;
+        case 'voice':
+            $endpoint = 'messages/voice';
+            $body['voice'] = ['link' => $media_url];
+            break;
+        case 'document':
+            $endpoint = 'messages/document';
+            $body['document'] = ['link' => $media_url, 'filename' => basename($media_url)];
+            if ($caption) $body['caption'] = $caption;
+            break;
+        case 'sticker':
+            $endpoint = 'messages/sticker';
+            $body['sticker'] = ['link' => $media_url];
+            break;
+        case 'gif':
+            $endpoint = 'messages/gif';
+            $body['gif'] = ['link' => $media_url];
+            if ($caption) $body['caption'] = $caption;
+            break;
+        case 'location':
+            $endpoint = 'messages/location';
+            $body['location'] = [
+                'name' => $payload['location_name'] ?? 'Location',
+                'address' => $payload['address'] ?? '',
+                'latitude' => floatval($payload['latitude'] ?? 0),
+                'longitude' => floatval($payload['longitude'] ?? 0)
+            ];
+            break;
+        case 'contact':
+            $endpoint = 'messages/contact';
+            $body['contact'] = [
+                'name' => $payload['contact_name'] ?? 'Contact',
+                'phone' => $payload['contact_number'] ?? $to_clean
+            ];
+            break;
+        case 'poll':
+            $endpoint = 'messages/poll';
+            $body['poll'] = [
+                'question' => $msg_text,
+                'options' => $payload['poll_options'] ?? ['Oui', 'Non'],
+                'selectableCount' => intval($payload['selectable_count'] ?? 1)
+            ];
+            break;
+        case 'story':
+            $endpoint = 'messages/story';
+            if ($media_url) {
+                $body['story'] = ['link' => $media_url];
+                $body['type'] = 'image';
+            } else {
+                $body['story'] = ['text' => $msg_text];
+                $body['type'] = 'text';
+            }
+            break;
+        default:
+            $endpoint = 'messages/text';
+            $body['body'] = $msg_text;
+    }
+    
+    // Mode simulation
+    if (($payload['simulate'] ?? false) === true) {
+        echo json_encode(['ok' => true, 'msg' => 'Mode simulation - message non envoyé', 'simulated' => true]);
+        exit;
+    }
+    
+    $result = whapi($endpoint, 'POST', $body);
+    
+    if ($result && !isset($result['error'])) {
+        dbx('INSERT INTO whatsapp_logs (phone_number, message_type, message_content, status, sent_at, created_at) 
+             VALUES (?, ?, ?, "sent", NOW(), NOW())', 
+             [$to_clean, $message_type, $msg_text ?: $media_url]);
+        echo json_encode(['ok' => true, 'msg' => 'Message envoyé avec succès', 'result' => $result]);
+    } else {
+        echo json_encode(['ok' => false, 'msg' => 'Erreur lors de l\'envoi', 'debug' => $result]);
+    }
+    exit;
+}
+
 
 
 
@@ -1000,18 +1141,17 @@ function toast(msg, type='ok') {
 
 function closeModal(id) { $(id)?.classList.remove('open'); }
 
-// Pages définition
 const PAGES = {
-  overview:  { title:'Vue d\'ensemble',  build:buildOverview,   load:loadOverview  },
-  broadcast: { title:'Diffusion',         build:buildBroadcast,  load:()=>{}        },
-  groups:    { title:'Groupes',           build:buildGroups,     load:loadGroups    },
-  members:   { title:'Membres',           build:buildMembers,    load:loadMembersPage},
-  inbox:     { title:'Inbox',             build:buildInbox,      load:loadInbox     },
-  blacklist: { title:'Blacklist',         build:buildBlacklist,  load:loadBlacklist },
-  queue:     { title:'File d\'envoi',     build:buildQueue,      load:loadQueue     },
-  logs:      { title:'Logs',              build:buildLogs,       load:loadLogs      },
-  security:  { title:'Sécurité',         build:buildSecurity,   load:loadSecurity  },
-  settings:  { title:'Paramètres',       build:buildSettings,   load:loadSettings  },
+    overview:  { title:'Vue d\'ensemble',  build:buildOverview,   load:loadOverview  },
+    broadcast: { title:'Diffusion',         build:buildBroadcast,  load:initBroadcast },
+    groups:    { title:'Groupes',           build:buildGroups,     load:loadGroups    },
+    members:   { title:'Membres',           build:buildMembers,    load:loadMembersPage},
+    inbox:     { title:'Inbox',             build:buildInbox,      load:loadInbox     },
+    blacklist: { title:'Blacklist',         build:buildBlacklist,  load:loadBlacklist },
+    queue:     { title:'File d\'envoi',     build:buildQueue,      load:loadQueue     },
+    logs:      { title:'Logs',              build:buildLogs,       load:loadLogs      },
+    security:  { title:'Sécurité',         build:buildSecurity,   load:loadSecurity  },
+    settings:  { title:'Paramètres',       build:buildSettings,   load:loadSettings  },
 };
 
 function goPage(name) {
@@ -1113,52 +1253,389 @@ async function loadStats() {
   if(nq&&d.queue_pending>0){nq.textContent=d.queue_pending;nq.style.display='';}
 }
 
-// ─── BROADCAST ───────────────────────────────────────────
+// ─── BROADCAST — Interface complète avec tous les types de messages
 function buildBroadcast() { return `
 <div class="broadcast-panel">
-  <h2>📢 Nouvelle diffusion</h2>
-  <p>Envoyez un message texte, audio, image, vidéo ou document à tous les groupes et/ou membres.</p>
-  <div class="broadcast-form">
-    <textarea class="broadcast-textarea" id="bc-text" placeholder="Votre message ici… (facultatif si vous envoyez un fichier média)" rows="4"></textarea>
-    <div class="broadcast-row">
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.7);margin-bottom:6px;">TYPE DE MÉDIA</div>
-        <div class="media-tabs">
-          <div class="media-tab active" data-type="" onclick="setMediaType(this,'')">💬 Texte seul</div>
-          <div class="media-tab" data-type="image" onclick="setMediaType(this,'image')">🖼 Image</div>
-          <div class="media-tab" data-type="audio" onclick="setMediaType(this,'audio')">🎵 Audio</div>
-          <div class="media-tab" data-type="video" onclick="setMediaType(this,'video')">🎥 Vidéo</div>
-          <div class="media-tab" data-type="document" onclick="setMediaType(this,'document')">📄 Document</div>
-        </div>
+  <h2>📢 Centre de Diffusion</h2>
+  <p>Envoyez des messages texte, images, audios, vidéos, documents, stickers, sondages, contacts, localisation et stories.</p>
+  
+  <!-- Onglets de sélection de cible -->
+  <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,.2); padding-bottom:10px; flex-wrap:wrap;">
+    <button class="media-tab active" onclick="switchBroadcastTab('groups')" id="tab-groups">👥 Groupes</button>
+    <button class="media-tab" onclick="switchBroadcastTab('inbox')" id="tab-inbox">💬 Contacts</button>
+    <button class="media-tab" onclick="switchBroadcastTab('both')" id="tab-both">📢 Groupes + Contacts</button>
+  </div>
+  
+  <!-- Zone Groupes -->
+  <div id="broadcast-groups">
+    <div style="margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📌 Sélectionner les groupes</label>
+      <select id="bc-group-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff; margin-top:5px;">
+        <option value="all">📋 Tous les groupes actifs</option>
+      </select>
+    </div>
+  </div>
+  
+  <!-- Zone Contacts -->
+  <div id="broadcast-inbox" style="display:none;">
+    <div style="margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📞 Sélectionner les contacts</label>
+      <select id="bc-contact-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff; margin-top:5px;">
+        <option value="all">📋 Tous les contacts</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📱 Ou entrer un numéro spécifique</label>
+      <input type="text" id="bc-custom-phone" class="broadcast-input" placeholder="+257XXXXXXXXX" style="width:100%; margin-top:5px;">
+    </div>
+  </div>
+  
+  <!-- Type de message -->
+  <div style="margin-top:20px;">
+    <label style="font-size:12px; font-weight:700; opacity:0.8;">🎯 TYPE DE MESSAGE</label>
+    <select id="message-type-select" class="broadcast-select" style="width:100%; margin-top:5px;" onchange="changeMessageType()">
+      <option value="text">💬 Texte simple</option>
+      <option value="link_preview">🔗 Texte avec aperçu de lien</option>
+      <option value="image">🖼 Image</option>
+      <option value="video">🎥 Vidéo</option>
+      <option value="audio">🎵 Audio</option>
+      <option value="voice">🎤 Message vocal</option>
+      <option value="document">📑 Document</option>
+      <option value="sticker">🎭 Sticker</option>
+      <option value="gif">🎬 GIF</option>
+      <option value="location">📍 Localisation</option>
+      <option value="contact">👤 Contact</option>
+      <option value="poll">📊 Sondage</option>
+      <option value="story">📖 Story</option>
+    </select>
+  </div>
+  
+  <!-- Zone message texte -->
+  <div id="message-text-area" style="margin-top:15px;">
+    <textarea class="broadcast-textarea" id="bc-text" placeholder="Votre message ici…" rows="4"></textarea>
+  </div>
+  
+  <!-- Zone média (URL) -->
+  <div id="message-media-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="url" id="bc-media-url" placeholder="URL du fichier (https://...)" style="width:100%;">
+    <div style="font-size:11px; opacity:0.6; margin-top:4px;">⚠️ L'URL doit être accessible publiquement</div>
+  </div>
+  
+  <!-- Zone localisation -->
+  <div id="message-location-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="text" id="bc-lat" placeholder="Latitude" style="width:48%; display:inline-block; margin-right:4%;">
+    <input class="broadcast-input" type="text" id="bc-lng" placeholder="Longitude" style="width:48%; display:inline-block;">
+    <input class="broadcast-input" type="text" id="bc-location-name" placeholder="Nom du lieu" style="width:100%; margin-top:8px;">
+    <input class="broadcast-input" type="text" id="bc-address" placeholder="Adresse" style="width:100%; margin-top:8px;">
+  </div>
+  
+  <!-- Zone sondage -->
+  <div id="message-poll-area" style="margin-top:15px; display:none;">
+    <div id="poll-options">
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input class="broadcast-input" type="text" placeholder="Option 1" style="flex:1;" value="Oui">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
       </div>
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.7);margin-bottom:6px;">DESTINATAIRES</div>
-        <select class="broadcast-select" id="bc-targets">
-          <option value="groups">👥 Tous les groupes actifs</option>
-          <option value="inbox">📥 Inbox de tous les membres</option>
-          <option value="both">📢 Groupes + Inbox (les deux)</option>
-        </select>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input class="broadcast-input" type="text" placeholder="Option 2" style="flex:1;" value="Non">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
       </div>
     </div>
-    <div id="bc-media-row" style="display:none;">
-      <input class="broadcast-input" type="url" id="bc-media-url" placeholder="URL du fichier (https://...)" style="width:100%;">
+    <button class="btn btn-ghost btn-sm" onclick="addPollOption()" style="margin-top:5px;">+ Ajouter une option</button>
+    <div style="margin-top:10px;">
+      <label style="font-size:11px;">Nombre de choix possibles:</label>
+      <select id="poll-selectable" class="broadcast-select" style="width:auto; display:inline-block; margin-left:10px;">
+        <option value="1">1 choix</option>
+        <option value="2">2 choix</option>
+        <option value="3">3 choix</option>
+        <option value="4">4 choix</option>
+      </select>
     </div>
-    <div class="broadcast-actions">
-      <button class="btn-send" onclick="doBroadcast()">
-        <span>📤</span> Envoyer la diffusion
-      </button>
-      <span class="send-status" id="bc-status"></span>
+  </div>
+  
+  <!-- Zone contact -->
+  <div id="message-contact-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="text" id="bc-contact-name" placeholder="Nom du contact" style="width:100%;">
+    <input class="broadcast-input" type="text" id="bc-contact-number" placeholder="Numéro du contact" style="width:100%; margin-top:8px;">
+  </div>
+  
+  <!-- Options -->
+  <div class="broadcast-row" style="margin-top:15px;">
+    <div style="flex:1;">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="bc-simulate">
+        <span style="font-size:12px;">🎮 Mode simulation (test sans envoyer)</span>
+      </label>
     </div>
+  </div>
+  
+  <div class="broadcast-actions" style="margin-top:20px;">
+    <button class="btn-send" onclick="doAdvancedBroadcast()">
+      <span>📤</span> Envoyer la diffusion
+    </button>
+    <span class="send-status" id="bc-status"></span>
+  </div>
+</div>
+
+<!-- Aperçu des sélections -->
+<div class="panel" style="margin-top:16px;">
+  <div class="panel-header">
+    <div class="panel-title">📋 Récapitulatif</div>
+    <button class="btn btn-ghost btn-sm" onclick="refreshSelections()">↻ Rafraîchir</button>
+  </div>
+  <div id="selection-preview" style="padding:16px; font-size:12px; color:var(--text2);">
+    Chargement...
   </div>
 </div>
 
 <div class="panel">
-  <div class="panel-header"><div class="panel-title">📤 File d'envoi — En cours / Récents</div><button class="btn btn-ghost btn-sm" onclick="goPage('queue')">Voir tout →</button></div>
-  <div class="tbl-wrap"><table>
-    <thead><tr><th>Type</th><th>Cible</th><th>Message</th><th>Statut</th><th>Date</th></tr></thead>
-    <tbody id="bc-queue"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody>
+  <div class="panel-header">
+    <div class="panel-title">📤 Derniers envois</div>
+    <button class="btn btn-ghost btn-sm" onclick="goPage('queue')">Voir tout →</button>
+  </div>
+  <div class="tbl-wrap"></tr>
+    <thead>汽<th>Type</th><th>Cible</th><th>Statut</th><th>Date</th></tr></thead>
+    <tbody id="bc-queue"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody>
   </table></div>
-</div>`; }
+</div>
+`; }
+
+function changeMessageType() {
+    const type = document.getElementById('message-type-select')?.value;
+    
+    // Masquer toutes les zones
+    document.getElementById('message-text-area').style.display = 'none';
+    document.getElementById('message-media-area').style.display = 'none';
+    document.getElementById('message-location-area').style.display = 'none';
+    document.getElementById('message-poll-area').style.display = 'none';
+    document.getElementById('message-contact-area').style.display = 'none';
+    
+    // Afficher la zone appropriée
+    if (type === 'text' || type === 'link_preview') {
+        document.getElementById('message-text-area').style.display = 'block';
+    } else if (type === 'image' || type === 'video' || type === 'audio' || type === 'voice' || 
+               type === 'document' || type === 'sticker' || type === 'gif' || type === 'story') {
+        document.getElementById('message-text-area').style.display = 'block';
+        document.getElementById('message-media-area').style.display = 'block';
+    } else if (type === 'location') {
+        document.getElementById('message-location-area').style.display = 'block';
+    } else if (type === 'poll') {
+        document.getElementById('message-poll-area').style.display = 'block';
+    } else if (type === 'contact') {
+        document.getElementById('message-contact-area').style.display = 'block';
+    }
+}
+
+function addPollOption() {
+    const container = document.getElementById('poll-options');
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.gap = '8px';
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+        <input class="broadcast-input" type="text" placeholder="Option ${container.children.length + 1}" style="flex:1;">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
+    `;
+    container.appendChild(div);
+}
+
+function removePollOption(btn) {
+    const container = document.getElementById('poll-options');
+    if (container.children.length > 2) {
+        btn.closest('div').remove();
+    } else {
+        toast('Un sondage doit avoir au moins 2 options', 'warn');
+    }
+}
+
+let currentBroadcastTab = 'groups';
+
+async function switchBroadcastTab(tab) {
+    currentBroadcastTab = tab;
+    document.querySelectorAll('#tab-groups, #tab-inbox, #tab-both').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    
+    document.getElementById('broadcast-groups').style.display = (tab === 'groups' || tab === 'both') ? 'block' : 'none';
+    document.getElementById('broadcast-inbox').style.display = (tab === 'inbox' || tab === 'both') ? 'block' : 'none';
+    
+    await refreshSelections();
+}
+
+async function refreshSelections() {
+    const groups = await api('list_groups');
+    const groupSelect = document.getElementById('bc-group-select');
+    if (groupSelect) {
+        groupSelect.innerHTML = '<option value="all">📋 Tous les groupes actifs</option>' +
+            groups.filter(g => g.actif == 1).map(g => `<option value="${esc(g.groupe_id)}">${esc(g.nom)} (${g.nb_membres} membres)</option>`).join('');
+    }
+    
+    const members = await api('list_members', '');
+    const uniquePhones = [...new Map(members.map(m => [m.phone_formatted, m])).values()];
+    const contactSelect = document.getElementById('bc-contact-select');
+    if (contactSelect) {
+        contactSelect.innerHTML = '<option value="all">📋 Tous les contacts</option>' +
+            uniquePhones.slice(0, 100).map(c => `<option value="${esc(c.phone_formatted)}">${esc(c.profile_name || c.phone_formatted)}</option>`).join('');
+    }
+    
+    const stats = await api('stats');
+    document.getElementById('stat-groups')?.setAttribute('data-value', stats.groups_actif);
+    document.getElementById('stat-contacts')?.setAttribute('data-value', stats.members);
+    
+    updatePreview();
+}
+
+async function updatePreview() {
+    const preview = document.getElementById('selection-preview');
+    if (!preview) return;
+    
+    let selectedGroups = [];
+    let selectedPhones = [];
+    const messageType = document.getElementById('message-type-select')?.value || 'text';
+    
+    if (currentBroadcastTab === 'groups' || currentBroadcastTab === 'both') {
+        const groupSelect = document.getElementById('bc-group-select');
+        const selected = Array.from(groupSelect?.selectedOptions || []).map(opt => opt.value);
+        const allGroups = await api('list_groups');
+        if (selected.includes('all') || selected.length === 0) {
+            selectedGroups = allGroups.filter(g => g.actif == 1);
+        } else {
+            selectedGroups = allGroups.filter(g => selected.includes(g.groupe_id));
+        }
+    }
+    
+    if (currentBroadcastTab === 'inbox' || currentBroadcastTab === 'both') {
+        const customPhone = document.getElementById('bc-custom-phone')?.value.trim();
+        if (customPhone) selectedPhones.push(customPhone);
+        const contactSelect = document.getElementById('bc-contact-select');
+        const selected = Array.from(contactSelect?.selectedOptions || []).map(opt => opt.value);
+        if (selected.includes('all') && !customPhone) {
+            const members = await api('list_members', '');
+            selectedPhones = [...new Map(members.map(m => [m.phone_formatted, m])).keys()];
+        } else if (!selected.includes('all')) {
+            selectedPhones.push(...selected);
+        }
+    }
+    
+    preview.innerHTML = `
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <div><strong>🎯 Type:</strong> ${messageType}</div>
+            <div><strong>👥 Groupes:</strong> ${selectedGroups.length}</div>
+            <div><strong>💬 Contacts:</strong> ${selectedPhones.length}</div>
+            <div><strong>📊 Total destinataires:</strong> ${selectedGroups.length + selectedPhones.length}</div>
+        </div>
+        ${selectedGroups.length > 0 ? `<div style="margin-top:8px;"><small>Groupes: ${selectedGroups.slice(0,3).map(g => g.nom).join(', ')}${selectedGroups.length > 3 ? '...' : ''}</small></div>` : ''}
+        ${selectedPhones.length > 0 ? `<div style="margin-top:4px;"><small>Contacts: ${selectedPhones.slice(0,3).join(', ')}${selectedPhones.length > 3 ? '...' : ''}</small></div>` : ''}
+    `;
+}
+
+async function doAdvancedBroadcast() {
+    const messageType = document.getElementById('message-type-select')?.value;
+    const text = document.getElementById('bc-text')?.value?.trim() || '';
+    const mediaUrl = document.getElementById('bc-media-url')?.value?.trim() || '';
+    const simulate = document.getElementById('bc-simulate')?.checked || false;
+    
+    // Récupérer les cibles
+    let targets = [];
+    
+    if (currentBroadcastTab === 'groups' || currentBroadcastTab === 'both') {
+        const groupSelect = document.getElementById('bc-group-select');
+        const selected = Array.from(groupSelect?.selectedOptions || []).map(opt => opt.value);
+        const allGroups = await api('list_groups');
+        let groups = [];
+        if (selected.includes('all') || selected.length === 0) {
+            groups = allGroups.filter(g => g.actif == 1);
+        } else {
+            groups = allGroups.filter(g => selected.includes(g.groupe_id));
+        }
+        targets.push(...groups.map(g => ({ type: 'group', id: g.groupe_id })));
+    }
+    
+    if (currentBroadcastTab === 'inbox' || currentBroadcastTab === 'both') {
+        const customPhone = document.getElementById('bc-custom-phone')?.value.trim();
+        if (customPhone) targets.push({ type: 'contact', id: customPhone });
+        const contactSelect = document.getElementById('bc-contact-select');
+        const selected = Array.from(contactSelect?.selectedOptions || []).map(opt => opt.value);
+        if (selected.includes('all') && !customPhone) {
+            const members = await api('list_members', '');
+            const uniquePhones = [...new Map(members.map(m => [m.phone_formatted, m])).keys()];
+            targets.push(...uniquePhones.map(p => ({ type: 'contact', id: p })));
+        } else if (!selected.includes('all')) {
+            targets.push(...selected.map(p => ({ type: 'contact', id: p })));
+        }
+    }
+    
+    if (targets.length === 0) {
+        toast('Aucun destinataire sélectionné', 'err');
+        return;
+    }
+    
+    const st = document.getElementById('bc-status');
+    if (st) {
+        st.style.display = 'inline';
+        st.textContent = `Préparation de l'envoi à ${targets.length} destinataire(s)...`;
+    }
+    
+    let sent = 0;
+    let failed = 0;
+    
+    for (const target of targets) {
+        let to = target.type === 'group' ? target.id : target.id.replace(/\D/g, '');
+        let payload = {
+            to: to,
+            text: text,
+            media_url: mediaUrl,
+            message_type: messageType,
+            simulate: simulate
+        };
+        
+        // Ajouter les champs spécifiques
+        if (messageType === 'location') {
+            payload.latitude = document.getElementById('bc-lat')?.value;
+            payload.longitude = document.getElementById('bc-lng')?.value;
+            payload.location_name = document.getElementById('bc-location-name')?.value;
+            payload.address = document.getElementById('bc-address')?.value;
+        }
+        
+        if (messageType === 'poll') {
+            const options = Array.from(document.querySelectorAll('#poll-options input')).map(i => i.value).filter(v => v.trim());
+            payload.poll_options = options;
+            payload.selectable_count = parseInt(document.getElementById('poll-selectable')?.value || 1);
+        }
+        
+        if (messageType === 'contact') {
+            payload.contact_name = document.getElementById('bc-contact-name')?.value;
+            payload.contact_number = document.getElementById('bc-contact-number')?.value;
+        }
+        
+        const d = await apiPost('send_message', payload);
+        if (d.ok) sent++; else failed++;
+        
+        await new Promise(r => setTimeout(r, 500));
+        
+        if (st) st.textContent = `Progression: ${sent + failed}/${targets.length}...`;
+    }
+    
+    if (st) st.style.display = 'none';
+    
+    if (simulate) {
+        toast(`🔍 SIMULATION - ${sent} message(s) auraient été envoyés (${failed} erreur(s))`, 'warn');
+    } else {
+        toast(`✅ ${sent} message(s) envoyés avec succès (${failed} échec(s))`, sent > 0 ? 'ok' : 'err');
+    }
+    
+    // Réinitialisation
+    if (document.getElementById('bc-text')) document.getElementById('bc-text').value = '';
+    if (document.getElementById('bc-media-url')) document.getElementById('bc-media-url').value = '';
+    
+    loadBcQueue();
+    loadStats();
+}
+
+
+
+
+
+
 
 let bcMediaType = '';
 function setMediaType(el, type) {
@@ -1169,36 +1646,40 @@ function setMediaType(el, type) {
   if(row) row.style.display = type ? 'block' : 'none';
 }
 
-async function doBroadcast() {
-  const text    = $('bc-text')?.value?.trim()||'';
-  const mediaUrl= $('bc-media-url')?.value?.trim()||'';
-  const targets = $('bc-targets')?.value||'groups';
-  const st      = $('bc-status');
-  if (!text && !mediaUrl) { toast('Saisissez un message ou une URL de fichier.','err'); return; }
-  if (st) { st.style.display='inline'; st.textContent='Envoi en cours…'; }
-  const d = await apiPost('broadcast',{text,media_url:mediaUrl,media_type:bcMediaType,targets});
-  if(st) st.style.display='none';
-  if(d.ok) {
-    toast(`✅ ${d.msg}`,'ok');
-    if($('bc-text'))    $('bc-text').value='';
-    if($('bc-media-url')) $('bc-media-url').value='';
-    // Recharger la mini-queue
-    loadBcQueue();
-    loadStats();
-  } else toast(d.msg||'Erreur','err');
-}
+
+
+
+// Supprimez les fonctions doBroadcast() et setMediaType() existantes
+// Et remplacez loadBcQueue par :
 
 async function loadBcQueue() {
-  const list = await api('list_queue');
-  const tbody = $('bc-queue'); if(!tbody) return;
-  const stBadge={pending:'badge-amber',processing:'badge-blue',completed:'badge-green',failed:'badge-red',retry:'badge-purple'};
-  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">File vide</td></tr>';return;}
-  tbody.innerHTML=list.slice(0,8).map(q=>`<tr>
-    <td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
-    <td class="mono">${esc(short(q.target_id||q.phone_number,20))}</td>
-    <td>${esc(short(q.message_data))}</td>
-    <td><span class="badge ${stBadge[q.status]||'badge-gray'}">${esc(q.status)}</span></td>
-    <td class="mono">${fmtDate(q.created_at)}</td></tr>`).join('');
+    const list = await api('list_queue');
+    const tbody = document.getElementById('bc-queue');
+    if (!tbody) return;
+    const stBadge = {pending:'badge-amber', processing:'badge-blue', completed:'badge-green', failed:'badge-red', retry:'badge-purple'};
+    if (!list.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4">File vide</td></tr>';
+        return;
+    }
+    tbody.innerHTML = list.slice(0,10).map(q => `
+        <tr>
+            <td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
+            <td class="mono">${esc(q.target_id || q.phone_number || '—')}</td>
+            <td><span class="badge ${stBadge[q.status] || 'badge-gray'}">${esc(q.status)}</span></td>
+            <td class="mono">${fmtDate(q.created_at)}</td>
+        </tr>
+    `).join('');
+}
+
+// Ajoutez cette fonction pour l'initialisation de la page broadcast
+async function initBroadcast() {
+    await refreshSelections();
+    loadBcQueue();
+    setInterval(() => {
+        if (currentPage === 'broadcast') {
+            loadBcQueue();
+        }
+    }, 30000);
 }
 
 // ─── GROUPS ──────────────────────────────────────────────
