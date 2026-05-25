@@ -99,13 +99,13 @@ if ($authed && isset($_GET['ajax'])) {
 
 
 
-    // ── sync_groups — VERSION CORRIGÉE AVEC COUNT=500
+// ── sync_groups — VERSION CORRIGÉE (sans participants_count)
 if ($act === 'sync_groups') {
-    // 🔥 Récupérer TOUS les groupes en un seul appel avec count=500
+    // Récupérer TOUS les groupes en un seul appel avec count=500
     $data = whapi('groups?count=500');
     
     if (!$data) {
-        // Fallback: essayer avec count=100 si 500 ne fonctionne pas
+        // Fallback: essayer avec count=200 si 500 ne fonctionne pas
         $data = whapi('groups?count=200');
     }
     
@@ -135,7 +135,6 @@ if ($act === 'sync_groups') {
     foreach ($groups as $g) {
         $gid = $g['id'] ?? '';
         $nom = $g['name'] ?? $g['subject'] ?? 'Groupe sans nom';
-        $participants_count = $g['participants_count'] ?? count($g['participants'] ?? []);
         
         if (!$gid) continue;
         
@@ -145,35 +144,22 @@ if ($act === 'sync_groups') {
         $exists = db1('SELECT id FROM groupes_whatsapp WHERE groupe_id = ?', [$gid]);
         
         if ($exists) {
-            // Mettre à jour le groupe existant
+            // Mettre à jour le groupe existant (sans participants_count)
             dbx(
-                'UPDATE groupes_whatsapp SET nom = ?, participants_count = ?, updated_at = NOW() WHERE groupe_id = ?',
-                [$nom, $participants_count, $gid]
+                'UPDATE groupes_whatsapp SET nom = ?, updated_at = NOW() WHERE groupe_id = ?',
+                [$nom, $gid]
             );
             $updated++;
         } else {
-            // Ajouter le nouveau groupe
+            // Ajouter le nouveau groupe (sans participants_count)
             dbx(
-                'INSERT INTO groupes_whatsapp (groupe_id, nom, participants_count, actif, created_at, updated_at) 
-                 VALUES (?, ?, ?, 1, NOW(), NOW())',
-                [$gid, $nom, $participants_count]
+                'INSERT INTO groupes_whatsapp (groupe_id, nom, actif, created_at, updated_at) 
+                 VALUES (?, ?, 1, NOW(), NOW())',
+                [$gid, $nom]
             );
             $added++;
         }
     }
-    
-    // Optionnel: Supprimer les groupes qui n'existent plus sur WhatsApp
-    // (décommenter si vous voulez nettoyer les anciens groupes)
-    /*
-    if (!empty($group_ids)) {
-        $placeholders = implode(',', array_fill(0, count($group_ids), '?'));
-        $deleted = dbx("DELETE FROM groupes_whatsapp WHERE groupe_id NOT IN ($placeholders)", $group_ids);
-        if ($deleted > 0) {
-            // Supprimer aussi les participants des groupes supprimés
-            dbx("DELETE FROM whatsapp_participants WHERE groupe_id NOT IN ($placeholders)", $group_ids);
-        }
-    }
-    */
     
     $msg = "$added groupe(s) ajouté(s), $updated mis à jour (Total: " . count($groups) . " groupes)";
     
@@ -183,7 +169,7 @@ if ($act === 'sync_groups') {
         'added' => $added,
         'updated' => $updated,
         'total' => count($groups),
-        'groups_sample' => array_slice($group_ids, 0, 5) // Afficher un échantillon pour debug
+        'groups_sample' => array_slice($group_ids, 0, 5)
     ]);
     exit;
 }
