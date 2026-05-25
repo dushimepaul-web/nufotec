@@ -1432,39 +1432,6 @@ tr:hover td{background:rgba(37,211,102,.04);}
 </head>
 <body>
 
-<?php
-// Simulation d'authentification (à remplacer par votre logique)
-$authed = true;
-$login_error = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
-    $password = $_POST['password'] ?? '';
-    if ($password === 'admin123') {
-        session_start();
-        $_SESSION['auth'] = true;
-        $authed = true;
-    } else {
-        $login_error = 'Mot de passe incorrect';
-        $authed = false;
-    }
-}
-
-if (isset($_GET['logout'])) {
-    session_start();
-    session_destroy();
-    $authed = false;
-    header('Location: ?');
-    exit;
-}
-
-
-if (isset($_SESSION['auth']) && $_SESSION['auth'] === true) {
-    $authed = true;
-} else {
-    $authed = false;
-}
-?>
-
 <?php if (!$authed): ?>
 <!-- ═══════════ LOGIN ═══════════ -->
 <div class="login-wrap">
