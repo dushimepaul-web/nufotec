@@ -94,126 +94,198 @@ if ($authed && isset($_GET['ajax'])) {
     header('Content-Type: application/json');
     $act = $_GET['ajax'];
 
-    // ── sync_groups
-    if ($act==='sync_groups') {
+
+
+
+
+
+    // ── sync_groups — VERSION CORRIGÉE AVEC COUNT=500
+if ($act === 'sync_groups') {
+    // 🔥 Récupérer TOUS les groupes en un seul appel avec count=500
+    $data = whapi('groups?count=500');
+    
+    if (!$data) {
+        // Fallback: essayer avec count=100 si 500 ne fonctionne pas
         $data = whapi('groups?count=100');
-        if (!$data) {
-            $cnt = db1('SELECT COUNT(*) c FROM groupes_whatsapp');
-            echo json_encode(['ok'=>true,'msg'=>'⚠️ API inaccessible — données locales utilisées','total'=>$cnt->c??0,'degraded'=>true]);
-            exit;
-        }
-        $groups = $data['groups'] ?? $data['data'] ?? [];
-        $added=0;$updated=0;
-        foreach ($groups as $g) {
-            $gid=$g['id']??''; $nom=$g['name']??$g['subject']??'Groupe';
-            if(!$gid) continue;
-            if(db1('SELECT id FROM groupes_whatsapp WHERE groupe_id=?',[$gid])) {
-                dbx('UPDATE groupes_whatsapp SET nom=?,updated_at=NOW() WHERE groupe_id=?',[$nom,$gid]); $updated++;
-            } else {
-                dbx('INSERT INTO groupes_whatsapp (groupe_id,nom,actif,created_at,updated_at) VALUES (?,?,1,NOW(),NOW())',[$gid,$nom]); $added++;
-            }
-        }
-        echo json_encode(['ok'=>true,'msg'=>"$added ajouté(s), $updated mis à jour",'total'=>count($groups)]);
+    }
+    
+    if (!$data) {
+        $cnt = db1('SELECT COUNT(*) c FROM groupes_whatsapp');
+        echo json_encode([
+            'ok' => true, 
+            'msg' => '⚠️ API inaccessible — données locales utilisées', 
+            'total' => $cnt->c ?? 0, 
+            'degraded' => true
+        ]);
         exit;
     }
-
-
-
-
-// ── sync_members — VERSION CORRIGÉE POUR WHAPI
-if ($act==='sync_members') {
-    $gid_filter = $_GET['gid'] ?? null;
-    $groups = $gid_filter
-        ? [db1('SELECT groupe_id,nom FROM groupes_whatsapp WHERE groupe_id=?', [$gid_filter])]
-        : dbq('SELECT groupe_id,nom FROM groupes_whatsapp WHERE actif=1');
     
-    $total = 0;
-    $errors = [];
-    $debug = [];
+    // Extraire les groupes (différents formats possibles)
+    $groups = $data['groups'] ?? $data['data'] ?? [];
+    
+    if (empty($groups)) {
+        echo json_encode(['ok' => true, 'msg' => 'Aucun groupe trouvé sur Whapi', 'total' => 0]);
+        exit;
+    }
+    
+    $added = 0;
+    $updated = 0;
+    $group_ids = [];
     
     foreach ($groups as $g) {
+        $gid = $g['id'] ?? '';
+        $nom = $g['name'] ?? $g['subject'] ?? 'Groupe sans nom';
+        $participants_count = $g['participants_count'] ?? count($g['participants'] ?? []);
+        
+        if (!$gid) continue;
+        
+        $group_ids[] = $gid;
+        
+        // Vérifier si le groupe existe déjà
+        $exists = db1('SELECT id FROM groupes_whatsapp WHERE groupe_id = ?', [$gid]);
+        
+        if ($exists) {
+            // Mettre à jour le groupe existant
+            dbx(
+                'UPDATE groupes_whatsapp SET nom = ?, participants_count = ?, updated_at = NOW() WHERE groupe_id = ?',
+                [$nom, $participants_count, $gid]
+            );
+            $updated++;
+        } else {
+            // Ajouter le nouveau groupe
+            dbx(
+                'INSERT INTO groupes_whatsapp (groupe_id, nom, participants_count, actif, created_at, updated_at) 
+                 VALUES (?, ?, ?, 1, NOW(), NOW())',
+                [$gid, $nom, $participants_count]
+            );
+            $added++;
+        }
+    }
+    
+    // Optionnel: Supprimer les groupes qui n'existent plus sur WhatsApp
+    // (décommenter si vous voulez nettoyer les anciens groupes)
+    /*
+    if (!empty($group_ids)) {
+        $placeholders = implode(',', array_fill(0, count($group_ids), '?'));
+        $deleted = dbx("DELETE FROM groupes_whatsapp WHERE groupe_id NOT IN ($placeholders)", $group_ids);
+        if ($deleted > 0) {
+            // Supprimer aussi les participants des groupes supprimés
+            dbx("DELETE FROM whatsapp_participants WHERE groupe_id NOT IN ($placeholders)", $group_ids);
+        }
+    }
+    */
+    
+    $msg = "$added groupe(s) ajouté(s), $updated mis à jour (Total: " . count($groups) . " groupes)";
+    
+    echo json_encode([
+        'ok' => true, 
+        'msg' => $msg, 
+        'added' => $added,
+        'updated' => $updated,
+        'total' => count($groups),
+        'groups_sample' => array_slice($group_ids, 0, 5) // Afficher un échantillon pour debug
+    ]);
+    exit;
+}
+
+
+
+// ── sync_members — VERSION OPTIMISÉE (1 seul appel API)
+if ($act === 'sync_members') {
+    $gid_filter = $_GET['gid'] ?? null;
+    
+    // 🔥 UN SEUL APPEL API POUR TOUS LES GROUPES
+    $data = whapi('groups?count=500');
+    
+    if (!$data || isset($data['error'])) {
+        // Fallback: essayer avec un plus petit count
+        $data = whapi('groups?count=200');
+    }
+    
+    if (!$data || isset($data['error'])) {
+        echo json_encode(['ok' => false, 'msg' => 'Erreur API Whapi - Impossible de récupérer les groupes', 'debug' => $data]);
+        exit;
+    }
+    
+    // Extraire la liste des groupes
+    $groups_from_api = $data['groups'] ?? $data['data'] ?? [];
+    
+    if (empty($groups_from_api)) {
+        echo json_encode(['ok' => true, 'msg' => 'Aucun groupe trouvé sur Whapi', 'total_members' => 0]);
+        exit;
+    }
+    
+    $total_members = 0;
+    $groups_processed = 0;
+    $groups_not_found = [];
+    $debug = [];
+    
+    // Déterminer quels groupes synchroniser
+    if ($gid_filter) {
+        // Synchroniser un seul groupe spécifique
+        $target_groups = [db1('SELECT groupe_id, nom FROM groupes_whatsapp WHERE groupe_id = ?', [$gid_filter])];
+        if (!$target_groups[0]) {
+            echo json_encode(['ok' => false, 'msg' => 'Groupe non trouvé en base']);
+            exit;
+        }
+    } else {
+        // Synchroniser tous les groupes actifs
+        $target_groups = dbq('SELECT groupe_id, nom FROM groupes_whatsapp WHERE actif = 1');
+    }
+    
+    foreach ($target_groups as $g) {
         if (!$g) continue;
         
-        // 🔥 ESSAYER D'ABORD L'ENDPOINT /participants
-        $data = whapi("groups/{$g->groupe_id}/participants");
-        
-        // Si ça ne marche pas, essayer l'endpoint principal
-        if (!$data || isset($data['error'])) {
-            $data = whapi("groups/{$g->groupe_id}");
+        // Chercher le groupe dans la réponse de l'API
+        $found_group = null;
+        foreach ($groups_from_api as $api_group) {
+            if (($api_group['id'] ?? '') === $g->groupe_id) {
+                $found_group = $api_group;
+                break;
+            }
         }
         
-        // Vérifier si l'appel a réussi
-        if (!$data || isset($data['error'])) {
-            $errors[] = $g->groupe_id;
-            error_log("Erreur API pour groupe: {$g->groupe_id}");
+        if (!$found_group) {
+            $groups_not_found[] = $g->groupe_id;
+            $debug[$g->groupe_id] = ['status' => 'not_found_in_api'];
             continue;
         }
         
-        // 🔥 EXTRAIRE LES PARTICIPANTS (différents formats possibles)
-        $parts = [];
+        // 🔥 RÉCUPÉRER LES PARTICIPANTS DIRECTEMENT
+        $participants = $found_group['participants'] ?? $found_group['members'] ?? [];
         
-        // Format 1: participants direct
-        if (isset($data['participants']) && is_array($data['participants'])) {
-            $parts = $data['participants'];
-        }
-        // Format 2: participants dans data
-        elseif (isset($data['data']['participants']) && is_array($data['data']['participants'])) {
-            $parts = $data['data']['participants'];
-        }
-        // Format 3: la réponse est directement un tableau
-        elseif (is_array($data) && !isset($data['id']) && !isset($data['error'])) {
-            // Vérifier si c'est un tableau de participants
-            $first = reset($data);
-            if (isset($first['id']) || isset($first['phone']) || isset($first['jid'])) {
-                $parts = $data;
-            }
-        }
-        
-        // 🔥 FORMAT SPÉCIAL WHAPI : parfois les participants sont dans la réponse racine
-        // quand on appelle /groups (liste des groupes) chaque groupe a un champ participants
-        if (empty($parts) && isset($data['groups'])) {
-            foreach ($data['groups'] as $group) {
-                if ($group['id'] === $g->groupe_id && isset($group['participants'])) {
-                    $parts = $group['participants'];
-                    break;
-                }
-            }
-        }
-        
-        // Debug pour comprendre
         $debug[$g->groupe_id] = [
-            'endpoint_used' => isset($data['participants']) ? 'groups/{id}' : (isset($data['data']['participants']) ? 'groups/{id}/participants' : 'unknown'),
-            'response_keys' => array_keys($data),
-            'participants_count' => count($parts),
-            'sample' => count($parts) > 0 ? array_slice($parts, 0, 2) : 'AUCUN'
+            'nom' => $found_group['name'] ?? $g->nom,
+            'participants_count' => count($participants),
+            'total_from_api' => $found_group['participants_count'] ?? count($participants)
         ];
         
-        if (empty($parts)) {
-            error_log("Aucun participant pour: {$g->groupe_id}");
-            continue;
+        // Mettre à jour le nom du groupe si différent
+        $api_nom = $found_group['name'] ?? $found_group['subject'] ?? $g->nom;
+        if ($api_nom !== $g->nom) {
+            dbx('UPDATE groupes_whatsapp SET nom = ?, updated_at = NOW() WHERE groupe_id = ?', [$api_nom, $g->groupe_id]);
         }
         
-        foreach ($parts as $p) {
+        // Parcourir tous les participants
+        foreach ($participants as $p) {
             $phone_raw = '';
             $is_admin = 0;
             $name = null;
             
             if (is_string($p)) {
+                // Format: "33612345678@s.whatsapp.net"
                 $phone_raw = $p;
-            } 
-            elseif (is_array($p)) {
-                // Différentes clés possibles dans Whapi
-                $phone_raw = $p['id'] ?? $p['phone'] ?? $p['jid'] ?? $p['whatsappId'] ?? '';
+            } elseif (is_array($p)) {
+                // Format standard Whapi
+                $phone_raw = $p['id'] ?? $p['phone'] ?? $p['jid'] ?? '';
                 
-                // Détection admin (Whapi utilise 'rank' ou 'isAdmin')
+                // Détection admin (Whapi utilise 'rank')
                 if (isset($p['rank'])) {
                     $is_admin = ($p['rank'] === 'admin' || $p['rank'] === 'superadmin') ? 1 : 0;
                 } elseif (isset($p['isAdmin'])) {
                     $is_admin = $p['isAdmin'] ? 1 : 0;
                 } elseif (isset($p['admin'])) {
                     $is_admin = $p['admin'] ? 1 : 0;
-                } elseif (isset($p['is_admin'])) {
-                    $is_admin = $p['is_admin'] ? 1 : 0;
                 }
                 
                 $name = $p['name'] ?? $p['pushName'] ?? $p['notify'] ?? $p['contactName'] ?? null;
@@ -221,12 +293,13 @@ if ($act==='sync_members') {
             
             if (!$phone_raw) continue;
             
-            // Nettoyer le numéro
+            // Nettoyer le numéro (enlever @s.whatsapp.net et autres suffixes)
             $phone_clean = preg_replace('/@[^@]+$/', '', (string)$phone_raw);
             $phone_fmt = preg_replace('/\D+/', '', $phone_clean);
             
             if (!$phone_fmt || strlen($phone_fmt) < 6) continue;
             
+            // Insérer ou mettre à jour le participant
             dbx(
                 'INSERT INTO whatsapp_participants
                  (groupe_id, phone, phone_formatted, is_admin, violation_count, profile_name, synced_at, created_at, updated_at)
@@ -238,21 +311,42 @@ if ($act==='sync_members') {
                    updated_at = NOW()',
                 [$g->groupe_id, $phone_raw, $phone_fmt, $is_admin, $name]
             );
-            $total++;
+            $total_members++;
+        }
+        $groups_processed++;
+    }
+    
+    // Supprimer les participants qui ne sont plus dans les groupes (optionnel)
+    // Cette étape nettoie les anciens membres qui ont quitté les groupes
+    if (!$gid_filter && $groups_processed > 0) {
+        $active_groups = array_column($target_groups, 'groupe_id');
+        if (!empty($active_groups)) {
+            $placeholders = implode(',', array_fill(0, count($active_groups), '?'));
+            $deleted = dbx("DELETE FROM whatsapp_participants WHERE groupe_id NOT IN ($placeholders)", $active_groups);
+            if ($deleted > 0) {
+                $debug['cleanup'] = "{$deleted} anciens participants supprimés";
+            }
         }
     }
     
-    $msg = "$total membre(s) synchronisé(s)";
-    if (!empty($errors)) {
-        $msg .= ' · Erreur API (' . count($errors) . ' groupes): ' . implode(', ', array_slice($errors, 0, 5));
-        if (count($errors) > 5) $msg .= '…';
+    // Construction du message de retour
+    $msg = "✅ $total_members membre(s) synchronisé(s) depuis $groups_processed groupe(s)";
+    
+    if (!empty($groups_not_found)) {
+        $msg .= " ⚠️ Groupes non trouvés dans l'API: " . implode(', ', array_slice($groups_not_found, 0, 3));
+        if (count($groups_not_found) > 3) $msg .= '…';
     }
     
-    // Ajouter les infos de debug dans la réponse (pour diagnostiquer)
-    echo json_encode(['ok' => true, 'msg' => $msg, 'debug' => $debug, 'total' => $total]);
+    echo json_encode([
+        'ok' => true, 
+        'msg' => $msg, 
+        'total_members' => $total_members,
+        'groups_processed' => $groups_processed,
+        'groups_not_found' => $groups_not_found,
+        'debug' => $debug
+    ]);
     exit;
 }
-
 
 
 
