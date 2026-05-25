@@ -106,7 +106,7 @@ if ($act === 'sync_groups') {
     
     if (!$data) {
         // Fallback: essayer avec count=100 si 500 ne fonctionne pas
-        $data = whapi('groups?count=100');
+        $data = whapi('groups?count=200');
     }
     
     if (!$data) {
