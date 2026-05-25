@@ -435,6 +435,17 @@ $route['api/investors/Save'] = 'Investors/Save';
 
 
 
+// Routes API Mobile React Native
+$route['api/mobile/medias'] = 'Api/Mobile/medias';
+$route['api/mobile/media/(:any)'] = 'Api/Mobile/media/$1';
+$route['api/mobile/categories'] = 'Api/Mobile/categories';
+$route['api/mobile/search'] = 'Api/Mobile/search';
+$route['api/mobile/popular'] = 'Api/Mobile/popular';
+$route['api/mobile/recent'] = 'Api/Mobile/recent';
+$route['api/mobile/playlists'] = 'Api/Mobile/playlists';
+// application/config/routes.php
+$route['api/mobile/record-view'] = 'Api/Mobile/recordViewApi';
+
 
 
 

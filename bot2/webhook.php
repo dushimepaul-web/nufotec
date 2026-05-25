@@ -4,6 +4,9 @@
  *  NUFOTEC — WhatsApp Webhook  (webhook.php)
  *  Rôle UNIQUE : recevoir, valider, répondre 200, déléguer
  *  Compatible 100% avec la base de données existante
+ *
+ *  CORRECTIF : réponse 200 envoyée AVANT toute validation
+ *  pour éviter l'erreur ETIMEDOUT côté Whapi
  * ============================================================
  */
 declare(strict_types=1);
@@ -12,14 +15,15 @@ declare(strict_types=1);
 ignore_user_abort(true);
 set_time_limit(30);
 
+
 // ============================================================
 //  CONFIGURATION
 // ============================================================
-define('WEBHOOK_TOKEN', '');          // laisser vide si non utilisé
-define('PROCESSOR_URL', 'https://nufotec.com/bot2/process.php');
+define('WEBHOOK_TOKEN',    '');          // laisser vide si non utilisé
+define('PROCESSOR_URL',    'https://nufotec.com/bot2/process.php');
 define('PROCESSOR_SECRET', 'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw');
-define('LOG_FILE',     __DIR__ . '/webhook.log');
-define('LOG_MAX_BYTES', 5 * 1024 * 1024);
+define('LOG_FILE',         __DIR__ . '/webhook.log');
+define('LOG_MAX_BYTES',    5 * 1024 * 1024);
 
 
 // ============================================================
@@ -29,37 +33,9 @@ $raw = (string) file_get_contents('php://input');
 
 
 // ============================================================
-//  VALIDATION TOKEN (optionnel)
-// ============================================================
-if (WEBHOOK_TOKEN !== '') {
-    $tok = $_GET['token'] ?? $_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? '';
-    if (!hash_equals(WEBHOOK_TOKEN, $tok)) {
-        wlog('WARN', 'Token invalide: ' . $tok);
-        http_response_code(401);
-        exit;
-    }
-}
-
-
-// ============================================================
-//  VALIDATION JSON MINIMALE
-// ============================================================
-if (empty($raw)) {
-    http_response_code(200);
-    exit;
-}
-$payload = json_decode($raw, true);
-if (!is_array($payload) || empty($payload)) {
-    wlog('ERROR', 'JSON invalide: ' . substr($raw, 0, 200));
-    http_response_code(200); // on répond quand même 200 à Whapi
-    exit;
-}
-
-wlog('INFO', 'Webhook reçu · type=' . ($payload['type'] ?? $payload['event']['type'] ?? '?'));
-
-
-// ============================================================
-//  RÉPONSE IMMÉDIATE À WHAPI  (avant tout traitement lourd)
+//  RÉPONSE IMMÉDIATE À WHAPI
+//  ⚠️ DOIT être envoyée AVANT toute validation ou traitement
+//  pour éviter le timeout ETIMEDOUT côté Whapi
 // ============================================================
 $resp = '{"status":"ok"}';
 http_response_code(200);
@@ -82,6 +58,35 @@ if (function_exists('fastcgi_finish_request')) {
 } else {
     wlog('DEBUG', 'fastcgi_finish_request non disponible — flush() utilisé');
 }
+
+
+// ============================================================
+//  VALIDATION TOKEN (optionnel) — après la réponse 200
+// ============================================================
+if (WEBHOOK_TOKEN !== '') {
+    $tok = $_GET['token'] ?? $_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? '';
+    if (!hash_equals(WEBHOOK_TOKEN, $tok)) {
+        wlog('WARN', 'Token invalide: ' . $tok);
+        exit;
+    }
+}
+
+
+// ============================================================
+//  VALIDATION JSON MINIMALE — après la réponse 200
+// ============================================================
+if (empty($raw)) {
+    wlog('DEBUG', 'Payload vide, rien à traiter');
+    exit;
+}
+
+$payload = json_decode($raw, true);
+if (!is_array($payload) || empty($payload)) {
+    wlog('ERROR', 'JSON invalide: ' . substr($raw, 0, 200));
+    exit;
+}
+
+wlog('INFO', 'Webhook reçu · type=' . ($payload['type'] ?? $payload['event']['type'] ?? '?'));
 
 
 // ============================================================
