@@ -120,7 +120,7 @@ if ($authed && isset($_GET['ajax'])) {
 
 
 
-// ── sync_members — VERSION CORRIGÉE
+// ── sync_members — VERSION CORRIGÉE POUR WHAPI
 if ($act==='sync_members') {
     $gid_filter = $_GET['gid'] ?? null;
     $groups = $gid_filter
@@ -134,90 +134,99 @@ if ($act==='sync_members') {
     foreach ($groups as $g) {
         if (!$g) continue;
         
-        // 🔥 CORRECTION : Utiliser le bon endpoint
-        $data = whapi("groups/{$g->groupe_id}");
+        // 🔥 ESSAYER D'ABORD L'ENDPOINT /participants
+        $data = whapi("groups/{$g->groupe_id}/participants");
+        
+        // Si ça ne marche pas, essayer l'endpoint principal
+        if (!$data || isset($data['error'])) {
+            $data = whapi("groups/{$g->groupe_id}");
+        }
         
         // Vérifier si l'appel a réussi
         if (!$data || isset($data['error'])) {
             $errors[] = $g->groupe_id;
-            error_log("Erreur API pour groupe: {$g->groupe_id} - " . json_encode($data));
+            error_log("Erreur API pour groupe: {$g->groupe_id}");
             continue;
         }
         
-        // 🔥 GÉRER LES DIFFÉRENTS FORMATS DE RÉPONSE WHAPI
+        // 🔥 EXTRAIRE LES PARTICIPANTS (différents formats possibles)
         $parts = [];
         
-        // Selon la documentation Whapi, les participants sont dans la clé 'participants'
+        // Format 1: participants direct
         if (isset($data['participants']) && is_array($data['participants'])) {
             $parts = $data['participants'];
         }
-        // Format alternatif
+        // Format 2: participants dans data
         elseif (isset($data['data']['participants']) && is_array($data['data']['participants'])) {
             $parts = $data['data']['participants'];
         }
-        // Si la réponse est directement un tableau de participants
-        elseif (is_array($data) && !isset($data['id'])) {
-            // Vérifier si chaque élément a un id/phone
-            $parts = $data;
+        // Format 3: la réponse est directement un tableau
+        elseif (is_array($data) && !isset($data['id']) && !isset($data['error'])) {
+            // Vérifier si c'est un tableau de participants
+            $first = reset($data);
+            if (isset($first['id']) || isset($first['phone']) || isset($first['jid'])) {
+                $parts = $data;
+            }
         }
         
-        // Debug pour voir ce que l'API retourne vraiment
+        // 🔥 FORMAT SPÉCIAL WHAPI : parfois les participants sont dans la réponse racine
+        // quand on appelle /groups (liste des groupes) chaque groupe a un champ participants
+        if (empty($parts) && isset($data['groups'])) {
+            foreach ($data['groups'] as $group) {
+                if ($group['id'] === $g->groupe_id && isset($group['participants'])) {
+                    $parts = $group['participants'];
+                    break;
+                }
+            }
+        }
+        
+        // Debug pour comprendre
         $debug[$g->groupe_id] = [
+            'endpoint_used' => isset($data['participants']) ? 'groups/{id}' : (isset($data['data']['participants']) ? 'groups/{id}/participants' : 'unknown'),
             'response_keys' => array_keys($data),
-            'has_participants' => isset($data['participants']),
-            'participants_count' => isset($data['participants_count']) ? $data['participants_count'] : count($parts),
-            'sample' => count($parts) > 0 ? array_slice($parts, 0, 2) : []
+            'participants_count' => count($parts),
+            'sample' => count($parts) > 0 ? array_slice($parts, 0, 2) : 'AUCUN'
         ];
         
         if (empty($parts)) {
-            error_log("Aucun participant trouvé pour groupe: {$g->groupe_id}");
+            error_log("Aucun participant pour: {$g->groupe_id}");
             continue;
         }
         
         foreach ($parts as $p) {
-            // Gérer différents formats de participant
             $phone_raw = '';
             $is_admin = 0;
             $name = null;
             
             if (is_string($p)) {
-                // Format: "33612345678@s.whatsapp.net" ou "33612345678"
                 $phone_raw = $p;
             } 
             elseif (is_array($p)) {
-                // Format standard Whapi
-                $phone_raw = $p['id'] ?? $p['phone'] ?? $p['jid'] ?? '';
+                // Différentes clés possibles dans Whapi
+                $phone_raw = $p['id'] ?? $p['phone'] ?? $p['jid'] ?? $p['whatsappId'] ?? '';
                 
                 // Détection admin (Whapi utilise 'rank' ou 'isAdmin')
                 if (isset($p['rank'])) {
                     $is_admin = ($p['rank'] === 'admin' || $p['rank'] === 'superadmin') ? 1 : 0;
                 } elseif (isset($p['isAdmin'])) {
-                    $is_admin = (int)(bool)$p['isAdmin'];
+                    $is_admin = $p['isAdmin'] ? 1 : 0;
                 } elseif (isset($p['admin'])) {
-                    $is_admin = (int)(bool)$p['admin'];
-                } elseif (isset($p['is_super_admin'])) {
-                    $is_admin = (int)(bool)$p['is_super_admin'];
+                    $is_admin = $p['admin'] ? 1 : 0;
                 } elseif (isset($p['is_admin'])) {
-                    $is_admin = (int)(bool)$p['is_admin'];
+                    $is_admin = $p['is_admin'] ? 1 : 0;
                 }
                 
-                $name = $p['name'] ?? $p['pushName'] ?? $p['notify'] ?? $p['contactName'] ?? $p['shortName'] ?? null;
-            }
-            elseif (is_object($p)) {
-                $phone_raw = $p->id ?? $p->phone ?? $p->jid ?? '';
-                $is_admin = isset($p->rank) ? ($p->rank === 'admin' ? 1 : 0) : ($p->isAdmin ?? $p->admin ?? 0);
-                $name = $p->name ?? $p->pushName ?? $p->notify ?? null;
+                $name = $p['name'] ?? $p['pushName'] ?? $p['notify'] ?? $p['contactName'] ?? null;
             }
             
             if (!$phone_raw) continue;
             
-            // Nettoyer le numéro (enlever @s.whatsapp.net et autres suffixes)
+            // Nettoyer le numéro
             $phone_clean = preg_replace('/@[^@]+$/', '', (string)$phone_raw);
             $phone_fmt = preg_replace('/\D+/', '', $phone_clean);
             
             if (!$phone_fmt || strlen($phone_fmt) < 6) continue;
             
-            // Insérer ou mettre à jour
             dbx(
                 'INSERT INTO whatsapp_participants
                  (groupe_id, phone, phone_formatted, is_admin, violation_count, profile_name, synced_at, created_at, updated_at)
@@ -235,13 +244,14 @@ if ($act==='sync_members') {
     
     $msg = "$total membre(s) synchronisé(s)";
     if (!empty($errors)) {
-        $msg .= ' · Groupes en erreur: ' . implode(', ', $errors);
+        $msg .= ' · Erreur API (' . count($errors) . ' groupes): ' . implode(', ', array_slice($errors, 0, 5));
+        if (count($errors) > 5) $msg .= '…';
     }
     
+    // Ajouter les infos de debug dans la réponse (pour diagnostiquer)
     echo json_encode(['ok' => true, 'msg' => $msg, 'debug' => $debug, 'total' => $total]);
     exit;
 }
-
 
 
 
