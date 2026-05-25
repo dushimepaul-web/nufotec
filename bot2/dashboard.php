@@ -1141,17 +1141,18 @@ function toast(msg, type='ok') {
 
 function closeModal(id) { $(id)?.classList.remove('open'); }
 
+// Pages définition
 const PAGES = {
-    overview:  { title:'Vue d\'ensemble',  build:buildOverview,   load:loadOverview  },
-    broadcast: { title:'Diffusion',         build:buildBroadcast,  load:initBroadcast },
-    groups:    { title:'Groupes',           build:buildGroups,     load:loadGroups    },
-    members:   { title:'Membres',           build:buildMembers,    load:loadMembersPage},
-    inbox:     { title:'Inbox',             build:buildInbox,      load:loadInbox     },
-    blacklist: { title:'Blacklist',         build:buildBlacklist,  load:loadBlacklist },
-    queue:     { title:'File d\'envoi',     build:buildQueue,      load:loadQueue     },
-    logs:      { title:'Logs',              build:buildLogs,       load:loadLogs      },
-    security:  { title:'Sécurité',         build:buildSecurity,   load:loadSecurity  },
-    settings:  { title:'Paramètres',       build:buildSettings,   load:loadSettings  },
+  overview:  { title:'Vue d\'ensemble',  build:buildOverview,   load:loadOverview  },
+  broadcast: { title:'Diffusion',         build:buildBroadcast,  load:()=>{}        },
+  groups:    { title:'Groupes',           build:buildGroups,     load:loadGroups    },
+  members:   { title:'Membres',           build:buildMembers,    load:loadMembersPage},
+  inbox:     { title:'Inbox',             build:buildInbox,      load:loadInbox     },
+  blacklist: { title:'Blacklist',         build:buildBlacklist,  load:loadBlacklist },
+  queue:     { title:'File d\'envoi',     build:buildQueue,      load:loadQueue     },
+  logs:      { title:'Logs',              build:buildLogs,       load:loadLogs      },
+  security:  { title:'Sécurité',         build:buildSecurity,   load:loadSecurity  },
+  settings:  { title:'Paramètres',       build:buildSettings,   load:loadSettings  },
 };
 
 function goPage(name) {
