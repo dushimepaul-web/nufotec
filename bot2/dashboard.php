@@ -730,6 +730,7 @@ if ($act === 'sync_members') {
 ?>
 
 
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1037,7 +1038,6 @@ tr:hover td{background:rgba(37,211,102,.04);}
 .warn-banner{
   background:rgba(255,149,0,.1);border-left:4px solid var(--amber);
   padding:10px 16px;margin-bottom:16px;font-size:13px;border-radius:8px;color:#804800;
-}
 
 /* ── WHATSAPP CHAT BROADCAST UI ── */
 .wa-chat-container {
@@ -1566,6 +1566,7 @@ function goPage(name) {
     el.id='page-'+name; el.className='page';
     el.innerHTML = pg.build();
     $('main-content').appendChild(el);
+    // bind events after build
     bindPageEvents(name);
   }
   el.classList.add('active');
@@ -1608,23 +1609,31 @@ function buildOverview() { return `
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
   <div class="panel">
     <div class="panel-header"><div class="panel-title">🛡 Dernières violations</div><button class="btn btn-ghost btn-sm" onclick="goPage('security')">Voir tout →</button></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Type</th><th>Date</th></tr></thead><tbody id="ov-security"><tr class="empty-row"><td colspan="3"><span class="spin"></span></td></tbody></table></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Type</th><th>Date</th></tr></thead><tbody id="ov-security"><tr class="empty-row"><td colspan="3"><span class="spin"></span></td></tr></tbody></table></div>
   </div>
   <div class="panel">
     <div class="panel-header"><div class="panel-title">📋 Logs récents</div><button class="btn btn-ghost btn-sm" onclick="goPage('logs')">Voir tout →</button></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Type</th><th>Statut</th></tr></thead><tbody id="ov-logs"><tr class="empty-row"><td colspan="3"><span class="spin"></span></td></tbody></table></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Type</th><th>Statut</th></tr></thead><tbody id="ov-logs"><tr class="empty-row"><td colspan="3"><span class="spin"></span></td></tr></tbody></table></div>
   </div>
 </div>`; }
 
 async function loadOverview() {
   await loadStats();
+  // security
   const sec = await api('list_security');
   const sb = $('ov-security');
-  if(sb) sb.innerHTML = sec.length ? sec.slice(0,6).map(l=>`<tr><td class="mono">${esc(l.sender)}</td><td><span class="badge badge-red">${esc(l.action_type)}</span></td><td class="mono">${fmtDate(l.created_at)}</td></tr>`).join('') : '<tr class="empty-row"><td colspan="3">Aucune violation</td></tr>';
+  if(sb) sb.innerHTML = sec.length ? sec.slice(0,6).map(l=>`<tr>
+    <td class="mono">${esc(l.sender)}</td>
+    <td><span class="badge badge-red">${esc(l.action_type)}</span></td>
+    <td class="mono">${fmtDate(l.created_at)}</td></tr>`).join('') : '<tr class="empty-row"><td colspan="3">Aucune violation</td></tr>';
+  // logs
   const logs = await api('list_logs');
   const sb2 = $('ov-logs');
   const stBadge = {sent:'badge-green',failed:'badge-red',received:'badge-blue',processing:'badge-amber'};
-  if(sb2) sb2.innerHTML = logs.length ? logs.slice(0,6).map(l=>`<tr><td class="mono">${esc(l.phone_number)}</td><td><span class="badge badge-gray">${esc(l.message_type)}</span></td><td><span class="badge ${stBadge[l.status]||'badge-gray'}">${esc(l.status)}</span></td></tr>`).join('') : '<tr class="empty-row"><td colspan="3">Aucun log</td></tr>';
+  if(sb2) sb2.innerHTML = logs.length ? logs.slice(0,6).map(l=>`<tr>
+    <td class="mono">${esc(l.phone_number)}</td>
+    <td><span class="badge badge-gray">${esc(l.message_type)}</span></td>
+    <td><span class="badge ${stBadge[l.status]||'badge-gray'}">${esc(l.status)}</span></td></tr>`).join('') : '<tr class="empty-row"><td colspan="3">Aucun log</td></tr>';
 }
 
 async function loadStats() {
@@ -1645,81 +1654,222 @@ async function loadStats() {
   if(nq&&d.queue_pending>0){nq.textContent=d.queue_pending;nq.style.display='';}
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ─── BROADCAST — Interface complète avec tous les types de messages
 function buildBroadcast() { return `
+<!-- Conteneur global de type WhatsApp -->
 <div class="wa-chat-container">
+  
+  <!-- En-tête avec sélection des cibles de diffusion -->
   <div class="wa-chat-header">
-    <div class="wa-chat-header-title"><span>📢</span> Centre de Diffusion WhatsApp (Interface WhatsApp Web)</div>
+    <div class="wa-chat-header-title">
+      <span>📢</span> Centre de Diffusion WhatsApp (Interface WhatsApp Web)
+    </div>
+    
+    <!-- Choix Cible -->
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
       <div class="wa-target-tabs">
         <button class="wa-target-tab active" onclick="switchBroadcastTab('groups')" id="tab-groups">👥 Groupes Actifs</button>
         <button class="wa-target-tab" onclick="switchBroadcastTab('inbox')" id="tab-inbox">💬 Contacts (Inbox)</button>
         <button class="wa-target-tab" onclick="switchBroadcastTab('both')" id="tab-both">📢 Les deux</button>
       </div>
+      
       <div style="display:flex; align-items:center; gap:8px;">
         <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:700; color:var(--text2);">
           <input type="checkbox" id="bc-simulate"> 🎮 Mode simulation (test)
         </label>
-        <button class="btn btn-dark btn-sm" onclick="doAdvancedBroadcast()" style="padding:6px 14px; font-size:12px;">🚀 Lancer la diffusion</button>
+        <button class="btn btn-dark btn-sm" onclick="doAdvancedBroadcast()" style="padding:6px 14px; font-size:12px;">
+          🚀 Lancer la diffusion
+        </button>
       </div>
     </div>
+
+    <!-- Sélecteurs dynamiques (multi-select list) -->
     <div id="broadcast-groups">
       <div style="font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">📌 Groupes actifs concernés (décochez pour exclure) :</div>
-      <div class="wa-targets-grid" id="wa-groups-list"></div>
+      <div class="wa-targets-grid" id="wa-groups-list">
+        <!-- Rempli dynamiquement -->
+      </div>
     </div>
+    
     <div id="broadcast-inbox" style="display:none;">
       <div style="font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">📞 Contacts inbox concernés (décochez pour exclure) :</div>
-      <div class="wa-targets-grid" id="wa-contacts-list"></div>
+      <div class="wa-targets-grid" id="wa-contacts-list">
+        <!-- Rempli dynamiquement -->
+      </div>
       <div style="margin-top:8px;">
         <input type="text" id="bc-custom-phone" class="setting-input" placeholder="Ajouter un numéro spécifique (ex: 25779666439)" style="font-size:11px; padding:6px 10px; width:280px; display:inline-block; margin-bottom:0;">
         <button class="btn btn-ghost btn-sm" onclick="addCustomPhoneTarget()" style="padding: 5px 10px;">+ Ajouter cible</button>
       </div>
     </div>
   </div>
+
+  <!-- Corps de chat virtuel (Wallpaper WhatsApp) -->
   <div class="wa-chat-body" id="wa-chat-body">
+    
+    <!-- Bulle de prévisualisation du message -->
     <div class="wa-bubble-wrapper" id="wa-bubble-preview-wrapper" style="display:none;">
       <div class="wa-msg-bubble">
-        <div class="wa-msg-loading" id="wa-bubble-loading" style="display:none;"><span class="spin"></span></div>
-        <div class="wa-msg-media-preview" id="wa-preview-media-box" style="display:none;"><img id="wa-preview-img" src="" style="display:none;"><video id="wa-preview-video" src="" controls style="display:none;"></video></div>
-        <div class="wa-msg-doc-preview" id="wa-preview-doc-box" style="display:none;"><div class="wa-msg-doc-icon">📄</div><div class="wa-msg-doc-info"><span class="wa-msg-doc-name" id="wa-preview-doc-name">document.pdf</span><span class="wa-msg-doc-size" id="wa-preview-doc-size">0 KB</span></div></div>
-        <div class="wa-msg-voice-preview" id="wa-preview-voice-box" style="display:none;"><button class="wa-voice-play-btn" type="button" onclick="togglePreviewVoiceAudio(event)" id="wa-preview-voice-btn">▶</button><div class="wa-voice-wave"><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div><div class="wa-wave-bar"></div></div><span class="wa-voice-time" id="wa-preview-voice-time">0:00</span></div>
+        
+        <!-- Chargement / Uploading state overlay -->
+        <div class="wa-msg-loading" id="wa-bubble-loading" style="display:none;">
+          <span class="spin"></span>
+        </div>
+
+        <!-- Aperçu Média (Image / Vidéo) -->
+        <div class="wa-msg-media-preview" id="wa-preview-media-box" style="display:none;">
+          <img id="wa-preview-img" src="" style="display:none;">
+          <video id="wa-preview-video" src="" controls style="display:none;"></video>
+        </div>
+
+        <!-- Aperçu Document -->
+        <div class="wa-msg-doc-preview" id="wa-preview-doc-box" style="display:none;">
+          <div class="wa-msg-doc-icon">📄</div>
+          <div class="wa-msg-doc-info">
+            <span class="wa-msg-doc-name" id="wa-preview-doc-name">document.pdf</span>
+            <span class="wa-msg-doc-size" id="wa-preview-doc-size">0 KB</span>
+          </div>
+        </div>
+
+        <!-- Aperçu Enregistrement vocal -->
+        <div class="wa-msg-voice-preview" id="wa-preview-voice-box" style="display:none;">
+          <button class="wa-voice-play-btn" type="button" onclick="togglePreviewVoiceAudio(event)" id="wa-preview-voice-btn">▶</button>
+          <div class="wa-voice-wave">
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+            <div class="wa-wave-bar"></div>
+          </div>
+          <span class="wa-voice-time" id="wa-preview-voice-time">0:00</span>
+        </div>
+
+        <!-- Texte du message -->
         <div id="wa-preview-text" style="white-space:pre-wrap;">Votre message ici...</div>
-        <div class="wa-msg-meta"><span id="wa-preview-time">12:00</span><span style="color:#53bdeb; font-size:14px; font-weight:bold;">✓✓</span></div>
+
+        <!-- Meta info (Heure + encoche) -->
+        <div class="wa-msg-meta">
+          <span id="wa-preview-time">12:00</span>
+          <span style="color:#53bdeb; font-size:14px; font-weight:bold;">✓✓</span>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Menu flottant pièces jointes -->
   <div class="wa-attach-menu" id="wa-attach-menu">
-    <div class="wa-attach-item" onclick="triggerFileInput('document')"><div class="wa-attach-icon wa-icon-doc">📄</div><span>Document</span></div>
-    <div class="wa-attach-item" onclick="triggerFileInput('image')"><div class="wa-attach-icon wa-icon-img">🖼</div><span>Photos & Vidéos</span></div>
-    <div class="wa-attach-item" onclick="triggerFileInput('audio')"><div class="wa-attach-icon wa-icon-audio">🎵</div><span>Audio</span></div>
+    <div class="wa-attach-item" onclick="triggerFileInput('document')">
+      <div class="wa-attach-icon wa-icon-doc">📄</div>
+      <span>Document</span>
+    </div>
+    <div class="wa-attach-item" onclick="triggerFileInput('image')">
+      <div class="wa-attach-icon wa-icon-img">🖼</div>
+      <span>Photos & Vidéos</span>
+    </div>
+    <div class="wa-attach-item" onclick="triggerFileInput('audio')">
+      <div class="wa-attach-icon wa-icon-audio">🎵</div>
+      <span>Audio</span>
+    </div>
   </div>
+
+  <!-- Caché : Inputs fichiers réels -->
   <input type="file" id="wa-file-input-doc" style="display:none;" onchange="handleFileSelected(this, 'document')">
   <input type="file" id="wa-file-input-img" accept="image/*,video/*" style="display:none;" onchange="handleFileSelected(this, 'image')">
   <input type="file" id="wa-file-input-audio" accept="audio/*" style="display:none;" onchange="handleFileSelected(this, 'audio')">
+
+  <!-- Barre de saisie style WhatsApp -->
   <div class="wa-chat-input-bar">
+    
+    <!-- Bouton "+" pièce jointe -->
     <button class="wa-action-btn" type="button" onclick="toggleAttachMenu(event)">+</button>
+    
+    <!-- Bouton émoji (esthétique) -->
     <button class="wa-action-btn" type="button" onclick="toast('Émojis bientôt disponibles !','warn')">😀</button>
-    <div class="wa-input-container" id="wa-input-container"><textarea class="wa-textarea-input" id="bc-text" placeholder="Entrez un message" rows="1" oninput="updateBubbleText()"></textarea></div>
-    <div class="wa-recording-panel" id="wa-rec-panel"><div class="wa-rec-indicator"><div class="wa-rec-dot"></div><span>Enregistrement...</span></div><div class="wa-rec-timer" id="wa-rec-timer">0:00</div><div style="display:flex; gap:8px;"><button class="btn btn-red btn-sm btn-icon" onclick="cancelAudioRecording()" title="Annuler">🗑</button><button class="btn btn-green btn-sm btn-icon" onclick="stopAudioRecording()" title="Terminer">✔️</button></div></div>
+
+    <!-- Zone de texte normale -->
+    <div class="wa-input-container" id="wa-input-container">
+      <textarea class="wa-textarea-input" id="bc-text" placeholder="Entrez un message" rows="1" oninput="updateBubbleText()"></textarea>
+    </div>
+
+    <!-- Zone d'enregistrement vocal (Masquée par défaut) -->
+    <div class="wa-recording-panel" id="wa-rec-panel">
+      <div class="wa-rec-indicator">
+        <div class="wa-rec-dot"></div>
+        <span>Enregistrement...</span>
+      </div>
+      <div class="wa-rec-timer" id="wa-rec-timer">0:00</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-red btn-sm btn-icon" onclick="cancelAudioRecording()" title="Annuler">🗑</button>
+        <button class="btn btn-green btn-sm btn-icon" onclick="stopAudioRecording()" title="Terminer">✔️</button>
+      </div>
+    </div>
+
+    <!-- Bouton micro (WhatsApp Action) -->
     <button class="wa-action-btn" id="wa-mic-btn" type="button" onclick="toggleVoiceRecord()" style="color:#00a884;" title="Enregistrer un vocal">🎤</button>
   </div>
 </div>
+
+<!-- Aperçu des sélections -->
 <div class="panel" style="margin-top:16px;">
-  <div class="panel-header"><div class="panel-title">📋 Récapitulatif de la diffusion</div><button class="btn btn-ghost btn-sm" onclick="refreshSelections()">↻ Rafraîchir</button></div>
-  <div id="selection-preview" style="padding:16px; font-size:12px; color:var(--text2);">Chargement...</div>
+  <div class="panel-header">
+    <div class="panel-title">📋 Récapitulatif de la diffusion</div>
+    <button class="btn btn-ghost btn-sm" onclick="refreshSelections()">↻ Rafraîchir</button>
+  </div>
+  <div id="selection-preview" style="padding:16px; font-size:12px; color:var(--text2);">
+    Chargement...
+  </div>
 </div>
+
 <div class="panel">
-  <div class="panel-header"><div class="panel-title">📤 Derniers envois en file d'attente</div><button class="btn btn-ghost btn-sm" onclick="goPage('queue')">Voir tout →</button></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Type</th><th>Cible</th><th>Statut</th><th>Date</th></tr></thead><tbody id="bc-queue"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody></table></div>
+  <div class="panel-header">
+    <div class="panel-title">📤 Derniers envois en file d'attente</div>
+    <button class="btn btn-ghost btn-sm" onclick="goPage('queue')">Voir tout →</button>
+  </div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Type</th><th>Cible</th><th>Statut</th><th>Date</th></tr></thead>
+    <tbody id="bc-queue"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody>
+  </table>
+  </div>
 </div>
 `; }
 
 // ─── WHATSAPP BROADCAST CONTROLLER ────────────────────────
 let currentBroadcastTab = 'groups';
-let selectedFileType = 'text';
+let selectedFileType = 'text'; // text | image | video | audio | document | voice
 let uploadedMediaId = '';
 let selectedFile = null;
 
+// Enregistrement Audio
 let mediaRecorder = null;
 let audioChunks = [];
 let recordingInterval = null;
@@ -1738,19 +1888,26 @@ function updateBubbleText() {
         previewText.style.display = text.trim() ? 'block' : 'none';
     }
     
+    // Afficher/Masquer la bulle en fonction du contenu
     if (previewWrapper) {
         const hasContent = text.trim() || uploadedMediaId || recordedAudioBlob;
         previewWrapper.style.display = hasContent ? 'flex' : 'none';
+        
+        // Faire défiler vers le bas du chat
         const chatBody = document.getElementById('wa-chat-body');
-        if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+        if (chatBody) {
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
     }
     
+    // Mettre à jour l'heure de la bulle
     const timeSpan = document.getElementById('wa-preview-time');
     if (timeSpan) {
         const now = new Date();
         timeSpan.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     }
     
+    // Modifier l'icône du micro en bouton envoyer s'il y a du texte ou un média
     const micBtn = document.getElementById('wa-mic-btn');
     if (micBtn) {
         const hasPayload = text.trim() || uploadedMediaId || recordedAudioBlob;
@@ -1768,11 +1925,13 @@ function updateBubbleText() {
     }
 }
 
+// Menu Pièces Jointes
 function toggleAttachMenu(e) {
     e.stopPropagation();
     document.getElementById('wa-attach-menu').classList.toggle('show');
 }
 
+// Fermer le menu lors de clic externe
 document.addEventListener('click', () => {
     document.getElementById('wa-attach-menu')?.classList.remove('show');
 });
@@ -1788,17 +1947,21 @@ async function handleFileSelected(input, type) {
     selectedFile = file;
     selectedFileType = type;
     
+    // Afficher la bulle et l'état de chargement
     document.getElementById('wa-bubble-preview-wrapper').style.display = 'flex';
     document.getElementById('wa-bubble-loading').style.display = 'flex';
     
+    // Cacher les autres aperçus médias
     document.getElementById('wa-preview-media-box').style.display = 'none';
     document.getElementById('wa-preview-doc-box').style.display = 'none';
     document.getElementById('wa-preview-voice-box').style.display = 'none';
     
+    // Créer un aperçu local
     if (type === 'image') {
         const previewImg = document.getElementById('wa-preview-img');
         const previewVideo = document.getElementById('wa-preview-video');
         const mediaBox = document.getElementById('wa-preview-media-box');
+        
         mediaBox.style.display = 'block';
         if (file.type.startsWith('image/')) {
             previewImg.src = URL.createObjectURL(file);
@@ -1808,7 +1971,7 @@ async function handleFileSelected(input, type) {
             previewVideo.src = URL.createObjectURL(file);
             previewVideo.style.display = 'block';
             previewImg.style.display = 'none';
-            selectedFileType = 'video';
+            selectedFileType = 'video'; // Ajuster au type vidéo
         }
     } else if (type === 'document') {
         document.getElementById('wa-preview-doc-box').style.display = 'flex';
@@ -1822,12 +1985,17 @@ async function handleFileSelected(input, type) {
     
     updateBubbleText();
     
+    // Envoyer le fichier au serveur
     const formData = new FormData();
     formData.append('file', file);
     
     try {
-        const res = await fetch('?ajax=upload_media', { method: 'POST', body: formData });
+        const res = await fetch('?ajax=upload_media', {
+            method: 'POST',
+            body: formData
+        });
         const data = await res.json();
+        
         if (data.ok) {
             uploadedMediaId = data.media_id;
             toast(`📎 Fichier ${file.name} téléversé avec succès !`, 'ok');
@@ -1854,6 +2022,7 @@ function cancelFileSelection() {
     updateBubbleText();
 }
 
+// Enregistrement vocal (Microphone)
 async function toggleVoiceRecord() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
         stopAudioRecording();
@@ -1865,14 +2034,22 @@ async function toggleVoiceRecord() {
         audioChunks = [];
         mediaRecorder = new MediaRecorder(stream);
         
-        mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
+        mediaRecorder.ondataavailable = e => {
+            audioChunks.push(e.data);
+        };
         
         mediaRecorder.onstop = async () => {
             recordedAudioBlob = new Blob(audioChunks, { type: 'audio/ogg;codecs=opus' });
+            
+            // Fermer les pistes du micro
             stream.getTracks().forEach(track => track.stop());
+            
+            // Afficher l'aperçu vocal
             document.getElementById('wa-preview-voice-box').style.display = 'flex';
             document.getElementById('wa-preview-voice-time').textContent = formatTime(recordingSeconds);
             document.getElementById('wa-bubble-preview-wrapper').style.display = 'flex';
+            
+            // Lancer le téléversement du fichier audio enregistré
             document.getElementById('wa-bubble-loading').style.display = 'flex';
             
             const file = new File([recordedAudioBlob], "recording.ogg", { type: "audio/ogg" });
@@ -1881,8 +2058,12 @@ async function toggleVoiceRecord() {
             selectedFileType = 'voice';
             
             try {
-                const res = await fetch('?ajax=upload_media', { method: 'POST', body: formData });
+                const res = await fetch('?ajax=upload_media', {
+                    method: 'POST',
+                    body: formData
+                });
                 const data = await res.json();
+                
                 if (data.ok) {
                     uploadedMediaId = data.media_id;
                     toast('🎤 Message vocal enregistré et prêt !', 'ok');
@@ -1897,7 +2078,10 @@ async function toggleVoiceRecord() {
             }
         };
         
+        // Lancer l'enregistrement
         mediaRecorder.start();
+        
+        // Interface Enregistrement
         document.getElementById('wa-input-container').style.display = 'none';
         document.getElementById('wa-rec-panel').style.display = 'flex';
         document.getElementById('wa-mic-btn').innerHTML = '⏹️';
@@ -1911,13 +2095,14 @@ async function toggleVoiceRecord() {
         }, 1000);
         
     } catch (err) {
+        console.error(err);
         toast('Accès micro refusé ou non supporté', 'err');
     }
 }
 
 function cancelAudioRecording() {
     if (mediaRecorder) {
-        mediaRecorder.onstop = null;
+        mediaRecorder.onstop = null; // Ne pas générer de bulle
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(t => t.stop());
     }
@@ -1951,6 +2136,7 @@ function formatTime(sec) {
     return m + ':' + s.toString().padStart(2, '0');
 }
 
+// Lecteur vocal preview
 function togglePreviewVoiceAudio(e) {
     e.stopPropagation();
     const btn = document.getElementById('wa-preview-voice-btn');
@@ -1996,7 +2182,7 @@ function updateVoiceWaveActive(progress) {
     bars.forEach((bar, idx) => {
         if (idx <= activeCount) {
             bar.classList.add('active');
-            bar.style.height = '60%';
+            bar.style.height = '60%'; // Stabiliser la barre lue
         } else {
             bar.classList.remove('active');
         }
@@ -2011,15 +2197,19 @@ function resetVoiceWaves() {
     });
 }
 
+// Onglets Cibles de diffusion
 async function switchBroadcastTab(tab) {
     currentBroadcastTab = tab;
     document.querySelectorAll('.wa-target-tab').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
+    
     document.getElementById('broadcast-groups').style.display = (tab === 'groups' || tab === 'both') ? 'block' : 'none';
     document.getElementById('broadcast-inbox').style.display = (tab === 'inbox' || tab === 'both') ? 'block' : 'none';
+    
     updatePreview();
 }
 
+// Charger et afficher les sélections de groupes/contacts (styled checkboxes)
 let customPhoneTargets = [];
 
 function addCustomPhoneTarget() {
@@ -2042,15 +2232,30 @@ function renderContactsList() {
     const cont = document.getElementById('wa-contacts-list');
     if (!cont) return;
     
+    // Charger la liste complète des contacts
     api('list_members', '').then(members => {
         const uniquePhones = [...new Map(members.map(m => [m.phone_formatted, m])).values()];
+        
         let html = '';
+        // Cibles personnalisées d'abord
         customPhoneTargets.forEach(p => {
-            html += `<label class="wa-target-checkbox selected" onclick="toggleCheckboxStyle(this)"><input type="checkbox" checked value="${esc(p)}" data-type="contact"><span>📱 Custom: ${esc(p)}</span></label>`;
+            html += `
+            <label class="wa-target-checkbox selected" onclick="toggleCheckboxStyle(this)">
+                <input type="checkbox" checked value="${esc(p)}" data-type="contact">
+                <span>📱 Custom: ${esc(p)}</span>
+            </label>
+            `;
         });
+        
+        // Contacts existants
         uniquePhones.slice(0, 100).forEach(c => {
             const name = c.profile_name || c.phone_formatted;
-            html += `<label class="wa-target-checkbox selected" onclick="toggleCheckboxStyle(this)"><input type="checkbox" checked value="${esc(c.phone_formatted)}" data-type="contact"><span>👤 ${esc(short(name, 22))}</span></label>`;
+            html += `
+            <label class="wa-target-checkbox selected" onclick="toggleCheckboxStyle(this)">
+                <input type="checkbox" checked value="${esc(c.phone_formatted)}" data-type="contact">
+                <span>👤 ${esc(short(name, 22))}</span>
+            </label>
+            `;
         });
         cont.innerHTML = html || '<div style="color:var(--text3); font-size:12px; padding:10px;">Aucun contact trouvé</div>';
         updatePreview();
@@ -2058,6 +2263,7 @@ function renderContactsList() {
 }
 
 function toggleCheckboxStyle(lbl) {
+    // Petit délai pour laisser le navigateur basculer l'état du checkbox
     setTimeout(() => {
         const chk = lbl.querySelector('input');
         if (chk) {
@@ -2079,6 +2285,7 @@ async function refreshSelections() {
             </label>
         `).join('') || '<div style="color:var(--text3); font-size:12px; padding:10px;">Aucun groupe actif. Allez dans l\'onglet Groupes.</div>';
     }
+    
     renderContactsList();
 }
 
@@ -2106,12 +2313,11 @@ async function updatePreview() {
     `;
 }
 
-// CORRECTION : Version complète et fonctionnelle de doAdvancedBroadcast
 async function doAdvancedBroadcast() {
     const text = document.getElementById('bc-text')?.value?.trim() || '';
     const simulate = document.getElementById('bc-simulate')?.checked || false;
     
-    // Récupérer les cibles sélectionnées
+    // Rassembler les cibles sélectionnées
     let targets = [];
     
     if (currentBroadcastTab === 'groups' || currentBroadcastTab === 'both') {
@@ -2129,89 +2335,45 @@ async function doAdvancedBroadcast() {
     }
     
     if (targets.length === 0) {
-        toast('⚠️ Aucune cible sélectionnée', 'warn');
-        return;
+        if (st) st.textContent = `Progression: ${sent + failed}/${targets.length}...`;
     }
     
-    if (!text && !uploadedMediaId && !recordedAudioBlob) {
-        toast('📝 Veuillez saisir un message ou ajouter un média', 'warn');
-        return;
-    }
+    if (st) st.style.display = 'none';
     
-    // Désactiver le bouton pendant l'envoi
-    const sendBtn = document.querySelector('.btn-dark[onclick*="doAdvancedBroadcast"]');
-    const originalHtml = sendBtn?.innerHTML || '🚀 Lancer la diffusion';
-    if (sendBtn) {
-        sendBtn.innerHTML = '<span class="spin" style="margin-right:6px;"></span> Envoi...';
-        sendBtn.disabled = true;
-    }
-    
-    let sent = 0;
-    let failed = 0;
-    
-    for (const target of targets) {
-        try {
-            let payload = {
-                target_type: target.type,
-                target_id: target.id,
-                message: text,
-                simulate: simulate
-            };
-            
-            if (uploadedMediaId) {
-                payload.media_id = uploadedMediaId;
-                payload.media_type = selectedFileType;
-            }
-            
-            const res = await fetch('?ajax=send_broadcast', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            
-            if (data.ok || data.success) {
-                sent++;
-                if (!simulate) toast(`✅ Envoyé à ${target.type === 'group' ? 'groupe' : target.id}`, 'ok');
-            } else {
-                failed++;
-                toast(`❌ Échec ${target.type === 'group' ? 'groupe' : target.id}: ${data.msg || 'Erreur'}`, 'err');
-            }
-        } catch (e) {
-            failed++;
-            toast(`❌ Erreur réseau pour ${target.id}`, 'err');
-        }
-        
-        // Petit délai pour éviter le rate limiting
-        await new Promise(r => setTimeout(r, 500));
-    }
-    
-    // Restaurer le bouton
-    if (sendBtn) {
-        sendBtn.innerHTML = originalHtml;
-        sendBtn.disabled = false;
-    }
-    
-    // Message récapitulatif
     if (simulate) {
         toast(`🔍 SIMULATION - ${sent} message(s) auraient été envoyés (${failed} erreur(s))`, 'warn');
     } else {
         toast(`✅ ${sent} message(s) envoyés avec succès (${failed} échec(s))`, sent > 0 ? 'ok' : 'err');
     }
     
-    // Réinitialisation après envoi réussi
-    if (sent > 0 && !simulate) {
-        if (document.getElementById('bc-text')) document.getElementById('bc-text').value = '';
-        cancelFileSelection();
-        recordedAudioBlob = null;
-        uploadedMediaId = '';
-        selectedFileType = 'text';
-        updateBubbleText();
-    }
+    // Réinitialisation
+    if (document.getElementById('bc-text')) document.getElementById('bc-text').value = '';
+    if (document.getElementById('bc-media-url')) document.getElementById('bc-media-url').value = '';
     
     loadBcQueue();
     loadStats();
 }
+
+
+
+
+
+
+
+let bcMediaType = '';
+function setMediaType(el, type) {
+  document.querySelectorAll('.media-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  bcMediaType = type;
+  const row = $('bc-media-row');
+  if(row) row.style.display = type ? 'block' : 'none';
+}
+
+
+
+
+// Supprimez les fonctions doBroadcast() et setMediaType() existantes
+// Et remplacez loadBcQueue par :
 
 async function loadBcQueue() {
     const list = await api('list_queue');
@@ -2223,24 +2385,38 @@ async function loadBcQueue() {
         return;
     }
     tbody.innerHTML = list.slice(0,10).map(q => `
-        <tr><td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
-        <td class="mono">${esc(q.target_id || q.phone_number || '—')}</td>
-        <td><span class="badge ${stBadge[q.status] || 'badge-gray'}">${esc(q.status)}</span></td>
-        <td class="mono">${fmtDate(q.created_at)}</td>
-    </tr>`).join('');
+        <tr>
+            <td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
+            <td class="mono">${esc(q.target_id || q.phone_number || '—')}</td>
+            <td><span class="badge ${stBadge[q.status] || 'badge-gray'}">${esc(q.status)}</span></td>
+            <td class="mono">${fmtDate(q.created_at)}</td>
+        </tr>
+    `).join('');
 }
 
+// Ajoutez cette fonction pour l'initialisation de la page broadcast
 async function initBroadcast() {
     await refreshSelections();
     loadBcQueue();
     setInterval(() => {
-        if (currentPage === 'broadcast') loadBcQueue();
+        if (currentPage === 'broadcast') {
+            loadBcQueue();
+        }
     }, 30000);
 }
 
 // ─── GROUPS ──────────────────────────────────────────────
 function buildGroups() { return `
-<div class="panel"><div class="panel-header"><div class="panel-title">👥 Groupes WhatsApp</div><div class="panel-actions"><button class="btn btn-dark" onclick="syncGroups()">↻ Sync Whapi</button><button class="btn btn-blue btn-sm" onclick="loadGroups()">↻ Actualiser</button></div></div><div id="groups-grid" class="group-grid"><div style="color:var(--text3);font-size:13px;padding:8px;">Chargement…</div></div></div>`; }
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">👥 Groupes WhatsApp</div>
+    <div class="panel-actions">
+      <button class="btn btn-dark" onclick="syncGroups()">↻ Sync Whapi</button>
+      <button class="btn btn-blue btn-sm" onclick="loadGroups()">↻ Actualiser</button>
+    </div>
+  </div>
+  <div id="groups-grid" class="group-grid"><div style="color:var(--text3);font-size:13px;padding:8px;">Chargement…</div></div>
+</div>`; }
 
 async function syncGroups() {
   toast('Synchronisation groupes…','');
@@ -2269,7 +2445,22 @@ async function loadGroups() {
   const c = $('groups-grid'); if(!c) return;
   if(!groups.length){c.innerHTML='<div style="padding:16px;color:var(--text3);font-size:13px;">Aucun groupe. Cliquez sur <b>Sync Whapi</b>.</div>';return;}
   c.innerHTML = groups.map(g=>`
-  <div class="group-card"><div class="group-card-top"><div><div class="group-name">${esc(g.nom||'Sans nom')}</div><div class="group-id">${esc(g.groupe_id)}</div></div><span class="badge ${g.actif=='1'?'badge-green':'badge-gray'}">${g.actif=='1'?'Actif':'Inactif'}</span></div><span class="badge badge-blue">👤 ${g.nb_membres} membres</span><div class="group-footer"><button class="btn btn-ghost btn-sm" onclick="syncMembers('${esc(g.groupe_id)}')">↻ Membres</button><button class="btn btn-sm ${g.actif=='1'?'btn-red':'btn-green'}" onclick="toggleGroup('${esc(g.groupe_id)}')">${g.actif=='1'?'🚫 Désactiver':'✅ Activer'}</button></div></div>`).join('');
+  <div class="group-card">
+    <div class="group-card-top">
+      <div>
+        <div class="group-name">${esc(g.nom||'Sans nom')}</div>
+        <div class="group-id">${esc(g.groupe_id)}</div>
+      </div>
+      <span class="badge ${g.actif=='1'?'badge-green':'badge-gray'}">${g.actif=='1'?'Actif':'Inactif'}</span>
+    </div>
+    <span class="badge badge-blue">👤 ${g.nb_membres} membres</span>
+    <div class="group-footer">
+      <button class="btn btn-ghost btn-sm" onclick="syncMembers('${esc(g.groupe_id)}')">↻ Membres</button>
+      <button class="btn btn-sm ${g.actif=='1'?'btn-red':'btn-green'}" onclick="toggleGroup('${esc(g.groupe_id)}')">
+        ${g.actif=='1'?'🚫 Désactiver':'✅ Activer'}
+      </button>
+    </div>
+  </div>`).join('');
 }
 
 async function toggleGroup(gid) {
@@ -2279,14 +2470,30 @@ async function toggleGroup(gid) {
 
 // ─── MEMBERS ─────────────────────────────────────────────
 function buildMembers() { return `
-<div class="panel"><div class="panel-header"><div class="panel-title">👤 Membres</div><div class="panel-actions"><input class="search-input" type="text" id="member-search" placeholder="Rechercher…" oninput="loadMembers()"><select class="search-input" id="member-group" style="width:auto;" onchange="loadMembers()"><option value="">Tous les groupes</option></select><button class="btn btn-dark btn-sm" onclick="syncMembers(null)">↻ Sync</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Nom</th><th>Groupe</th><th>Rôle</th><th>Violations</th><th>Actions</th></tr></thead><tbody id="members-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table></div></div>`; }
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">👤 Membres</div>
+    <div class="panel-actions">
+      <input class="search-input" type="text" id="member-search" placeholder="Rechercher…" oninput="loadMembers()">
+      <select class="search-input" id="member-group" style="width:auto;" onchange="loadMembers()">
+        <option value="">Tous les groupes</option>
+      </select>
+      <button class="btn btn-dark btn-sm" onclick="syncMembers(null)">↻ Sync</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Téléphone</th><th>Nom</th><th>Groupe</th><th>Rôle</th><th>Violations</th><th>Actions</th></tr></thead>
+    <tbody id="members-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
 
 async function loadMembersPage() {
   const groups = await api('list_groups');
   const sel = $('member-group');
   if(sel) {
     const cur=sel.value;
-    sel.innerHTML='<option value="">Tous les groupes</option>'+groups.map(g=>`<option value="${esc(g.groupe_id)}" ${g.groupe_id===cur?'selected':''}>${esc(g.nom||g.groupe_id)}</option>`).join('');
+    sel.innerHTML='<option value="">Tous les groupes</option>'+
+      groups.map(g=>`<option value="${esc(g.groupe_id)}" ${g.groupe_id===cur?'selected':''}>${esc(g.nom||g.groupe_id)}</option>`).join('');
   }
   loadMembers();
 }
@@ -2297,74 +2504,232 @@ async function loadMembers() {
   const params=`search=${encodeURIComponent(search)}&gid=${encodeURIComponent(gid)}`;
   const members=await api('list_members',params);
   const tbody=$('members-tbody'); if(!tbody) return;
-  if(!members.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">Aucun membre</tr>';return;}
-  tbody.innerHTML=members.map(m=>{const vio=parseInt(m.violation_count)||0; return `<tr><td class="mono">${esc(m.phone_formatted)}</td><td>${esc(m.profile_name||'—')}</td><td style="font-size:12px;color:var(--text2);">${esc(short(m.groupe_nom||m.groupe_id,28))}</td><td>${m.is_admin=='1'?'<span class="badge badge-dark">⭐ Admin</span>':'<span class="badge badge-gray">Membre</span>'}</td><td>${vio>0?`<span class="badge badge-red">${vio}</span>`:'<span class="badge badge-gray">0</span>'}</td><td><div style="display:flex;gap:5px;">${vio>0?`<button class="btn btn-ghost btn-sm" onclick="resetViolations(\'${esc(m.phone_formatted)}\')">↺</button>`:''}<button class="btn btn-amber btn-sm" onclick="blacklistPhone(\'${esc(m.phone_formatted)}\')">🚫</button></div></td></tr>`;}).join('');
+  if(!members.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">Aucun membre</td></tr>';return;}
+  tbody.innerHTML=members.map(m=>{
+    const vio=parseInt(m.violation_count)||0;
+    return `<tr>
+      <td class="mono">${esc(m.phone_formatted)}</td>
+      <td>${esc(m.profile_name||'—')}</td>
+      <td style="font-size:12px;color:var(--text2);">${esc(short(m.groupe_nom||m.groupe_id,28))}</td>
+      <td>${m.is_admin=='1'?'<span class="badge badge-dark">⭐ Admin</span>':'<span class="badge badge-gray">Membre</span>'}</td>
+      <td>${vio>0?`<span class="badge badge-red">${vio}</span>`:'<span class="badge badge-gray">0</span>'}</td>
+      <td><div style="display:flex;gap:5px;">
+        ${vio>0?`<button class="btn btn-ghost btn-sm" onclick="resetViolations('${esc(m.phone_formatted)}')">↺</button>`:''}
+        <button class="btn btn-amber btn-sm" onclick="blacklistPhone('${esc(m.phone_formatted)}')">🚫</button>
+      </div></td></tr>`;
+  }).join('');
 }
 
-async function resetViolations(phone) { const d=await api('reset_violations',`phone=${encodeURIComponent(phone)}`); if(d.ok){toast('Violations réinitialisées','ok');loadMembers();} }
-async function blacklistPhone(phone) { if(!confirm(`Blacklister ${phone} ?`)) return; const d=await api('blacklist_add',`phone=${encodeURIComponent(phone)}&reason=Blacklist%20dashboard`); if(d.ok){toast(`🚫 ${phone} blacklisté`,'ok');loadMembers();loadStats();} }
+async function resetViolations(phone) {
+  const d=await api('reset_violations',`phone=${encodeURIComponent(phone)}`);
+  if(d.ok){toast('Violations réinitialisées','ok');loadMembers();}
+}
+async function blacklistPhone(phone) {
+  if(!confirm(`Blacklister ${phone} ?`)) return;
+  const d=await api('blacklist_add',`phone=${encodeURIComponent(phone)}&reason=Blacklist%20dashboard`);
+  if(d.ok){toast(`🚫 ${phone} blacklisté`,'ok');loadMembers();loadStats();}
+}
 
 // ─── INBOX ───────────────────────────────────────────────
-function buildInbox() { return `<div class="panel"><div class="panel-header"><div class="panel-title">📥 Inbox — Contacts</div><button class="btn btn-ghost btn-sm" onclick="loadInbox()">↻ Actualiser</button></div><div class="tbl-wrap"> <table><thead><tr><th>Téléphone</th><th>Nom</th><th>Dernier message</th><th>Date</th><th>Statut</th></tr></thead><tbody id="inbox-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table></div></div>`; }
-async function loadInbox() { const list=await api('list_inbox'); const tbody=$('inbox-tbody'); if(!tbody) return; if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Aucun contact inbox</tr>';return;} tbody.innerHTML=list.map(c=>`<tr><td class="mono">${esc(c.phone_number)}</td><td>${esc(c.full_name||'—')}</td><td>${esc(short(c.last_message))}</td><td class="mono">${fmtDate(c.last_message_at)}</td><td>${c.is_blacklisted=='1'?'<span class="badge badge-red">🚫 Bloqué</span>':'<span class="badge badge-green">✅ OK</span>'}</td></tr>`).join(''); }
+function buildInbox() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📥 Inbox — Contacts</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadInbox()">↻ Actualiser</button>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Téléphone</th><th>Nom</th><th>Dernier message</th><th>Date</th><th>Statut</th></tr></thead>
+    <tbody id="inbox-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
+
+async function loadInbox() {
+  const list=await api('list_inbox');
+  const tbody=$('inbox-tbody'); if(!tbody) return;
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Aucun contact inbox</td></tr>';return;}
+  tbody.innerHTML=list.map(c=>`<tr>
+    <td class="mono">${esc(c.phone_number)}</td>
+    <td>${esc(c.full_name||'—')}</td>
+    <td>${esc(short(c.last_message))}</td>
+    <td class="mono">${fmtDate(c.last_message_at)}</td>
+    <td>${c.is_blacklisted=='1'?'<span class="badge badge-red">🚫 Bloqué</span>':'<span class="badge badge-green">✅ OK</span>'}</td>
+  </tr>`).join('');
+}
 
 // ─── BLACKLIST ────────────────────────────────────────────
-function buildBlacklist() { return `<div class="panel"><div class="panel-header"><div class="panel-title">🚫 Blacklist</div><div class="panel-actions"><button class="btn btn-red" onclick="$('modal-blacklist').classList.add('open')">+ Ajouter</button><button class="btn btn-ghost btn-sm" onclick="loadBlacklist()">↻</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Raison</th><th>Date ajout</th><th>Action</th></tr></thead><tbody id="blacklist-tbody"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody></table></div></div>`; }
-async function loadBlacklist() { const list=await api('list_blacklist'); const tbody=$('blacklist-tbody'); if(!tbody) return; if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="4">Aucun numéro blacklisté 🎉</tr>';return;} tbody.innerHTML=list.map(b=>`<tr><td class="mono">${esc(b.phone_number)}</td><td>${esc(short(b.reason))}</td><td class="mono">${fmtDate(b.created_at)}</td><td><button class="btn btn-green btn-sm" onclick="removeBlacklist('${esc(b.phone_number)}')">↺ Débloquer</button></td></tr>`).join(''); }
-async function doBlacklistAdd() { const phone=($('bl-phone')?.value||'').replace(/\D/g,''); const reason=$('bl-reason')?.value||'Ajouté manuellement'; if(!phone){toast('Numéro invalide','err');return;} const d=await api('blacklist_add',`phone=${encodeURIComponent(phone)}&reason=${encodeURIComponent(reason)}`); if(d.ok){toast(`🚫 ${phone} blacklisté`,'ok');closeModal('modal-blacklist');if(currentPage==='blacklist')loadBlacklist();loadStats();} }
-async function removeBlacklist(phone) { const d=await api('blacklist_remove',`phone=${encodeURIComponent(phone)}`); if(d.ok){toast('✅ Débloqué','ok');loadBlacklist();loadStats();} }
+function buildBlacklist() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">🚫 Blacklist</div>
+    <div class="panel-actions">
+      <button class="btn btn-red" onclick="$('modal-blacklist').classList.add('open')">+ Ajouter</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadBlacklist()">↻</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Numéro</th><th>Raison</th><th>Date ajout</th><th>Action</th></tr></thead>
+    <tbody id="blacklist-tbody"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
+
+async function loadBlacklist() {
+  const list=await api('list_blacklist');
+  const tbody=$('blacklist-tbody'); if(!tbody) return;
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="4">Aucun numéro blacklisté 🎉</td></tr>';return;}
+  tbody.innerHTML=list.map(b=>`<tr>
+    <td class="mono">${esc(b.phone_number)}</td>
+    <td>${esc(short(b.reason))}</td>
+    <td class="mono">${fmtDate(b.created_at)}</td>
+    <td><button class="btn btn-green btn-sm" onclick="removeBlacklist('${esc(b.phone_number)}')">↺ Débloquer</button></td>
+  </tr>`).join('');
+}
+
+async function doBlacklistAdd() {
+  const phone=($('bl-phone')?.value||'').replace(/\D/g,'');
+  const reason=$('bl-reason')?.value||'Ajouté manuellement';
+  if(!phone){toast('Numéro invalide','err');return;}
+  const d=await api('blacklist_add',`phone=${encodeURIComponent(phone)}&reason=${encodeURIComponent(reason)}`);
+  if(d.ok){toast(`🚫 ${phone} blacklisté`,'ok');closeModal('modal-blacklist');if(currentPage==='blacklist')loadBlacklist();loadStats();}
+}
+async function removeBlacklist(phone) {
+  const d=await api('blacklist_remove',`phone=${encodeURIComponent(phone)}`);
+  if(d.ok){toast('✅ Débloqué','ok');loadBlacklist();loadStats();}
+}
 
 // ─── QUEUE ────────────────────────────────────────────────
-function buildQueue() { return `<div class="panel"><div class="panel-header"><div class="panel-title">📤 File d'envoi</div><div class="panel-actions"><button class="btn btn-red btn-sm" onclick="if(confirm('Vider les complétés ?'))api('clear_queue','status=completed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider complétés</button><button class="btn btn-amber btn-sm" onclick="if(confirm('Vider les échecs ?'))api('clear_queue','status=failed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider échecs</button><button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Type</th><th>Cible</th><th>Contenu</th><th>Média</th><th>Statut</th><th>Tentatives</th><th>Créé</th></tr></thead><tbody id="queue-tbody"><tr class="empty-row"><td colspan="7"><span class="spin"></span></td></tr></tbody></table></div></div>`; }
-async function loadQueue() { const list=await api('list_queue'); const tbody=$('queue-tbody'); if(!tbody) return; const stBadge={pending:'badge-amber',processing:'badge-blue',completed:'badge-green',failed:'badge-red',retry:'badge-purple'}; if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="7">File vide ✅</tr>';return;} tbody.innerHTML=list.map(q=>`<tr><td><span class="badge badge-teal">${esc(q.target_type)}</span></td><td class="mono">${esc(short(q.target_id||q.phone_number,20))}</td><td>${esc(short(q.message_data))}</td><td>${q.media_url?`<span class="badge badge-blue">${esc(q.message_type)}</span>`:'<span class="badge badge-gray">texte</span>'}</td><td><span class="badge ${stBadge[q.status]||'badge-gray'}">${esc(q.status)}</span></td><td class="mono">${q.retry_count}</td><td class="mono">${fmtDate(q.created_at)}</td></tr>`).join(''); }
+function buildQueue() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📤 File d'envoi</div>
+    <div class="panel-actions">
+      <button class="btn btn-red btn-sm" onclick="if(confirm('Vider les complétés ?'))api('clear_queue','status=completed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider complétés</button>
+      <button class="btn btn-amber btn-sm" onclick="if(confirm('Vider les échecs ?'))api('clear_queue','status=failed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider échecs</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Type</th><th>Cible</th><th>Contenu</th><th>Média</th><th>Statut</th><th>Tentatives</th><th>Créé</th></tr></thead>
+    <tbody id="queue-tbody"><tr class="empty-row"><td colspan="7"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
+
+async function loadQueue() {
+  const list=await api('list_queue');
+  const tbody=$('queue-tbody'); if(!tbody) return;
+  const stBadge={pending:'badge-amber',processing:'badge-blue',completed:'badge-green',failed:'badge-red',retry:'badge-purple'};
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="7">File vide ✅</td></tr>';return;}
+  tbody.innerHTML=list.map(q=>`<tr>
+    <td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
+    <td class="mono">${esc(short(q.target_id||q.phone_number,20))}</td>
+    <td>${esc(short(q.message_data))}</td>
+    <td>${q.media_url?`<span class="badge badge-blue">${esc(q.message_type)}</span>`:'<span class="badge badge-gray">texte</span>'}</td>
+    <td><span class="badge ${stBadge[q.status]||'badge-gray'}">${esc(q.status)}</span></td>
+    <td class="mono">${q.retry_count}</td>
+    <td class="mono">${fmtDate(q.created_at)}</td></tr>`).join('');
+}
 
 // ─── LOGS ─────────────────────────────────────────────────
-function buildLogs() { return `<div class="panel"><div class="panel-header"><div class="panel-title">📋 Logs de messages</div><button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻</button></div><div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Type</th><th>Contenu</th><th>Statut</th><th>Erreur</th><th>Date</th></tr></thead><tbody id="logs-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table></div></div>`; }
-async function loadLogs() { const list=await api('list_logs'); const tbody=$('logs-tbody'); if(!tbody) return; const stBadge={sent:'badge-green',failed:'badge-red',received:'badge-blue',processing:'badge-amber'}; if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">Aucun log</tr>';return;} tbody.innerHTML=list.map(l=>`<tr><td class="mono">${esc(l.phone_number)}</td><td><span class="badge badge-gray">${esc(l.message_type||'?')}</span></td><td>${esc(short(l.message_content))}</td><td><span class="badge ${stBadge[l.status]||'badge-gray'}">${esc(l.status)}</span></td><td style="color:var(--red);font-size:12px;">${esc(short(l.error_message||'',30))}</td><td class="mono">${fmtDate(l.sent_at||l.created_at)}</td></tr>`).join(''); }
+function buildLogs() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📋 Logs de messages</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻</button>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Téléphone</th><th>Type</th><th>Contenu</th><th>Statut</th><th>Erreur</th><th>Date</th></tr></thead>
+    <tbody id="logs-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
+
+async function loadLogs() {
+  const list=await api('list_logs');
+  const tbody=$('logs-tbody'); if(!tbody) return;
+  const stBadge={sent:'badge-green',failed:'badge-red',received:'badge-blue',processing:'badge-amber'};
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">Aucun log</td></tr>';return;}
+  tbody.innerHTML=list.map(l=>`<tr>
+    <td class="mono">${esc(l.phone_number)}</td>
+    <td><span class="badge badge-gray">${esc(l.message_type||'?')}</span></td>
+    <td>${esc(short(l.message_content))}</td>
+    <td><span class="badge ${stBadge[l.status]||'badge-gray'}">${esc(l.status)}</span></td>
+    <td style="color:var(--red);font-size:12px;">${esc(short(l.error_message||'',30))}</td>
+    <td class="mono">${fmtDate(l.sent_at||l.created_at)}</td></tr>`).join('');
+}
 
 // ─── SECURITY ─────────────────────────────────────────────
-function buildSecurity() { return `<div class="panel"><div class="panel-header"><div class="panel-title">🛡 Logs de sécurité</div><button class="btn btn-ghost btn-sm" onclick="loadSecurity()">↻</button></div><div class="tbl-wrap"><table><thead><tr><th>Expéditeur</th><th>Action</th><th>Raison</th><th>Groupe</th><th>Date</th></tr></thead><tbody id="security-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table></div></div>`; }
-async function loadSecurity() { const list=await api('list_security'); const tbody=$('security-tbody'); if(!tbody) return; if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Aucune violation 🎉</tr>';return;} tbody.innerHTML=list.map(l=>`<tr><td class="mono">${esc(l.sender)}</td><td><span class="badge badge-red">${esc(l.action_type)}</span></td><td>${esc(short(l.reason))}</td><td class="mono" style="font-size:11px;">${esc(short(l.group_id,22))}</td><td class="mono">${fmtDate(l.created_at)}</td></tr>`).join(''); }
+function buildSecurity() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">🛡 Logs de sécurité</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadSecurity()">↻</button>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Expéditeur</th><th>Action</th><th>Raison</th><th>Groupe</th><th>Date</th></tr></thead>
+    <tbody id="security-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
+
+async function loadSecurity() {
+  const list=await api('list_security');
+  const tbody=$('security-tbody'); if(!tbody) return;
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Aucune violation 🎉</td></tr>';return;}
+  tbody.innerHTML=list.map(l=>`<tr>
+    <td class="mono">${esc(l.sender)}</td>
+    <td><span class="badge badge-red">${esc(l.action_type)}</span></td>
+    <td>${esc(short(l.reason))}</td>
+    <td class="mono" style="font-size:11px;">${esc(short(l.group_id,22))}</td>
+    <td class="mono">${fmtDate(l.created_at)}</td></tr>`).join('');
+}
 
 // ─── SETTINGS ─────────────────────────────────────────────
-function buildSettings() { return `<div class="panel"><div class="panel-header"><div class="panel-title">⚙️ Paramètres système</div><button class="btn btn-ghost btn-sm" onclick="loadSettings()">↻</button></div><div id="settings-grid" class="settings-grid"><div style="padding:16px;color:var(--text3);">Chargement…</div></div></div><div class="panel" style="margin-top:4px;"><div class="panel-header"><div class="panel-title">🔍 Diagnostic système</div></div><div style="padding:16px;"><button class="btn btn-dark" onclick="runDiag()">▶ Lancer le diagnostic</button><pre id="diag-out" style="margin-top:14px;background:var(--wa-sidebar);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--text);white-space:pre-wrap;display:none;"></pre></div></div>`; }
-async function loadSettings() { const list=await api('list_settings'); const grid=$('settings-grid'); if(!grid) return; if(!list.length){grid.innerHTML='<div style="padding:16px;color:var(--text3);">Aucun paramètre</div>';return;} grid.innerHTML=list.map(s=>`<div class="setting-item"><div class="setting-key">${esc(s.setting_key)}</div><div style="display:flex;gap:6px;"><input class="setting-input" type="text" value="${esc(s.setting_value||'')}" id="set-${esc(s.setting_key)}" onkeydown="if(event.key==='Enter')saveSetting('${esc(s.setting_key)}')"><button class="btn btn-green btn-sm" onclick="saveSetting('${esc(s.setting_key)}')">💾</button></div></div>`).join(''); }
-async function saveSetting(key) { const val=$(`set-${key}`)?.value||''; const d=await api('save_setting',`key=${encodeURIComponent(key)}&val=${encodeURIComponent(val)}`); if(d.ok) toast(`💾 ${key} sauvegardé`,'ok'); }
-async function runDiag() { const out=$('diag-out'); if(!out) return; out.style.display='block'; out.textContent='Diagnostic en cours…'; const d=await api('diag'); out.textContent=JSON.stringify(d.diag||d,null,2); }
+function buildSettings() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">⚙️ Paramètres système</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadSettings()">↻</button>
+  </div>
+  <div id="settings-grid" class="settings-grid"><div style="padding:16px;color:var(--text3);">Chargement…</div></div>
+</div>
+<div class="panel" style="margin-top:4px;">
+  <div class="panel-header"><div class="panel-title">🔍 Diagnostic système</div></div>
+  <div style="padding:16px;">
+    <button class="btn btn-dark" onclick="runDiag()">▶ Lancer le diagnostic</button>
+    <pre id="diag-out" style="margin-top:14px;background:var(--wa-sidebar);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--text);white-space:pre-wrap;display:none;"></pre>
+  </div>
+</div>`; }
+
+async function loadSettings() {
+  const list=await api('list_settings');
+  const grid=$('settings-grid'); if(!grid) return;
+  if(!list.length){grid.innerHTML='<div style="padding:16px;color:var(--text3);">Aucun paramètre</div>';return;}
+  grid.innerHTML=list.map(s=>`
+  <div class="setting-item">
+    <div class="setting-key">${esc(s.setting_key)}</div>
+    <div style="display:flex;gap:6px;">
+      <input class="setting-input" type="text" value="${esc(s.setting_value||'')}" id="set-${esc(s.setting_key)}" onkeydown="if(event.key==='Enter')saveSetting('${esc(s.setting_key)}')">
+      <button class="btn btn-green btn-sm" onclick="saveSetting('${esc(s.setting_key)}')">💾</button>
+    </div>
+  </div>`).join('');
+}
+
+async function saveSetting(key) {
+  const val=$(`set-${key}`)?.value||'';
+  const d=await api('save_setting',`key=${encodeURIComponent(key)}&val=${encodeURIComponent(val)}`);
+  if(d.ok) toast(`💾 ${key} sauvegardé`,'ok');
+}
+
+async function runDiag() {
+  const out=$('diag-out'); if(!out) return;
+  out.style.display='block'; out.textContent='Diagnostic en cours…';
+  const d=await api('diag');
+  out.textContent=JSON.stringify(d.diag||d,null,2);
+}
 
 // ─── Keyboard + init ──────────────────────────────────────
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open')); });
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+});
 
-// Initialisation des mocks API pour la démo (backend simulé)
-window.api = async function(action, params='') {
-    await new Promise(r => setTimeout(r, 200));
-    const mockData = {
-        stats: { groups:5, groups_actif:3, members:128, admins:12, inbox:42, blacklist:7, queue_pending:2, queue_failed:1, violations:4 },
-        list_groups: [{groupe_id:'G_123456', nom:'Développeurs WhatsApp', actif:'1', nb_membres:24},{groupe_id:'G_789012', nom:'Community Hub', actif:'1', nb_membres:142},{groupe_id:'G_345678', nom:'Marketing Digital', actif:'0', nb_membres:56}],
-        list_members: [{phone_formatted:'25761122334', profile_name:'Jean Claude', groupe_nom:'Développeurs WhatsApp', is_admin:'0', violation_count:0},{phone_formatted:'25779666439', profile_name:'Alice Martin', groupe_nom:'Community Hub', is_admin:'1', violation_count:2},{phone_formatted:'25772233445', profile_name:'Bernard Koffi', groupe_nom:'Développeurs WhatsApp', is_admin:'0', violation_count:0}],
-        list_inbox: [{phone_number:'25771122334', full_name:'David Konan', last_message:'Ok super', last_message_at:new Date().toISOString(), is_blacklisted:'0'}],
-        list_blacklist: [{phone_number:'25770011223', reason:'Spam', created_at:new Date().toISOString()}],
-        list_queue: [{target_type:'group', target_id:'G_123456', phone_number:null, message_data:'Test message', media_url:null, message_type:'text', status:'completed', retry_count:0, created_at:new Date().toISOString()}],
-        list_logs: [{phone_number:'25761122334', message_type:'text', message_content:'Bonjour', status:'sent', error_message:null, sent_at:new Date().toISOString()}],
-        list_security: [{sender:'25761122334', action_type:'spam_detected', reason:'Message suspect', group_id:'G_123456', created_at:new Date().toISOString()}],
-        list_settings: [{setting_key:'wa_api_key', setting_value:'demo_123'},{setting_key:'broadcast_delay', setting_value:'2'}],
-        sync_groups: {ok:true, msg:'Synchronisation terminée', total:5, degraded:false},
-        sync_members: {ok:true, msg:'Membres synchronisés'},
-        toggle_group: {ok:true},
-        reset_violations: {ok:true},
-        blacklist_add: {ok:true},
-        blacklist_remove: {ok:true},
-        clear_queue: {ok:true},
-        save_setting: {ok:true},
-        diag: {diag:{php_version:'8.2', curl:true, db:'connected'}},
-        send_broadcast: {ok:true, success:true, msg:'Message envoyé'}
-    };
-    
-    if (action === 'upload_media') return {ok:true, media_id:'media_'+Date.now()};
-    if (mockData[action]) return mockData[action];
-    return {ok:true};
-};
-
+// Init
 goPage('overview');
 setInterval(loadStats,60000);
 </script>
