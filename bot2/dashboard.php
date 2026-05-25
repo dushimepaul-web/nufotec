@@ -117,55 +117,129 @@ if ($authed && isset($_GET['ajax'])) {
         exit;
     }
 
-    // ── sync_members — CORRIGÉ ET ROBUSTE
-    if ($act==='sync_members') {
-        $gid_filter = $_GET['gid']??null;
-        $groups = $gid_filter
-            ? [db1('SELECT groupe_id,nom FROM groupes_whatsapp WHERE groupe_id=?',[$gid_filter])]
-            : dbq('SELECT groupe_id,nom FROM groupes_whatsapp WHERE actif=1');
-        $total=0; $errors=[]; $debug=[];
-        foreach ($groups as $g) {
-            if (!$g) continue;
-            $data = whapi("groups/{$g->groupe_id}/participants");
-            if (!$data) { $errors[]=$g->groupe_id; continue; }
-            // Support tous les formats Whapi possibles
-            $parts = $data['participants'] ?? $data['members'] ?? $data['data'] ?? $data['contacts'] ?? [];
-            $debug[$g->groupe_id] = ['keys'=>array_keys($data),'count'=>count($parts)];
-            foreach ($parts as $p) {
-                // phone_raw peut être string ou array
-                if (is_string($p)) {
-                    $phone_raw = $p;
-                    $is_admin  = 0;
-                    $name      = null;
-                } else {
-                    $phone_raw = $p['id'] ?? $p['phone'] ?? $p['jid'] ?? '';
-                    $is_admin  = isset($p['isAdmin'])?(int)(bool)$p['isAdmin']
-                                :(isset($p['admin'])?(int)(bool)$p['admin']
-                                :(isset($p['rank'])&&$p['rank']==='admin'?1:0));
-                    $name      = $p['name'] ?? $p['pushName'] ?? $p['notify'] ?? null;
-                }
-                // Nettoyer le numéro : supprimer @s.whatsapp.net etc.
-                $phone_clean = preg_replace('/@\S+/','', (string)$phone_raw);
-                $phone_fmt   = preg_replace('/\D+/','',$phone_clean);
-                if (!$phone_fmt || strlen($phone_fmt)<6) continue;
-                dbx(
-                    'INSERT INTO whatsapp_participants
-                     (groupe_id,phone,phone_formatted,is_admin,violation_count,profile_name,synced_at,created_at,updated_at)
-                     VALUES (?,?,?,?,0,?,NOW(),NOW(),NOW())
-                     ON DUPLICATE KEY UPDATE
-                       is_admin=VALUES(is_admin),
-                       profile_name=COALESCE(VALUES(profile_name),profile_name),
-                       synced_at=NOW(), updated_at=NOW()',
-                    [$g->groupe_id,$phone_raw,$phone_fmt,$is_admin,$name]
-                );
-                $total++;
-            }
+
+
+
+// ── sync_members — VERSION CORRIGÉE ET ROBUSTE
+if ($act==='sync_members') {
+    $gid_filter = $_GET['gid'] ?? null;
+    $groups = $gid_filter
+        ? [db1('SELECT groupe_id,nom FROM groupes_whatsapp WHERE groupe_id=?', [$gid_filter])]
+        : dbq('SELECT groupe_id,nom FROM groupes_whatsapp WHERE actif=1');
+    
+    $total = 0;
+    $errors = [];
+    $debug = [];
+    
+    foreach ($groups as $g) {
+        if (!$g) continue;
+        
+        $data = whapi("groups/{$g->groupe_id}/participants");
+        
+        // 🔥 CORRECTION CLAVI : Vérifier si l'appel a réussi
+        if (!$data) {
+            $errors[] = $g->groupe_id;
+            error_log("Erreur API pour groupe: {$g->groupe_id}");
+            continue;
         }
-        $msg = "$total membre(s) synchronisé(s)";
-        if ($errors) $msg .= ' · Erreur API: '.implode(', ',$errors);
-        echo json_encode(['ok'=>true,'msg'=>$msg,'debug'=>$debug]);
-        exit;
+        
+        // 🔥 GÉRER LES DIFFÉRENTS FORMATS DE RÉPONSE WHAPI
+        $parts = [];
+        
+        // Cas 1: format standard avec clé 'participants'
+        if (isset($data['participants']) && is_array($data['participants'])) {
+            $parts = $data['participants'];
+        }
+        // Cas 2: format avec clé 'members'
+        elseif (isset($data['members']) && is_array($data['members'])) {
+            $parts = $data['members'];
+        }
+        // Cas 3: format avec clé 'data'
+        elseif (isset($data['data']) && is_array($data['data'])) {
+            $parts = $data['data'];
+        }
+        // Cas 4: réponse directe sous forme de tableau
+        elseif (is_array($data) && !isset($data['error'])) {
+            // Vérifier si c'est un tableau simple de participants
+            $parts = $data;
+        }
+        
+        // 🔥 SI AUCUN PARTICIPANT TROUVÉ
+        if (empty($parts)) {
+            error_log("Aucun participant trouvé pour groupe: {$g->groupe_id} - Réponse: " . json_encode($data));
+            continue;
+        }
+        
+        $debug[$g->groupe_id] = [
+            'keys' => array_keys($data),
+            'count' => count($parts),
+            'sample' => array_slice($parts, 0, 2)
+        ];
+        
+        foreach ($parts as $p) {
+            // Gérer différents formats de participant
+            $phone_raw = '';
+            $is_admin = 0;
+            $name = null;
+            
+            if (is_string($p)) {
+                // Format simple: string comme "33612345678@s.whatsapp.net"
+                $phone_raw = $p;
+            } 
+            elseif (is_array($p)) {
+                // Format array
+                $phone_raw = $p['id'] ?? $p['phone'] ?? $p['jid'] ?? $p['whatsappId'] ?? '';
+                
+                // Admin detection
+                $is_admin = isset($p['isAdmin']) ? (int)(bool)$p['isAdmin']
+                          : (isset($p['admin']) ? (int)(bool)$p['admin']
+                          : (isset($p['is_super_admin']) ? (int)(bool)$p['is_super_admin']
+                          : (isset($p['rank']) && $p['rank'] === 'admin' ? 1 : 0)));
+                
+                $name = $p['name'] ?? $p['pushName'] ?? $p['notify'] ?? $p['contactName'] ?? null;
+            }
+            elseif (is_object($p)) {
+                $phone_raw = $p->id ?? $p->phone ?? $p->jid ?? '';
+                $is_admin = $p->isAdmin ?? $p->admin ?? 0;
+                $name = $p->name ?? $p->pushName ?? null;
+            }
+            
+            if (!$phone_raw) continue;
+            
+            // Nettoyer le numéro
+            $phone_clean = preg_replace('/@\S+/', '', (string)$phone_raw);
+            $phone_fmt = preg_replace('/\D+/', '', $phone_clean);
+            
+            if (!$phone_fmt || strlen($phone_fmt) < 6) continue;
+            
+            dbx(
+                'INSERT INTO whatsapp_participants
+                 (groupe_id, phone, phone_formatted, is_admin, violation_count, profile_name, synced_at, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 0, ?, NOW(), NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE
+                   is_admin = VALUES(is_admin),
+                   profile_name = COALESCE(VALUES(profile_name), profile_name),
+                   synced_at = NOW(), 
+                   updated_at = NOW()',
+                [$g->groupe_id, $phone_raw, $phone_fmt, $is_admin, $name]
+            );
+            $total++;
+        }
     }
+    
+    $msg = "$total membre(s) synchronisé(s)";
+    if (!empty($errors)) {
+        $msg .= ' · Erreur API: ' . implode(', ', $errors);
+    }
+    
+    echo json_encode(['ok' => true, 'msg' => $msg, 'debug' => $debug]);
+    exit;
+}
+
+
+
+
+
 
     // ── toggle_group
     if ($act==='toggle_group') {
