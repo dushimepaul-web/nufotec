@@ -1,131 +1,121 @@
 <?php
 /**
  * ============================================================
- *  NUFOTEC — WhatsApp Webhook  (webhook.php)
- *  Rôle UNIQUE : recevoir, valider, répondre 200, déléguer
- *  Compatible 100% avec la base de données existante
- *
- *  CORRECTIF : réponse 200 envoyée AVANT toute validation
- *  pour éviter l'erreur ETIMEDOUT côté Whapi
+ *  NUFOTEC — WhatsApp Webhook (webhook.php)
+ *  CORRIGÉ : Réponse 200 ultra-rapide + traitement asynchrone
+ *  Plus aucun risque de timeout ETIMEDOUT
  * ============================================================
  */
 declare(strict_types=1);
 
-// ── Empêcher PHP de s'arrêter si le client ferme la connexion ──
-ignore_user_abort(true);
-set_time_limit(30);
-
-
 // ============================================================
 //  CONFIGURATION
 // ============================================================
-define('WEBHOOK_TOKEN',    '');          // laisser vide si non utilisé
 define('PROCESSOR_URL',    'https://nufotec.com/bot2/process.php');
 define('PROCESSOR_SECRET', 'VghiTs88mPZt3GkeA7dGf4G6v3Av6Skw');
 define('LOG_FILE',         __DIR__ . '/webhook.log');
 define('LOG_MAX_BYTES',    5 * 1024 * 1024);
+define('PENDING_DIR',      __DIR__ . '/pending_webhooks/');
 
+// Créer le dossier pour les webhooks en attente s'il n'existe pas
+if (!is_dir(PENDING_DIR)) {
+    mkdir(PENDING_DIR, 0755, true);
+}
 
 // ============================================================
-//  LIRE LE PAYLOAD AVANT TOUT
+//  ÉTAPE 1 : RÉPONSE 200 IMMÉDIATE (rien ne doit précéder ceci)
+// ============================================================
+ob_start(); // Démarrer le buffer de sortie
+
+// Envoyer la réponse 200
+http_response_code(200);
+header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
+echo '{"status":"ok","timestamp":' . time() . '}';
+
+// Forcer l'envoi immédiat des headers
+header('Content-Length: ' . ob_get_length());
+header('Connection: close');
+ob_end_flush();
+flush();
+
+// Clôture spécifique pour FastCGI/PHP-FPM
+if (function_exists('fastcgi_finish_request')) {
+    fastcgi_finish_request();
+}
+
+// ============================================================
+//  ÉTAPE 2 : RÉCUPÉRER LE PAYLOAD (après la réponse)
 // ============================================================
 $raw = (string) file_get_contents('php://input');
 
-
-// ============================================================
-//  RÉPONSE IMMÉDIATE À WHAPI
-//  ⚠️ DOIT être envoyée AVANT toute validation ou traitement
-//  pour éviter le timeout ETIMEDOUT côté Whapi
-// ============================================================
-$resp = '{"status":"ok"}';
-http_response_code(200);
-header('Content-Type: application/json');
-header('Connection: close');
-header('Cache-Control: no-cache');
-header('Content-Length: ' . strlen($resp));
-echo $resp;
-
-// Vider tous les buffers de sortie
-while (ob_get_level() > 0) {
-    ob_end_flush();
-}
-flush();
-
-// FastCGI : fermer la connexion client immédiatement
-if (function_exists('fastcgi_finish_request')) {
-    fastcgi_finish_request();
-    wlog('DEBUG', 'Connexion fermée via fastcgi_finish_request');
-} else {
-    wlog('DEBUG', 'fastcgi_finish_request non disponible — flush() utilisé');
-}
-
-
-// ============================================================
-//  VALIDATION TOKEN (optionnel) — après la réponse 200
-// ============================================================
-if (WEBHOOK_TOKEN !== '') {
-    $tok = $_GET['token'] ?? $_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? '';
-    if (!hash_equals(WEBHOOK_TOKEN, $tok)) {
-        wlog('WARN', 'Token invalide: ' . $tok);
-        exit;
-    }
-}
-
-
-// ============================================================
-//  VALIDATION JSON MINIMALE — après la réponse 200
-// ============================================================
+// Si pas de payload, on arrête
 if (empty($raw)) {
-    wlog('DEBUG', 'Payload vide, rien à traiter');
+    wlog('INFO', 'Payload vide - rien à traiter');
     exit;
 }
 
-$payload = json_decode($raw, true);
-if (!is_array($payload) || empty($payload)) {
-    wlog('ERROR', 'JSON invalide: ' . substr($raw, 0, 200));
+// ============================================================
+//  ÉTAPE 3 : STOCKAGE EN FILE D'ATTENTE (disque)
+//  Solution 1: Fichier temporaire (la plus simple et fiable)
+// ============================================================
+$filename = PENDING_DIR . time() . '_' . uniqid() . '.json';
+$result = file_put_contents($filename, $raw, LOCK_EX);
+
+if ($result === false) {
+    wlog('ERROR', 'Impossible d\'écrire le fichier: ' . $filename);
     exit;
 }
 
-wlog('INFO', 'Webhook reçu · type=' . ($payload['type'] ?? $payload['event']['type'] ?? '?'));
-
+wlog('INFO', 'Webhook sauvegardé: ' . basename($filename) . ' (taille: ' . strlen($raw) . ' bytes)');
 
 // ============================================================
-//  DÉLÉGATION AU PROCESSEUR (connexion non bloquante)
-//  On envoie le payload à process.php sans attendre sa réponse
+//  ÉTAPE 4 : DÉCLENCHER LE TRAITEMENT EN ARRIÈRE-PLAN
+//  Solution A: via exec() (recommandée pour Apache)
+//  Solution B: via cron job (alternative plus robuste)
 // ============================================================
-$ch = curl_init(PROCESSOR_URL);
-curl_setopt_array($ch, [
-    CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => $raw,
-    CURLOPT_HTTPHEADER     => [
-        'Content-Type: application/json',
-        'X-Internal-Secret: ' . PROCESSOR_SECRET,
-    ],
-    CURLOPT_RETURNTRANSFER => false,
-    CURLOPT_TIMEOUT_MS     => 500,    // on n'attend PAS la réponse (0.5 s max)
-    CURLOPT_CONNECTTIMEOUT => 1,
-    CURLOPT_NOBODY         => false,
-    CURLOPT_SSL_VERIFYPEER => true,
-    CURLOPT_NOSIGNAL       => 1,      // obligatoire avec timeout < 1 s
-]);
-curl_exec($ch);
-curl_close($ch);
 
-wlog('INFO', 'Payload délégué à process.php');
+// Vérifier quel environnement PHP on utilise
+$php_path = PHP_BINARY; // Chemin vers l'exécutable PHP
+
+// Commande pour lancer process.php en arrière-plan
+$cmd = sprintf(
+    '%s %s/process_worker.php %s > /dev/null 2>&1 &',
+    escapeshellarg($php_path),
+    __DIR__,
+    escapeshellarg($filename)
+);
+
+// Exécuter en arrière-plan (non bloquant)
+if (function_exists('exec')) {
+    exec($cmd);
+    wlog('DEBUG', 'Worker déclenché: ' . $cmd);
+} else {
+    // Si exec n'est pas disponible, on utilisera un cron job
+    wlog('WARN', 'exec() non disponible, le webhook sera traité par le cron');
+}
+
 exit;
 
-
 // ============================================================
-//  LOGGER  (rotation auto)
+//  FONCTION DE LOG (rotation automatique)
 // ============================================================
 function wlog(string $level, string $msg): void
 {
     static $levels = ['DEBUG' => 0, 'INFO' => 1, 'WARN' => 2, 'ERROR' => 3];
-    if (($levels[$level] ?? 1) < 1) return;  // min INFO en prod
-
-    if (file_exists(LOG_FILE) && filesize(LOG_FILE) > LOG_MAX_BYTES) {
-        rename(LOG_FILE, LOG_FILE . '.' . date('Ymd-His') . '.bak');
+    $minLevel = 1; // Niveau minimum (1 = INFO)
+    
+    if (($levels[$level] ?? 1) < $minLevel) {
+        return;
     }
+    
+    // Rotation du log si nécessaire
+    if (file_exists(LOG_FILE) && filesize(LOG_FILE) > LOG_MAX_BYTES) {
+        $backup = LOG_FILE . '.' . date('Ymd-His') . '.bak';
+        rename(LOG_FILE, $backup);
+    }
+    
+    // Écrire dans le log
     @file_put_contents(
         LOG_FILE,
         date('Y-m-d H:i:s') . " [$level] $msg\n",
