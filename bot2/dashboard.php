@@ -605,57 +605,6 @@ if ($act === 'sync_members') {
         exit;
     }
 
-
-
-
-    // ── upload_media
-if ($act === 'upload_media') {
-    if (empty($_FILES['file'])) {
-        echo json_encode(['ok' => false, 'msg' => 'Aucun fichier']);
-        exit;
-    }
-    
-    $file = $_FILES['file'];
-    $maxSize = 64 * 1024 * 1024;
-    if ($file['size'] > $maxSize) {
-        echo json_encode(['ok' => false, 'msg' => 'Fichier trop volumineux (max 64 Mo)']);
-        exit;
-    }
-    
-    $uploadDir = __DIR__ . '/uploads/whatsapp/';
-    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-    
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $safeName = uniqid('wa_', true) . '.' . $ext;
-    $dest = $uploadDir . $safeName;
-    
-    if (!move_uploaded_file($file['tmp_name'], $dest)) {
-        echo json_encode(['ok' => false, 'msg' => 'Erreur upload']);
-        exit;
-    }
-    
-    $mime = mime_content_type($dest) ?: $file['type'];
-    $mediaType = 'document';
-    if (str_starts_with($mime, 'image/')) $mediaType = 'image';
-    elseif (str_starts_with($mime, 'video/')) $mediaType = 'video';
-    elseif (str_starts_with($mime, 'audio/')) $mediaType = 'audio';
-    
-    $publicUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST']
-               . dirname($_SERVER['SCRIPT_NAME']) . '/uploads/whatsapp/' . $safeName;
-    
-    echo json_encode([
-        'ok' => true,
-        'url' => $publicUrl,
-        'media_type' => $mediaType,
-        'name' => $file['name'],
-        'size' => $file['size']
-    ]);
-    exit;
-}
-
-
-
-
     // ── stats
     if ($act==='stats') {
         echo json_encode([
@@ -1161,177 +1110,354 @@ tr:hover td{background:rgba(37,211,102,.04);}
 
 <div id="toast"></div>
 
-
-
-
-
-
 <script>
 // ─── Utilitaires ─────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const esc = s => s == null ? '' : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const fmtDate = s => s ? s.replace('T', ' ').substring(0, 16) : '—';
-const short = (s, n = 35) => !s ? '—' : (s.length > n ? s.substring(0, n) + '…' : s);
+const $  = id => document.getElementById(id);
+const esc = s => s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtDate = s => s ? s.replace('T',' ').substring(0,16) : '—';
+const short   = (s,n=35) => !s?'—':(s.length>n?s.substring(0,n)+'…':s);
 
 let currentPage = '';
+let degraded = false;
 
-async function api(action, params = '') {
-    const sep = params ? '&' : '';
-    const r = await fetch(`?ajax=${action}${sep}${params}`);
-    return r.json();
+async function api(action, params='') {
+  const sep = params?'&':'';
+  const r   = await fetch(`?ajax=${action}${sep}${params}`);
+  return r.json();
 }
-
 async function apiPost(action, body) {
-    const r = await fetch(`?ajax=${action}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
-    return r.json();
+  const r = await fetch(`?ajax=${action}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
 }
 
-function toast(msg, type = 'ok') {
-    const el = document.createElement('div');
-    el.className = `toast-item ${type === 'err' ? 'err' : type === 'warn' ? 'warn' : ''}`;
-    const icon = type === 'err' ? '❌' : type === 'warn' ? '⚠️' : '✅';
-    el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
-    document.getElementById('toast').appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.className = `toast-item ${type==='err'?'err':type==='warn'?'warn':''}`;
+  const icon = type==='err'?'❌':type==='warn'?'⚠️':'✅';
+  el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  $('toast').appendChild(el);
+  setTimeout(()=>el.remove(),4000);
 }
 
-function closeModal(id) {
-    document.getElementById(id)?.classList.remove('open');
+function closeModal(id) { $(id)?.classList.remove('open'); }
+
+const PAGES = {
+    overview:  { title:'Vue d\'ensemble',  build:buildOverview,   load:loadOverview  },
+    broadcast: { title:'Diffusion',         build:buildBroadcast,  load:initBroadcast },
+    groups:    { title:'Groupes',           build:buildGroups,     load:loadGroups    },
+    members:   { title:'Membres',           build:buildMembers,    load:loadMembersPage},
+    inbox:     { title:'Inbox',             build:buildInbox,      load:loadInbox     },
+    blacklist: { title:'Blacklist',         build:buildBlacklist,  load:loadBlacklist },
+    queue:     { title:'File d\'envoi',     build:buildQueue,      load:loadQueue     },
+    logs:      { title:'Logs',              build:buildLogs,       load:loadLogs      },
+    security:  { title:'Sécurité',         build:buildSecurity,   load:loadSecurity  },
+    settings:  { title:'Paramètres',       build:buildSettings,   load:loadSettings  },
+};
+
+function goPage(name) {
+  const pg = PAGES[name]; if (!pg) return;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+
+  let el = $('page-'+name);
+  if (!el) {
+    el = document.createElement('div');
+    el.id='page-'+name; el.className='page';
+    el.innerHTML = pg.build();
+    $('main-content').appendChild(el);
+    // bind events after build
+    bindPageEvents(name);
+  }
+  el.classList.add('active');
+  $('page-title').textContent = pg.title;
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
+  });
+  currentPage = name;
+  pg.load();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  OVERVIEW
-// ═══════════════════════════════════════════════════════════
-function buildOverview() {
-    return `
+function bindPageEvents(name) {
+  if (name==='blacklist') {
+    $('modal-blacklist')?.addEventListener('click',e=>{ if(e.target===$('modal-blacklist')) closeModal('modal-blacklist'); });
+  }
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────
+function buildOverview() { return `
 <div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Groupes actifs</div><div class="stat-val" id="s-groups">—</div><div class="stat-sub" id="s-groups-sub">sur — total</div></div>
-    <div class="stat-card blue"><div class="stat-icon">👤</div><div class="stat-label">Membres</div><div class="stat-val" id="s-members">—</div><div class="stat-sub" id="s-admins-sub">— admins</div></div>
-    <div class="stat-card teal"><div class="stat-icon">📥</div><div class="stat-label">Inbox</div><div class="stat-val" id="s-inbox">—</div><div class="stat-sub">contacts</div></div>
-    <div class="stat-card red"><div class="stat-icon">🚫</div><div class="stat-label">Blacklist</div><div class="stat-val" id="s-blacklist">—</div><div class="stat-sub">bloqués</div></div>
-    <div class="stat-card amber"><div class="stat-icon">📤</div><div class="stat-label">En attente</div><div class="stat-val" id="s-queue">—</div><div class="stat-sub" id="s-queue-sub">— échecs</div></div>
-    <div class="stat-card purple"><div class="stat-icon">⚠️</div><div class="stat-label">Violations</div><div class="stat-val" id="s-violations">—</div><div class="stat-sub">membres signalés</div></div>
+  <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Groupes actifs</div><div class="stat-val" id="s-groups">—</div><div class="stat-sub" id="s-groups-sub">sur — total</div></div>
+  <div class="stat-card blue"><div class="stat-icon">👤</div><div class="stat-label">Membres</div><div class="stat-val" id="s-members">—</div><div class="stat-sub" id="s-admins-sub">— admins</div></div>
+  <div class="stat-card teal"><div class="stat-icon">📥</div><div class="stat-label">Inbox</div><div class="stat-val" id="s-inbox">—</div><div class="stat-sub">contacts</div></div>
+  <div class="stat-card red"><div class="stat-icon">🚫</div><div class="stat-label">Blacklist</div><div class="stat-val" id="s-blacklist">—</div><div class="stat-sub">bloqués</div></div>
+  <div class="stat-card amber"><div class="stat-icon">📤</div><div class="stat-label">En attente</div><div class="stat-val" id="s-queue">—</div><div class="stat-sub" id="s-queue-sub">— échecs</div></div>
+  <div class="stat-card purple"><div class="stat-icon">⚠️</div><div class="stat-label">Violations</div><div class="stat-val" id="s-violations">—</div><div class="stat-sub">membres signalés</div></div>
 </div>
+
 <div class="panel">
-    <div class="panel-header"><div class="panel-title">⚡ Actions rapides</div></div>
-    <div style="padding:16px;display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn btn-green" onclick="goPage('broadcast')">📢 Nouvelle diffusion</button>
-        <button class="btn btn-dark" onclick="syncGroups()">↻ Sync groupes Whapi</button>
-        <button class="btn btn-blue" onclick="syncMembers(null)">↻ Sync membres</button>
-        <button class="btn btn-ghost" onclick="loadStats()">↻ Actualiser stats</button>
-        <button class="btn btn-amber" onclick="document.getElementById('modal-blacklist').classList.add('open')">🚫 Blacklister numéro</button>
-    </div>
+  <div class="panel-header"><div class="panel-title">⚡ Actions rapides</div></div>
+  <div style="padding:16px;display:flex;gap:10px;flex-wrap:wrap;">
+    <button class="btn btn-green" onclick="goPage('broadcast')">📢 Nouvelle diffusion</button>
+    <button class="btn btn-dark" onclick="syncGroups()">↻ Sync groupes Whapi</button>
+    <button class="btn btn-blue" onclick="syncMembers(null)">↻ Sync membres</button>
+    <button class="btn btn-ghost" onclick="loadStats()">↻ Actualiser stats</button>
+    <button class="btn btn-amber" onclick="$('modal-blacklist').classList.add('open')">🚫 Blacklister numéro</button>
+  </div>
 </div>
+
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-    <div class="panel">
-        <div class="panel-header"><div class="panel-title">🛡 Dernières violations</div><button class="btn btn-ghost btn-sm" onclick="goPage('security')">Voir tout →</button></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Type</th><th>Date</th></tr></thead><tbody id="ov-security"><tr class="empty-row"><td colspan="3">Chargement...</td></tr></tbody></table></div>
-    </div>
-    <div class="panel">
-        <div class="panel-header"><div class="panel-title">📋 Logs récents</div><button class="btn btn-ghost btn-sm" onclick="goPage('logs')">Voir tout →</button></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Type</th><th>Statut</th></tr></thead><tbody id="ov-logs"><tr class="empty-row"><td colspan="3">Chargement...</td></tr></tbody></table></div>
-    </div>
-</div>`;
-}
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title">🛡 Dernières violations</div><button class="btn btn-ghost btn-sm" onclick="goPage('security')">Voir tout →</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Type</th><th>Date</th></tr></thead><tbody id="ov-security"><tr class="empty-row"><td colspan="3"><span class="spin"></span></td></tr></tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title">📋 Logs récents</div><button class="btn btn-ghost btn-sm" onclick="goPage('logs')">Voir tout →</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Type</th><th>Statut</th></tr></thead><tbody id="ov-logs"><tr class="empty-row"><td colspan="3"><span class="spin"></span></td></tr></tbody></table></div>
+  </div>
+</div>`; }
 
 async function loadOverview() {
-    await loadStats();
-    const sec = await api('list_security');
-    const sb = document.getElementById('ov-security');
-    if (sb && sec.length) {
-        sb.innerHTML = sec.slice(0, 6).map(l => `<tr><td class="mono">${esc(l.sender)}</td><td><span class="badge badge-red">${esc(l.action_type)}</span></td><td class="mono">${fmtDate(l.created_at)}</td></tr>`).join('');
-    }
-    const logs = await api('list_logs');
-    const sb2 = document.getElementById('ov-logs');
-    const stBadge = { sent: 'badge-green', failed: 'badge-red', received: 'badge-blue', processing: 'badge-amber' };
-    if (sb2 && logs.length) {
-        sb2.innerHTML = logs.slice(0, 6).map(l => `<tr><td class="mono">${esc(l.phone_number)}</td><td><span class="badge badge-gray">${esc(l.message_type)}</span></td><td><span class="badge ${stBadge[l.status] || 'badge-gray'}">${esc(l.status)}</span></td></tr>`).join('');
-    }
+  await loadStats();
+  // security
+  const sec = await api('list_security');
+  const sb = $('ov-security');
+  if(sb) sb.innerHTML = sec.length ? sec.slice(0,6).map(l=>`<tr>
+    <td class="mono">${esc(l.sender)}</td>
+    <td><span class="badge badge-red">${esc(l.action_type)}</span></td>
+    <td class="mono">${fmtDate(l.created_at)}</td></tr>`).join('') : '<tr class="empty-row"><td colspan="3">Aucune violation</td></tr>';
+  // logs
+  const logs = await api('list_logs');
+  const sb2 = $('ov-logs');
+  const stBadge = {sent:'badge-green',failed:'badge-red',received:'badge-blue',processing:'badge-amber'};
+  if(sb2) sb2.innerHTML = logs.length ? logs.slice(0,6).map(l=>`<tr>
+    <td class="mono">${esc(l.phone_number)}</td>
+    <td><span class="badge badge-gray">${esc(l.message_type)}</span></td>
+    <td><span class="badge ${stBadge[l.status]||'badge-gray'}">${esc(l.status)}</span></td></tr>`).join('') : '<tr class="empty-row"><td colspan="3">Aucun log</td></tr>';
 }
 
 async function loadStats() {
-    const d = await api('stats');
-    const set = (id, v) => { const e = $(id); if (e) e.textContent = v; };
-    set('s-groups', d.groups_actif);
-    set('s-groups-sub', `sur ${d.groups} total`);
-    set('s-members', d.members);
-    set('s-admins-sub', `${d.admins} admin(s)`);
-    set('s-inbox', d.inbox);
-    set('s-blacklist', d.blacklist);
-    set('s-queue', d.queue_pending);
-    set('s-queue-sub', `${d.queue_failed} échecs`);
-    set('s-violations', d.violations);
-    const nb = document.getElementById('nb-blacklist');
-    if (nb && d.blacklist > 0) { nb.textContent = d.blacklist; nb.style.display = ''; }
-    const nq = document.getElementById('nb-queue');
-    if (nq && d.queue_pending > 0) { nq.textContent = d.queue_pending; nq.style.display = ''; }
+  const d = await api('stats');
+  const set = (id,v)=>{ const e=$(id); if(e) e.textContent=v; };
+  set('s-groups',d.groups_actif);
+  set('s-groups-sub',`sur ${d.groups} total`);
+  set('s-members',d.members);
+  set('s-admins-sub',`${d.admins} admin(s)`);
+  set('s-inbox',d.inbox);
+  set('s-blacklist',d.blacklist);
+  set('s-queue',d.queue_pending);
+  set('s-queue-sub',`${d.queue_failed} échecs`);
+  set('s-violations',d.violations);
+  const nb = $('nb-blacklist');
+  if(nb&&d.blacklist>0){nb.textContent=d.blacklist;nb.style.display='';}
+  const nq = $('nb-queue');
+  if(nq&&d.queue_pending>0){nq.textContent=d.queue_pending;nq.style.display='';}
 }
 
-// ═══════════════════════════════════════════════════════════
-//  BROADCAST
-// ═══════════════════════════════════════════════════════════
-function buildBroadcast() {
-    return `
+// ─── BROADCAST — Interface complète avec tous les types de messages
+function buildBroadcast() { return `
 <div class="broadcast-panel">
-    <h2>📢 Centre de Diffusion</h2>
-    <p>Envoyez des messages texte, images, audios, vidéos, documents.</p>
-    <div style="display:flex; gap:10px; margin-bottom:20px;">
-        <button class="media-tab active" onclick="switchBroadcastTab('groups')">👥 Groupes</button>
-        <button class="media-tab" onclick="switchBroadcastTab('inbox')">💬 Contacts</button>
-        <button class="media-tab" onclick="switchBroadcastTab('both')">📢 Les deux</button>
+  <h2>📢 Centre de Diffusion</h2>
+  <p>Envoyez des messages texte, images, audios, vidéos, documents, stickers, sondages, contacts, localisation et stories.</p>
+  
+  <!-- Onglets de sélection de cible -->
+  <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,.2); padding-bottom:10px; flex-wrap:wrap;">
+    <button class="media-tab active" onclick="switchBroadcastTab('groups')" id="tab-groups">👥 Groupes</button>
+    <button class="media-tab" onclick="switchBroadcastTab('inbox')" id="tab-inbox">💬 Contacts</button>
+    <button class="media-tab" onclick="switchBroadcastTab('both')" id="tab-both">📢 Groupes + Contacts</button>
+  </div>
+  
+  <!-- Zone Groupes -->
+  <div id="broadcast-groups">
+    <div style="margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📌 Sélectionner les groupes</label>
+      <select id="bc-group-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff; margin-top:5px;">
+        <option value="all">📋 Tous les groupes actifs</option>
+      </select>
     </div>
-    <div id="broadcast-groups">
-        <select id="bc-group-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff;">
-            <option value="all">📋 Tous les groupes actifs</option>
-        </select>
+  </div>
+  
+  <!-- Zone Contacts -->
+  <div id="broadcast-inbox" style="display:none;">
+    <div style="margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📞 Sélectionner les contacts</label>
+      <select id="bc-contact-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff; margin-top:5px;">
+        <option value="all">📋 Tous les contacts</option>
+      </select>
     </div>
-    <div id="broadcast-inbox" style="display:none;">
-        <select id="bc-contact-select" multiple style="width:100%; background:rgba(255,255,255,.15); border-radius:8px; padding:10px; color:#fff; margin-bottom:10px;">
-            <option value="all">📋 Tous les contacts</option>
-        </select>
-        <input type="text" id="bc-custom-phone" class="broadcast-input" placeholder="📱 Ou un numéro spécifique" style="width:100%;">
+    <div>
+      <label style="font-size:12px; font-weight:700; opacity:0.8;">📱 Ou entrer un numéro spécifique</label>
+      <input type="text" id="bc-custom-phone" class="broadcast-input" placeholder="+257XXXXXXXXX" style="width:100%; margin-top:5px;">
     </div>
-    <div style="margin-top:15px;">
-        <select id="message-type-select" class="broadcast-select" style="width:100%;" onchange="changeMessageType()">
-            <option value="text">💬 Texte</option>
-            <option value="image">🖼 Image</option>
-            <option value="video">🎥 Vidéo</option>
-            <option value="audio">🎵 Audio</option>
-            <option value="document">📑 Document</option>
-        </select>
+  </div>
+  
+  <!-- Type de message -->
+  <div style="margin-top:20px;">
+    <label style="font-size:12px; font-weight:700; opacity:0.8;">🎯 TYPE DE MESSAGE</label>
+    <select id="message-type-select" class="broadcast-select" style="width:100%; margin-top:5px;" onchange="changeMessageType()">
+      <option value="text">💬 Texte simple</option>
+      <option value="link_preview">🔗 Texte avec aperçu de lien</option>
+      <option value="image">🖼 Image</option>
+      <option value="video">🎥 Vidéo</option>
+      <option value="audio">🎵 Audio</option>
+      <option value="voice">🎤 Message vocal</option>
+      <option value="document">📑 Document</option>
+      <option value="sticker">🎭 Sticker</option>
+      <option value="gif">🎬 GIF</option>
+      <option value="location">📍 Localisation</option>
+      <option value="contact">👤 Contact</option>
+      <option value="poll">📊 Sondage</option>
+      <option value="story">📖 Story</option>
+    </select>
+  </div>
+  
+  <!-- Zone message texte -->
+  <div id="message-text-area" style="margin-top:15px;">
+    <textarea class="broadcast-textarea" id="bc-text" placeholder="Votre message ici…" rows="4"></textarea>
+  </div>
+  
+  <!-- Zone média (URL) -->
+  <div id="message-media-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="url" id="bc-media-url" placeholder="URL du fichier (https://...)" style="width:100%;">
+    <div style="font-size:11px; opacity:0.6; margin-top:4px;">⚠️ L'URL doit être accessible publiquement</div>
+  </div>
+  
+  <!-- Zone localisation -->
+  <div id="message-location-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="text" id="bc-lat" placeholder="Latitude" style="width:48%; display:inline-block; margin-right:4%;">
+    <input class="broadcast-input" type="text" id="bc-lng" placeholder="Longitude" style="width:48%; display:inline-block;">
+    <input class="broadcast-input" type="text" id="bc-location-name" placeholder="Nom du lieu" style="width:100%; margin-top:8px;">
+    <input class="broadcast-input" type="text" id="bc-address" placeholder="Adresse" style="width:100%; margin-top:8px;">
+  </div>
+  
+  <!-- Zone sondage -->
+  <div id="message-poll-area" style="margin-top:15px; display:none;">
+    <div id="poll-options">
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input class="broadcast-input" type="text" placeholder="Option 1" style="flex:1;" value="Oui">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input class="broadcast-input" type="text" placeholder="Option 2" style="flex:1;" value="Non">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
+      </div>
     </div>
-    <div id="message-text-area" style="margin-top:15px;">
-        <textarea class="broadcast-textarea" id="bc-text" placeholder="Votre message ici…" rows="4"></textarea>
+    <button class="btn btn-ghost btn-sm" onclick="addPollOption()" style="margin-top:5px;">+ Ajouter une option</button>
+    <div style="margin-top:10px;">
+      <label style="font-size:11px;">Nombre de choix possibles:</label>
+      <select id="poll-selectable" class="broadcast-select" style="width:auto; display:inline-block; margin-left:10px;">
+        <option value="1">1 choix</option>
+        <option value="2">2 choix</option>
+        <option value="3">3 choix</option>
+        <option value="4">4 choix</option>
+      </select>
     </div>
-    <div id="message-media-area" style="margin-top:15px; display:none;">
-        <input class="broadcast-input" type="url" id="bc-media-url" placeholder="URL du fichier" style="width:100%;">
+  </div>
+  
+  <!-- Zone contact -->
+  <div id="message-contact-area" style="margin-top:15px; display:none;">
+    <input class="broadcast-input" type="text" id="bc-contact-name" placeholder="Nom du contact" style="width:100%;">
+    <input class="broadcast-input" type="text" id="bc-contact-number" placeholder="Numéro du contact" style="width:100%; margin-top:8px;">
+  </div>
+  
+  <!-- Options -->
+  <div class="broadcast-row" style="margin-top:15px;">
+    <div style="flex:1;">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="bc-simulate">
+        <span style="font-size:12px;">🎮 Mode simulation (test sans envoyer)</span>
+      </label>
     </div>
-    <div class="broadcast-row" style="margin-top:15px;">
-        <label style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" id="bc-simulate"> 🎮 Mode simulation
-        </label>
-    </div>
-    <div class="broadcast-actions" style="margin-top:20px;">
-        <button class="btn-send" onclick="doAdvancedBroadcast()">📤 Envoyer</button>
-        <span class="send-status" id="bc-status"></span>
-    </div>
+  </div>
+  
+  <div class="broadcast-actions" style="margin-top:20px;">
+    <button class="btn-send" onclick="doAdvancedBroadcast()">
+      <span>📤</span> Envoyer la diffusion
+    </button>
+    <span class="send-status" id="bc-status"></span>
+  </div>
 </div>
+
+<!-- Aperçu des sélections -->
+<div class="panel" style="margin-top:16px;">
+  <div class="panel-header">
+    <div class="panel-title">📋 Récapitulatif</div>
+    <button class="btn btn-ghost btn-sm" onclick="refreshSelections()">↻ Rafraîchir</button>
+  </div>
+  <div id="selection-preview" style="padding:16px; font-size:12px; color:var(--text2);">
+    Chargement...
+  </div>
+</div>
+
 <div class="panel">
-    <div class="panel-header"><div class="panel-title">📤 Derniers envois</div></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Type</th><th>Cible</th><th>Statut</th><th>Date</th></tr></thead><tbody id="bc-queue"><tr class="empty-row"><td colspan="4">Chargement...</td></tr></tbody></table></div>
-</div>`;
+  <div class="panel-header">
+    <div class="panel-title">📤 Derniers envois</div>
+    <button class="btn btn-ghost btn-sm" onclick="goPage('queue')">Voir tout →</button>
+  </div>
+  <div class="tbl-wrap"></tr>
+    <thead>汽<th>Type</th><th>Cible</th><th>Statut</th><th>Date</th></tr></thead>
+    <tbody id="bc-queue"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody>
+  </table></div>
+</div>
+`; }
+
+function changeMessageType() {
+    const type = document.getElementById('message-type-select')?.value;
+    
+    // Masquer toutes les zones
+    document.getElementById('message-text-area').style.display = 'none';
+    document.getElementById('message-media-area').style.display = 'none';
+    document.getElementById('message-location-area').style.display = 'none';
+    document.getElementById('message-poll-area').style.display = 'none';
+    document.getElementById('message-contact-area').style.display = 'none';
+    
+    // Afficher la zone appropriée
+    if (type === 'text' || type === 'link_preview') {
+        document.getElementById('message-text-area').style.display = 'block';
+    } else if (type === 'image' || type === 'video' || type === 'audio' || type === 'voice' || 
+               type === 'document' || type === 'sticker' || type === 'gif' || type === 'story') {
+        document.getElementById('message-text-area').style.display = 'block';
+        document.getElementById('message-media-area').style.display = 'block';
+    } else if (type === 'location') {
+        document.getElementById('message-location-area').style.display = 'block';
+    } else if (type === 'poll') {
+        document.getElementById('message-poll-area').style.display = 'block';
+    } else if (type === 'contact') {
+        document.getElementById('message-contact-area').style.display = 'block';
+    }
+}
+
+function addPollOption() {
+    const container = document.getElementById('poll-options');
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.gap = '8px';
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+        <input class="broadcast-input" type="text" placeholder="Option ${container.children.length + 1}" style="flex:1;">
+        <button class="btn btn-ghost btn-sm" onclick="removePollOption(this)">✖</button>
+    `;
+    container.appendChild(div);
+}
+
+function removePollOption(btn) {
+    const container = document.getElementById('poll-options');
+    if (container.children.length > 2) {
+        btn.closest('div').remove();
+    } else {
+        toast('Un sondage doit avoir au moins 2 options', 'warn');
+    }
 }
 
 let currentBroadcastTab = 'groups';
 
 async function switchBroadcastTab(tab) {
     currentBroadcastTab = tab;
+    document.querySelectorAll('#tab-groups, #tab-inbox, #tab-both').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    
     document.getElementById('broadcast-groups').style.display = (tab === 'groups' || tab === 'both') ? 'block' : 'none';
     document.getElementById('broadcast-inbox').style.display = (tab === 'inbox' || tab === 'both') ? 'block' : 'none';
+    
     await refreshSelections();
 }
 
@@ -1342,6 +1468,7 @@ async function refreshSelections() {
         groupSelect.innerHTML = '<option value="all">📋 Tous les groupes actifs</option>' +
             groups.filter(g => g.actif == 1).map(g => `<option value="${esc(g.groupe_id)}">${esc(g.nom)} (${g.nb_membres} membres)</option>`).join('');
     }
+    
     const members = await api('list_members', '');
     const uniquePhones = [...new Map(members.map(m => [m.phone_formatted, m])).values()];
     const contactSelect = document.getElementById('bc-contact-select');
@@ -1349,12 +1476,56 @@ async function refreshSelections() {
         contactSelect.innerHTML = '<option value="all">📋 Tous les contacts</option>' +
             uniquePhones.slice(0, 100).map(c => `<option value="${esc(c.phone_formatted)}">${esc(c.profile_name || c.phone_formatted)}</option>`).join('');
     }
+    
+    const stats = await api('stats');
+    document.getElementById('stat-groups')?.setAttribute('data-value', stats.groups_actif);
+    document.getElementById('stat-contacts')?.setAttribute('data-value', stats.members);
+    
+    updatePreview();
 }
 
-function changeMessageType() {
-    const type = document.getElementById('message-type-select')?.value;
-    document.getElementById('message-text-area').style.display = 'block';
-    document.getElementById('message-media-area').style.display = (type !== 'text') ? 'block' : 'none';
+async function updatePreview() {
+    const preview = document.getElementById('selection-preview');
+    if (!preview) return;
+    
+    let selectedGroups = [];
+    let selectedPhones = [];
+    const messageType = document.getElementById('message-type-select')?.value || 'text';
+    
+    if (currentBroadcastTab === 'groups' || currentBroadcastTab === 'both') {
+        const groupSelect = document.getElementById('bc-group-select');
+        const selected = Array.from(groupSelect?.selectedOptions || []).map(opt => opt.value);
+        const allGroups = await api('list_groups');
+        if (selected.includes('all') || selected.length === 0) {
+            selectedGroups = allGroups.filter(g => g.actif == 1);
+        } else {
+            selectedGroups = allGroups.filter(g => selected.includes(g.groupe_id));
+        }
+    }
+    
+    if (currentBroadcastTab === 'inbox' || currentBroadcastTab === 'both') {
+        const customPhone = document.getElementById('bc-custom-phone')?.value.trim();
+        if (customPhone) selectedPhones.push(customPhone);
+        const contactSelect = document.getElementById('bc-contact-select');
+        const selected = Array.from(contactSelect?.selectedOptions || []).map(opt => opt.value);
+        if (selected.includes('all') && !customPhone) {
+            const members = await api('list_members', '');
+            selectedPhones = [...new Map(members.map(m => [m.phone_formatted, m])).keys()];
+        } else if (!selected.includes('all')) {
+            selectedPhones.push(...selected);
+        }
+    }
+    
+    preview.innerHTML = `
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <div><strong>🎯 Type:</strong> ${messageType}</div>
+            <div><strong>👥 Groupes:</strong> ${selectedGroups.length}</div>
+            <div><strong>💬 Contacts:</strong> ${selectedPhones.length}</div>
+            <div><strong>📊 Total destinataires:</strong> ${selectedGroups.length + selectedPhones.length}</div>
+        </div>
+        ${selectedGroups.length > 0 ? `<div style="margin-top:8px;"><small>Groupes: ${selectedGroups.slice(0,3).map(g => g.nom).join(', ')}${selectedGroups.length > 3 ? '...' : ''}</small></div>` : ''}
+        ${selectedPhones.length > 0 ? `<div style="margin-top:4px;"><small>Contacts: ${selectedPhones.slice(0,3).join(', ')}${selectedPhones.length > 3 ? '...' : ''}</small></div>` : ''}
+    `;
 }
 
 async function doAdvancedBroadcast() {
@@ -1363,17 +1534,22 @@ async function doAdvancedBroadcast() {
     const mediaUrl = document.getElementById('bc-media-url')?.value?.trim() || '';
     const simulate = document.getElementById('bc-simulate')?.checked || false;
     
+    // Récupérer les cibles
     let targets = [];
+    
     if (currentBroadcastTab === 'groups' || currentBroadcastTab === 'both') {
         const groupSelect = document.getElementById('bc-group-select');
         const selected = Array.from(groupSelect?.selectedOptions || []).map(opt => opt.value);
         const allGroups = await api('list_groups');
+        let groups = [];
         if (selected.includes('all') || selected.length === 0) {
-            targets.push(...allGroups.filter(g => g.actif == 1).map(g => ({ type: 'group', id: g.groupe_id })));
+            groups = allGroups.filter(g => g.actif == 1);
         } else {
-            targets.push(...allGroups.filter(g => selected.includes(g.groupe_id)).map(g => ({ type: 'group', id: g.groupe_id })));
+            groups = allGroups.filter(g => selected.includes(g.groupe_id));
         }
+        targets.push(...groups.map(g => ({ type: 'group', id: g.groupe_id })));
     }
+    
     if (currentBroadcastTab === 'inbox' || currentBroadcastTab === 'both') {
         const customPhone = document.getElementById('bc-custom-phone')?.value.trim();
         if (customPhone) targets.push({ type: 'contact', id: customPhone });
@@ -1387,305 +1563,454 @@ async function doAdvancedBroadcast() {
             targets.push(...selected.map(p => ({ type: 'contact', id: p })));
         }
     }
+    
     if (targets.length === 0) {
         toast('Aucun destinataire sélectionné', 'err');
         return;
     }
-    if (!text && !mediaUrl) {
-        toast('Message ou fichier requis', 'err');
-        return;
-    }
+    
     const st = document.getElementById('bc-status');
-    if (st) { st.style.display = 'inline'; st.textContent = `Envoi à ${targets.length} destinataire(s)...`; }
-    let sent = 0, failed = 0;
+    if (st) {
+        st.style.display = 'inline';
+        st.textContent = `Préparation de l'envoi à ${targets.length} destinataire(s)...`;
+    }
+    
+    let sent = 0;
+    let failed = 0;
+    
     for (const target of targets) {
-        const to = target.type === 'group' ? target.id : target.id.replace(/\D/g, '');
-        const payload = { to, text, media_url: mediaUrl, message_type: messageType, simulate };
+        let to = target.type === 'group' ? target.id : target.id.replace(/\D/g, '');
+        let payload = {
+            to: to,
+            text: text,
+            media_url: mediaUrl,
+            message_type: messageType,
+            simulate: simulate
+        };
+        
+        // Ajouter les champs spécifiques
+        if (messageType === 'location') {
+            payload.latitude = document.getElementById('bc-lat')?.value;
+            payload.longitude = document.getElementById('bc-lng')?.value;
+            payload.location_name = document.getElementById('bc-location-name')?.value;
+            payload.address = document.getElementById('bc-address')?.value;
+        }
+        
+        if (messageType === 'poll') {
+            const options = Array.from(document.querySelectorAll('#poll-options input')).map(i => i.value).filter(v => v.trim());
+            payload.poll_options = options;
+            payload.selectable_count = parseInt(document.getElementById('poll-selectable')?.value || 1);
+        }
+        
+        if (messageType === 'contact') {
+            payload.contact_name = document.getElementById('bc-contact-name')?.value;
+            payload.contact_number = document.getElementById('bc-contact-number')?.value;
+        }
+        
         const d = await apiPost('send_message', payload);
         if (d.ok) sent++; else failed++;
-        await new Promise(r => setTimeout(r, 300));
+        
+        await new Promise(r => setTimeout(r, 500));
+        
         if (st) st.textContent = `Progression: ${sent + failed}/${targets.length}...`;
     }
+    
     if (st) st.style.display = 'none';
+    
     if (simulate) {
-        toast(`🎮 SIMULATION - ${sent} message(s)`, 'warn');
+        toast(`🔍 SIMULATION - ${sent} message(s) auraient été envoyés (${failed} erreur(s))`, 'warn');
     } else {
-        toast(`✅ ${sent} message(s) envoyés (${failed} échec(s))`, sent > 0 ? 'ok' : 'err');
+        toast(`✅ ${sent} message(s) envoyés avec succès (${failed} échec(s))`, sent > 0 ? 'ok' : 'err');
     }
-    document.getElementById('bc-text').value = '';
-    document.getElementById('bc-media-url').value = '';
+    
+    // Réinitialisation
+    if (document.getElementById('bc-text')) document.getElementById('bc-text').value = '';
+    if (document.getElementById('bc-media-url')) document.getElementById('bc-media-url').value = '';
+    
     loadBcQueue();
     loadStats();
 }
+
+
+
+
+
+
+
+let bcMediaType = '';
+function setMediaType(el, type) {
+  document.querySelectorAll('.media-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  bcMediaType = type;
+  const row = $('bc-media-row');
+  if(row) row.style.display = type ? 'block' : 'none';
+}
+
+
+
+
+// Supprimez les fonctions doBroadcast() et setMediaType() existantes
+// Et remplacez loadBcQueue par :
 
 async function loadBcQueue() {
     const list = await api('list_queue');
     const tbody = document.getElementById('bc-queue');
     if (!tbody) return;
-    const stBadge = { pending: 'badge-amber', processing: 'badge-blue', completed: 'badge-green', failed: 'badge-red' };
+    const stBadge = {pending:'badge-amber', processing:'badge-blue', completed:'badge-green', failed:'badge-red', retry:'badge-purple'};
     if (!list.length) {
         tbody.innerHTML = '<tr class="empty-row"><td colspan="4">File vide</td></tr>';
         return;
     }
-    tbody.innerHTML = list.slice(0, 10).map(q => `
-        <tr><td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
-        <td class="mono">${esc(q.target_id || q.phone_number || '—')}</td>
-        <td><span class="badge ${stBadge[q.status] || 'badge-gray'}">${esc(q.status)}</span></td>
-        <td class="mono">${fmtDate(q.created_at)}</td></tr>
+    tbody.innerHTML = list.slice(0,10).map(q => `
+        <tr>
+            <td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
+            <td class="mono">${esc(q.target_id || q.phone_number || '—')}</td>
+            <td><span class="badge ${stBadge[q.status] || 'badge-gray'}">${esc(q.status)}</span></td>
+            <td class="mono">${fmtDate(q.created_at)}</td>
+        </tr>
     `).join('');
 }
 
+// Ajoutez cette fonction pour l'initialisation de la page broadcast
 async function initBroadcast() {
     await refreshSelections();
-    await loadBcQueue();
-    setInterval(() => { if (currentPage === 'broadcast') loadBcQueue(); }, 30000);
+    loadBcQueue();
+    setInterval(() => {
+        if (currentPage === 'broadcast') {
+            loadBcQueue();
+        }
+    }, 30000);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  GROUPS
-// ═══════════════════════════════════════════════════════════
-function buildGroups() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">👥 Groupes WhatsApp</div><div class="panel-actions"><button class="btn btn-dark" onclick="syncGroups()">↻ Sync Whapi</button><button class="btn btn-blue btn-sm" onclick="loadGroups()">↻ Actualiser</button></div></div><div id="groups-grid" class="group-grid"><div style="color:var(--text3);font-size:13px;padding:8px;">Chargement…</div></div></div>`;
-}
+// ─── GROUPS ──────────────────────────────────────────────
+function buildGroups() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">👥 Groupes WhatsApp</div>
+    <div class="panel-actions">
+      <button class="btn btn-dark" onclick="syncGroups()">↻ Sync Whapi</button>
+      <button class="btn btn-blue btn-sm" onclick="loadGroups()">↻ Actualiser</button>
+    </div>
+  </div>
+  <div id="groups-grid" class="group-grid"><div style="color:var(--text3);font-size:13px;padding:8px;">Chargement…</div></div>
+</div>`; }
 
 async function syncGroups() {
-    toast('Synchronisation groupes…', '');
-    const d = await api('sync_groups');
-    if (d.ok) {
-        if (d.degraded) toast('⚠️ ' + d.msg, 'warn');
-        else toast(`✅ ${d.msg} (${d.total} groupes)`, 'ok');
-        if (currentPage === 'groups') await loadGroups();
-        await loadStats();
-    } else toast(d.msg || 'Erreur', 'err');
-}
-
-async function loadGroups() {
-    const groups = await api('list_groups');
-    const c = document.getElementById('groups-grid');
-    if (!c) return;
-    if (!groups.length) { c.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px;">Aucun groupe. Cliquez sur <b>Sync Whapi</b>.</div>'; return; }
-    c.innerHTML = groups.map(g => `
-        <div class="group-card"><div class="group-card-top"><div><div class="group-name">${esc(g.nom || 'Sans nom')}</div><div class="group-id">${esc(g.groupe_id)}</div></div><span class="badge ${g.actif == '1' ? 'badge-green' : 'badge-gray'}">${g.actif == '1' ? 'Actif' : 'Inactif'}</span></div>
-        <span class="badge badge-blue">👤 ${g.nb_membres} membres</span>
-        <div class="group-footer"><button class="btn btn-ghost btn-sm" onclick="syncMembers('${esc(g.groupe_id)}')">↻ Membres</button><button class="btn btn-sm ${g.actif == '1' ? 'btn-red' : 'btn-green'}" onclick="toggleGroup('${esc(g.groupe_id)}')">${g.actif == '1' ? '🚫 Désactiver' : '✅ Activer'}</button></div></div>
-    `).join('');
-}
-
-async function toggleGroup(gid) {
-    const d = await api('toggle_group', `gid=${encodeURIComponent(gid)}`);
-    if (d.ok) { toast('Groupe mis à jour', 'ok'); await loadGroups(); await loadStats(); }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  MEMBERS
-// ═══════════════════════════════════════════════════════════
-function buildMembers() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">👤 Membres</div><div class="panel-actions"><input class="search-input" type="text" id="member-search" placeholder="Rechercher…" oninput="loadMembers()"><select class="search-input" id="member-group" style="width:auto;" onchange="loadMembers()"><option value="">Tous les groupes</option></select><button class="btn btn-dark btn-sm" onclick="syncMembers(null)">↻ Sync</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Nom</th><th>Groupe</th><th>Rôle</th><th>Violations</th><th>Actions</th></tr></thead><tbody id="members-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table></div></div>`;
+  toast('Synchronisation groupes…','');
+  const d = await api('sync_groups');
+  if(d.ok){
+    if(d.degraded) toast('⚠️ '+d.msg,'warn');
+    else toast(`✅ ${d.msg} (${d.total} groupes)`,'ok');
+    if(currentPage==='groups') loadGroups();
+    loadStats();
+  } else toast(d.msg||'Erreur','err');
 }
 
 async function syncMembers(gid) {
-    toast('Synchronisation membres…', '');
-    const d = await api('sync_members', gid ? `gid=${encodeURIComponent(gid)}` : '');
-    if (d.ok) {
-        toast('✅ ' + d.msg, 'ok');
-        if (currentPage === 'members') await loadMembersPage();
-        if (currentPage === 'groups') await loadGroups();
-        await loadStats();
-    } else toast(d.msg || 'Erreur', 'err');
+  toast('Synchronisation membres…','');
+  const d = await api('sync_members', gid?`gid=${encodeURIComponent(gid)}`:'');
+  if(d.ok){
+    toast('✅ '+d.msg,'ok');
+    if(currentPage==='members') loadMembersPage();
+    if(currentPage==='groups')  loadGroups();
+    loadStats();
+  } else toast(d.msg||'Erreur','err');
 }
 
+async function loadGroups() {
+  const groups = await api('list_groups');
+  const c = $('groups-grid'); if(!c) return;
+  if(!groups.length){c.innerHTML='<div style="padding:16px;color:var(--text3);font-size:13px;">Aucun groupe. Cliquez sur <b>Sync Whapi</b>.</div>';return;}
+  c.innerHTML = groups.map(g=>`
+  <div class="group-card">
+    <div class="group-card-top">
+      <div>
+        <div class="group-name">${esc(g.nom||'Sans nom')}</div>
+        <div class="group-id">${esc(g.groupe_id)}</div>
+      </div>
+      <span class="badge ${g.actif=='1'?'badge-green':'badge-gray'}">${g.actif=='1'?'Actif':'Inactif'}</span>
+    </div>
+    <span class="badge badge-blue">👤 ${g.nb_membres} membres</span>
+    <div class="group-footer">
+      <button class="btn btn-ghost btn-sm" onclick="syncMembers('${esc(g.groupe_id)}')">↻ Membres</button>
+      <button class="btn btn-sm ${g.actif=='1'?'btn-red':'btn-green'}" onclick="toggleGroup('${esc(g.groupe_id)}')">
+        ${g.actif=='1'?'🚫 Désactiver':'✅ Activer'}
+      </button>
+    </div>
+  </div>`).join('');
+}
+
+async function toggleGroup(gid) {
+  const d = await api('toggle_group',`gid=${encodeURIComponent(gid)}`);
+  if(d.ok){toast('Groupe mis à jour','ok');loadGroups();loadStats();}
+}
+
+// ─── MEMBERS ─────────────────────────────────────────────
+function buildMembers() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">👤 Membres</div>
+    <div class="panel-actions">
+      <input class="search-input" type="text" id="member-search" placeholder="Rechercher…" oninput="loadMembers()">
+      <select class="search-input" id="member-group" style="width:auto;" onchange="loadMembers()">
+        <option value="">Tous les groupes</option>
+      </select>
+      <button class="btn btn-dark btn-sm" onclick="syncMembers(null)">↻ Sync</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Téléphone</th><th>Nom</th><th>Groupe</th><th>Rôle</th><th>Violations</th><th>Actions</th></tr></thead>
+    <tbody id="members-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
+
 async function loadMembersPage() {
-    const groups = await api('list_groups');
-    const sel = document.getElementById('member-group');
-    if (sel) {
-        const cur = sel.value;
-        sel.innerHTML = '<option value="">Tous les groupes</option>' + groups.map(g => `<option value="${esc(g.groupe_id)}" ${g.groupe_id === cur ? 'selected' : ''}>${esc(g.nom || g.groupe_id)}</option>`).join('');
-    }
-    await loadMembers();
+  const groups = await api('list_groups');
+  const sel = $('member-group');
+  if(sel) {
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Tous les groupes</option>'+
+      groups.map(g=>`<option value="${esc(g.groupe_id)}" ${g.groupe_id===cur?'selected':''}>${esc(g.nom||g.groupe_id)}</option>`).join('');
+  }
+  loadMembers();
 }
 
 async function loadMembers() {
-    const search = document.getElementById('member-search')?.value || '';
-    const gid = document.getElementById('member-group')?.value || '';
-    const params = `search=${encodeURIComponent(search)}&gid=${encodeURIComponent(gid)}`;
-    const members = await api('list_members', params);
-    const tbody = document.getElementById('members-tbody');
-    if (!tbody) return;
-    if (!members.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Aucun membre</td></tr>'; return; }
-    tbody.innerHTML = members.map(m => {
-        const vio = parseInt(m.violation_count) || 0;
-        return `<tr><td class="mono">${esc(m.phone_formatted)}</td><td>${esc(m.profile_name || '—')}</td><td style="font-size:12px;color:var(--text2);">${esc(short(m.groupe_nom || m.groupe_id, 28))}</td><td>${m.is_admin == '1' ? '<span class="badge badge-dark">⭐ Admin</span>' : '<span class="badge badge-gray">Membre</span>'}</td><td>${vio > 0 ? `<span class="badge badge-red">${vio}</span>` : '<span class="badge badge-gray">0</span>'}</td><td><div style="display:flex;gap:5px;">${vio > 0 ? `<button class="btn btn-ghost btn-sm" onclick="resetViolations('${esc(m.phone_formatted)}')">↺</button>` : ''}<button class="btn btn-amber btn-sm" onclick="blacklistPhone('${esc(m.phone_formatted)}')">🚫</button></div></td></tr>`;
-    }).join('');
+  const search=$('member-search')?.value||'';
+  const gid=$('member-group')?.value||'';
+  const params=`search=${encodeURIComponent(search)}&gid=${encodeURIComponent(gid)}`;
+  const members=await api('list_members',params);
+  const tbody=$('members-tbody'); if(!tbody) return;
+  if(!members.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">Aucun membre</td></tr>';return;}
+  tbody.innerHTML=members.map(m=>{
+    const vio=parseInt(m.violation_count)||0;
+    return `<tr>
+      <td class="mono">${esc(m.phone_formatted)}</td>
+      <td>${esc(m.profile_name||'—')}</td>
+      <td style="font-size:12px;color:var(--text2);">${esc(short(m.groupe_nom||m.groupe_id,28))}</td>
+      <td>${m.is_admin=='1'?'<span class="badge badge-dark">⭐ Admin</span>':'<span class="badge badge-gray">Membre</span>'}</td>
+      <td>${vio>0?`<span class="badge badge-red">${vio}</span>`:'<span class="badge badge-gray">0</span>'}</td>
+      <td><div style="display:flex;gap:5px;">
+        ${vio>0?`<button class="btn btn-ghost btn-sm" onclick="resetViolations('${esc(m.phone_formatted)}')">↺</button>`:''}
+        <button class="btn btn-amber btn-sm" onclick="blacklistPhone('${esc(m.phone_formatted)}')">🚫</button>
+      </div></td></tr>`;
+  }).join('');
 }
 
 async function resetViolations(phone) {
-    const d = await api('reset_violations', `phone=${encodeURIComponent(phone)}`);
-    if (d.ok) { toast('Violations réinitialisées', 'ok'); await loadMembers(); }
+  const d=await api('reset_violations',`phone=${encodeURIComponent(phone)}`);
+  if(d.ok){toast('Violations réinitialisées','ok');loadMembers();}
 }
-
 async function blacklistPhone(phone) {
-    if (!confirm(`Blacklister ${phone} ?`)) return;
-    const d = await api('blacklist_add', `phone=${encodeURIComponent(phone)}&reason=Blacklist dashboard`);
-    if (d.ok) { toast(`🚫 ${phone} blacklisté`, 'ok'); await loadMembers(); await loadStats(); }
+  if(!confirm(`Blacklister ${phone} ?`)) return;
+  const d=await api('blacklist_add',`phone=${encodeURIComponent(phone)}&reason=Blacklist%20dashboard`);
+  if(d.ok){toast(`🚫 ${phone} blacklisté`,'ok');loadMembers();loadStats();}
 }
 
-// ═══════════════════════════════════════════════════════════
-//  INBOX
-// ═══════════════════════════════════════════════════════════
-function buildInbox() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">📥 Inbox — Contacts</div><button class="btn btn-ghost btn-sm" onclick="loadInbox()">↻ Actualiser</button></div><div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Nom</th><th>Dernier message</th><th>Date</th><th>Statut</th></tr></thead><tbody id="inbox-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table></div></div>`;
-}
+// ─── INBOX ───────────────────────────────────────────────
+function buildInbox() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📥 Inbox — Contacts</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadInbox()">↻ Actualiser</button>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Téléphone</th><th>Nom</th><th>Dernier message</th><th>Date</th><th>Statut</th></tr></thead>
+    <tbody id="inbox-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
 
 async function loadInbox() {
-    const list = await api('list_inbox');
-    const tbody = document.getElementById('inbox-tbody');
-    if (!tbody) return;
-    if (!list.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Aucun contact inbox</td></tr>'; return; }
-    tbody.innerHTML = list.map(c => `<tr><td class="mono">${esc(c.phone_number)}</td><td>${esc(c.full_name || '—')}</td><td>${esc(short(c.last_message))}</td><td class="mono">${fmtDate(c.last_message_at)}</td><td>${c.is_blacklisted == '1' ? '<span class="badge badge-red">🚫 Bloqué</span>' : '<span class="badge badge-green">✅ OK</span>'}</td></tr>`).join('');
+  const list=await api('list_inbox');
+  const tbody=$('inbox-tbody'); if(!tbody) return;
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Aucun contact inbox</td></tr>';return;}
+  tbody.innerHTML=list.map(c=>`<tr>
+    <td class="mono">${esc(c.phone_number)}</td>
+    <td>${esc(c.full_name||'—')}</td>
+    <td>${esc(short(c.last_message))}</td>
+    <td class="mono">${fmtDate(c.last_message_at)}</td>
+    <td>${c.is_blacklisted=='1'?'<span class="badge badge-red">🚫 Bloqué</span>':'<span class="badge badge-green">✅ OK</span>'}</td>
+  </tr>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  BLACKLIST
-// ═══════════════════════════════════════════════════════════
-function buildBlacklist() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">🚫 Blacklist</div><div class="panel-actions"><button class="btn btn-red" onclick="document.getElementById('modal-blacklist').classList.add('open')">+ Ajouter</button><button class="btn btn-ghost btn-sm" onclick="loadBlacklist()">↻</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Numéro</th><th>Raison</th><th>Date ajout</th><th>Action</th></tr></thead><tbody id="blacklist-tbody"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody></table></div></div>`;
-}
+// ─── BLACKLIST ────────────────────────────────────────────
+function buildBlacklist() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">🚫 Blacklist</div>
+    <div class="panel-actions">
+      <button class="btn btn-red" onclick="$('modal-blacklist').classList.add('open')">+ Ajouter</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadBlacklist()">↻</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Numéro</th><th>Raison</th><th>Date ajout</th><th>Action</th></tr></thead>
+    <tbody id="blacklist-tbody"><tr class="empty-row"><td colspan="4"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
 
 async function loadBlacklist() {
-    const list = await api('list_blacklist');
-    const tbody = document.getElementById('blacklist-tbody');
-    if (!tbody) return;
-    if (!list.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Aucun numéro blacklisté 🎉</td></tr>'; return; }
-    tbody.innerHTML = list.map(b => `<tr><td class="mono">${esc(b.phone_number)}</td><td>${esc(short(b.reason))}</td><td class="mono">${fmtDate(b.created_at)}</td><td><button class="btn btn-green btn-sm" onclick="removeBlacklist('${esc(b.phone_number)}')">↺ Débloquer</button></td></tr>`).join('');
+  const list=await api('list_blacklist');
+  const tbody=$('blacklist-tbody'); if(!tbody) return;
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="4">Aucun numéro blacklisté 🎉</td></tr>';return;}
+  tbody.innerHTML=list.map(b=>`<tr>
+    <td class="mono">${esc(b.phone_number)}</td>
+    <td>${esc(short(b.reason))}</td>
+    <td class="mono">${fmtDate(b.created_at)}</td>
+    <td><button class="btn btn-green btn-sm" onclick="removeBlacklist('${esc(b.phone_number)}')">↺ Débloquer</button></td>
+  </tr>`).join('');
 }
 
 async function doBlacklistAdd() {
-    const phone = document.getElementById('bl-phone')?.value.replace(/\D/g, '');
-    const reason = document.getElementById('bl-reason')?.value || 'Ajouté manuellement';
-    if (!phone) { toast('Numéro invalide', 'err'); return; }
-    const d = await api('blacklist_add', `phone=${encodeURIComponent(phone)}&reason=${encodeURIComponent(reason)}`);
-    if (d.ok) { toast(`🚫 ${phone} blacklisté`, 'ok'); closeModal('modal-blacklist'); if (currentPage === 'blacklist') await loadBlacklist(); await loadStats(); }
+  const phone=($('bl-phone')?.value||'').replace(/\D/g,'');
+  const reason=$('bl-reason')?.value||'Ajouté manuellement';
+  if(!phone){toast('Numéro invalide','err');return;}
+  const d=await api('blacklist_add',`phone=${encodeURIComponent(phone)}&reason=${encodeURIComponent(reason)}`);
+  if(d.ok){toast(`🚫 ${phone} blacklisté`,'ok');closeModal('modal-blacklist');if(currentPage==='blacklist')loadBlacklist();loadStats();}
 }
-
 async function removeBlacklist(phone) {
-    const d = await api('blacklist_remove', `phone=${encodeURIComponent(phone)}`);
-    if (d.ok) { toast('✅ Débloqué', 'ok'); await loadBlacklist(); await loadStats(); }
+  const d=await api('blacklist_remove',`phone=${encodeURIComponent(phone)}`);
+  if(d.ok){toast('✅ Débloqué','ok');loadBlacklist();loadStats();}
 }
 
-// ═══════════════════════════════════════════════════════════
-//  QUEUE
-// ═══════════════════════════════════════════════════════════
-function buildQueue() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">📤 File d'envoi</div><div class="panel-actions"><button class="btn btn-red btn-sm" onclick="if(confirm('Vider les complétés ?')) api('clear_queue','status=completed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider complétés</button><button class="btn btn-amber btn-sm" onclick="if(confirm('Vider les échecs ?')) api('clear_queue','status=failed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider échecs</button><button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻</button></div></div><div class="tbl-wrap"><table><thead><tr><th>Type</th><th>Cible</th><th>Message</th><th>Média</th><th>Statut</th><th>Tentatives</th><th>Créé</th></tr></thead><tbody id="queue-tbody"><tr class="empty-row"><td colspan="7"><span class="spin"></span></td></tr></tbody></table></div></div>`;
-}
+// ─── QUEUE ────────────────────────────────────────────────
+function buildQueue() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📤 File d'envoi</div>
+    <div class="panel-actions">
+      <button class="btn btn-red btn-sm" onclick="if(confirm('Vider les complétés ?'))api('clear_queue','status=completed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider complétés</button>
+      <button class="btn btn-amber btn-sm" onclick="if(confirm('Vider les échecs ?'))api('clear_queue','status=failed').then(d=>{if(d.ok){toast('Nettoyé','ok');loadQueue();}})">🗑 Vider échecs</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Type</th><th>Cible</th><th>Contenu</th><th>Média</th><th>Statut</th><th>Tentatives</th><th>Créé</th></tr></thead>
+    <tbody id="queue-tbody"><tr class="empty-row"><td colspan="7"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
 
 async function loadQueue() {
-    const list = await api('list_queue');
-    const tbody = document.getElementById('queue-tbody');
-    if (!tbody) return;
-    const stBadge = { pending: 'badge-amber', processing: 'badge-blue', completed: 'badge-green', failed: 'badge-red', retry: 'badge-purple' };
-    if (!list.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">File vide ✅</td></tr>'; return; }
-    tbody.innerHTML = list.map(q => `<tr><td><span class="badge badge-teal">${esc(q.target_type)}</span></td><td class="mono">${esc(short(q.target_id || q.phone_number, 20))}</td><td>${esc(short(q.message_data))}</td><td>${q.media_url ? `<span class="badge badge-blue">${esc(q.message_type)}</span>` : '<span class="badge badge-gray">texte</span>'}</td><td><span class="badge ${stBadge[q.status] || 'badge-gray'}">${esc(q.status)}</span></td><td class="mono">${q.retry_count}</td><td class="mono">${fmtDate(q.created_at)}</td></tr>`).join('');
+  const list=await api('list_queue');
+  const tbody=$('queue-tbody'); if(!tbody) return;
+  const stBadge={pending:'badge-amber',processing:'badge-blue',completed:'badge-green',failed:'badge-red',retry:'badge-purple'};
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="7">File vide ✅</td></tr>';return;}
+  tbody.innerHTML=list.map(q=>`<tr>
+    <td><span class="badge badge-teal">${esc(q.target_type)}</span></td>
+    <td class="mono">${esc(short(q.target_id||q.phone_number,20))}</td>
+    <td>${esc(short(q.message_data))}</td>
+    <td>${q.media_url?`<span class="badge badge-blue">${esc(q.message_type)}</span>`:'<span class="badge badge-gray">texte</span>'}</td>
+    <td><span class="badge ${stBadge[q.status]||'badge-gray'}">${esc(q.status)}</span></td>
+    <td class="mono">${q.retry_count}</td>
+    <td class="mono">${fmtDate(q.created_at)}</td></tr>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  LOGS
-// ═══════════════════════════════════════════════════════════
-function buildLogs() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">📋 Logs de messages</div><button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻</button></div><div class="tbl-wrap"><table><thead><tr><th>Téléphone</th><th>Type</th><th>Contenu</th><th>Statut</th><th>Erreur</th><th>Date</th></tr></thead><tbody id="logs-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table></div></div>`;
-}
+// ─── LOGS ─────────────────────────────────────────────────
+function buildLogs() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📋 Logs de messages</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻</button>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Téléphone</th><th>Type</th><th>Contenu</th><th>Statut</th><th>Erreur</th><th>Date</th></tr></thead>
+    <tbody id="logs-tbody"><tr class="empty-row"><td colspan="6"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
 
 async function loadLogs() {
-    const list = await api('list_logs');
-    const tbody = document.getElementById('logs-tbody');
-    if (!tbody) return;
-    const stBadge = { sent: 'badge-green', failed: 'badge-red', received: 'badge-blue', processing: 'badge-amber' };
-    if (!list.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Aucun log</td></tr>'; return; }
-    tbody.innerHTML = list.map(l => `<tr><td class="mono">${esc(l.phone_number)}</td><td><span class="badge badge-gray">${esc(l.message_type || '?')}</span></td><td>${esc(short(l.message_content))}</td><td><span class="badge ${stBadge[l.status] || 'badge-gray'}">${esc(l.status)}</span></td><td style="color:var(--red);font-size:12px;">${esc(short(l.error_message || '', 30))}</td><td class="mono">${fmtDate(l.sent_at || l.created_at)}</td></tr>`).join('');
+  const list=await api('list_logs');
+  const tbody=$('logs-tbody'); if(!tbody) return;
+  const stBadge={sent:'badge-green',failed:'badge-red',received:'badge-blue',processing:'badge-amber'};
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">Aucun log</td></tr>';return;}
+  tbody.innerHTML=list.map(l=>`<tr>
+    <td class="mono">${esc(l.phone_number)}</td>
+    <td><span class="badge badge-gray">${esc(l.message_type||'?')}</span></td>
+    <td>${esc(short(l.message_content))}</td>
+    <td><span class="badge ${stBadge[l.status]||'badge-gray'}">${esc(l.status)}</span></td>
+    <td style="color:var(--red);font-size:12px;">${esc(short(l.error_message||'',30))}</td>
+    <td class="mono">${fmtDate(l.sent_at||l.created_at)}</td></tr>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  SECURITY
-// ═══════════════════════════════════════════════════════════
-function buildSecurity() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">🛡 Logs de sécurité</div><button class="btn btn-ghost btn-sm" onclick="loadSecurity()">↻</button></div><div class="tbl-wrap"></table><thead>汽<th>Expéditeur</th><th>Action</th><th>Raison</th><th>Groupe</th><th>Date</th></tr></thead><tbody id="security-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table></div></div>`;
-}
+// ─── SECURITY ─────────────────────────────────────────────
+function buildSecurity() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">🛡 Logs de sécurité</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadSecurity()">↻</button>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Expéditeur</th><th>Action</th><th>Raison</th><th>Groupe</th><th>Date</th></tr></thead>
+    <tbody id="security-tbody"><tr class="empty-row"><td colspan="5"><span class="spin"></span></td></tr></tbody></table>
+  </div>
+</div>`; }
 
 async function loadSecurity() {
-    const list = await api('list_security');
-    const tbody = document.getElementById('security-tbody');
-    if (!tbody) return;
-    if (!list.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Aucune violation 🎉</td></tr>'; return; }
-    tbody.innerHTML = list.map(l => `<td><td class="mono">${esc(l.sender)}</td><td><span class="badge badge-red">${esc(l.action_type)}</span></td><td>${esc(short(l.reason))}</td><td class="mono" style="font-size:11px;">${esc(short(l.group_id, 22))}</td><td class="mono">${fmtDate(l.created_at)}</td></tr>`).join('');
+  const list=await api('list_security');
+  const tbody=$('security-tbody'); if(!tbody) return;
+  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Aucune violation 🎉</td></tr>';return;}
+  tbody.innerHTML=list.map(l=>`<tr>
+    <td class="mono">${esc(l.sender)}</td>
+    <td><span class="badge badge-red">${esc(l.action_type)}</span></td>
+    <td>${esc(short(l.reason))}</td>
+    <td class="mono" style="font-size:11px;">${esc(short(l.group_id,22))}</td>
+    <td class="mono">${fmtDate(l.created_at)}</td></tr>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  SETTINGS
-// ═══════════════════════════════════════════════════════════
-function buildSettings() {
-    return `<div class="panel"><div class="panel-header"><div class="panel-title">⚙️ Paramètres système</div><button class="btn btn-ghost btn-sm" onclick="loadSettings()">↻</button></div><div id="settings-grid" class="settings-grid"><div style="padding:16px;color:var(--text3);">Chargement…</div></div></div><div class="panel" style="margin-top:4px;"><div class="panel-header"><div class="panel-title">🔍 Diagnostic système</div></div><div style="padding:16px;"><button class="btn btn-dark" onclick="runDiag()">▶ Lancer le diagnostic</button><pre id="diag-out" style="margin-top:14px;background:var(--wa-sidebar);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--text);white-space:pre-wrap;display:none;"></pre></div></div>`;
-}
+// ─── SETTINGS ─────────────────────────────────────────────
+function buildSettings() { return `
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">⚙️ Paramètres système</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadSettings()">↻</button>
+  </div>
+  <div id="settings-grid" class="settings-grid"><div style="padding:16px;color:var(--text3);">Chargement…</div></div>
+</div>
+<div class="panel" style="margin-top:4px;">
+  <div class="panel-header"><div class="panel-title">🔍 Diagnostic système</div></div>
+  <div style="padding:16px;">
+    <button class="btn btn-dark" onclick="runDiag()">▶ Lancer le diagnostic</button>
+    <pre id="diag-out" style="margin-top:14px;background:var(--wa-sidebar);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--text);white-space:pre-wrap;display:none;"></pre>
+  </div>
+</div>`; }
 
 async function loadSettings() {
-    const list = await api('list_settings');
-    const grid = document.getElementById('settings-grid');
-    if (!grid) return;
-    if (!list.length) { grid.innerHTML = '<div style="padding:16px;color:var(--text3);">Aucun paramètre</div>'; return; }
-    grid.innerHTML = list.map(s => `<div class="setting-item"><div class="setting-key">${esc(s.setting_key)}</div><div style="display:flex;gap:6px;"><input class="setting-input" type="text" value="${esc(s.setting_value || '')}" id="set-${esc(s.setting_key)}" onkeydown="if(event.key==='Enter')saveSetting('${esc(s.setting_key)}')"><button class="btn btn-green btn-sm" onclick="saveSetting('${esc(s.setting_key)}')">💾</button></div></div>`).join('');
+  const list=await api('list_settings');
+  const grid=$('settings-grid'); if(!grid) return;
+  if(!list.length){grid.innerHTML='<div style="padding:16px;color:var(--text3);">Aucun paramètre</div>';return;}
+  grid.innerHTML=list.map(s=>`
+  <div class="setting-item">
+    <div class="setting-key">${esc(s.setting_key)}</div>
+    <div style="display:flex;gap:6px;">
+      <input class="setting-input" type="text" value="${esc(s.setting_value||'')}" id="set-${esc(s.setting_key)}" onkeydown="if(event.key==='Enter')saveSetting('${esc(s.setting_key)}')">
+      <button class="btn btn-green btn-sm" onclick="saveSetting('${esc(s.setting_key)}')">💾</button>
+    </div>
+  </div>`).join('');
 }
 
 async function saveSetting(key) {
-    const val = document.getElementById(`set-${key}`)?.value || '';
-    const d = await api('save_setting', `key=${encodeURIComponent(key)}&val=${encodeURIComponent(val)}`);
-    if (d.ok) toast(`💾 ${key} sauvegardé`, 'ok');
+  const val=$(`set-${key}`)?.value||'';
+  const d=await api('save_setting',`key=${encodeURIComponent(key)}&val=${encodeURIComponent(val)}`);
+  if(d.ok) toast(`💾 ${key} sauvegardé`,'ok');
 }
 
 async function runDiag() {
-    const out = document.getElementById('diag-out');
-    if (!out) return;
-    out.style.display = 'block';
-    out.textContent = 'Diagnostic en cours…';
-    const d = await api('diag');
-    out.textContent = JSON.stringify(d.diag || d, null, 2);
+  const out=$('diag-out'); if(!out) return;
+  out.style.display='block'; out.textContent='Diagnostic en cours…';
+  const d=await api('diag');
+  out.textContent=JSON.stringify(d.diag||d,null,2);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PAGES & NAVIGATION
-// ═══════════════════════════════════════════════════════════
-const PAGES = {
-    overview: { title: 'Vue d\'ensemble', build: buildOverview, load: loadOverview },
-    broadcast: { title: 'Diffusion', build: buildBroadcast, load: initBroadcast },
-    groups: { title: 'Groupes', build: buildGroups, load: loadGroups },
-    members: { title: 'Membres', build: buildMembers, load: loadMembersPage },
-    inbox: { title: 'Inbox', build: buildInbox, load: loadInbox },
-    blacklist: { title: 'Blacklist', build: buildBlacklist, load: loadBlacklist },
-    queue: { title: 'File d\'envoi', build: buildQueue, load: loadQueue },
-    logs: { title: 'Logs', build: buildLogs, load: loadLogs },
-    security: { title: 'Sécurité', build: buildSecurity, load: loadSecurity },
-    settings: { title: 'Paramètres', build: buildSettings, load: loadSettings }
-};
+// ─── Keyboard + init ──────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+});
 
-function goPage(name) {
-    const pg = PAGES[name];
-    if (!pg) return;
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    let el = document.getElementById('page-' + name);
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'page-' + name;
-        el.className = 'page';
-        el.innerHTML = pg.build();
-        document.getElementById('main-content').appendChild(el);
-    }
-    el.classList.add('active');
-    document.getElementById('page-title').textContent = pg.title;
-    currentPage = name;
-    pg.load();
-}
-
-// ═══════════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════════
+// Init
 goPage('overview');
-setInterval(loadStats, 60000);
+setInterval(loadStats,60000);
 </script>
+
+<?php endif; ?>
+</body>
+</html>
