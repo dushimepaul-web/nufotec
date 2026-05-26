@@ -593,5 +593,365 @@ class Mobile extends MY_Controller {
         
         return $similar;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * GET: Liste des produits avec pagination et filtres
+     * Endpoint: /api/products?page=1&limit=10&category_id=1&search=nom
+     */
+    public function products()
+    {
+        $page = (int) $this->input->get('page') ?: 1;
+        $limit = (int) $this->input->get('limit') ?: 10;
+        $category_id = $this->input->get('category_id');
+        $search = $this->input->get('search');
+        $offset = ($page - 1) * $limit;
+        
+        // Requête de base
+        $this->db->select("id, main_image, slug, price, category_id, created_at, title, description, in_vedette, price_request_count");
+        $this->db->where('is_active', 1);
+        $this->db->where('deleted_at IS NULL');
+        
+        if (!empty($category_id) && $category_id != 'all') {
+            $this->db->where('category_id', $category_id);
+        }
+        
+        if (!empty($search)) {
+            $this->db->group_start();
+            $this->db->like('title', $search);
+            $this->db->or_like('description', $search);
+            $this->db->group_end();
+        }
+        
+        // Compter le total
+        $total_products = $this->db->count_all_results('advertise_product', FALSE);
+        
+        // Récupérer les produits
+        $this->db->limit($limit, $offset);
+        $this->db->order_by('in_vedette', 'DESC');
+        $this->db->order_by('id', 'DESC');
+        $products_db = $this->db->get()->result_array();
+        
+        $products = [];
+        foreach ($products_db as $p) {
+            $image_path = !empty($p['main_image']) ? base_url('attachments/Products/' . $p['main_image']) : base_url('attachments/Products/default-product.png');
+            $products[] = [
+                'id' => (int) $p['id'],
+                'title' => $p['title'],
+                'description' => strip_tags($p['description']),
+                'price' => $p['price'],
+                'price_request_count' => (int) ($p['price_request_count'] ?? 0),
+                'image' => $image_path,
+                'slug' => $p['slug'],
+                'category_id' => (int) $p['category_id'],
+                'in_vedette' => (int) ($p['in_vedette'] ?? 0),
+                'created_at' => $p['created_at']
+            ];
+        }
+        
+        $response = [
+            'success' => true,
+            'data' => $products,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total' => (int) $total_products,
+                'total_pages' => ceil($total_products / $limit)
+            ]
+        ];
+        
+        echo json_encode($response);
+    }
+    
+    /**
+     * GET: Détail d'un produit
+     * Endpoint: /api/products/detail/{id}
+     */
+    public function detail($id)
+    {
+        // Rechercher par ID ou par slug
+        $this->db->select("id, main_image, slug, price, category_id, created_at, title, description, in_vedette");
+        $this->db->where('is_active', 1);
+        $this->db->where('deleted_at IS NULL');
+        
+        if (is_numeric($id)) {
+            $this->db->where('id', $id);
+        } else {
+            $this->db->where('slug', $id);
+        }
+        
+        $product = $this->db->get('advertise_product')->row_array();
+        
+        if (empty($product)) {
+            echo json_encode(['success' => false, 'message' => 'Produit non trouvé']);
+            return;
+        }
+        
+        $image_path = !empty($product['main_image']) ? base_url('attachments/Products/' . $product['main_image']) : base_url('attachments/Products/default-product.png');
+        
+        // Récupérer les produits similaires
+        $similar_products = [];
+        if (!empty($product['category_id'])) {
+            $this->db->select("id, main_image, slug, price, title");
+            $this->db->where('category_id', $product['category_id']);
+            $this->db->where('is_active', 1);
+            $this->db->where('id !=', $product['id']);
+            $this->db->where('deleted_at IS NULL');
+            $this->db->limit(4);
+            $similar = $this->db->get('advertise_product')->result_array();
+            
+            foreach ($similar as $s) {
+                $similar_products[] = [
+                    'id' => (int) $s['id'],
+                    'title' => $s['title'],
+                    'price' => $s['price'],
+                    'image' => !empty($s['main_image']) ? base_url('attachments/Products/' . $s['main_image']) : base_url('attachments/Products/default-product.png'),
+                    'slug' => $s['slug']
+                ];
+            }
+        }
+        
+        $response = [
+            'success' => true,
+            'data' => [
+                'id' => (int) $product['id'],
+                'title' => $product['title'],
+                'description' => $product['description'],
+                'price' => $product['price'],
+                'image' => $image_path,
+                'slug' => $product['slug'],
+                'category_id' => (int) $product['category_id'],
+                'created_at' => $product['created_at'],
+                'similar_products' => $similar_products
+            ]
+        ];
+        
+        echo json_encode($response);
+    }
+    
+    /**
+     * GET: Liste des catégories de produits
+     * Endpoint: /api/products/categories
+     */
+    public function categoriepro()
+    {
+        $categories = $this->Model->read('product_categories', ['is_active' => 1], 'name', 'ASC');
+        
+        $data = [];
+        foreach ($categories as $cat) {
+            // Compter les produits dans cette catégorie
+            $product_count = $this->Model->count('advertise_product', [
+                'category_id' => $cat->id, 
+                'is_active' => 1,
+                'deleted_at IS NULL' => null
+            ]);
+            
+            $data[] = [
+                'id' => (int) $cat->id,
+                'name' => $cat->name,
+                'product_count' => $product_count,
+                'image' => !empty($cat->image) ? base_url('attachments/Categories/' . $cat->image) : null
+            ];
+        }
+        
+        echo json_encode(['success' => true, 'data' => $data]);
+    }
+    
+    /**
+     * POST: Enregistrer une demande de commande
+     * Endpoint: /api/products/save_order
+     * Body: product_id, customer_name, customer_phone, customer_country, customer_city, customer_address, customer_notes
+     */
+    public function save_order()
+    {
+        // Récupérer les données POST
+        $product_id = $this->input->post('product_id');
+        $customer_name = trim($this->input->post('customer_name'));
+        $customer_phone = trim($this->input->post('customer_phone'));
+        $customer_country = trim($this->input->post('customer_country'));
+        $customer_city = trim($this->input->post('customer_city'));
+        $customer_address = trim($this->input->post('customer_address'));
+        $customer_notes = trim($this->input->post('customer_notes'));
+        
+        // Validation
+        if (empty($product_id) || empty($customer_name) || empty($customer_phone) || 
+            empty($customer_country) || empty($customer_city) || empty($customer_address)) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Tous les champs obligatoires doivent être remplis'
+            ]);
+            return;
+        }
+        
+        // Vérifier si le produit existe
+        $product = $this->Model->readOne('advertise_product', ['id' => $product_id, 'is_active' => 1]);
+        if (empty($product)) {
+            echo json_encode(['success' => false, 'message' => 'Produit non trouvé']);
+            return;
+        }
+        
+        // Incrémenter le compteur de demandes
+        $this->db->query("UPDATE advertise_product SET price_request_count = price_request_count + 1 WHERE id = ?", [$product_id]);
+        
+        // Préparer les données pour la commande
+        $order_data = [
+            'product_id' => $product_id,
+            'customer_name' => $customer_name,
+            'customer_phone' => $customer_phone,
+            'customer_country' => $customer_country,
+            'customer_city' => $customer_city,
+            'customer_address' => $customer_address,
+            'customer_notes' => $customer_notes,
+            'product_title' => $product->title,
+            'product_price' => $product->price,
+            'order_status' => 'pending',
+            'ip_address' => $this->input->ip_address(),
+            'user_agent' => $this->agent->agent_string(),
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+        
+        // Insérer dans la base de données
+        $order_id = $this->Model->create('order_requests', $order_data);
+        
+        if ($order_id) {
+            // Générer le message WhatsApp
+            $whatsapp_message = "*NOUVELLE COMMANDE NUFOTEC*%0A%0A";
+            $whatsapp_message .= "*Produit:* {$product->title}%0A";
+            $whatsapp_message .= "*Prix:* {$product->price} BIF%0A";
+            $whatsapp_message .= "*Client:* {$customer_name}%0A";
+            $whatsapp_message .= "*Téléphone:* {$customer_phone}%0A";
+            $whatsapp_message .= "*Pays:* {$customer_country}%0A";
+            $whatsapp_message .= "*Ville:* {$customer_city}%0A";
+            $whatsapp_message .= "*Adresse:* {$customer_address}%0A";
+            if (!empty($customer_notes)) {
+                $whatsapp_message .= "*Notes:* {$customer_notes}%0A";
+            }
+            $whatsapp_message .= "%0A📅 Date: " . date('d/m/Y H:i');
+            
+            echo json_encode([
+                'success' => true, 
+                'order_id' => $order_id,
+                'whatsapp_message' => $whatsapp_message,
+                'whatsapp_number' => '68862945',
+                'message' => 'Demande enregistrée avec succès'
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'enregistrement']);
+        }
+    }
+    
+    /**
+     * POST: Incrémenter le compteur de demande de prix
+     * Endpoint: /api/products/increment_price_request
+     * Body: product_id
+     */
+    public function increment_price_request()
+    {
+        $product_id = $this->input->post('product_id');
+        
+        if (empty($product_id)) {
+            echo json_encode(['success' => false, 'message' => 'ID produit requis']);
+            return;
+        }
+        
+        $this->db->query("UPDATE advertise_product SET price_request_count = price_request_count + 1 WHERE id = ?", [$product_id]);
+        
+        if ($this->db->affected_rows() > 0) {
+            $new_count = $this->db->query("SELECT price_request_count FROM advertise_product WHERE id = ?", [$product_id])->row()->price_request_count;
+            echo json_encode([
+                'success' => true,
+                'product_id' => $product_id,
+                'new_count' => $new_count
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Produit non trouvé']);
+        }
+    }
+    
+    /**
+     * GET: Produits vedettes (mis en avant)
+     * Endpoint: /api/products/featured
+     */
+    public function featured()
+    {
+        $limit = (int) $this->input->get('limit') ?: 6;
+        
+        $this->db->select("id, main_image, slug, price, title");
+        $this->db->where('is_active', 1);
+        $this->db->where('deleted_at IS NULL');
+        $this->db->where('in_vedette', 1);
+        $this->db->limit($limit);
+        $this->db->order_by('id', 'DESC');
+        $products_db = $this->db->get('advertise_product')->result_array();
+        
+        $products = [];
+        foreach ($products_db as $p) {
+            $image_path = !empty($p['main_image']) ? base_url('attachments/Products/' . $p['main_image']) : base_url('attachments/Products/default-product.png');
+            $products[] = [
+                'id' => (int) $p['id'],
+                'title' => $p['title'],
+                'price' => $p['price'],
+                'image' => $image_path,
+                'slug' => $p['slug']
+            ];
+        }
+        
+        echo json_encode(['success' => true, 'data' => $products]);
+    }
+    
+    /**
+     * POST: Envoyer un message WhatsApp pour le produit
+     * Endpoint: /api/products/send_whatsapp
+     * Body: product_id, phone_number (optionnel)
+     */
+    public function send_whatsapp()
+    {
+        $product_id = $this->input->post('product_id');
+        $customer_phone = $this->input->post('phone_number');
+        
+        $product = $this->Model->readOne('advertise_product', ['id' => $product_id]);
+        if (empty($product)) {
+            echo json_encode(['success' => false, 'message' => 'Produit non trouvé']);
+            return;
+        }
+        
+        $message = "*NUFOTEC BURUNDI - Information produit*%0A%0A";
+        $message .= "*Produit:* {$product->title}%0A";
+        $message .= "*Prix:* {$product->price} BIF%0A";
+        $message .= "%0A";
+        $message .= "https://nufotec.bi/produits/{$product->slug}%0A%0A";
+        $message .= "Pour plus d'informations, contactez-nous!";
+        
+        $phone = !empty($customer_phone) ? $customer_phone : '68862945';
+        
+        echo json_encode([
+            'success' => true,
+            'whatsapp_url' => "https://wa.me/{$phone}?text={$message}",
+            'message' => $message
+        ]);
+    }
+
 }
 ?>
