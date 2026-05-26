@@ -759,20 +759,25 @@ public function categoriepro()
 {
     $categories = $this->Model->read('product_categories', null, 'name', 'ASC');
     
-    // Vérifiez si $categories n'est pas vide et est un tableau
-    if (empty($categories) || !is_array($categories)) {
+    if (empty($categories)) {
         echo json_encode(['success' => true, 'data' => []]);
         return;
     }
     
     $data = [];
     foreach ($categories as $cat) {
-        // Accès comme tableau au lieu d'objet
-        $cat_id = isset($cat['id']) ? $cat['id'] : 0;
-        $cat_name = isset($cat['name']) ? $cat['name'] : '';
-        $cat_image = isset($cat['image']) ? $cat['image'] : '';
+        // Vérifier si c'est un objet ou un tableau
+        if (is_object($cat)) {
+            $cat_id = $cat->id;
+            $cat_name = $cat->name;
+            $cat_image = $cat->image ?? '';
+        } else {
+            $cat_id = $cat['id'] ?? 0;
+            $cat_name = $cat['name'] ?? '';
+            $cat_image = $cat['image'] ?? '';
+        }
         
-        // Compter les produits dans cette catégorie
+        // Compter les produits
         $product_count = $this->Model->count('advertise_product', [
             'category_id' => $cat_id, 
             'is_active' => 1,
@@ -787,10 +792,12 @@ public function categoriepro()
         ];
     }
     
-    // Ajouter le header JSON
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => $data]);
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode(['success' => true, 'data' => $data]));
 }
+
+
     
     /**
      * POST: Enregistrer une demande de commande
