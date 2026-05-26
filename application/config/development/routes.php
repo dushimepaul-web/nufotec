@@ -452,7 +452,7 @@ $route['api/mobile/record-view'] = 'Api/Mobile/recordViewApi';
 // API Routes pour les produits
 $route['api/products'] = 'Api/Mobile/products';
 $route['api/products/detail/(:any)'] = 'Api/Mobile/detail/$1';
-$route['api/products/categories'] = 'Api/Mobile/categories';
+$route['api/products/categories'] = 'Api/Mobile/categoriepro';
 $route['api/products/featured'] = 'Api/Mobile/featured';
 $route['api/products/save_order'] = 'Api/Mobile/save_order';
 $route['api/products/send_whatsapp'] = 'Api/Mobile/send_whatsapp';

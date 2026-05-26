@@ -751,33 +751,46 @@ class Mobile extends MY_Controller {
         echo json_encode($response);
     }
     
-    /**
-     * GET: Liste des catégories de produits
-     * Endpoint: /api/products/categories
-     */
-    public function categoriepro()
-    {
-        $categories = $this->Model->read('product_categories', ['is_active' => 1], 'name', 'ASC');
-        
-        $data = [];
-        foreach ($categories as $cat) {
-            // Compter les produits dans cette catégorie
-            $product_count = $this->Model->count('advertise_product', [
-                'category_id' => $cat->id, 
-                'is_active' => 1,
-                'deleted_at IS NULL' => null
-            ]);
-            
-            $data[] = [
-                'id' => (int) $cat->id,
-                'name' => $cat->name,
-                'product_count' => $product_count,
-                'image' => !empty($cat->image) ? base_url('attachments/Categories/' . $cat->image) : null
-            ];
-        }
-        
-        echo json_encode(['success' => true, 'data' => $data]);
+   /**
+ * GET: Liste des catégories de produits
+ * Endpoint: /api/products/categories
+ */
+public function categoriepro()
+{
+    $categories = $this->Model->read('product_categories', null, 'name', 'ASC');
+    
+    // Vérifiez si $categories n'est pas vide et est un tableau
+    if (empty($categories) || !is_array($categories)) {
+        echo json_encode(['success' => true, 'data' => []]);
+        return;
     }
+    
+    $data = [];
+    foreach ($categories as $cat) {
+        // Accès comme tableau au lieu d'objet
+        $cat_id = isset($cat['id']) ? $cat['id'] : 0;
+        $cat_name = isset($cat['name']) ? $cat['name'] : '';
+        $cat_image = isset($cat['image']) ? $cat['image'] : '';
+        
+        // Compter les produits dans cette catégorie
+        $product_count = $this->Model->count('advertise_product', [
+            'category_id' => $cat_id, 
+            'is_active' => 1,
+            'deleted_at' => null
+        ]);
+        
+        $data[] = [
+            'id' => (int) $cat_id,
+            'name' => $cat_name,
+            'product_count' => $product_count,
+            'image' => !empty($cat_image) ? base_url('attachments/Categories/' . $cat_image) : null
+        ];
+    }
+    
+    // Ajouter le header JSON
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'data' => $data]);
+}
     
     /**
      * POST: Enregistrer une demande de commande
