@@ -1012,5 +1012,175 @@ public function categoriepro()
         ]);
     }
 
+    /**
+     * GET /api/mobile/settings
+     * Paramètres dynamiques de l'application mobile
+     * Tous les textes statiques de l'app sont configurables ici
+     */
+    public function settings()
+    {
+        $lang = $this->getCurrentLang();
+
+        $site_name = 'NUFOTEC';
+        $site_subtitle = 'BURUNDI';
+
+$settings = [
+    'app_name' => $site_name,
+    'app_subtitle' => $site_subtitle,
+    'tagline' => 'Votre référence en médias numériques, produits et services au Burundi',
+    'marque' => 'nufotec',
+    'version' => '1.0.0',
+    'nav_items' => [
+        ['icon' => 'home', 'label' => 'Accueil', 'route' => 'index'],
+        ['icon' => 'search', 'label' => 'Recherche', 'route' => 'search'],
+        ['icon' => 'compass', 'label' => 'Explorer', 'route' => 'explore'],
+        ['icon' => 'cart', 'label' => 'Produits', 'route' => 'produits'],
+        ['icon' => 'library', 'label' => 'Bibliothèque', 'route' => 'library'],
+    ],
+    'header' => [
+        'home_title' => 'Accueil',
+        'tagline' => 'Votre référence en médias numériques, produits et services au Burundi',
+    ],
+    'home' => [
+        'marque' => 'nufotec',
+        'tagline' => 'Votre référence en médias numériques, produits et services au Burundi',
+        'stats_label' => 'En chiffres',
+        'stats' => [
+            ['icon' => 'musical-notes', 'value' => '500+', 'label' => 'Médias'],
+            ['icon' => 'cart', 'value' => '200+', 'label' => 'Produits'],
+            ['icon' => 'people', 'value' => '10k+', 'label' => 'Utilisateurs'],
+        ],
+        'actions_title' => 'Nos services',
+        'actions' => [
+            ['icon' => 'play-circle', 'label' => 'Médias', 'desc' => 'Vidéos, audios, podcasts', 'route' => 'explore'],
+            ['icon' => 'cart', 'label' => 'Boutique', 'desc' => 'Produits et services', 'route' => 'produits'],
+            ['icon' => 'chatbubbles', 'label' => 'Consultation', 'desc' => 'Conseils personnalisés', 'route' => 'consultation'],
+        ],
+        'featured_title' => 'Produits à la une',
+        'promo_banner' => [
+            'visible' => true,
+            'text' => 'Découvrez nos nouveaux médias exclusifs !',
+            'button' => 'Explorer',
+            'route' => 'explore',
+        ],
+    ],
+    'consultation' => [
+        'title' => 'Consultation en ligne',
+        'subtitle' => 'Besoin de conseils ou d\'accompagnement ? Contactez-nous directement via WhatsApp.',
+        'local_label' => 'Burundi',
+        'local_price' => '40 000 FBu',
+        'international_label' => 'International',
+        'international_price' => '50 USD / 50 EUR',
+        'submit_text' => 'Envoyer via WhatsApp',
+        'whatsapp_number' => '79666439',
+    ],
+    'player' => [
+        'like_text' => "J'aime",
+        'save_text' => 'Sauver',
+        'share_text' => 'Partager',
+        'download_text' => 'Télécharger',
+        'offline_text' => 'Hors-ligne',
+        'downloading_text' => 'Chargement…',
+        'suggestions_text' => 'Suggestions',
+        'loading_text' => 'Chargement…',
+        'back_text' => 'Retour',
+        'already_offline' => 'Déjà disponible hors-ligne',
+        'already_offline_desc' => 'Ce média est déjà téléchargé sur votre appareil.',
+        'youtube_not_downloadable' => 'Les vidéos YouTube ne peuvent pas être téléchargées hors-ligne.',
+        'no_file' => "Ce média n'a pas de fichier téléchargeable.",
+    ],
+    'library' => [
+        'title' => 'Bibliothèque',
+        'login_title' => 'Connectez-vous',
+        'login_subtitle' => 'Accédez à vos médias, commentaires et playlists',
+        'login_button' => 'Se connecter',
+        'menu_items' => [
+            ['icon' => 'time-outline', 'label' => 'Historique', 'subtitle' => 'Médias récemment vus', 'color' => 'gold'],
+            ['icon' => 'thumbs-up-outline', 'label' => 'Médias aimés', 'subtitle' => "Vos j'aimes", 'color' => 'red'],
+            ['icon' => 'bookmark-outline', 'label' => 'Enregistrés', 'subtitle' => 'Regarder plus tard', 'color' => 'green'],
+            ['icon' => 'list-outline', 'label' => 'Playlists', 'subtitle' => 'Vos listes de lecture', 'color' => 'gold'],
+        ],
+    ],
+    'products' => [
+        'title' => 'Produits',
+        'search_placeholder' => 'Rechercher un produit…',
+        'detail_button' => 'Détails',
+        'featured_text' => 'Vedette',
+        'order_text' => 'Commander',
+        'quantity_text' => 'Quantité',
+        'details_title' => 'Détails du produit',
+        'price_request_text' => 'Demander le prix réel',
+        'similar_title' => 'Produits similaires',
+    ],
+    'search' => [
+        'placeholder' => 'Rechercher des médias...',
+        'hint' => 'Tapez pour chercher…',
+    ],
+    'media' => [
+        'no_media' => 'Aucun média disponible',
+        'trending' => 'Tendances',
+    ],
+    'offline' => [
+        'title' => 'Téléchargements',
+        'empty_title' => 'Aucun média hors-ligne',
+        'empty_text' => 'Téléchargez des vidéos, audios ou PDFs depuis l\'écran de lecture pour y accéder sans connexion.',
+        'empty_button' => 'Parcourir les médias',
+        'clear_all' => 'Tout effacer',
+        'delete_title' => 'Supprimer le téléchargement',
+    ],
+    'contact' => [
+        'whatsapp' => '79666439',
+        'phone' => '(+257) 79 666 439',
+        'email' => 'nufotecburundi2026@gmail.com',
+    ],
+];
+
+        // Vérifier si une table de paramètres existe en DB pour surcharge
+        if ($this->db->table_exists('app_settings')) {
+            $db_settings = $this->db->query("
+                SELECT setting_key, setting_value 
+                FROM app_settings 
+                WHERE is_active = 1
+            ")->result_array();
+
+            foreach ($db_settings as $row) {
+                $key = $row['setting_key'];
+                $value = json_decode($row['setting_value'], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($value)) {
+                    // Merge récursif pour les objets imbriqués
+                    $this->arraySetNested($settings, $key, $value);
+                } else {
+                    $this->arraySetNested($settings, $key, $row['setting_value']);
+                }
+            }
+        }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => true,
+                'data' => $settings
+            ]));
+    }
+
+
+    
+
+    /**
+     * Définir une valeur dans un tableau multidimensionnel via une clé pointée (ex: "home.stats.0.label")
+     */
+    private function arraySetNested(&$array, $key, $value)
+    {
+        $keys = explode('.', $key);
+        $current = &$array;
+        foreach ($keys as $k) {
+            if (!isset($current[$k]) || !is_array($current[$k])) {
+                $current[$k] = [];
+            }
+            $current = &$current[$k];
+        }
+        $current = $value;
+    }
+
 }
 ?>
