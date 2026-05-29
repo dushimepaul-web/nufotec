@@ -1106,7 +1106,7 @@ $settings = [
         'hint' => 'Tapez pour chercher…',
     ],
      'media' => [
-         'title' => 'Emission',
+         'title' => 'Emission sur la santé',
         'subtitle' => 'Vidéos, audios et documents',
         'no_media' => 'Aucun média disponible',
         'trending' => 'Emission',
