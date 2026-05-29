@@ -33,73 +33,112 @@ class Mobile extends MY_Controller {
         $this->output->set_content_type('application/json');
     }
 
-    /**
-     * GET /api/mobile/medias
-     * Récupérer tous les médias (vidéos + audios)
-     */
-    public function medias()
-    {
-        $type = $this->input->get('type'); // video, audio, all
-        $limit = (int)($this->input->get('limit') ?? 50);
-        $offset = (int)($this->input->get('offset') ?? 0);
-        $category = $this->input->get('category');
-        $lang = $this->getCurrentLang();
-        
-        $sql = "
-            SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
-                   g.duree, g.date_media,
-                   g.description_{$lang} AS description,
-                   g.categorie_{$lang} AS categorie,
-                   g.credits_{$lang} AS credits,
-                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
-                   (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
-                   (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count
-            FROM galerie_medias g
-            WHERE g.est_actif = 1
-        ";
-        
-        $params = [];
-        
-        if ($type === 'video') {
-            $sql .= " AND (g.type = 'video' OR (g.type = 'link' AND g.lien IS NOT NULL AND (g.lien LIKE '%youtube%' OR g.lien LIKE '%youtu.be%')))";
-        } elseif ($type === 'audio') {
-            $sql .= " AND g.type = 'audio'";
-        }
-        
-        if (!empty($category)) {
-            $sql .= " AND g.categorie_{$lang} = ?";
-            $params[] = $category;
-        }
-        
-        $sql .= " ORDER BY g.created_at DESC LIMIT ? OFFSET ?";
-        $params[] = $limit;
-        $params[] = $offset;
-        
-        $medias = $this->db->query($sql, $params)->result_array();
-        
-        // Compter total
-        $total = $this->db->query("
-            SELECT COUNT(*) as total FROM galerie_medias g 
-            WHERE g.est_actif = 1
-            " . ($type === 'video' ? "AND (g.type = 'video' OR g.type = 'link')" : ($type === 'audio' ? "AND g.type = 'audio'" : "")) . "
-        ")->row()->total ?? 0;
-        
-        // Formater les médias
-        foreach ($medias as &$media) {
-            $media = $this->formatMediaForMobile($media);
-        }
-        
-        $this->output->set_output(json_encode([
-            'success' => true,
-            'data' => $medias,
-            'pagination' => [
-                'total' => (int)$total,
-                'limit' => $limit,
-                'offset' => $offset,
-                'has_more' => ($offset + $limit) < $total
-            ]
-        ]));
+
+
+/**
+ * GET /api/mobile/medias
+ * Récupérer les médias selon le type
+ * - all : audio + video + link uniquement
+ * - video : video + link
+ * - audio : audio uniquement
+ * - pdf : document uniquement
+ */
+public function medias()
+{
+    $type = $this->input->get('type'); // all, video, audio, pdf
+    $limit = (int)($this->input->get('limit') ?? 50);
+    $offset = (int)($this->input->get('offset') ?? 0);
+    $category = $this->input->get('category');
+    $lang = $this->getCurrentLang();
+    
+    // Définir les types à récupérer selon le paramètre
+    $allowedTypes = [];
+    
+    switch ($type) {
+        case 'video':
+            $allowedTypes = ['video', 'link'];
+            break;
+        case 'audio':
+            $allowedTypes = ['audio'];
+            break;
+        case 'pdf':
+            $allowedTypes = ['document'];
+            break;
+        case 'all':
+        default:
+            $allowedTypes = ['audio', 'video', 'link'];
+            break;
     }
+    
+    // Construction de la clause IN
+    $inClause = "'" . implode("','", $allowedTypes) . "'";
+    
+    $sql = "
+        SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
+               g.duree, g.date_media,
+               g.description_{$lang} AS description,
+               g.categorie_{$lang} AS categorie,
+               g.credits_{$lang} AS credits,
+               (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
+               (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
+               (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count
+        FROM galerie_medias g
+        WHERE g.est_actif = 1
+          AND g.type IN ({$inClause})
+    ";
+    
+    $params = [];
+    
+    // Filtrage par catégorie (si spécifiée)
+    if (!empty($category)) {
+        $sql .= " AND g.categorie_{$lang} = ?";
+        $params[] = $category;
+    }
+    
+    $sql .= " ORDER BY g.created_at DESC LIMIT ? OFFSET ?";
+    $params[] = $limit;
+    $params[] = $offset;
+    
+    $medias = $this->db->query($sql, $params)->result_array();
+    
+    // Compter le total (mêmes conditions)
+    $countSql = "
+        SELECT COUNT(*) as total FROM galerie_medias g 
+        WHERE g.est_actif = 1
+          AND g.type IN ({$inClause})
+    ";
+    
+    if (!empty($category)) {
+        $countSql .= " AND g.categorie_{$lang} = ?";
+    }
+    
+    $total = $this->db->query($countSql, $params)->row()->total ?? 0;
+    
+    // Formater les médias
+    foreach ($medias as &$media) {
+        $media = $this->formatMediaForMobile($media);
+    }
+    
+    $this->output->set_output(json_encode([
+        'success' => true,
+        'data' => $medias,
+        'filters' => [
+            'type' => $type ?: 'all',
+            'allowed_types' => $allowedTypes
+        ],
+        'pagination' => [
+            'total' => (int)$total,
+            'limit' => $limit,
+            'offset' => $offset,
+            'has_more' => ($offset + $limit) < $total
+        ]
+    ]));
+}
+
+
+
+
+
 
     /**
      * GET /api/mobile/media/:id
