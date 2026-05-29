@@ -1105,11 +1105,11 @@ $settings = [
         'placeholder' => 'Rechercher des médias...',
         'hint' => 'Tapez pour chercher…',
     ],
-    'media' => [
-        'title' => 'Emission',
+     'media' => [
+         'title' => 'Emission',
         'subtitle' => 'Vidéos, audios et documents',
         'no_media' => 'Aucun média disponible',
-        'trending' => 'EMISSION SUR LA SANTÉ',
+        'trending' => 'Emission',
     ],
     'offline' => [
         'title' => 'Téléchargements',
