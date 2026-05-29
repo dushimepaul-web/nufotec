@@ -445,6 +445,9 @@ $route['api/mobile/recent'] = 'Api/Mobile/recent';
 $route['api/mobile/playlists'] = 'Api/Mobile/playlists';
 // application/config/routes.php
 $route['api/mobile/record-view'] = 'Api/Mobile/recordViewApi';
+$route['api/mobile/settings'] = 'Api/Mobile/settings';
+
+
 
 
 
