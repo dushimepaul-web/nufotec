@@ -1031,19 +1031,19 @@ $settings = [
     'welcome_title' => 'Bienvenue sur NUFOTEC BURUNDI',
     'welcome_text' => "Votre plateforme d'information, de conseils et de solutions naturelles pour une vie meilleure.",
     'stats' => [
-        ['value' => '100+', 'label' => 'Médias', 'icon' => 'play'],
+        ['value' => '100+', 'label' => 'Emission', 'icon' => 'play'],
         ['value' => '50+', 'label' => 'Produits', 'icon' => 'cube'],
         ['value' => '24/7', 'label' => 'Support', 'icon' => 'headset'],
     ],
     'quick_actions' => [
-        ['title' => 'Médias', 'description' => 'Vidéos, audios, PDFs', 'icon' => 'play-circle', 'route' => '/medias'],
+        ['title' => 'Emission', 'description' => 'Vidéos, audios, PDFs', 'icon' => 'play-circle', 'route' => '/medias'],
         ['title' => 'Consultation', 'description' => 'Réservez un expert', 'icon' => 'calendar', 'route' => '/consultation'],
         ['title' => 'Produits', 'description' => 'Solutions naturelles', 'icon' => 'leaf', 'route' => '/produits'],
         ['title' => 'Téléchargé', 'description' => 'Hors-ligne', 'icon' => 'cloud-download', 'route' => '/OfflineScreen'],
     ],
     'nav_items' => [
         ['name' => 'Accueil', 'icon' => 'home', 'route' => '/'],
-        ['name' => 'Médias', 'icon' => 'play-circle', 'route' => '/medias'],
+        ['name' => 'Emission', 'icon' => 'play-circle', 'route' => '/medias'],
         ['name' => 'Consultation', 'icon' => 'calendar', 'route' => '/consultation'],
         ['name' => 'Produits', 'icon' => 'cube', 'route' => '/produits'],
         ['name' => 'Téléchargés', 'icon' => 'cloud-download', 'route' => '/OfflineScreen'],
