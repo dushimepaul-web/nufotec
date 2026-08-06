@@ -46,7 +46,9 @@ class PatientForm extends Public_Controller {
         $public_methods = [
             'get_countries',  // API pour les pays (accessible sans connexion)
             'medicin',        // Liste des médecins (accessible sans connexion)
-            'checkDisponibiliteMaintenant' // Vérification disponibilité
+            'checkDisponibiliteMaintenant', // Vérification disponibilité
+            'index',          // Formulaire patient (public)
+            'create'          // Soumission formulaire patient (public)
         ];
         
         $current_method = $this->router->fetch_method();
@@ -72,34 +74,9 @@ class PatientForm extends Public_Controller {
 
     public function index()
     {   
-        // Vérifier si l'utilisateur est connecté
+        // L'utilisateur peut être connecté ou non (formulaire public)
         $user_id = $this->session->userdata('user_id');
-        
-        // Si l'utilisateur n'est pas connecté, sauvegarder l'URL et rediriger
-        if (!$user_id) {
-            $current_url = current_url();
-            $query_string = $_SERVER['QUERY_STRING'];
-            if (!empty($query_string)) {
-                $current_url .= '?' . $query_string;
-            }
-            $this->session->set_userdata('login_redirect', $current_url);
-            log_message('debug', 'PatientForm: URL sauvegardée dans session: ' . $current_url);
-            redirect('Auth');
-            return;
-        }
-        
-        // Récupérer l'utilisateur connecté
-        $user = $this->getCurrentUser();
-        
-        // Vérifier s'il y a une consultation en attente de paiement
-        $patient_id = $user_id;
-        $pending_consultation = $this->Model->getPendingConsultationByPatient($patient_id);
-        
-        if ($pending_consultation) {
-            $this->session->set_flashdata('warning', 'Vous avez une consultation en attente de paiement. Veuillez finaliser votre paiement.');
-            redirect('Consultations/Payment/index/' . $pending_consultation['numero_consultation']);
-            return;
-        }
+        $user = $user_id ? $this->getCurrentUser() : null;
 
         // Récupérer l'UUID du médecin depuis GET ou POST
         $doctor_uuid = $this->input->get('doctor_uuid') ?: $this->input->post('selected_doctor_uuid');
@@ -138,8 +115,8 @@ class PatientForm extends Public_Controller {
             'title'          => 'Nouvelle consultation - NUFOTEC',
             'pays'           => $this->Model->read('pays', null, 'pays', 'ASC'),
             'products'       => $this->Model->read('advertise_product', null, 'id', 'DESC'),
-            'mode_payements' => $this->Model->read('mode_payement', null, 'id_mode_payement'),
-            'is_logged_in'   => TRUE,
+            'mode_payements' => $this->Model->getActivePaymentMethods(),
+            'is_logged_in'   => (bool)$user_id,
             'user_id'        => $user_id,
             'user'           => $user,
             'medecin'        => $medecin,
@@ -213,10 +190,10 @@ class PatientForm extends Public_Controller {
             redirect('patient-form');
         }
 
-        $patient_id = $this->session->userdata('user_id');
+        // Patient connecté ou non (formulaire public)
+        $patient_id = $this->session->userdata('user_id') ?: null;
         if (!$patient_id) {
-            $this->session->set_flashdata('error', 'Veuillez vous connecter pour soumettre une consultation.');
-            redirect('Auth');
+            log_message('info', 'PatientForm: Soumission publique sans connexion');
         }
 
         $this->form_validation->set_rules('full_name', 'Nom complet', 'required|trim|min_length[3]|max_length[100]');
@@ -228,6 +205,7 @@ class PatientForm extends Public_Controller {
         $this->form_validation->set_rules('symptoms_duration', 'Durée des symptômes', 'trim');
         $this->form_validation->set_rules('previous_consultation', 'Consultation précédente', 'trim|in_list[yes,no]');
         $this->form_validation->set_rules('terms', 'Conditions générales', 'required');
+        $this->form_validation->set_rules('payment_method', 'Mode de paiement', 'required|trim|max_length[100]');
 
         if ($this->form_validation->run() === FALSE) {
             $this->session->set_flashdata('error', validation_errors('<div>', '</div>'));
@@ -269,6 +247,20 @@ class PatientForm extends Public_Controller {
             $prescriptions = $this->_upload_multiple_files_custom('prescriptions');
         }
 
+        // Mode de paiement choisi
+        $payment_method = $this->input->post('payment_method', TRUE) ?: null;
+
+        // Preuve de paiement (capture d'écran) — optionnelle
+        $payment_proof = null;
+        if (!empty($_FILES['payment_proof']['name'])) {
+            $payment_proof = $this->_upload_payment_proof_custom();
+            if ($payment_proof === false) {
+                $this->_cleanup_files(array_merge($medical_docs, $prescriptions));
+                $this->session->set_flashdata('error', 'Preuve de paiement invalide. Formats acceptés : JPG, PNG, PDF (max 5 Mo).');
+                redirect('patient-form');
+            }
+        }
+
         $consultation_data = [
             'numero_consultation' => $numero_consultation,
             'patient_id'          => $patient_id,
@@ -299,9 +291,9 @@ class PatientForm extends Public_Controller {
             'prix_ht'             => $consultation_prix,
             'devise'              => $consultation_devise,
             'tva'                 => 0.00,
-            'paiement_statut'     => 'en_attente',
-            'mode_paiement'       => NULL,
-            'preuve_paiement'     => NULL,
+            'paiement_statut'     => $payment_proof ? 'paye' : 'en_attente',
+            'mode_paiement'       => $payment_method,
+            'preuve_paiement'     => $payment_proof,
             'ip_creation'         => $this->input->ip_address(),
             'created_at'          => date('Y-m-d H:i:s'),
             'updated_at'          => date('Y-m-d H:i:s')
@@ -333,6 +325,8 @@ class PatientForm extends Public_Controller {
             'previous_consultation' => $this->input->post('previous_consultation', TRUE),
             'consultation_prix'   => $consultation_prix,
             'consultation_devise' => $consultation_devise,
+            'payment_method'      => $payment_method,
+            'payment_proof'       => $payment_proof,
             'medecin'             => $medecin,
             'medical_docs'        => $medical_docs,
             'prescriptions'       => $prescriptions
@@ -343,7 +337,133 @@ class PatientForm extends Public_Controller {
         $this->session->set_flashdata('success', 'Votre demande de consultation a été créée avec succès.');
         $this->session->set_flashdata('tracking_number', $numero_consultation);
         
-        redirect('Consultations/Payment/index/' . $numero_consultation);
+        // Sauvegarde OK → ouverture WhatsApp avec message préconfiguré
+        $this->_redirect_to_whatsapp($numero_consultation, $medecin, $medical_docs, $prescriptions, $payment_method, $payment_proof, $consultation_prix, $consultation_devise);
+    }
+
+    /**
+     * Upload de la preuve de paiement (capture d'écran)
+     * @return string|false Chemin relatif du fichier ou false si erreur
+     */
+    private function _upload_payment_proof_custom()
+    {
+        if (empty($_FILES['payment_proof']['name'])) {
+            return false;
+        }
+
+        $file = $_FILES['payment_proof'];
+        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 5 * 1024 * 1024) {
+            return false;
+        }
+
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $file_type = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($file_type, $allowed_types)) {
+            return false;
+        }
+
+        $upload_dir = FCPATH . 'attachments/Payments/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, TRUE);
+        }
+
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $filename = 'payment_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+        $filepath = $upload_dir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            return 'attachments/Payments/' . $filename;
+        }
+
+        return false;
+    }
+
+    /**
+     * Rediriger vers WhatsApp avec un message de demande de consultation préconfiguré
+     */
+    private function _redirect_to_whatsapp($numero_consultation, $medecin, $medical_docs = [], $prescriptions = [], $payment_method = null, $payment_proof = null, $consultation_prix = null, $consultation_devise = null)
+    {
+        $numero = preg_replace('/[^0-9]/', '', $this->Model->get_setting('contact_whatsapp', '+257 79 666 439'));
+        if (empty($numero)) {
+            redirect('patient-form');
+            return;
+        }
+
+        // Nom du médecin (tolérant aux données incomplètes)
+        $doctor_name = 'À attribuer';
+        if ($medecin) {
+            $doctor_prenom = trim(preg_replace('/^[.\s]+$/', '', (string)($medecin['prenom'] ?? '')));
+            $doctor_nom = trim(preg_replace('/^[.\s]+$/', '', (string)($medecin['nom'] ?? '')));
+            if ($doctor_prenom !== '' || $doctor_nom !== '') {
+                $doctor_name = 'Dr. ' . trim($doctor_prenom . ' ' . $doctor_nom);
+            }
+        }
+
+        // Email (si connecté)
+        $patient_email = $this->session->userdata('email');
+        if (empty($patient_email)) {
+            $patient_email = 'Non renseigné';
+        }
+
+        // Montant + équivalent BIF
+        $taux = $this->config->item('taux_devise');
+        if (!$taux || !is_array($taux)) {
+            $taux = ['USD_TO_BIF' => 2900];
+        }
+        $prix = (float)$consultation_prix;
+        $montant = number_format($prix, (floor($prix) == $prix ? 0 : 2), ',', ' ');
+        $prix_bif = number_format($prix * ($taux['USD_TO_BIF'] ?? 2900), 0, ',', ' ');
+
+        $message = "*DEMANDE DE CONSULTATION - NUFOTEC*\n\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "*INFORMATIONS PATIENT*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "• Nom : " . $this->input->post('full_name', TRUE) . "\n";
+        $message .= "• Email : " . $patient_email . "\n";
+        $message .= "• Date : " . date('d/m/Y H:i') . "\n\n";
+
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "*DÉTAILS DE LA CONSULTATION*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "• N° suivi : " . $numero_consultation . "\n";
+        $message .= "• Médecin : " . $doctor_name . "\n";
+        $message .= "• Âge : " . $this->input->post('age', TRUE) . " ans\n";
+        $message .= "• Pays : " . $this->input->post('country', TRUE) . "\n";
+        $message .= "• Poids : " . $this->input->post('weight', TRUE) . " kg | Taille : " . $this->input->post('height', TRUE) . " cm\n";
+        $message .= "• Symptômes : " . $this->input->post('symptoms', TRUE) . "\n";
+        if (!empty($this->input->post('symptoms_duration', TRUE))) {
+            $message .= "• Durée des symptômes : " . $this->input->post('symptoms_duration', TRUE) . "\n";
+        }
+        $message .= "• Montant : " . $montant . " USD\n";
+        $message .= "• Équivalent : ≈ " . $prix_bif . " BIF\n\n";
+
+        // Documents téléchargés : WhatsApp ne transfère pas les fichiers via wa.me,
+        // on fournit un lien vers l'emplacement sur le site pour consultation en ligne
+        $documents = array_merge((array)$medical_docs, (array)$prescriptions);
+        if (!empty($documents)) {
+            $message .= "\n*Documents joints (disponibles en ligne) :*\n";
+            foreach ($documents as $document) {
+                if (!empty($document)) {
+                    $message .= "• " . base_url('attachments/Consultations/' . $document) . "\n";
+                }
+            }
+        }
+
+        // Mode de paiement et preuve de paiement
+        if (!empty($payment_method)) {
+            $message .= "\n*Mode de paiement :* " . $payment_method . "\n";
+        }
+        if (!empty($payment_proof)) {
+            $message .= "*Epreuve de paiement*\n";
+            $message .= base_url($payment_proof) . "\n";
+        } else {
+            $message .= "\n*NB — Paiement en attente :* je me précipite pour effectuer le paiement et je vous envoie ma preuve de paiement via WhatsApp sur ce numéro dès que possible.\n";
+        }
+
+        redirect('https://wa.me/' . $numero . '?text=' . rawurlencode($message));
     }
 
     private function _upload_multiple_files_custom($field_name)
@@ -463,9 +583,9 @@ class PatientForm extends Public_Controller {
             medecins.nombre_avis,
             medecins.created_at,
             medecins.updated_at,
-            medecins.specialite_fr AS specialite,
-            medecins.diplomes_fr AS diplomes,
-            medecins.langues_parlees_fr AS langues_parlees,
+            medecins.specialite AS specialite,
+            medecins.diplomes AS diplomes,
+            medecins.langues_parlees AS langues_parlees,
             users.nom,
             users.prenom,
             users.email,
@@ -610,6 +730,8 @@ class PatientForm extends Public_Controller {
         
         $doctor_name = $doctor ? htmlspecialchars($doctor['prenom']) . ' ' . htmlspecialchars($doctor['nom']) : 'À attribuer';
         $appointment_date = date('Y-m-d H:i', strtotime('+1 day'));
+        $whatsapp_num = preg_replace('/[^0-9]/', '', $this->Model->get_setting('contact_whatsapp', '+257 79 666 439'));
+        $whatsapp_url = 'https://wa.me/' . $whatsapp_num;
         
         return '
         <!DOCTYPE html>
@@ -674,7 +796,7 @@ class PatientForm extends Public_Controller {
                         <div class="info-row"><span class="info-label">Montant</span><span class="info-value">' . $data['consultation_prix'] . ' ' . $data['consultation_devise'] . '</span></div>
                         <div class="info-row"><span class="info-label">Statut</span><span class="info-value">En attente de confirmation</span></div>
                     </div>
-                    <div style="text-align: center;"><a href="' . base_url('Consultations/Payment/index/' . $data['numero_consultation']) . '" class="btn">Procéder au paiement</a></div>
+                    <div style="text-align: center;"><a href="' . $whatsapp_url . '" class="btn">Suivre ma consultation sur WhatsApp</a></div>
                 </div>
                 <div class="footer">
                     <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>

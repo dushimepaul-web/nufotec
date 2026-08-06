@@ -1,4180 +1,620 @@
 <?php include VIEWPATH.'includes/frontend/Header.php'; ?>
 
-<style>
-/* ============================================
-   VARIABLES GLOBALES
-   ============================================ */
-:root {
-    --primary: #0f4c3a;
-    --primary-light: #1a6b52;
-    --primary-dark: #0a3326;
-    --primary-soft: rgba(15, 76, 58, 0.1);
-    --accent: #d4af37;
-    --accent-hover: #b8962e;
-    --accent-soft: rgba(212, 175, 55, 0.15);
-    --light: #f8f9fa;
-    --dark: #212529;
-    --gray: #6c757d;
-    --gray-light: #dee2e6;
-    --gray-soft: #f1f3f5;
-    --shadow-sm: 0 4px 6px rgba(0,0,0,0.05);
-    --shadow: 0 10px 20px rgba(0,0,0,0.1);
-    --shadow-lg: 0 20px 40px rgba(0,0,0,0.15);
-    --shadow-xl: 0 30px 60px rgba(0,0,0,0.2);
-    --shadow-hover: 0 30px 50px rgba(15, 76, 58, 0.25);
-    --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    --border-radius-sm: 12px;
-    --border-radius-md: 20px;
-    --border-radius-lg: 30px;
-    --border-radius-xl: 40px;
-    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-secondary: 'Playfair Display', serif;
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<link rel="canonical" href="<?= base_url('background-strategic-rationale') ?>">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "<?= base_url() ?>" },
+    { "@type": "ListItem", "position": 2, "name": "Corporate", "item": "<?= base_url('background-strategic-rationale') ?>" },
+    { "@type": "ListItem", "position": 3, "name": "Contexte et justification stratégique", "item": "<?= base_url('background-strategic-rationale') ?>" }
+  ]
 }
-
-/* ============================================
-   SCROLL PROGRESS & BACK TO TOP
-   ============================================ */
-.scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 0%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--primary));
-    z-index: 9999;
-    transition: width 0.1s;
-}
-
-.back-to-top {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 50px;
-    height: 50px;
-    background: var(--primary);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border: none;
-    box-shadow: var(--shadow);
-    opacity: 0;
-    visibility: hidden;
-    transition: var(--transition);
-    z-index: 100;
-}
-
-.back-to-top.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-.back-to-top:hover {
-    background: var(--accent);
-    transform: translateY(-5px);
-}
-
-/* ============================================
-   SECTION HERO PAGE - VERSION CORRIGÉE
-   ============================================ */
-.page-hero {
-    position: relative;
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    overflow: hidden;
-}
-
-/* Image de fond - PREMIER PLAN */
-.hero-bg-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0.8;
-    z-index: 1;
-}
-
-/* Dégradé de superposition - DEUXIÈME PLAN */
-.hero-gradient-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(10, 51, 38, 0.7), rgba(15, 76, 58, 0.6));
-    z-index: 2;
-    pointer-events: none;
-}
-
-/* Contenu - TROISIÈME PLAN */
-.page-hero-content {
-    position: relative;
-    z-index: 3;
-    max-width: 800px;
-    padding: 60px 20px;
-}
-
-.page-hero-title {
-    font-family: var(--font-secondary);
-    font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 700;
-    color: white;
-    margin-bottom: 20px;
-    animation: fadeInDown 1s ease;
-}
-
-.page-hero-title span {
-    color: var(--accent);
-    position: relative;
-    display: inline-block;
-}
-
-.page-hero-title span::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: var(--accent);
-    animation: expandWidth 1s ease 0.5s forwards;
-    transform-origin: left;
-    transform: scaleX(0);
-}
-
-@keyframes expandWidth {
-    to { transform: scaleX(1); }
-}
-
-.page-hero-subtitle {
-    font-size: clamp(1rem, 2vw, 1.2rem);
-    color: rgba(255,255,255,0.9);
-    max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.8;
-    animation: fadeInUp 1s ease 0.3s forwards;
-    opacity: 0;
-}
-
-@keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* ============================================
-   SECTION GÉNÉRIQUE
-   ============================================ */
-.section {
-    padding: 80px 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.section:nth-child(even) {
-    background: linear-gradient(135deg, #ffffff, var(--gray-soft));
-}
-
-.section-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.section-container-fluid {
-    width: 70%;
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0;
-}
-
-.section-header {
-    text-align: center;
-    margin-bottom: 50px;
-    opacity: 0;
-    transform: translateY(30px);
-    transition: var(--transition);
-}
-
-.section-header.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.section-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 20px;
-    background: var(--accent-soft);
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border-radius: 50px;
-    margin-bottom: 20px;
-    border: 1px solid var(--accent);
-}
-
-.section-tag::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.5); opacity: 0.7; }
-}
-
-.section-title {
-    font-family: var(--font-secondary);
-    font-size: clamp(2rem, 4vw, 2.8rem);
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 15px;
-    line-height: 1.2;
-}
-
-.section-subtitle {
-    font-size: 1.1rem;
-    color: var(--gray);
-    max-width: 700px;
-    margin: 0 auto;
-    line-height: 1.8;
-}
-
-/* ============================================
-   GRID CARDS (Style unifié)
-   ============================================ */
-.grid-card {
-    background: white;
-    border-radius: var(--border-radius-md);
-    padding: 30px 25px;
-    height: 100%;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    border: 1px solid transparent;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.grid-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--accent);
-}
-
-.grid-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--primary));
-    transform: translateX(-100%);
-    transition: transform 0.6s;
-}
-
-.grid-card:hover::before {
-    transform: translateX(0);
-}
-
-.grid-icon {
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 28px;
-    color: var(--primary);
-    transition: var(--transition);
-}
-
-.grid-card:hover .grid-icon {
-    transform: scale(1.1) rotate(5deg);
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    color: white;
-}
-
-.grid-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--primary-dark);
-    margin-bottom: 15px;
-}
-
-.grid-description {
-    color: #666;
-    font-size: 0.95rem;
-    line-height: 1.6;
-}
-
-/* ============================================
-   FACT SHEET STYLES
-   ============================================ */
-.fact-sheet {
-    background: white;
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-    margin-bottom: 40px;
-    transform: translateY(30px);
-    opacity: 0;
-    transition: var(--transition);
-}
-
-.fact-sheet.visible {
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.fact-sheet-header {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
-    padding: 25px 30px;
-    position: relative;
-    overflow: hidden;
-}
-
-.fact-sheet-header::before {
-    content: '';
-    position: absolute;
-    right: 20px;
-    bottom: -20px;
-    font-size: 120px;
-    font-weight: 800;
-    opacity: 0.1;
-    color: white;
-    pointer-events: none;
-}
-
-.fact-sheet-header h2 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 5px;
-    position: relative;
-    z-index: 1;
-}
-
-.fact-sheet-header p {
-    font-size: 1rem;
-    opacity: 0.9;
-    position: relative;
-    z-index: 1;
-}
-
-.fact-sheet-body {
-    padding: 30px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.fact-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    padding: 15px;
-    background: var(--gray-soft);
-    border-radius: var(--border-radius-sm);
-    transition: var(--transition);
-}
-
-.fact-item:hover {
-    transform: translateX(10px);
-    background: var(--accent-soft);
-}
-
-.fact-icon {
-    width: 50px;
-    height: 50px;
-    background: var(--primary);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-    transition: var(--transition);
-}
-
-.fact-item:hover .fact-icon {
-    transform: rotate(360deg);
-    background: var(--accent);
-    color: var(--primary);
-}
-
-.fact-content {
-    flex: 1;
-}
-
-.fact-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--gray);
-    margin-bottom: 5px;
-}
-
-.fact-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--dark);
-    line-height: 1.4;
-}
-
-.fact-value.highlight {
-    color: var(--primary);
-    font-size: 1.3rem;
-    font-weight: 700;
-}
-
-/* ============================================
-   IMAGE + TEXTE LAYOUT
-   ============================================ */
-.content-wrapper {
-    padding: 20px;
-}
-
-.image-wrapper {
-    position: relative;
-    border-radius: var(--border-radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-}
-
-.image-wrapper img {
-    width: 100%;
-    height: auto;
-    transition: var(--transition);
-}
-
-.image-wrapper:hover img {
-    transform: scale(1.05);
-}
-
-/* ============================================
-   timeline STYLES
-   ============================================ */
-.timeline-container {
-    position: relative;
-    padding: 40px 0;
-    margin: 40px 0;
-}
-
-.timeline-line {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 100%;
-    top: 0;
-    background: linear-gradient(to bottom, var(--primary), var(--accent), var(--primary));
-    border-radius: 2px;
-}
-
-.timeline-item {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 50px;
-    width: 100%;
-}
-
-.timeline-item.left {
-    flex-direction: row;
-}
-
-.timeline-item.left .timeline-content {
-    margin-right: 50%;
-    padding-right: 50px;
-}
-
-.timeline-item.right {
-    flex-direction: row-reverse;
-}
-
-.timeline-item.right .timeline-content {
-    margin-left: 50%;
-    padding-left: 50px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    border: 4px solid var(--accent);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    z-index: 3;
-    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
-    transition: var(--transition);
-}
-
-.timeline-item:hover .timeline-marker {
-    transform: translateX(-50%) scale(1.15);
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    border-color: var(--primary);
-}
-
-.timeline-year-badge {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: white;
-}
-
-.timeline-marker i {
-    font-size: 1.8rem;
-    color: white;
-}
-
-.timeline-content {
-    position: relative;
-    width: 45%;
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    border: 1px solid transparent;
-    overflow: hidden;
-}
-
-.timeline-content:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--accent);
-}
-
-.timeline-year {
-    display: inline-block;
-    padding: 5px 15px;
-    background: var(--accent);
-    color: var(--primary-dark);
-    font-weight: 700;
-    border-radius: 25px;
-    margin-bottom: 15px;
-    font-size: 0.9rem;
-}
-
-.timeline-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 15px;
-    line-height: 1.3;
-}
-
-.timeline-description {
-    color: var(--gray);
-    font-size: 1rem;
-    line-height: 1.6;
-}
-
-.timeline-icon-decoration {
-    position: absolute;
-    bottom: 15px;
-    right: 20px;
-    font-size: 3rem;
-    color: var(--accent-soft);
-    opacity: 0.3;
-    transition: var(--transition);
-}
-
-.timeline-content:hover .timeline-icon-decoration {
-    opacity: 0.6;
-    transform: scale(1.1) rotate(5deg);
-}
-
-/* ============================================
-   CTA SECTION
-   ============================================ */
-.cta-section {
-    position: relative;
-    padding: 80px 0;
-    overflow: hidden;
-}
-
-.cta-section::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%);
-    animation: rotate 30s linear infinite;
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.cta-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px 40px;
-    background: var(--accent);
-    color: var(--primary-dark);
-    font-weight: 700;
-    border-radius: 50px;
-    text-decoration: none;
-    transition: var(--transition);
-    position: relative;
-    z-index: 1;
-}
-
-.cta-button:hover {
-    background: var(--accent-hover);
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
-}
-
-/* ============================================
-   BUTTONS
-   ============================================ */
-.btn-primary-custom {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 30px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
-    font-weight: 600;
-    border-radius: 50px;
-    text-decoration: none;
-    transition: var(--transition);
-    border: none;
-}
-
-.btn-primary-custom:hover {
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    color: var(--primary-dark);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow);
-}
-
-/* ============================================
-   TINYMCE CONTENT - STYLES COMPLÈTS
-   ============================================ */
-.tinymce-content {
-    font-size: 1rem;
-    line-height: 1.8;
-    color: var(--dark);
-}
-
-.tinymce-content p {
-    margin-bottom: 1rem;
-}
-
-.tinymce-content h1, 
-.tinymce-content h2, 
-.tinymce-content h3, 
-.tinymce-content h4, 
-.tinymce-content h5, 
-.tinymce-content h6 {
-    color: var(--primary);
-    font-family: var(--font-secondary);
-    margin-bottom: 1rem;
-    font-weight: 700;
-}
-
-.tinymce-content h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.tinymce-content h2 {
-    font-size: 2rem;
-    margin-bottom: 1.2rem;
-    border-bottom: 2px solid var(--accent);
-    padding-bottom: 10px;
-    display: inline-block;
-}
-
-.tinymce-content h3 {
-    font-size: 1.5rem;
-    color: var(--primary-light);
-}
-
-.tinymce-content h4 {
-    font-size: 1.25rem;
-}
-
-.tinymce-content h5 {
-    font-size: 1.1rem;
-}
-
-.tinymce-content h6 {
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.tinymce-content ul, 
-.tinymce-content ol {
-    margin-bottom: 1.5rem;
-    padding-left: 1.5rem;
-}
-
-.tinymce-content ul {
-    list-style-type: disc;
-}
-
-.tinymce-content ol {
-    list-style-type: decimal;
-}
-
-.tinymce-content li {
-    margin-bottom: 0.5rem;
-}
-
-.tinymce-content li::marker {
-    color: var(--accent);
-}
-
-.tinymce-content strong, 
-.tinymce-content b {
-    color: var(--primary);
-    font-weight: 700;
-}
-
-.tinymce-content em, 
-.tinymce-content i {
-    font-style: italic;
-    color: var(--gray);
-}
-
-.tinymce-content u {
-    text-decoration: underline;
-    text-decoration-color: var(--accent);
-    text-decoration-thickness: 2px;
-}
-
-.tinymce-content s, 
-.tinymce-content strike {
-    text-decoration: line-through;
-    color: var(--gray);
-}
-
-.tinymce-content a {
-    color: var(--primary);
-    text-decoration: none;
-    border-bottom: 2px solid var(--accent);
-    transition: var(--transition);
-}
-
-.tinymce-content a:hover {
-    color: var(--accent);
-    border-bottom-color: var(--primary);
-}
-
-.tinymce-content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow);
-    margin: 1.5rem 0;
-}
-
-.tinymce-content img.align-left {
-    float: left;
-    margin-right: 20px;
-    margin-bottom: 20px;
-}
-
-.tinymce-content img.align-right {
-    float: right;
-    margin-left: 20px;
-    margin-bottom: 20px;
-}
-
-.tinymce-content img.align-center {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.tinymce-content blockquote {
-    border-left: 4px solid var(--accent);
-    padding: 20px 20px 20px 30px;
-    margin: 2rem 0;
-    font-style: italic;
-    color: var(--gray);
-    background: var(--gray-soft);
-    border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
-}
-
-.tinymce-content blockquote p:last-child {
-    margin-bottom: 0;
-}
-
-.tinymce-content pre {
-    background: var(--dark);
-    color: var(--light);
-    padding: 20px;
-    border-radius: var(--border-radius-sm);
-    overflow-x: auto;
-    font-family: monospace;
-    margin-bottom: 1.5rem;
-}
-
-.tinymce-content code {
-    background: var(--gray-soft);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: monospace;
-    color: var(--primary);
-}
-
-.tinymce-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 2rem 0;
-    background: white;
-    box-shadow: var(--shadow);
-    border-radius: var(--border-radius-sm);
-    overflow: hidden;
-}
-
-.tinymce-content th {
-    background: var(--primary);
-    color: white;
-    padding: 15px;
-    text-align: left;
-    font-weight: 600;
-    border: none;
-}
-
-.tinymce-content td {
-    padding: 12px 15px;
-    border-bottom: 1px solid var(--gray-light);
-}
-
-.tinymce-content tr:last-child td {
-    border-bottom: none;
-}
-
-.tinymce-content tr:hover {
-    background: var(--gray-soft);
-}
-
-.tinymce-content hr {
-    border: none;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    margin: 2rem 0;
-}
-
-.tinymce-content sup {
-    vertical-align: super;
-    font-size: smaller;
-    color: var(--accent);
-}
-
-.tinymce-content sub {
-    vertical-align: sub;
-    font-size: smaller;
-    color: var(--accent);
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-@media (max-width: 992px) {
-    .section {
-        padding: 60px 0;
-    }
-    
-    .timeline-line {
-        left: 30px;
-    }
-    
-    .timeline-item.left,
-    .timeline-item.right {
-        flex-direction: row;
-        justify-content: flex-start;
-        margin-left: 60px;
-    }
-    
-    .timeline-item.left .timeline-content,
-    .timeline-item.right .timeline-content {
-        margin-left: 80px;
-        margin-right: 0;
-        width: calc(100% - 80px);
-        padding: 25px;
-    }
-    
-    .timeline-marker {
-        left: 30px;
-    }
-    
-    .fact-sheet-body {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .page-hero {
-        min-height: 50vh;
-    }
-    
-    .page-hero-title {
-        font-size: 2rem;
-    }
-    
-    .tinymce-content h1 {
-        font-size: 1.8rem;
-    }
-    
-    .tinymce-content h2 {
-        font-size: 1.5rem;
-    }
-    
-    .tinymce-content h3 {
-        font-size: 1.2rem;
-    }
-    
-    .timeline-content {
-        padding: 25px;
-    }
-    
-    .timeline-title {
-        font-size: 1.2rem;
-    }
-}
-</style>
-
-<!-- Scroll Progress -->
-<div class="scroll-progress" id="scrollProgress"></div>
-
-<!-- Bouton Retour en haut -->
-<button class="back-to-top" id="backToTop">
-    <i class="bi bi-arrow-up"></i>
-</button>
-
-<?php 
-// Fonction pour nettoyer les chemins d'images
-function fix_image_path($image_path) {
-    if (empty($image_path)) return null;
-    
-    if (filter_var($image_path, FILTER_VALIDATE_URL)) {
-        return $image_path;
-    }
-    
-    $image_path = preg_replace('/\.\.\//', '', $image_path);
-    $image_path = ltrim($image_path, '/');
-    
-    return base_url($image_path);
-}
-
-// Fonction pour corriger les URLs d'images dans le contenu HTML
-function fix_content_images($content) {
-    if (empty($content)) return '';
-    
-    $base_url = rtrim(base_url(), '/');
-    
-    $content = preg_replace(
-        '/src=["\'](?:\.\.\/)+(attachments\/[^"\']+)["\']/i',
-        'src="/$1"',
-        $content
-    );
-    
-    $content = preg_replace(
-        '/src=["\'](\/attachments\/[^"\']+)["\']/i',
-        'src="' . $base_url . '$1"',
-        $content
-    );
-    
-    return $content;
-}
-
-// Boucle sur chaque section pour affichage dynamique
-foreach ($sections as $section): 
-    $type = $section['type_section'];
-    $options = !empty($section['options_json']) ? json_decode($section['options_json'], true) : [];
-    
-    $raw_content = $section['contenu_texte'] ?? '';
-    $content_with_fixed_images = fix_content_images($raw_content);
-?>
-
-    <?php switch($type):
-        
-        // ============================================
-        // HERO SECTION
-        // ============================================
-        case 'hero': 
-            $image_opacity = $options['image_opacity'] ?? '0.85';
-        ?>
-            <section class="page-hero <?= $section['custom_class'] ?? '' ?> d-flex align-items-center justify-content-center text-center position-relative overflow-hidden">
-                
-                <?php if (!empty($section['image_url'])): ?>
-                    <div class="hero-bg-image" style="background-image: url('<?= fix_image_path($section['image_url']) ?>'); opacity: <?= $image_opacity ?>;"></div>
-                <?php endif; ?>
-                
-                <div class="hero-gradient-overlay"></div>
-                
-                <div class="container position-relative" style="z-index: 4;">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8 col-xl-6">
-                            <h1 class="page-hero-title">
-                                <?= $section['titre_section'] ?>
-                                <?php if (!empty($section['sous_titre'])): ?>
-                                    <span><?= $section['sous_titre'] ?></span>
-                                <?php endif; ?>
-                            </h1>
-                            
-                            <?php if (!empty($raw_content)): ?>
-                                <p class="page-hero-subtitle"><?= strip_tags($raw_content) ?></p>
-                            <?php endif; ?>
-                            
-                            <?php if (!empty($section['bouton_texte'])): ?>
-                                <a href="<?= $section['bouton_lien'] ?? '#' ?>" class="cta-button mt-4">
-                                    <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        <?php break; ?>
-
-// ============================================
-// TEXTE SIMPLE - Version avec classes Bootstrap
-// ============================================
-<?php case 'texte': 
-    // Options de mise en page
-    $layout = $options['layout'] ?? 'simple'; // simple, with-image-left, with-image-right
-    $has_image = !empty($section['image_url']);
-    $image_url = $has_image ? fix_image_path($section['image_url']) : null;
-    
-    // Classes Bootstrap pour le conteneur
-    $container_class = $options['container_class'] ?? 'container-fluid'; // container, container-fluid, container-lg, etc.
-    $text_align = $options['text_align'] ?? 'text-start'; // text-start, text-center, text-end, text-justify
-    
-    // Colonnes pour le contenu
-    $content_cols = $options['content_cols'] ?? 'col-lg-10 col-xl-8 mx-auto';
-    
-    // Padding
-    $padding_y = $options['padding_y'] ?? 'py-5';
-    $padding_x = $options['padding_x'] ?? 'px-3';
-?>
-    <section class="section <?= $section['custom_class'] ?? '' ?> <?= $padding_y ?>" 
-             style="background: <?= $options['bg_color'] ?? 'transparent' ?>;">
-        <div class="<?= $container_class ?> <?= $padding_x ?>">
-            
-            <?php if ($layout == 'with-image-left' && $has_image): ?>
-                <!-- Layout avec image à gauche -->
-                <div class="row align-items-center g-5">
-                    <div class="col-lg-6" data-aos="fade-right">
-                        <div class="image-wrapper">
-                            <img src="<?= $image_url ?>" 
-                                 alt="<?= htmlspecialchars($section['titre_section'] ?? 'Image') ?>" 
-                                 class="img-fluid rounded-4 shadow">
-                        </div>
-                    </div>
-                    <div class="col-lg-6" data-aos="fade-left">
-                        <div class="content-wrapper">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                            <?php endif; ?>
-                            
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                            <?php endif; ?>
-                            
-                            <div class="tinymce-content <?= $text_align ?>">
-                                <?= $content_with_fixed_images ?>
-                            </div>
-                            
-                            <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                <div class="mt-4">
-                                    <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn btn-primary btn-lg rounded-pill">
-                                        <?= htmlspecialchars($section['bouton_texte']) ?> 
-                                        <i class="bi bi-arrow-right ms-2"></i>
-                                    </a>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                
-            <?php elseif ($layout == 'with-image-right' && $has_image): ?>
-                <!-- Layout avec image à droite -->
-                <div class="row align-items-center g-5">
-                    <div class="col-lg-6" data-aos="fade-right">
-                        <div class="content-wrapper">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                            <?php endif; ?>
-                            
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                            <?php endif; ?>
-                            
-                            <div class="tinymce-content <?= $text_align ?>">
-                                <?= $content_with_fixed_images ?>
-                            </div>
-                            
-                            <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                <div class="mt-4">
-                                    <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn btn-primary btn-lg rounded-pill">
-                                        <?= htmlspecialchars($section['bouton_texte']) ?> 
-                                        <i class="bi bi-arrow-right ms-2"></i>
-                                    </a>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="col-lg-6" data-aos="fade-left">
-                        <div class="image-wrapper">
-                            <img src="<?= $image_url ?>" 
-                                 alt="<?= htmlspecialchars($section['titre_section'] ?? 'Image') ?>" 
-                                 class="img-fluid rounded-4 shadow">
-                        </div>
-                    </div>
-                </div>
-                
-            <?php else: ?>
-                <!-- Layout simple (sans image) -->
-                <div class="row justify-content-center">
-                    <div class="<?= $content_cols ?>">
-                        
-                        <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                            <div class="text-center mb-5">
-                                <?php if (!empty($section['titre_section'])): ?>
-                                    <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                                <?php endif; ?>
-                                <?php if (!empty($section['sous_titre'])): ?>
-                                    <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <div class="tinymce-content <?= $text_align ?>">
-                            <?= $content_with_fixed_images ?>
-                        </div>
-                        
-                        <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                            <div class="text-center mt-5">
-                                <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn btn-primary btn-lg rounded-pill">
-                                    <?= htmlspecialchars($section['bouton_texte']) ?> 
-                                    <i class="bi bi-arrow-right ms-2"></i>
-                                </a>
-                            </div>
-                        <?php endif; ?>
-                        
-                    </div>
-                </div>
-            <?php endif; ?>
-            
-        </div>
-    </section>
-<?php break; ?>
-
-        // ============================================
-        // IMAGE SEULE
-        // ============================================
-        <?php case 'image': 
-            $image_url = !empty($section['image_url']) ? fix_image_path($section['image_url']) : null;
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>" style="background: <?= $options['bg_color'] ?? 'transparent' ?>; padding: <?= $options['padding'] ?? '40px' ?> 0;">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($image_url): ?>
-                        <div class="text-center">
-                            <img src="<?= $image_url ?>" alt="<?= $section['titre_section'] ?? 'Image' ?>" class="img-fluid <?= $options['image_class'] ?? 'rounded shadow-lg' ?>" style="max-width: <?= $options['max_width'] ?? '100%' ?>;">
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if (!empty($content_with_fixed_images)): ?>
-                        <div class="tinymce-content mt-4">
-                            <?= $content_with_fixed_images ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // IMAGE + TEXTE
-        // ============================================
-        <?php case 'image_texte': 
-            $image_left = empty($section['image_droite']) || $section['image_droite'] == 0;
-            $has_image = !empty($section['image_url']);
-            $image_url = $has_image ? fix_image_path($section['image_url']) : null;
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <div class="row align-items-center g-5">
-                        <?php if ($has_image && $image_left): ?>
-                            <!-- Image à gauche -->
-                            <div class="col-lg-6" data-aos="fade-right">
-                                <div class="image-wrapper">
-                                    <img src="<?= $image_url ?>" alt="<?= $section['titre_section'] ?? 'Image' ?>" class="img-fluid">
-                                </div>
-                            </div>
-                            <div class="col-lg-6" data-aos="fade-left">
-                                <div class="content-wrapper">
-                                    <?php if (!empty($section['titre_section'])): ?>
-                                        <span class="section-tag"><?= $section['titre_section'] ?></span>
-                                    <?php endif; ?>
-                                    <?php if (!empty($section['sous_titre'])): ?>
-                                        <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                                    <?php endif; ?>
-                                    <div class="tinymce-content">
-                                        <?= $content_with_fixed_images ?>
-                                    </div>
-                                    <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                        <a href="<?= $section['bouton_lien'] ?>" class="btn-primary-custom mt-4">
-                                            <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php elseif ($has_image && !$image_left): ?>
-                            <!-- Image à droite -->
-                            <div class="col-lg-6" data-aos="fade-right">
-                                <div class="content-wrapper">
-                                    <?php if (!empty($section['titre_section'])): ?>
-                                        <span class="section-tag"><?= $section['titre_section'] ?></span>
-                                    <?php endif; ?>
-                                    <?php if (!empty($section['sous_titre'])): ?>
-                                        <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                                    <?php endif; ?>
-                                    <div class="tinymce-content">
-                                        <?= $content_with_fixed_images ?>
-                                    </div>
-                                    <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                        <a href="<?= $section['bouton_lien'] ?>" class="btn-primary-custom mt-4">
-                                            <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <div class="col-lg-6" data-aos="fade-left">
-                                <div class="image-wrapper">
-                                    <img src="<?= $image_url ?>" alt="<?= $section['titre_section'] ?? 'Image' ?>" class="img-fluid">
-                                </div>
-                            </div>
-                        <?php else: ?>
-                            <!-- Sans image -->
-                            <div class="col-12 text-center">
-                                <?php if (!empty($section['titre_section'])): ?>
-                                    <span class="section-tag"><?= $section['titre_section'] ?></span>
-                                <?php endif; ?>
-                                <?php if (!empty($section['sous_titre'])): ?>
-                                    <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                                <?php endif; ?>
-                                <div class="tinymce-content mx-auto" style="max-width: 800px;">
-                                    <?= $content_with_fixed_images ?>
-                                </div>
-                                <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                    <a href="<?= $section['bouton_lien'] ?>" class="btn-primary-custom mt-4">
-                                        <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // GRILLE STANDARD
-        // ============================================
-        <?php case 'grille': 
-            $cols = $options['columns'] ?? 3;
-            $col_class = match($cols) {
-                2 => 'col-md-6',
-                3 => 'col-md-6 col-lg-4',
-                4 => 'col-md-6 col-lg-3',
-                default => 'col-md-6 col-lg-4'
-            };
-            
-            $decoded_content = html_entity_decode($raw_content, ENT_QUOTES, 'UTF-8');
-            $items = [];
-            
-            if (strpos($decoded_content, '<li>') !== false) {
-                preg_match_all('/<li>(.*?)<\/li>/', $decoded_content, $matches);
-                $items = $matches[1] ?? [];
-            } else {
-                $lines = explode("\n", strip_tags($decoded_content));
-                foreach ($lines as $line) {
-                    $line = trim($line);
-                    if (!empty($line)) {
-                        $items[] = $line;
-                    }
-                }
-            }
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="row g-4">
-                        <?php foreach ($items as $item): 
-                            if (empty(trim($item))) continue;
-                            
-                            $item = html_entity_decode($item, ENT_QUOTES, 'UTF-8');
-                            $item = trim(strip_tags($item));
-                            
-                            $title = $item;
-                            $description = '';
-                            if (strpos($item, ':') !== false) {
-                                $parts = explode(':', $item, 2);
-                                $title = trim($parts[0]);
-                                $description = trim($parts[1]);
-                            }
-                        ?>
-                        <div class="<?= $col_class ?>">
-                            <div class="grid-card h-100">
-                                <?php if ($options['show_icons'] ?? true): ?>
-                                    <div class="grid-icon">
-                                        <i class="bi bi-<?= $options['icon'] ?? 'grid' ?>"></i>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <h4 class="grid-title"><?= htmlspecialchars($title) ?></h4>
-                                
-                                <?php if (!empty($description)): ?>
-                                    <div class="grid-description">
-                                        <?= htmlspecialchars($description) ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    
-                    <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                        <div class="text-center mt-5">
-                            <a href="<?= $section['bouton_lien'] ?>" class="btn-primary-custom">
-                                <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // GRILLE CARD - Version avec cartes plus stylisées
-        // ============================================
-        <?php case 'grille_card': 
-            $cols = $options['columns'] ?? 3;
-            $col_class = match($cols) {
-                2 => 'col-md-6',
-                3 => 'col-md-6 col-lg-4',
-                4 => 'col-md-6 col-lg-3',
-                default => 'col-md-6 col-lg-4'
-            };
-            
-            $decoded_content = html_entity_decode($raw_content, ENT_QUOTES, 'UTF-8');
-            $items = [];
-            
-            if (strpos($decoded_content, '<li>') !== false) {
-                preg_match_all('/<li>(.*?)<\/li>/', $decoded_content, $matches);
-                $items = $matches[1] ?? [];
-            } else {
-                $lines = explode("\n", strip_tags($decoded_content));
-                foreach ($lines as $line) {
-                    $line = trim($line);
-                    if (!empty($line)) {
-                        $items[] = $line;
-                    }
-                }
-            }
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="row g-4">
-                        <?php foreach ($items as $item): 
-                            if (empty(trim($item))) continue;
-                            
-                            $item = html_entity_decode($item, ENT_QUOTES, 'UTF-8');
-                            $item = trim(strip_tags($item));
-                            
-                            $title = $item;
-                            $description = '';
-                            if (strpos($item, ':') !== false) {
-                                $parts = explode(':', $item, 2);
-                                $title = trim($parts[0]);
-                                $description = trim($parts[1]);
-                            }
-                            
-                            $icon = $options['icons'][$index % count($options['icons'])] ?? 'star';
-                        ?>
-                        <div class="<?= $col_class ?>">
-                            <div class="grid-card h-100">
-                                <?php if ($options['show_icons'] ?? true): ?>
-                                    <div class="grid-icon">
-                                        <i class="bi bi-<?= $icon ?>"></i>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <h4 class="grid-title"><?= htmlspecialchars($title) ?></h4>
-                                
-                                <?php if (!empty($description)): ?>
-                                    <div class="grid-description">
-                                        <?= htmlspecialchars($description) ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    
-                    <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                        <div class="text-center mt-5">
-                            <a href="<?= $section['bouton_lien'] ?>" class="btn-primary-custom">
-                                <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // GRILLE INLINE - Éléments en ligne
-        // ============================================
-        <?php case 'grille_inline': 
-            $decoded_content = html_entity_decode($raw_content, ENT_QUOTES, 'UTF-8');
-            $items = [];
-            
-            if (strpos($decoded_content, '<li>') !== false) {
-                preg_match_all('/<li>(.*?)<\/li>/', $decoded_content, $matches);
-                $items = $matches[1] ?? [];
-            } else {
-                $lines = explode("\n", strip_tags($decoded_content));
-                foreach ($lines as $line) {
-                    $line = trim($line);
-                    if (!empty($line)) {
-                        $items[] = $line;
-                    }
-                }
-            }
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="d-flex flex-wrap justify-content-center gap-4">
-                        <?php foreach ($items as $item): 
-                            if (empty(trim($item))) continue;
-                            
-                            $item = html_entity_decode($item, ENT_QUOTES, 'UTF-8');
-                            $item = trim(strip_tags($item));
-                        ?>
-                        <div class="text-center p-3" style="min-width: 150px;">
-                            <?php if ($options['show_icons'] ?? true): ?>
-                                <div class="mb-3">
-                                    <i class="bi bi-<?= $options['icon'] ?? 'tag' ?>" style="font-size: 2rem; color: var(--primary);"></i>
-                                </div>
-                            <?php endif; ?>
-                            <span class="fw-bold text-primary"><?= htmlspecialchars($item) ?></span>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // LISTE STANDARD
-        // ============================================
-        <?php case 'liste': 
-            $list_items = [];
-            $decoded_content = html_entity_decode($raw_content, ENT_QUOTES, 'UTF-8');
-            $clean_content = strip_tags($decoded_content);
-            $lines = explode("\n", $clean_content);
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (!empty($line)) {
-                    $list_items[] = $line;
-                }
-            }
-            
-            if (empty($list_items) && strpos($clean_content, ';') !== false) {
-                $items = explode(';', $clean_content);
-                foreach ($items as $item) {
-                    $item = trim($item);
-                    if (!empty($item)) {
-                        $list_items[] = $item;
-                    }
-                }
-            }
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if (!empty($list_items)): ?>
-                        <ul class="list-unstyled">
-                            <?php foreach ($list_items as $item): 
-                                $item = html_entity_decode($item, ENT_QUOTES, 'UTF-8');
-                                $label = '';
-                                $value = $item;
-                                
-                                if (strpos($item, ':') !== false) {
-                                    $parts = explode(':', $item, 2);
-                                    $label = trim($parts[0]);
-                                    $value = trim($parts[1]);
-                                }
-                            ?>
-                            <li class="mb-3 d-flex">
-                                <i class="bi bi-<?= $options['icon'] ?? 'check-circle-fill' ?> text-<?= $options['icon_color'] ?? 'primary' ?> me-3 flex-shrink-0" style="font-size: 1.2rem;"></i>
-                                <div>
-                                    <?php if (!empty($label)): ?>
-                                        <strong class="text-primary"><?= htmlspecialchars($label) ?>:</strong>
-                                    <?php endif; ?>
-                                    <?= htmlspecialchars($value) ?>
-                                </div>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                    
-                    <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                        <div class="text-center mt-4">
-                            <a href="<?= $section['bouton_lien'] ?>" class="btn-primary-custom">
-                                <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // LISTE CARD - Cartes en liste
-        // ============================================
-        <?php case 'liste_card': 
-            $list_items = [];
-            $decoded_content = html_entity_decode($raw_content, ENT_QUOTES, 'UTF-8');
-            $clean_content = strip_tags($decoded_content);
-            $lines = explode("\n", $clean_content);
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (!empty($line)) {
-                    $list_items[] = $line;
-                }
-            }
-            
-            $cols = $options['columns'] ?? 2;
-            $col_class = ($cols == 1) ? 'col-12' : 'col-md-4';
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if (!empty($list_items)): ?>
-                        <div class="row g-4">
-                            <?php foreach ($list_items as $item): 
-                                $item = html_entity_decode($item, ENT_QUOTES, 'UTF-8');
-                                $label = '';
-                                $value = $item;
-                                
-                                if (strpos($item, ':') !== false) {
-                                    $parts = explode(':', $item, 2);
-                                    $label = trim($parts[0]);
-                                    $value = trim($parts[1]);
-                                }
-                            ?>
-                            <div class="<?= $col_class ?>">
-                                <div class="fact-item h-100">
-                                    <div class="fact-icon">
-                                        <i class="bi bi-<?= $options['icon'] ?? 'check-circle' ?>"></i>
-                                    </div>
-                                    <div class="fact-content">
-                                        <?php if (!empty($label)): ?>
-                                            <div class="fact-label"><?= htmlspecialchars($label) ?></div>
-                                        <?php endif; ?>
-                                        <div class="fact-value"><?= htmlspecialchars($value) ?></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // LISTE INLINE - Liste horizontale
-        // ============================================
-        <?php case 'liste_inline': 
-            $list_items = [];
-            $decoded_content = html_entity_decode($raw_content, ENT_QUOTES, 'UTF-8');
-            $clean_content = strip_tags($decoded_content);
-            $lines = explode("\n", $clean_content);
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (!empty($line)) {
-                    $list_items[] = $line;
-                }
-            }
-        ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if (!empty($list_items)): ?>
-                        <div class="d-flex flex-wrap justify-content-center gap-3">
-                            <?php foreach ($list_items as $item): 
-                                $item = html_entity_decode($item, ENT_QUOTES, 'UTF-8');
-                            ?>
-                            <span class="badge bg-light text-dark p-3 border">
-                                <?= htmlspecialchars($item) ?>
-                            </span>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // LISTE ITEM - Élément unique
-        // ============================================
-        <?php case 'liste_item': ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8">
-                            <div class="fact-item">
-                                <div class="fact-icon">
-                                    <i class="bi bi-<?= $options['icon'] ?? 'info-circle' ?>"></i>
-                                </div>
-                                <div class="fact-content">
-                                    <div class="tinymce-content">
-                                        <?= $content_with_fixed_images ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        <?php break; ?>
-
-        // ============================================
-        // TABLEAU
-        // ============================================
-        <?php case 'tableau': ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="table-responsive">
-                        <?= $content_with_fixed_images ?>
-                    </div>
-                </div>
-            </section>
-        <?php break; ?>
-
-// ============================================
-// TIMELINE - Version avec interprétation HTML complète
-// ============================================
-<?php case 'timeline': 
-    $timeline_items = [];
-    $decoded_content = html_entity_decode($raw_content, ENT_QUOTES, 'UTF-8');
-    
-    // Découper par catégories (séparées par des lignes vides)
-    $categories = preg_split('/\n\s*\n/', $decoded_content);
-    
-    foreach ($categories as $cat_index => $category) {
-        if (empty(trim($category))) continue;
-        
-        $lines = explode("\n", trim($category));
-        $cat_title = '';
-        $cat_items = [];
-        
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line)) continue;
-            
-            // Détecter le titre de catégorie (ex: "1) Research & Product Development")
-            if (preg_match('/^\d+[\)\.]\s*(.+)$/', $line, $matches)) {
-                $cat_title = $matches[1];
-            } else {
-                // C'est un élément de la catégorie
-                $cat_items[] = $line;
-            }
-        }
-        
-        if (!empty($cat_title) && !empty($cat_items)) {
-            $timeline_items[] = [
-                'title' => $cat_title,
-                'items' => $cat_items,
-                'marker' => $cat_index + 1
-            ];
-        }
-    }
-    
-    // Fallback si le format ci-dessus ne fonctionne pas
-    if (empty($timeline_items)) {
-        if (strpos($decoded_content, '<li>') !== false) {
-            preg_match_all('/<li>(.*?)<\/li>/', $decoded_content, $matches);
-            $simple_items = $matches[1] ?? [];
-            foreach ($simple_items as $index => $item) {
-                // Nettoyer mais garder le HTML
-                $item = trim($item);
-                $timeline_items[] = [
-                    'title' => 'Étape ' . ($index + 1),
-                    'items' => [$item],
-                    'marker' => $index + 1
-                ];
-            }
-        } else {
-            $lines = explode("\n", $decoded_content); // Ne pas enlever les balises
-            $current_cat = '';
-            $current_items = [];
-            
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (empty($line)) continue;
-                
-                if (preg_match('/^\d+[\)\.]\s*(.+)$/', strip_tags($line), $matches)) {
-                    if (!empty($current_cat) && !empty($current_items)) {
-                        $timeline_items[] = [
-                            'title' => $current_cat,
-                            'items' => $current_items,
-                            'marker' => count($timeline_items) + 1
-                        ];
-                    }
-                    $current_cat = $matches[1];
-                    $current_items = [];
-                } else {
-                    $current_items[] = $line;
-                }
-            }
-            
-            if (!empty($current_cat) && !empty($current_items)) {
-                $timeline_items[] = [
-                    'title' => $current_cat,
-                    'items' => $current_items,
-                    'marker' => count($timeline_items) + 1
-                ];
-            }
-        }
-    }
-?>
-    <section class="section timeline-section <?= $section['custom_class'] ?? '' ?>" 
-             style="background: <?= $options['bg_color'] ?? 'var(--light)' ?>;">
-        <div class="section-container">
-            
-            <!-- En-tête de section -->
-            <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                <div class="section-header">
-                    <?php if (!empty($section['titre_section'])): ?>
-                        <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($section['sous_titre'])): ?>
-                        <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-            
-            <!-- Timeline Container style Objectives -->
-            <div class="objectives-timeline">
-                
-                <?php if (!empty($timeline_items)): ?>
-                    <?php foreach ($timeline_items as $index => $item): 
-                        $side_class = ($index % 2 == 0) ? '' : 'even';
-                    ?>
-                        <div class="objective-item <?= $side_class ?>">
-                            
-                            <!-- Contenu de la timeline -->
-                            <div class="objective-content">
-                                
-                                <?php if (!empty($item['title'])): ?>
-                                    <h3 class="objective-title"><?= htmlspecialchars($item['title']) ?></h3>
-                                <?php endif; ?>
-                                
-                                <?php if (!empty($item['items'])): ?>
-                                    <?php foreach ($item['items'] as $sub_item): 
-                                        $sub_item = html_entity_decode($sub_item, ENT_QUOTES, 'UTF-8');
-                                        
-                                        // Extraire l'année si présente (mais garder le HTML)
-                                        $year = '';
-                                        $description = $sub_item;
-                                        
-                                        if (preg_match('/^(\d{4}(?:–\d{4})?)[:\s]\s*(.+)/', strip_tags($sub_item), $matches)) {
-                                            $year = $matches[1];
-                                            // Remplacer l'année dans la description mais garder le HTML
-                                            $description = preg_replace('/^' . preg_quote($matches[0], '/') . '/', '', $sub_item);
-                                            if (empty($description)) {
-                                                $description = $matches[2];
-                                            }
-                                        }
-                                    ?>
-                                        <?php if (!empty($year)): ?>
-                                            <span class="objective-year"><?= htmlspecialchars($year) ?></span>
-                                        <?php endif; ?>
-                                        
-                                        <div class="objective-desc tinymce-content">
-                                            <?= fix_content_images($description) ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                                
-                            </div>
-                            
-                            <!-- Marqueur -->
-                            <div class="objective-marker">
-                                <?= $item['marker'] ?>
-                            </div>
-                            
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                
-            </div>
-            
-            <!-- Bouton d'action -->
-            <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                <div class="text-center mt-5">
-                    <a href="<?= htmlspecialchars($section['bouton_lien']) ?>" class="btn-primary-custom">
-                        <?= htmlspecialchars($section['bouton_texte']) ?> <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            <?php endif; ?>
-            
-        </div>
-    </section>
-<?php break; ?>
-        // ============================================
-        // DEFAULT
-        // ============================================
-        <?php default: ?>
-            <section class="section <?= $section['custom_class'] ?? '' ?>">
-                <div class="section-container">
-                    <?php if (!empty($section['titre_section']) || !empty($section['sous_titre'])): ?>
-                        <div class="section-header">
-                            <?php if (!empty($section['titre_section'])): ?>
-                                <span class="section-tag"><?= $section['titre_section'] ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($section['sous_titre'])): ?>
-                                <h2 class="section-title"><?= $section['sous_titre'] ?></h2>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="tinymce-content">
-                        <?= $content_with_fixed_images ?>
-                    </div>
-                    
-                    <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                        <div class="text-center mt-4">
-                            <a href="<?= $section['bouton_lien'] ?>" class="btn-primary-custom">
-                                <?= $section['bouton_texte'] ?> <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php break; ?>
-
-    <?php endswitch; ?>
-
-<?php endforeach; ?>
-
-<script>
-// Scroll Progress Indicator
-window.addEventListener('scroll', () => {
-    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const scrolled = (winScroll / height) * 100;
-    document.getElementById('scrollProgress').style.width = scrolled + '%';
-    
-    // Back to top button visibility
-    const backToTop = document.getElementById('backToTop');
-    if (winScroll > 300) {
-        backToTop.classList.add('visible');
-    } else {
-        backToTop.classList.remove('visible');
-    }
-});
-
-// Back to top functionality
-document.getElementById('backToTop').addEventListener('click', () => {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-});
-
-// Intersection Observer for animations
-document.addEventListener('DOMContentLoaded', function() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-            }
-        });
-    }, { threshold: 0.1, rootMargin: '50px' });
-    
-    document.querySelectorAll('.section-header, .fact-sheet, .grid-card, .timeline-content, .timeline-item').forEach(el => {
-        observer.observe(el);
-    });
-    
-    // Counter animation
-    const counters = document.querySelectorAll('.stat-number[data-target]');
-    counters.forEach(counter => {
-        const target = parseInt(counter.getAttribute('data-target'));
-        if (!isNaN(target)) {
-            let current = 0;
-            const increment = target / 50;
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    counter.innerText = target.toLocaleString();
-                    clearInterval(timer);
-                } else {
-                    counter.innerText = Math.floor(current).toLocaleString();
-                }
-            }, 30);
-        }
-    });
-});
-
-// Smooth scroll for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
 </script>
 
-<?php include VIEWPATH.'includes/frontend/Footer.php'; ?>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<?php include VIEWPATH.'includes/frontend/Header.php'; ?>
-
 <style>
-/* ============================================
-   VARIABLES GLOBALES
-   ============================================ */
+/* ============================================================
+   PAGE : CONTEXTE ET JUSTIFICATION STRATÉGIQUE (statique)
+   NUFOTEC-PHYTOMED INDUSTRIES
+   ============================================================ */
+.bgr-page {
+    font-family: 'Poppins', sans-serif;
+    color: #33403A;
+    background: #fff;
+    overflow-x: hidden;
+}
+.bgr-page * { font-family: 'Poppins', sans-serif; }
+.bgr-page :is(h1, h2, h3, h4, h5, h6) { color: #083D2A; }
+
 :root {
-    --primary: #0f4c3a;
-    --primary-light: #1a6b52;
-    --primary-dark: #0a3326;
-    --primary-soft: rgba(15, 76, 58, 0.1);
-    --accent: #d4af37;
-    --accent-hover: #b8962e;
-    --accent-soft: rgba(212, 175, 55, 0.15);
-    --light: #f8f9fa;
-    --dark: #212529;
-    --gray: #6c757d;
-    --gray-light: #dee2e6;
-    --gray-soft: #f1f3f5;
-    --shadow-sm: 0 4px 6px rgba(0,0,0,0.05);
-    --shadow: 0 10px 20px rgba(0,0,0,0.1);
-    --shadow-lg: 0 20px 40px rgba(0,0,0,0.15);
-    --shadow-xl: 0 30px 60px rgba(0,0,0,0.2);
-    --shadow-hover: 0 30px 50px rgba(15, 76, 58, 0.25);
-    --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    --border-radius-sm: 12px;
-    --border-radius-md: 20px;
-    --border-radius-lg: 30px;
-    --border-radius-xl: 40px;
-    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-secondary: 'Playfair Display', serif;
-}
-
-
-
-/* ============================================
-   SECTION HERO PAGE
-   ============================================ */
-.page-hero {
-    position: relative;
-    min-height: 50vh;
-    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    overflow: hidden;
-}
-
-.page-hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.1"><path d="M20 20 L80 20 L80 80 L20 80 Z" fill="none" stroke="%23d4af37" stroke-width="2"/><circle cx="50" cy="50" r="20" fill="none" stroke="%23d4af37" stroke-width="2"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="%23d4af37" stroke-width="2"/></svg>');
-    background-size: 100px 100px;
-    animation: moveBackground 20s linear infinite;
-}
-
-@keyframes moveBackground {
-    from { transform: translateY(0) rotate(0); }
-    to { transform: translateY(-50px) rotate(10deg); }
-}
-
-.page-hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 800px;
-    padding: 60px 20px;
-}
-
-.page-hero-title {
-    font-family: var(--font-secondary);
-    font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 700;
-    color: white;
-    margin-bottom: 20px;
-    animation: fadeInDown 1s ease;
-}
-
-.page-hero-title span {
-    color: var(--accent);
-    position: relative;
-    display: inline-block;
-}
-
-.page-hero-title span::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: var(--accent);
-    animation: expandWidth 1s ease 0.5s forwards;
-    transform-origin: left;
-    transform: scaleX(0);
-}
-
-@keyframes expandWidth {
-    to { transform: scaleX(1); }
-}
-
-.page-hero-subtitle {
-    font-size: clamp(1rem, 2vw, 1.2rem);
-    color: rgba(255,255,255,0.9);
-    max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.8;
-    animation: fadeInUp 1s ease 0.3s forwards;
-    opacity: 0;
-    animation-fill-mode: forwards;
-}
-
-@keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-
-
-
-/* ============================================
-   SECTION GÉNÉRIQUE
-   ============================================ */
-.section {
-    padding: 80px 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.section:nth-child(even) {
-    background: linear-gradient(135deg, #ffffff, var(--gray-soft));
-}
-
-.section-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.section-header {
-    text-align: center;
-    margin-bottom: 50px;
-    opacity: 0;
-    transform: translateY(30px);
-    transition: var(--transition);
-}
-
-.section-header.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.section-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 20px;
-    background: var(--accent-soft);
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border-radius: 50px;
-    margin-bottom: 20px;
-    border: 1px solid var(--accent);
-}
-
-.section-tag::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.5); opacity: 0.7; }
-}
-
-.section-title {
-    font-family: var(--font-secondary);
-    font-size: clamp(2rem, 4vw, 2.8rem);
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 15px;
-    line-height: 1.2;
-}
-
-.section-subtitle {
-    font-size: 1.1rem;
-    color: var(--gray);
-    max-width: 700px;
-    margin: 0 auto;
-    line-height: 1.8;
-}
-
-/* ============================================
-   PROJECT FACT SHEET
-   ============================================ */
-.fact-sheet {
-    background: white;
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-    margin-bottom: 40px;
-    transform: translateY(30px);
-    opacity: 0;
-    transition: var(--transition);
-}
-
-.fact-sheet.visible {
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.fact-sheet-header {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
-    padding: 25px 30px;
-    position: relative;
-    overflow: hidden;
-}
-
-.fact-sheet-header::before {
-    content: 'AGF';
-    position: absolute;
-    right: 20px;
-    bottom: -20px;
-    font-size: 120px;
-    font-weight: 800;
-    opacity: 0.1;
-    color: white;
-    pointer-events: none;
-}
-
-.fact-sheet-header h2 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 5px;
-    position: relative;
-    z-index: 1;
-}
-
-.fact-sheet-header p {
-    font-size: 1rem;
-    opacity: 0.9;
-    position: relative;
-    z-index: 1;
-}
-
-.fact-sheet-body {
-    padding: 30px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.fact-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    padding: 15px;
-    background: var(--gray-soft);
-    border-radius: var(--border-radius-sm);
-    transition: var(--transition);
-}
-
-.fact-item:hover {
-    transform: translateX(10px);
-    background: var(--accent-soft);
-}
-
-.fact-icon {
-    width: 50px;
-    height: 50px;
-    background: var(--primary);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-    transition: var(--transition);
-}
-
-.fact-item:hover .fact-icon {
-    transform: rotate(360deg);
-    background: var(--accent);
-    color: var(--primary);
-}
-
-.fact-content {
-    flex: 1;
-}
-
-.fact-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--gray);
-    margin-bottom: 5px;
-}
-
-.fact-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--dark);
-    line-height: 1.4;
-}
-
-.fact-value.highlight {
-    color: var(--primary);
-    font-size: 1.3rem;
-    font-weight: 700;
-}
-
-/* ============================================
-   CORPORATE PROFILE
-   ============================================ */
-.corporate-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
-}
-
-.corporate-card {
-    background: white;
-    border-radius: var(--border-radius-md);
-    padding: 30px;
-    text-align: center;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.corporate-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 5px;
-    background: linear-gradient(90deg, var(--accent), var(--primary));
-    transform: translateX(-100%);
-    transition: transform 0.6s;
-}
-
-.corporate-card:hover::before {
-    transform: translateX(0);
-}
-
-.corporate-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-hover);
-}
-
-.corporate-icon {
-    width: 80px;
-    height: 80px;
-    background: var(--primary-soft);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 2rem;
-    color: var(--primary);
-    transition: var(--transition);
-}
-
-.corporate-card:hover .corporate-icon {
-    transform: scale(1.1) rotate(360deg);
-    background: var(--accent);
-    color: white;
-}
-
-.corporate-label {
-    font-size: 0.9rem;
-    color: var(--gray);
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.corporate-value {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 5px;
-}
-
-.corporate-value.small {
-    font-size: 1rem;
-    color: var(--dark);
-}
-
-/* ============================================
-   COMPANY OVERVIEW
-   ============================================ */
-.overview-content {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    border-radius: var(--border-radius-lg);
-    padding: 50px;
-    color: white;
-    position: relative;
-    overflow: hidden;
-    margin: 40px 0;
-}
-
-.overview-content::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%);
-    animation: rotate 30s linear infinite;
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.overview-text {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    margin-bottom: 30px;
-    position: relative;
-    z-index: 1;
-}
-
-.overview-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
-    position: relative;
-    z-index: 1;
-}
-
-.overview-stat {
-    text-align: center;
-}
-
-.overview-stat-number {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--accent);
-    margin-bottom: 10px;
-}
-
-.overview-stat-label {
-    font-size: 1rem;
-    opacity: 0.9;
-}
-
-/* ============================================
-   CORE ACTIVITIES
-   ============================================ */
-.activities-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-    margin-top: 40px;
-}
-
-.activity-item {
-    background: white;
-    border-radius: var(--border-radius-sm);
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    border-left: 4px solid transparent;
-}
-
-.activity-item:hover {
-    transform: translateX(10px);
-    border-left-color: var(--accent);
-    box-shadow: var(--shadow-lg);
-}
-
-.activity-number {
-    width: 40px;
-    height: 40px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.2rem;
-    flex-shrink: 0;
-    transition: var(--transition);
-}
-
-.activity-item:hover .activity-number {
-    background: var(--accent);
-    color: var(--primary-dark);
-    transform: scale(1.1);
-}
-
-.activity-text {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--dark);
-    line-height: 1.4;
-}
-
-/* ============================================
-   VISION MISSION
-   ============================================ */
-.vision-mission-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 30px;
-    margin-top: 40px;
-}
-
-.vision-card,
-.mission-card {
-    background: white;
-    border-radius: var(--border-radius-lg);
-    padding: 40px;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.vision-card::before,
-.mission-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 5px;
-    background: linear-gradient(90deg, var(--accent), var(--primary));
-}
-
-.vision-card:hover,
-.mission-card:hover {
-    transform: translateY(-15px);
-    box-shadow: var(--shadow-hover);
-}
-
-.card-icon {
-    width: 80px;
-    height: 80px;
-    background: var(--accent-soft);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 25px;
-    font-size: 2.5rem;
-    color: var(--accent);
-    transition: var(--transition);
-}
-
-.vision-card:hover .card-icon,
-.mission-card:hover .card-icon {
-    transform: scale(1.1) rotate(360deg);
-    background: var(--accent);
-    color: white;
-}
-
-.card-title {
-    font-family: var(--font-secondary);
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 20px;
-}
-
-.card-text {
-    font-size: 1rem;
-    line-height: 1.8;
-    color: var(--gray);
-}
-
-/* ============================================
-   OBJECTIVES SECTION
-   ============================================ */
-.objectives-timeline {
-    position: relative;
-    padding: 40px 0;
-}
-
-.objectives-timeline::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(to bottom, var(--primary), var(--accent), var(--primary));
-    border-radius: 2px;
-}
-
-.objective-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 50px;
-    position: relative;
-}
-
-.objective-item:nth-child(even) {
-    flex-direction: row-reverse;
-}
-
-.objective-content {
-    width: 45%;
-    background: white;
-    border-radius: var(--border-radius-md);
-    padding: 30px;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    position: relative;
-}
-
-.objective-content:hover {
+    --bgr-green: #0B5D3B;
+    --bgr-green-dark: #083D2A;
+    --bgr-green-deep: #052B1E;
+    --bgr-gold: #D4A017;
+    --bgr-soft: #EAF6EF;
+    --bgr-gray: #F5F8F6;
+    --bgr-text: #33403A;
+    --bgr-muted: #5C6B64;
+    --bgr-radius: 24px;
+    --bgr-shadow: 0 18px 44px rgba(8, 61, 42, .10);
+}
+
+.bgr-container { max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+.bgr-section { padding: 96px 0; }
+.bgr-section-gray { background: var(--bgr-gray); }
+
+.bgr-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--bgr-gold); color: #083D2A;
+    font-size: .78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    padding: 9px 26px; border-radius: 50px; margin-bottom: 26px;
+}
+.bgr-badge-green {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--bgr-soft); color: var(--bgr-green);
+    font-size: .78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    padding: 9px 26px; border-radius: 50px; margin-bottom: 26px; border: 1px solid #BBD8C6;
+}
+.bgr-h2 {
+    font-size: clamp(1.7rem, 3vw, 2.5rem);
+    font-weight: 800; line-height: 1.25; color: var(--bgr-green-dark);
+    margin-bottom: 22px;
+}
+.bgr-lead { font-size: 1.12rem; color: var(--bgr-muted); line-height: 1.8; margin-bottom: 0; }
+
+.bgr-text { font-size: 1.03rem; line-height: 1.9; color: var(--bgr-text); margin-bottom: 18px; }
+.bgr-text strong { color: var(--bgr-green-dark); font-weight: 700; }
+
+.bgr-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 15px 34px; border-radius: 50px; font-weight: 600; font-size: 1rem;
+    text-decoration: none; transition: all .3s ease; border: 2px solid transparent;
+}
+.bgr-btn-green { background: var(--bgr-green); color: #fff; }
+.bgr-btn-green:hover { background: #0E7A4E; color: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px rgba(11, 93, 59, .3); }
+.bgr-btn-gold { background: var(--bgr-gold); color: #083D2A; }
+.bgr-btn-gold:hover { background: #E0AF2E; color: #083D2A; transform: translateY(-3px); box-shadow: 0 14px 30px rgba(212, 160, 23, .35); }
+.bgr-btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.55); }
+.bgr-btn-ghost:hover { background: rgba(255,255,255,.12); color: #fff; transform: translateY(-3px); }
+
+/* ══════════════ HERO ══════════════ */
+.bgr-hero {
+    position: relative; min-height: 560px;
+    display: flex; align-items: center;
+    overflow: hidden; padding: 130px 0 90px;
+}
+.bgr-hero-bg {
+    position: absolute; inset: 0;
+    background: url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
     transform: scale(1.05);
-    box-shadow: var(--shadow-hover);
+}
+.bgr-hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(115deg, rgba(5,43,30,.94) 20%, rgba(8,61,42,.82) 55%, rgba(8,61,42,.55) 100%);
+}
+.bgr-hero-content { position: relative; z-index: 3; max-width: 880px; }
+.bgr-hero-crumb {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22);
+    color: rgba(255,255,255,.85); font-size: .82rem; font-weight: 500;
+    padding: 8px 18px; border-radius: 50px; margin-bottom: 28px; backdrop-filter: blur(6px);
+}
+.bgr-hero-crumb a { color: rgba(255,255,255,.85); text-decoration: none; }
+.bgr-hero-crumb a:hover { color: var(--bgr-gold); }
+.bgr-hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--bgr-gold); color: #083D2A;
+    font-size: .78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    padding: 9px 22px; border-radius: 50px; margin-bottom: 24px;
+}
+.bgr-hero-title {
+    color: #fff; font-size: clamp(2.1rem, 4.6vw, 3.6rem);
+    font-weight: 800; line-height: 1.18; margin-bottom: 24px;
+}
+.bgr-hero-title span { color: var(--bgr-gold); }
+.bgr-hero-sub { color: rgba(255,255,255,.88); font-size: 1.12rem; line-height: 1.85; max-width: 720px; margin-bottom: 38px; }
+
+/* ══════════════ CALLOUT ══════════════ */
+.bgr-callout {
+    display: flex; align-items: flex-start; gap: 18px;
+    background: var(--bgr-soft); border-left: 5px solid var(--bgr-green);
+    border-radius: 18px; padding: 22px 28px; margin: 30px 0;
+}
+.bgr-callout i { color: var(--bgr-green); font-size: 1.7rem; margin-top: 3px; }
+.bgr-callout p { margin: 0; font-weight: 600; color: var(--bgr-green-dark); line-height: 1.7; font-size: 1.02rem; }
+
+/* ══════════════ POINTS / CHIPS ══════════════ */
+.bgr-points { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 30px; }
+.bgr-point {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: #fff; border: 1px solid #E3EBE6; border-radius: 16px;
+    padding: 18px 20px; transition: all .3s ease;
+}
+.bgr-point:hover { border-color: #BBD8C6; box-shadow: 0 10px 24px rgba(11, 93, 59, .08); transform: translateY(-3px); }
+.bgr-point i { color: var(--bgr-gold); font-size: 1.35rem; margin-top: 2px; }
+.bgr-point p { margin: 0; font-size: .95rem; font-weight: 500; color: var(--bgr-text); line-height: 1.6; }
+
+.bgr-chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.bgr-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid #DCE8E0; color: var(--bgr-green-dark);
+    font-size: .9rem; font-weight: 600; padding: 10px 20px; border-radius: 50px;
+    transition: all .3s ease;
+}
+.bgr-chip i { color: var(--bgr-gold); }
+.bgr-chip:hover { background: var(--bgr-soft); border-color: var(--bgr-green); transform: translateY(-2px); }
+
+/* ══════════════ IMAGE CARD ══════════════ */
+.bgr-img-card {
+    position: relative; border-radius: var(--bgr-radius);
+    overflow: hidden; box-shadow: var(--bgr-shadow);
+}
+.bgr-img-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bgr-img-badge {
+    position: absolute; bottom: 22px; left: 22px;
+    background: rgba(255,255,255,.95); color: var(--bgr-green-dark);
+    font-weight: 700; font-size: .85rem; padding: 10px 20px; border-radius: 50px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
 }
 
-.objective-year {
-    display: inline-block;
-    padding: 5px 15px;
-    background: var(--accent);
-    color: var(--primary-dark);
-    font-weight: 700;
-    border-radius: 20px;
-    margin-bottom: 15px;
+/* ══════════════ STATS ══════════════ */
+.bgr-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 34px; }
+.bgr-stat {
+    background: #fff; border: 1px solid #E3EBE6; border-radius: 20px;
+    padding: 28px 22px; text-align: center; transition: all .3s ease;
 }
+.bgr-stat:hover { transform: translateY(-6px); box-shadow: 0 16px 34px rgba(11, 93, 59, .10); border-color: #BBD8C6; }
+.bgr-stat-value { font-size: 1.9rem; font-weight: 800; color: var(--bgr-green); line-height: 1.15; }
+.bgr-stat-unit { font-size: 1rem; font-weight: 600; color: var(--bgr-gold); }
+.bgr-stat-label { font-size: .88rem; font-weight: 500; color: var(--bgr-muted); margin-top: 10px; line-height: 1.5; }
 
-.objective-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 15px;
+/* ══════════════ TURNKEY HIGHLIGHT ══════════════ */
+.bgr-tk {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--bgr-green-dark), #0B5D3B);
+    border-radius: var(--bgr-radius); padding: 36px 40px; margin-top: 34px;
 }
-
-.objective-desc {
-    font-size: 0.95rem;
-    color: var(--gray);
-    line-height: 1.6;
-    margin-bottom: 15px;
+.bgr-tk::after {
+    content: '\F5C6'; font-family: 'bootstrap-icons';
+    position: absolute; right: 30px; bottom: -30px; font-size: 130px; color: rgba(255,255,255,.07);
 }
+.bgr-tk-label { color: var(--bgr-gold); font-size: .78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+.bgr-tk-title { color: #fff; font-size: 1.35rem; font-weight: 700; line-height: 1.6; margin: 0; position: relative; z-index: 1; }
+.bgr-tk-title small { display: block; color: rgba(255,255,255,.75); font-size: .95rem; font-weight: 500; margin-top: 10px; line-height: 1.7; }
 
-.objective-details {
-    list-style: none;
-    padding: 0;
+/* ══════════════ PROCESS CARDS ══════════════ */
+.bgr-proc { position: relative; background: #fff; border-radius: var(--bgr-radius); padding: 40px 34px; height: 100%; box-shadow: 0 10px 30px rgba(8,61,42,.06); border: 1px solid #EDF2EE; transition: all .35s ease; }
+.bgr-proc:hover { transform: translateY(-8px); box-shadow: 0 22px 46px rgba(11, 93, 59, .14); border-color: #BBD8C6; }
+.bgr-proc-num {
+    width: 62px; height: 62px; border-radius: 18px;
+    background: linear-gradient(135deg, var(--bgr-green), #0E7A4E);
+    color: #fff; font-size: 1.7rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 24px;
 }
-
-.objective-details li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
+.bgr-proc-title { font-size: 1.25rem; font-weight: 700; color: var(--bgr-green-dark); margin-bottom: 18px; line-height: 1.4; }
+.bgr-proc-steps { list-style: none; padding: 0; margin: 0; }
+.bgr-proc-steps li {
+    position: relative; padding: 9px 0 9px 30px;
+    color: var(--bgr-text); font-size: .95rem; line-height: 1.65; border-bottom: 1px dashed #E3EBE6;
 }
-
-.objective-details li i {
-    color: var(--accent);
-    font-size: 1rem;
+.bgr-proc-steps li:last-child { border-bottom: none; }
+.bgr-proc-steps li::before {
+    content: ''; position: absolute; left: 4px; top: 17px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bgr-gold); border: 2px solid #F6E3B5;
 }
+.bgr-proc-steps li strong { color: var(--bgr-green-dark); }
 
-.objective-marker {
-    width: 60px;
-    height: 60px;
-    background: var(--primary);
-    border: 4px solid var(--accent);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 1.5rem;
-    position: relative;
-    z-index: 2;
-    box-shadow: var(--shadow);
+/* ══════════════ LOW TEMP PANEL ══════════════ */
+.bgr-cool { position: relative; overflow: hidden; }
+.bgr-cool-bg { position: absolute; inset: 0; background: url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat; }
+.bgr-cool-overlay { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(5,43,30,.95) 35%, rgba(8,61,42,.85) 100%); }
+.bgr-cool-content { position: relative; z-index: 2; }
+.bgr-cool h2 { color: #fff; }
+.bgr-cool .bgr-text { color: rgba(255,255,255,.88); }
+.bgr-temp {
+    display: inline-flex; align-items: center; gap: 18px;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.22);
+    border-radius: 18px; padding: 20px 30px; margin-bottom: 28px; backdrop-filter: blur(6px);
 }
+.bgr-temp i { color: var(--bgr-gold); font-size: 2rem; }
+.bgr-temp-value { font-size: 2.2rem; font-weight: 800; color: var(--bgr-gold); line-height: 1; }
+.bgr-temp-label { font-size: .92rem; color: rgba(255,255,255,.85); font-weight: 500; }
 
-/* ============================================
-   CAPITAL ALLOCATION
-   ============================================ */
-.capital-section {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
-    padding: 60px 0;
+/* ══════════════ CTA ══════════════ */
+.bgr-cta {
+    position: relative; overflow: hidden; text-align: center;
+    background: linear-gradient(135deg, var(--bgr-green-dark), #0B5D3B);
+    border-radius: var(--bgr-radius); padding: 76px 40px;
 }
-
-.capital-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
+.bgr-cta::before {
+    content: ''; position: absolute; top: -70%; right: -30%; width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(212,160,23,.22) 0%, transparent 65%);
 }
+.bgr-cta h2 { color: #fff; font-size: clamp(1.8rem, 3.2vw, 2.7rem); font-weight: 800; margin-bottom: 22px; }
+.bgr-cta p { color: rgba(255,255,255,.82); font-size: 1.12rem; max-width: 720px; margin: 0 auto 38px; }
 
-.capital-card {
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-    border-radius: var(--border-radius-md);
-    padding: 30px;
-    border: 1px solid rgba(255,255,255,0.2);
-    transition: var(--transition);
+/* ══════════════ RESPONSIVE ══════════════ */
+@media (max-width: 991.98px) {
+    .bgr-section { padding: 64px 0; }
+    .bgr-stats { grid-template-columns: 1fr 1fr; }
+    .bgr-hero { min-height: 480px; padding: 120px 0 70px; }
 }
-
-.capital-card:hover {
-    transform: translateY(-10px);
-    background: rgba(255,255,255,0.15);
-    border-color: var(--accent);
-}
-
-.capital-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin-bottom: 20px;
-    color: var(--accent);
-}
-
-.capital-list {
-    list-style: none;
-    padding: 0;
-}
-
-.capital-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    font-size: 0.95rem;
-}
-
-.capital-list li i {
-    color: var(--accent);
-    font-size: 1rem;
-}
-
-.capital-percent {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.2);
-    text-align: right;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--accent);
-}
-
-/* ============================================
-   MILESTONES timeline
-   ============================================ */
-.milestones-timeline {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
-}
-
-.milestone-card {
-    background: white;
-    border-radius: var(--border-radius-md);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    position: relative;
-}
-
-.milestone-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: var(--shadow-hover);
-}
-
-.milestone-header {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-}
-
-.milestone-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%);
-}
-
-.milestone-year {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: var(--accent);
-    position: relative;
-    z-index: 1;
-}
-
-.milestone-category {
-    font-size: 0.9rem;
-    opacity: 0.9;
-    position: relative;
-    z-index: 1;
-}
-
-.milestone-body {
-    padding: 25px;
-}
-
-.milestone-list {
-    list-style: none;
-    padding: 0;
-}
-
-.milestone-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    font-size: 0.95rem;
-    color: var(--gray);
-}
-
-.milestone-list li i {
-    color: var(--accent);
-    font-size: 1rem;
-}
-
-.milestone-list li strong {
-    color: var(--primary);
-}
-
-/* ============================================
-   EQUIPMENT SHOWCASE
-   ============================================ */
-.equipment-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
-    margin-top: 40px;
-}
-
-.equipment-card {
-    background: white;
-    border-radius: var(--border-radius-md);
-    padding: 25px;
-    text-align: center;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    border: 1px solid transparent;
-}
-
-.equipment-card:hover {
-    transform: translateY(-10px);
-    border-color: var(--accent);
-    box-shadow: var(--shadow-hover);
-}
-
-.equipment-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 2rem;
-    color: var(--primary);
-    transition: var(--transition);
-}
-
-.equipment-card:hover .equipment-icon {
-    transform: rotateY(360deg);
-    background: var(--accent);
-    color: white;
-}
-
-.equipment-name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 10px;
-    line-height: 1.4;
-}
-
-.equipment-desc {
-    font-size: 0.9rem;
-    color: var(--gray);
-    line-height: 1.6;
-}
-
-/* ============================================
-   STATS COUNTERS
-   ============================================ */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
-    margin: 50px 0;
-}
-
-.stat-box {
-    text-align: center;
-    padding: 30px;
-    background: white;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-}
-
-.stat-box:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-hover);
-}
-
-.stat-box:hover .stat-number {
-    color: var(--accent);
-}
-
-.stat-number {
-    font-size: 3rem;
-    font-weight: 800;
-    color: var(--primary);
-    margin-bottom: 10px;
-    transition: var(--transition);
-}
-
-.stat-label {
-    font-size: 1rem;
-    color: var(--gray);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-@media (max-width: 992px) {
-    .section {
-        padding: 60px 0;
-    }
-    
-    .objectives-timeline::before {
-        left: 30px;
-    }
-    
-    .objective-item,
-    .objective-item:nth-child(even) {
-        flex-direction: column;
-        align-items: flex-start;
-        margin-left: 60px;
-    }
-    
-    .objective-content {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    
-    .objective-marker {
-        position: absolute;
-        left: -60px;
-        top: 0;
-    }
-    
-    .vision-mission-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .overview-content {
-        padding: 30px;
-    }
-}
-
-@media (max-width: 768px) {
-    .fact-sheet-body {
-        grid-template-columns: 1fr;
-    }
-    
-    .corporate-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .activities-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .capital-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .milestones-timeline {
-        grid-template-columns: 1fr;
-    }
-    
-    .equipment-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .overview-stats {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 576px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .page-hero-title {
-        font-size: 2rem;
-    }
-    
-    .section-title {
-        font-size: 1.8rem;
-    }
-    
-    .fact-sheet-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .corporate-card {
-        padding: 20px;
-    }
-    
-    .activity-item {
-        flex-direction: column;
-        text-align: center;
-    }
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-}
-
-.floating {
-    animation: float 4s ease-in-out infinite;
-}
-
-/* Scroll Progress */
-.scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 0%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--primary));
-    z-index: 9999;
-    transition: width 0.1s;
-}
-
-/* Back to Top Button */
-.back-to-top {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 50px;
-    height: 50px;
-    background: var(--primary);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border: none;
-    box-shadow: var(--shadow);
-    opacity: 0;
-    visibility: hidden;
-    transition: var(--transition);
-    z-index: 100;
-}
-
-.back-to-top.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-.back-to-top:hover {
-    background: var(--accent);
-    transform: translateY(-5px);
-}
-
-/* Print Styles */
-@media print {
-    .back-to-top,
-    .scroll-progress {
-        display: none;
-    }
+@media (max-width: 575.98px) {
+    .bgr-hero { min-height: 440px; padding: 110px 0 60px; }
+    .bgr-hero-title { font-size: 1.8rem; }
+    .bgr-points { grid-template-columns: 1fr; }
+    .bgr-stats { grid-template-columns: 1fr; }
+    .bgr-btn { width: 100%; justify-content: center; }
 }
 </style>
 
+<main class="bgr-page">
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- PROJECT FACT SHEET -->
-<section class="section">
-    <div class="section-container">
-        <div class="section-header" id="factSheetHeader">
-            <span class="section-tag">Overview</span>
-            <h2 class="section-title">Project Fact Sheet</h2>
-            <p class="section-subtitle">Comprehensive overview of our integrated phytopharmaceutical manufacturing facility</p>
-        </div>
-
-        <div class="fact-sheet" id="factSheet">
-            <div class="fact-sheet-header">
-                <h2>AGF-PHYTOMED INDUSTRIES</h2>
-                <p>Integrated Phytopharmaceutical & Nutraceutical Manufacturing Facility</p>
-            </div>
-            <div class="fact-sheet-body">
-                <div class="fact-item">
-                    <div class="fact-icon"><i class="bi bi-building"></i></div>
-                    <div class="fact-content">
-                        <div class="fact-label">Project Title</div>
-                        <div class="fact-value">AGF-PHYTOMED INDUSTRIES Integrated Phytopharmaceutical & Nutraceutical Manufacturing facility</div>
-                    </div>
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- HERO -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="bgr-hero" id="bgr-hero">
+        <div class="bgr-hero-bg"></div>
+        <div class="bgr-hero-overlay"></div>
+        <div class="container">
+            <div class="bgr-hero-content">
+                <div class="bgr-hero-crumb">
+                    <i class="bi bi-house-door"></i>
+                    <a href="<?= base_url() ?>">Accueil</a>
+                    <i class="bi bi-chevron-right" style="font-size:.7rem;"></i>
+                    <span>Corporate</span>
+                    <i class="bi bi-chevron-right" style="font-size:.7rem;"></i>
+                    <span>Contexte stratégique</span>
                 </div>
-
-                <div class="fact-item">
-                    <div class="fact-icon"><i class="bi bi-briefcase"></i></div>
-                    <div class="fact-content">
-                        <div class="fact-label">Promoter entity</div>
-                        <div class="fact-value">African Green Farmers Ltd (AGF)</div>
-                    </div>
+                <div class="bgr-hero-badge">
+                    <i class="bi bi-compass"></i> Vision 2026-2031
                 </div>
-
-                <div class="fact-item">
-                    <div class="fact-icon"><i class="bi bi-geo-alt"></i></div>
-                    <div class="fact-content">
-                        <div class="fact-label">Location</div>
-                        <div class="fact-value">Zambia</div>
-                    </div>
-                </div>
-
-                <div class="fact-item">
-                    <div class="fact-icon"><i class="bi bi-envelope"></i></div>
-                    <div class="fact-content">
-                        <div class="fact-label">Contact</div>
-                        <div class="fact-value">info@africangreenfarmers.com</div>
-                    </div>
-                </div>
-
-                <div class="fact-item">
-                    <div class="fact-icon"><i class="bi bi-globe"></i></div>
-                    <div class="fact-content">
-                        <div class="fact-label">Website</div>
-                        <div class="fact-value">www.africangreenfarmers.com</div>
-                    </div>
-                </div>
-
-                <div class="fact-item">
-                    <div class="fact-icon"><i class="bi bi-tag"></i></div>
-                    <div class="fact-content">
-                        <div class="fact-label">Sector</div>
-                        <div class="fact-value">Pharmaceutical Manufacturing & Botanical Standardization</div>
-                    </div>
-                </div>
-
-                <div class="fact-item">
-                    <div class="fact-icon"><i class="bi bi-cash-stack"></i></div>
-                    <div class="fact-content">
-                        <div class="fact-label">Total Seed Capital Requirement</div>
-                        <div class="fact-value highlight">USD 40+ Million</div>
-                    </div>
+                <h1 class="bgr-hero-title" data-aos="fade-up">
+                    Contexte et justification <span>stratégique</span>
+                </h1>
+                <p class="bgr-hero-sub" data-aos="fade-up" data-aos-delay="120">
+                    Le Burundi possède l'une des biodiversités botaniques les plus riches d'Afrique et un héritage
+                    profond de la médecine traditionnelle. NUFOTEC-PHYTOMED INDUSTRIES transforme cet héritage en
+                    une plateforme industrielle moderne, standardisée et à haute valeur ajoutée.
+                </p>
+                <div class="d-flex flex-wrap gap-3" data-aos="fade-up" data-aos-delay="240">
+                    <a href="<?= base_url('About/presentation') ?>" class="bgr-btn bgr-btn-gold">
+                        <i class="bi bi-bullseye"></i> Découvrir notre vision
+                    </a>
+                    <a href="<?= base_url('Investors') ?>" class="bgr-btn bgr-btn-ghost">
+                        <i class="bi bi-graph-up-arrow"></i> Investir
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-
-
-
-
-
-
-
-
-
-<!-- CORPORATE PROFILE -->
-<section class="section">
-    <div class="section-container">
-        <div class="section-header" id="corporateHeader">
-            <span class="section-tag">Company Details</span>
-            <h2 class="section-title">Corporate Profile</h2>
-        </div>
-
-        <div class="corporate-grid">
-            <div class="corporate-card">
-                <div class="corporate-icon"><i class="bi bi-building"></i></div>
-                <div class="corporate-label">Commercial Name</div>
-                <div class="corporate-value">African Green Farmers (AGF) Limited</div>
-            </div>
-
-            <div class="corporate-card">
-                <div class="corporate-icon"><i class="bi bi-calendar-check"></i></div>
-                <div class="corporate-label">Incorporation Date</div>
-                <div class="corporate-value">12th March 2025</div>
-                <div class="corporate-value small">Fully incorporated limited liability Company</div>
-            </div>
-
-            <div class="corporate-card">
-                <div class="corporate-icon"><i class="bi bi-upc-scan"></i></div>
-                <div class="corporate-label">TPIN Number</div>
-                <div class="corporate-value">2003675243</div>
-            </div>
-
-            <div class="corporate-card">
-                <div class="corporate-icon"><i class="bi bi-award"></i></div>
-                <div class="corporate-label">Investment License</div>
-                <div class="corporate-value">Secured</div>
-            </div>
-
-            <div class="corporate-card">
-                <div class="corporate-icon"><i class="bi bi-diagram-3"></i></div>
-                <div class="corporate-label">Sector</div>
-                <div class="corporate-value">Agro-Processing & Phytomedicine/Phytopharmaceutical Manufacturing</div>
-            </div>
-
-            <div class="corporate-card">
-                <div class="corporate-icon"><i class="bi bi-people"></i></div>
-                <div class="corporate-label">Ownership Structure</div>
-                <div class="corporate-value">Privately held by founding partners</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- BRIEF COMPANY OVERVIEW -->
-<section class="section">
-    <div class="section-container">
-        <div class="overview-content">
-            <div class="section-header" style="color: white;">
-                <span class="section-tag" style="background: rgba(212,175,55,0.2); color: var(--accent);">Who We Are</span>
-                <h2 class="section-title" style="color: white;">Company Overview</h2>
-            </div>
-
-            <p class="overview-text">
-                AFRICAN GREEN FARMERS (AGF) Limited is a vertically integrated agro-industrial Zambian privately-owned company engaged in commercial organic farming of key medicinal plants, functional crops, fruits and vegetables in over 2000 hectare-farmland and industrial processing of innovative standardized TCAMs (Traditional, Complementary and Alternative Medicines), Nutraceuticals/Food Supplements, scientifically advanced formulation of phytomedicines and phytopharmaceuticals subjected to preclinical and clinical trials via our scientific research laboratory and laboratory animal breeding facility, as well as clean-label fortified health food products and fruit beverages.
-            </p>
-            <p class="overview-text">
-                Through advanced value addition, scientific quality control & standardization and inclusive farmer partnerships, AGF transforms organic agriculture into scalable industrial opportunity and sustainable economic growth via our AGF-PHYTOMED INDUSTRIES facility.
-            </p>
-
-            <div class="overview-stats">
-                <div class="overview-stat">
-                    <div class="overview-stat-number">2000+</div>
-                    <div class="overview-stat-label">Hectares Farmland</div>
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1 : LE CONTEXTE -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="bgr-section bg-white" id="bgr-contexte">
+        <div class="container">
+            <div class="row align-items-start g-5">
+                <div class="col-lg-6" data-aos="fade-right">
+                    <div class="bgr-img-card" style="height: 520px;">
+                        <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=1200&q=80"
+                             alt="Plantes médicinales et produits naturels"
+                             onerror="this.src='https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'">
+                        <div class="bgr-img-badge">
+                            <i class="bi bi-flower1"></i> Héritage botanique africain
+                        </div>
+                    </div>
                 </div>
-                <div class="overview-stat">
-                    <div class="overview-stat-number">40M+</div>
-                    <div class="overview-stat-label">USD Investment</div>
-                </div>
-                <div class="overview-stat">
-                    <div class="overview-stat-number">500+</div>
-                    <div class="overview-stat-label">Direct Jobs</div>
-                </div>
-                <div class="overview-stat">
-                    <div class="overview-stat-number">2031</div>
-                    <div class="overview-stat-label">Vision Target</div>
+                <div class="col-lg-6" data-aos="fade-left">
+                    <div style="max-width: 850px;">
+                        <span class="bgr-badge-green">Le contexte</span>
+                        <h2 class="bgr-h2">Une richesse naturelle encore largement sous-exploitée</h2>
+                        <p class="bgr-text">
+                            Le Burundi, comme de nombreuses nations africaines, est dotée d'une riche biodiversité
+                            de plantes médicinales et d'un fort héritage culturel d'utilisation de la médecine
+                            traditionnelle. Cependant, le secteur des Médecines Traditionnelles, Complémentaires et
+                            Alternatives (MTCAs) reste largement sous-développé, caractérisé par des pratiques
+                            rudimentaires, un manque de standardisation, un soutien minimal à la recherche et
+                            l'absence d'infrastructures de fabrication modernes.
+                        </p>
+                        <p class="bgr-text">
+                            Malgré une volonté politique croissante, la reconnaissance par le ministère de la Santé
+                            et la mise en place d'organismes de réglementation tels que la ZAMRA, le pays manque
+                            encore de la capacité technologique nécessaire pour transformer les connaissances
+                            traditionnelles en produits de santé de haute qualité, sûrs et standardisés.
+                        </p>
+                        <div class="bgr-points">
+                            <div class="bgr-point">
+                                <i class="bi bi-flower2"></i>
+                                <p>Riche biodiversité de plantes médicinales et héritage traditionnel fort</p>
+                            </div>
+                            <div class="bgr-point">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <p>Pratiques rudimentaires, manque de standardisation et soutien minimal à la recherche</p>
+                            </div>
+                            <div class="bgr-point">
+                                <i class="bi bi-bank"></i>
+                                <p>Volonté politique croissante et réglementation émergente (ministère de la Santé, ZAMRA)</p>
+                            </div>
+                            <div class="bgr-point">
+                                <i class="bi bi-lightbulb"></i>
+                                <p>Capacité technologique à construire pour produire des MTCAs sûrs et standardisés</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- CORE BUSINESS ACTIVITIES -->
-<section class="section">
-    <div class="section-container">
-        <div class="section-header">
-            <span class="section-tag">What We Do</span>
-            <h2 class="section-title">Core Business Activities</h2>
-            <p class="section-subtitle">21 key activities driving our vertical integration strategy</p>
-        </div>
-
-        <div class="activities-grid">
-            <?php 
-            $activities = [
-                "Corporate documentation",
-                "Business plan development",
-                "Fundraising",
-                "Strategic partnership development",
-                "Regulatory affairs documentation",
-                "Licensing and compliance documentation",
-                "Corporate governance documentation",
-                "Investment documentation",
-                "Statutory documentation",
-                "Development finance documentation",
-                "Regulatory submission",
-                "Permit and certification documentation",
-                "Corporate structuring documentation",
-                "Compliance and authorization documentation",
-                "Business regulatory advisory",
-                "Vendor management",
-                "Progressive employee recruitment",
-                "Turnkey construction of the AGF-PHYTOMED INDUSTRIES facility",
-                "Importation and commissioning",
-                "Product manufacturing, certification, registration, Marketing and market launch",
-                "Agricultural land sourcing and organic farm development"
-            ];
-            
-            foreach ($activities as $index => $activity): 
-            ?>
-            <div class="activity-item">
-                <div class="activity-number"><?= str_pad($index + 1, 2, '0', STR_PAD_LEFT) ?></div>
-                <div class="activity-text"><?= $activity ?></div>
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 2 : LA PLATEFORME -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="bgr-section bgr-section-gray" id="bgr-plateforme">
+        <div class="container">
+            <div class="text-center mx-auto mb-5" style="max-width: 820px;" data-aos="fade-up">
+                <span class="bgr-badge-green">La plateforme</span>
+                <h2 class="bgr-h2">NUFOTEC-PHYTOMED INDUSTRIES : une plateforme agro-biotechnologique intégrée BPF et ISO</h2>
             </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
 
-<!-- VISION & MISSION -->
-<section class="section">
-    <div class="section-container">
-        <div class="vision-mission-grid">
-            <div class="vision-card">
-                <div class="card-icon"><i class="bi bi-eye"></i></div>
-                <h3 class="card-title">Vision Statement</h3>
-                <p class="card-text">
-                    To become a leading Zambian-based model in chemical-devoid large-scale farming of organic crops and medicinal plants and industrial hub for manufacturing of innovative standardized TCAMs, Nutraceuticals/Food Supplements, phytomedicines and phytopharmaceuticals subjected to preclinical and clinical trials via our scientific research laboratory and laboratory animal breeding facility, high-nutrient organic fertilizers as well as clean-label fortified health food products and fruit beverages- recognized across African continent and globally for quality, safety and sustainability, and contribution to the sustainable socio-economic transformation.
+            <div data-aos="fade-up">
+                <p class="bgr-text">
+                    NUFOTEC-PHYTOMED Industries est structurée, via son installation NUFOTEC-PHYTOMED Industries,
+                    comme une plateforme de fabrication agro-biotechnologique et phytopharmaceutique intégrée
+                    verticalement, alignée sur les BPF et aux normes ISO, conçue pour capturer la demande de
+                    croissance élevée pour les produits de santé préventifs et thérapeutiques à base de plantes sur
+                    les marchés domestiques et régionaux.
+                </p>
+                <p class="bgr-text">
+                    En faisant passer la culture biologique commerciale de <strong>90 hectares à plus de 2 000
+                    hectares</strong> de cultures médicinales et de cultures riches en nutriments à haute valeur
+                    ajoutée, y compris l'<strong>Aloe vera</strong> et la <strong>Carica papaya</strong>, et en
+                    déployant <strong>plus de 40 millions USD</strong> dans des infrastructures de transformation
+                    avancées, des environnements de fabrication en salle blanche, des laboratoires phytochimiques et
+                    microbiologiques et des systèmes qualité certifiés ISO, NUFOTEC assure la traçabilité des
+                    matières premières, établit de solides barrières à l'entrée, optimise les marges de valeur
+                    ajoutée et réduit la dépendance aux importations régionales.
+                </p>
+                <p class="bgr-text">
+                    L'architecture de produits diversifiée – couvrant les MTCAs standardisées, les nutraceutiques,
+                    les aliments fonctionnels fortifiés clean-label, les engrais organiques riches en nutriments,
+                    les phytomédicines et phytopharmaceutiques cliniquement validés – crée des flux de revenus
+                    superposés avec une génération de trésorerie précoce et un positionnement phytopharmaceutique à
+                    long terme à haute marge, visant un chiffre d'affaires annuel de plusieurs millions de dollars,
+                    une performance EBITDA durable et une expansion exportable à l'échelle d'ici 2031.
                 </p>
             </div>
 
-            <div class="mission-card">
-                <div class="card-icon"><i class="bi bi-rocket"></i></div>
-                <h3 class="card-title">Mission Statement</h3>
-                <p class="card-text">
-                    To organically do large-scale commercial farming of key medicinal plants, functional crops, fruits and vegetables in over 2000 hectare-farmland and to process the harvest into GMP-compliant and ISO standard TCAMs, Nutraceuticals/Food Supplements, phytomedicines and phytopharmaceuticals subjected to preclinical and clinical trials via our scientific research laboratory and laboratory animal breeding facility, as well as clean-label fortified health food products and fruit beverages and high-nutrient organic fertilizers.
-                </p>
+            <div class="bgr-stats" data-aos="fade-up" data-aos-delay="100">
+                <div class="bgr-stat">
+                    <div class="bgr-stat-value">90 → 2000<span class="bgr-stat-unit">+</span></div>
+                    <div class="bgr-stat-label">Hectares de cultures médicinales et riches en nutriments</div>
+                </div>
+                <div class="bgr-stat">
+                    <div class="bgr-stat-value">40<span class="bgr-stat-unit">+</span> M<span class="bgr-stat-unit"> USD</span></div>
+                    <div class="bgr-stat-label">Déployés dans les infrastructures de transformation</div>
+                </div>
+                <div class="bgr-stat">
+                    <div class="bgr-stat-value">6</div>
+                    <div class="bgr-stat-label">Gammes de produits à flux de revenus superposés</div>
+                </div>
+                <div class="bgr-stat">
+                    <div class="bgr-stat-value">BPF <span class="bgr-stat-unit">· ISO</span></div>
+                    <div class="bgr-stat-label">Conformité BPF et systèmes qualité certifiés ISO</div>
+                </div>
+            </div>
+
+            <div class="bgr-chips" data-aos="fade-up" data-aos-delay="180">
+                <span class="bgr-chip"><i class="bi bi-capsule"></i> MTCAs standardisées</span>
+                <span class="bgr-chip"><i class="bi bi-heart-pulse"></i> Nutraceutiques</span>
+                <span class="bgr-chip"><i class="bi bi-basket2"></i> Aliments fonctionnels clean-label</span>
+                <span class="bgr-chip"><i class="bi bi-tree"></i> Engrais organiques riches en nutriments</span>
+                <span class="bgr-chip"><i class="bi bi-eyedropper"></i> Phytomédicines cliniquement validées</span>
+                <span class="bgr-chip"><i class="bi bi-flask"></i> Phytopharmaceutiques</span>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- STRATEGIC POSITIONING -->
-<section class="section">
-    <div class="section-container">
-        <div class="overview-content" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary));">
-            <div class="section-header" style="color: white;">
-                <span class="section-tag" style="background: rgba(212,175,55,0.2); color: var(--accent);">Our Edge</span>
-                <h2 class="section-title" style="color: white;">Strategic Positioning</h2>
-            </div>
-            <p class="overview-text" style="font-size: 1.2rem; text-align: center;">
-                AFRICAN GREEN FARMERS LIMITED is positioned as a vertically integrated agro-industrial company focused on high-value medicinal and functional crops. Through structured partnerships, value addition and export-oriented processing, the company transforms commercial organic agriculture into scalable industrial (TCAMs, Nutraceuticals/Food Supplements, phytomedicines and phytopharmaceuticals subjected to preclinical and clinical trials via our scientific research laboratory and laboratory animal breeding facility, as well as clean-label fortified health food products and fruit beverages.
-            </p>
-        </div>
-    </div>
-</section>
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 3 : L'INSTALLATION INDUSTRIELLE -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="bgr-section bg-white" id="bgr-installation">
+        <div class="container">
+            <div class="row align-items-start g-5">
+                <div class="col-lg-6" data-aos="fade-left">
+                    <div style="max-width: 850px;">
+                        <span class="bgr-badge-green">L'installation</span>
+                        <h2 class="bgr-h2">Une ligne de production clé en main, automatisée et de pointe</h2>
+                        <p class="bgr-text">
+                            L'installation NUFOTEC-PHYTOMED INDUSTRIES émerge comme l'une des principales initiatives
+                            privées visant à mettre en œuvre des solutions industrielles automatisées, entièrement
+                            intégrées et de pointe dans le secteur des herbes et nutraceutiques.
+                        </p>
+                        <p class="bgr-text">
+                            L'entreprise a adopté un système de ligne de production clé en main automatisé et
+                            personnalisé, rare, conforme aux BPF et aux normes ISO pour l'extraction, l'encapsulation
+                            et la mise en comprimés d'<strong>API (Principes Actifs Pharmaceutiques)</strong> à base
+                            de plantes. Cette configuration industrielle complexe et automatisée combine trois
+                            techniques de transformation avancées.
+                        </p>
 
+                        <div class="bgr-tk">
+                            <div class="bgr-tk-label"><i class="bi bi-gear-wide-connected"></i> Configuration industrielle</div>
+                            <div class="bgr-tk-title">
+                                TURNKEY ULTRASOUND-ASSISTED EXTRACTION (UAE)
+                                <small>CAPSULE PRODUCTION AND TABLETING LINE SYSTEM — un système automatisé intégrant extraction par ultrasons, production de gélules et de comprimés.</small>
+                            </div>
+                        </div>
 
-
-
-
-
-<!-- OBJECTIVES -->
-<section class="section">
-    <div class="section-container">
-        <div class="section-header">
-            <span class="section-tag">Our Goals</span>
-            <h2 class="section-title">Global & Specific Objectives</h2>
-        </div>
-
-        <div class="objectives-timeline">
-            <!-- Global Objective -->
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">2026-2031</span>
-                    <h3 class="objective-title">Global Objective</h3>
-                    <p class="objective-desc">
-                        Following the strategic deployment of USD 40+ million as seeds capital, AFRICAN GREEN FARMERS (AGF) Limited will have fully constructed and operationalized the AGF-PHYTOMED INDUSTRIES facility as a GMP-aligned agro-biotechnology manufacturing platform producing essentially seven (7) categories of standardized TCAMs, Nutraceuticals/Food Supplements, clean-label fortified health food products and fruit beverages, high-nutrient organic fertilizers, preclinical research-based phytomedicines and phytopharmaceuticals, generating sustainable job opportunities and revenues from domestic markets while achieving ISO certifications, entitling us for regional and international export expansion, targeting multi-million-dollar annual turnover, sustainable EBITDA performance, and scalable export expansion by 2031 (Vision 2026-2031).
-                    </p>
-                </div>
-                <div class="objective-marker">1</div>
-            </div>
-
-            <!-- Specific Objectives -->
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 1</span>
-                    <h3 class="objective-title">Establish GMP-compliant Facility</h3>
-                    <p class="objective-desc">
-                        Establish a GMP-compliant AGF-PHYTOMED INDUSTRIES facility endowed with ISO-certified cleanroom manufacturing standards
-                    </p>
-                </div>
-                <div class="objective-marker">2</div>
-            </div>
-
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 2</span>
-                    <h3 class="objective-title">Product Development</h3>
-                    <p class="objective-desc">
-                        Develop standardized TCAMs, Nutraceuticals/Food Supplements, phytochemicals & phytopharmaceuticals formulations, fortified clean-label health food products and fruit beverages
-                    </p>
-                </div>
-                <div class="objective-marker">3</div>
-            </div>
-
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 3</span>
-                    <h3 class="objective-title">Fermentation Biotechnology</h3>
-                    <p class="objective-desc">
-                        Integrate fermentation biotechnology for high-nutrient organic fertilizers
-                    </p>
-                </div>
-                <div class="objective-marker">4</div>
-            </div>
-
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 4</span>
-                    <h3 class="objective-title">Advanced Laboratory Equipment</h3>
-                    <div class="objective-details">
-                        <li><i class="bi bi-check-circle-fill"></i> Ultra-high Performance Liquid Chromatography (UHPLC-MS/MS)</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Triple Quadruple Gas Chromatography Tandem Mass Spectrometry (GC-MS/MS 8000)</li>
-                        <li><i class="bi bi-check-circle-fill"></i> High-Performance Atomic Absorption Spectrometer (HPAAS)</li>
-                        <li><i class="bi bi-check-circle-fill"></i> AH SN600 Laser Scanning Microscope</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Quant Studio 5 (RT-qPCR)</li>
-                        <li><i class="bi bi-check-circle-fill"></i> High-Parameter Digital Flow Cytometer</li>
+                        <div class="bgr-callout">
+                            <i class="bi bi-patch-check"></i>
+                            <p>
+                                Trois techniques de transformation avancées combinées au sein d'une seule
+                                configuration industrielle automatisée et clé en main.
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <div class="objective-marker">5</div>
-            </div>
-
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 5</span>
-                    <h3 class="objective-title">Preclinical Animal Research Facility</h3>
-                    <p class="objective-desc">
-                        Setup preclinical animal research facility where laboratory animals (e.g. Mice) are housed, bred and used under controlled scientific research conditions for generating scientifically validated, regulatory compliant preclinical data that proves a product is safe, effective, and standardized before human administration
-                    </p>
+                <div class="col-lg-6" data-aos="fade-right">
+                    <div class="bgr-img-card" style="height: 560px;">
+                        <img src="https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80"
+                             alt="Ligne de production industrielle automatisée"
+                             onerror="this.src='https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'">
+                        <div class="bgr-img-badge">
+                            <i class="bi bi-cpu"></i> Ligne automatisée clé en main
+                        </div>
+                    </div>
                 </div>
-                <div class="objective-marker">6</div>
-            </div>
-
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 6</span>
-                    <h3 class="objective-title">Commercial-scale Organic Cultivation</h3>
-                    <p class="objective-desc">
-                        Undertake commercial-scale organic cultivation of medicinal plants, functional crops, fruits and vegetables for sustainable raw material production
-                    </p>
-                </div>
-                <div class="objective-marker">7</div>
-            </div>
-
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 7</span>
-                    <h3 class="objective-title">Regulatory Approvals</h3>
-                    <p class="objective-desc">
-                        Achieve domestic, regional and international regulatory approvals
-                    </p>
-                </div>
-                <div class="objective-marker">8</div>
-            </div>
-
-            <div class="objective-item">
-                <div class="objective-content">
-                    <span class="objective-year">Priority 8</span>
-                    <h3 class="objective-title">Export-oriented Manufacturing</h3>
-                    <p class="objective-desc">
-                        Scale export-oriented manufacturing for domestic, regional and international market integration
-                    </p>
-                </div>
-                <div class="objective-marker">9</div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 4 : LES TROIS PROCÉDÉS -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="bgr-section bgr-section-gray" id="bgr-procedes">
+        <div class="container">
+            <div class="text-center mx-auto mb-5" style="max-width: 760px;" data-aos="fade-up">
+                <span class="bgr-badge-green">Nos procédés</span>
+                <h2 class="bgr-h2">Trois procédés de transformation de pointe</h2>
+                <p class="bgr-lead">De la matière première végétale au produit fini standardisé : une chaîne complète, automatisée et conforme aux BPF.</p>
+            </div>
 
-
-
-
-
-
-
-
-<!-- STRATEGIC OBJECTIVES 2026-2031 -->
-<section class="section">
-    <div class="section-container">
-        <div class="section-header">
-            <span class="section-tag">Roadmap</span>
-            <h2 class="section-title">Strategic Objectives 2026-2031</h2>
-        </div>
-
-        <!-- Commercial Organic Farming Expansion -->
-        <div class="overview-content" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); margin-top: 30px;">
-            <h3 style="font-size: 1.8rem; color: var(--accent); margin-bottom: 20px;">10.1. Commercial Organic Farming Expansion</h3>
-            <p style="color: white; margin-bottom: 30px;">Scale climate-smart commercial organic cultivation of high-value medicinal and functional crops.</p>
-            
             <div class="row g-4">
-                <div class="col-md-6">
-                    <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: var(--border-radius-md);">
-                        <h4 style="color: var(--accent); margin-bottom: 15px;">Phase I (2026–2027)</h4>
-                        <ul style="list-style: none; padding: 0; color: white;">
-                            <li style="margin-bottom: 10px;"><i class="bi bi-check-circle-fill" style="color: var(--accent); margin-right: 10px;"></i>Operationalize 90 hectares already acquired</li>
-                            <li style="margin-bottom: 10px;"><i class="bi bi-check-circle-fill" style="color: var(--accent); margin-right: 10px;"></i>Cultivate priority medicinal plants including Carica papayaya and aloe vera</li>
-                            <li style="margin-bottom: 10px;"><i class="bi bi-check-circle-fill" style="color: var(--accent); margin-right: 10px;"></i>Establish irrigation, post-harvest handling, and drying systems</li>
+                <div class="col-lg-4" data-aos="fade-up">
+                    <div class="bgr-proc">
+                        <div class="bgr-proc-num">1</div>
+                        <h3 class="bgr-proc-title">Extraction et purification phytochimique</h3>
+                        <ul class="bgr-proc-steps">
+                            <li><strong>Traitement post-récolte</strong></li>
+                            <li><strong>Dégraissage</strong> éventuel</li>
+                            <li><strong>Concentration</strong></li>
+                            <li><strong>Purification</strong> éventuelle</li>
+                            <li><strong>Séchage sous vide</strong></li>
+                            <li><strong>Conditionnement de l'extrait</strong> pour stockage</li>
                         </ul>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: var(--border-radius-md);">
-                        <h4 style="color: var(--accent); margin-bottom: 15px;">Phase II (2028–2031)</h4>
-                        <ul style="list-style: none; padding: 0; color: white;">
-                            <li style="margin-bottom: 10px;"><i class="bi bi-check-circle-fill" style="color: var(--accent); margin-right: 10px;"></i>Expand to 2,000+ hectares (owned + contracted farming)</li>
-                            <li style="margin-bottom: 10px;"><i class="bi bi-check-circle-fill" style="color: var(--accent); margin-right: 10px;"></i>Integrate 5,000+ out-growers</li>
-                            <li style="margin-bottom: 10px;"><i class="bi bi-check-circle-fill" style="color: var(--accent); margin-right: 10px;"></i>Achieve certified organic compliance</li>
-                            <li style="margin-bottom: 10px;"><i class="bi bi-check-circle-fill" style="color: var(--accent); margin-right: 10px;"></i>Target Output: 15,000–25,000 metric tons annual raw biomass</li>
+                <div class="col-lg-4" data-aos="fade-up" data-aos-delay="120">
+                    <div class="bgr-proc">
+                        <div class="bgr-proc-num">2</div>
+                        <h3 class="bgr-proc-title">Fabrication de gélules</h3>
+                        <ul class="bgr-proc-steps">
+                            <li><strong>Encapsulation</strong></li>
+                            <li><strong>Remplissage des flacons</strong></li>
+                            <li><strong>Capsulage et scellage</strong></li>
+                            <li><strong>Étiquetage des flacons</strong></li>
+                            <li><strong>Mise en carton</strong> des flacons</li>
+                            <li><strong>Insertion de la notice</strong> et emballage en caisse de 15 flacons</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-4" data-aos="fade-up" data-aos-delay="240">
+                    <div class="bgr-proc">
+                        <div class="bgr-proc-num">3</div>
+                        <h3 class="bgr-proc-title">Fabrication de comprimés</h3>
+                        <ul class="bgr-proc-steps">
+                            <li><strong>Mélange d'extrait sec</strong></li>
+                            <li><strong>Granulation</strong> et séchage sous vide éventuel</li>
+                            <li><strong>Sécheur à lit fluidisé</strong></li>
+                            <li><strong>Compression</strong> et <strong>enrobage des comprimés</strong></li>
+                            <li><strong>Remplissage, capsulage, scellage et étiquetage</strong> des flacons</li>
+                            <li><strong>Mise en carton, notice</strong> et emballage en caisse de 15 flacons</li>
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Capital Allocation -->
-        <div class="capital-section" style="margin-top: 40px; border-radius: var(--border-radius-lg);">
-            <div class="section-header" style="color: white;">
-                <span class="section-tag" style="background: rgba(212,175,55,0.2); color: var(--accent);">Investment</span>
-                <h2 class="section-title" style="color: white;">USD 40+ Million Seed Capital Allocation</h2>
-            </div>
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 5 : TECHNOLOGIE BASSE TEMPÉRATURE -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="bgr-section bgr-cool" id="bgr-technologie">
+        <div class="bgr-cool-bg"></div>
+        <div class="bgr-cool-overlay"></div>
+        <div class="container">
+            <div class="bgr-cool-content" style="max-width: 980px;" data-aos="fade-up">
+                <span class="bgr-hero-badge"><i class="bi bi-thermometer-snow"></i> Technologie douce</span>
+                <h2 class="bgr-h2" style="color:#fff;">Une technologie basse température qui préserve les principes actifs</h2>
 
-            <div class="capital-grid">
-                <div class="capital-card">
-                    <h3 class="capital-title">A. Facility Establishment</h3>
-                    <ul class="capital-list">
-                        <li><i class="bi bi-building"></i> GMP-grade facility construction & commissioning</li>
-                        <li><i class="bi bi-door-open"></i> ISO-classified cleanroom establishment</li>
-                    </ul>
-                    <div class="capital-percent">25-35%</div>
+                <div class="bgr-temp">
+                    <i class="bi bi-thermometer-half"></i>
+                    <div>
+                        <div class="bgr-temp-value">40 – 60°C</div>
+                        <div class="bgr-temp-label">Températures de fonctionnement réduites</div>
+                    </div>
                 </div>
 
-                <div class="capital-card">
-                    <h3 class="capital-title">B. Manufacturing Line Systems</h3>
-                    <ul class="capital-list">
-                        <li><i class="bi bi-gear"></i> UAE Extraction Line</li>
-                        <li><i class="bi bi-capsule"></i> Capsule/Tablet Production</li>
-                        <li><i class="bi bi-droplet"></i> Liquid Processing Lines</li>
-                        <li><i class="bi bi-flower"></i> Spirulina Production</li>
-                        <li><i class="bi bi-cup"></i> Cold Press Juices</li>
-                        <li><i class="bi bi-tree"></i> Organic Fertilizers</li>
-                    </ul>
-                    <div class="capital-percent">20-30%</div>
+                <p class="bgr-text">
+                    Le système de ligne fonctionne à des températures réduites (40–60°C) pour préserver les
+                    principes actifs pharmaceutiques thermosensibles (composés bioactifs) ciblés pour développer des
+                    phytomédicaments sûrs et efficaces, des nutraceutiques, des aliments santé fortifiés riches en
+                    nutriments et des engrais organiques riches en nutriments.
+                </p>
+
+                <div class="bgr-chips" style="margin-top: 12px;">
+                    <span class="bgr-chip" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff;"><i class="bi bi-capsule"></i> Phytomédicaments sûrs et efficaces</span>
+                    <span class="bgr-chip" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff;"><i class="bi bi-heart-pulse"></i> Nutraceutiques</span>
+                    <span class="bgr-chip" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff;"><i class="bi bi-basket2"></i> Aliments santé fortifiés</span>
+                    <span class="bgr-chip" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff;"><i class="bi bi-tree"></i> Engrais organiques</span>
                 </div>
 
-                <div class="capital-card">
-                    <h3 class="capital-title">C. Advanced Laboratory Equipment</h3>
-                    <ul class="capital-list">
-                        <li><i class="bi bi-mic                    <li><i class="bi bi-mic"></i> Ultra-high Performance Liquid Chromatography (UHPLC-MS/MS)</li>
-                        <li><i class="bi bi-bar-chart"></i> Triple Quadruple GC-MS/MS 8000</li>
-                        <li><i class="bi bi-thermometer"></i> High-Performance Atomic Absorption Spectrometer</li>
-                        <li><i class="bi bi-scanner"></i> AH SN600 Laser Scanning Microscope</li>
-                        <li><i class="bi bi-cpu"></i> Quant Studio 5 (RT-qPCR)</li>
-                        <li><i class="bi bi-graph-up"></i> High-Parameter Digital Flow Cytometer</li>
-                    </ul>
-                    <div class="capital-percent">15-20%</div>
-                </div>
-
-                <div class="capital-card">
-                    <h3 class="capital-title">D. Cleanrooms & Sterile Zones</h3>
-                    <ul class="capital-list">
-                        <li><i class="bi bi-wind"></i> ISO-classified cleanrooms</li>
-                        <li><i class="bi bi-droplet"></i> Sterile processing areas</li>
-                        <li><i class="bi bi-shield"></i> Containment zones</li>
-                    </ul>
-                    <div class="capital-percent">8-12%</div>
-                </div>
-
-                <div class="capital-card">
-                    <h3 class="capital-title">E. Certification & Regulatory</h3>
-                    <ul class="capital-list">
-                        <li><i class="bi bi-award"></i> ISO certifications</li>
-                        <li><i class="bi bi-file-text"></i> GMP documentation</li>
-                        <li><i class="bi bi-check-circle"></i> Regulatory compliance</li>
-                    </ul>
-                    <div class="capital-percent">3-5%</div>
-                </div>
-
-                <div class="capital-card">
-                    <h3 class="capital-title">F. Working Capital Buffer</h3>
-                    <ul class="capital-list">
-                        <li><i class="bi bi-cash"></i> Operational liquidity</li>
-                        <li><i class="bi bi-cart"></i> Raw material procurement</li>
-                        <li><i class="bi bi-people"></i> Staffing and training</li>
-                    </ul>
-                    <div class="capital-percent">10-15%</div>
+                <div class="bgr-callout" style="background:rgba(255,255,255,.08);border-left-color:var(--bgr-gold);margin-top:34px;">
+                    <i class="bi bi-stars" style="color:var(--bgr-gold);"></i>
+                    <p style="color:#fff;">
+                        Une technologie de pointe sans précédent dans le secteur des MTCAs / phytomédecine.
+                    </p>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Product Portfolio Development -->
-        <div class="overview-content" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary)); margin-top: 40px;">
-            <h3 style="font-size: 1.8rem; color: var(--accent); margin-bottom: 20px;">10.3. Product Portfolio Development By 2031</h3>
-            
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: var(--border-radius-md); height: 100%;">
-                        <h4 style="color: var(--accent); margin-bottom: 15px;">A. Standardized TCAMAs</h4>
-                        <p style="color: white;">20+ standardized botanical formulations, Stability-tested and batch-traceable.</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: var(--border-radius-md); height: 100%;">
-                        <h4 style="color: var(--accent); margin-bottom: 15px;">B. Nutraceuticals & Food Supplements</h4>
-                        <p style="color: white;">15+ evidence-supported supplements, Clean-label, non-synthetic fortified products.</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: var(--border-radius-md); height: 100%;">
-                        <h4 style="color: var(--accent); margin-bottom: 15px;">C. Fortified Functional Foods & Beverages</h4>
-                        <p style="color: white;">Nutrient-dense fruit & vegetable derivatives, Botanical-enhanced health beverages.</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: var(--border-radius-md); height: 100%;">
-                        <h4 style="color: var(--accent); margin-bottom: 15px;">D. Clinical Trial–Based Phytomedicines</h4>
-                        <p style="color: white;">Pre-clinical validation via animal research facility, at least 3 clinical trial programs initiated by 2030.</p>
-                    </div>
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 6 : CTA -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="bgr-section bg-white" id="bgr-cta">
+        <div class="container">
+            <div class="bgr-cta" data-aos="fade-up">
+                <span class="bgr-hero-badge">Rejoignez-nous</span>
+                <h2>Construisons ensemble l'avenir de la phytomédecine industrielle en Afrique.</h2>
+                <p>
+                    Investissez dans une plateforme industrielle d'envergure internationale, devenez courtier
+                    contractuel, ou découvrez nos produits de santé naturelle d'exception.
+                </p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="<?= base_url('About/presentation') ?>" class="bgr-btn bgr-btn-gold">
+                        <i class="bi bi-bullseye"></i> Découvrir la présentation
+                    </a>
+                    <a href="<?= base_url('Investors') ?>" class="bgr-btn bgr-btn-ghost">
+                        <i class="bi bi-graph-up-arrow"></i> Investir
+                    </a>
+                    <a href="<?= base_url('Home/Contact') ?>" class="bgr-btn bgr-btn-ghost">
+                        <i class="bi bi-envelope"></i> Nous contacter
+                    </a>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Quality & Certifications -->
-        <div class="stats-grid" style="margin-top: 40px;">
-            <div class="stat-box">
-                <div class="stat-number">ISO 9001</div>
-                <div class="stat-label">Quality Management</div>
-                <p style="margin-top: 10px; color: var(--gray);">By 2029</p>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">ISO 22000</div>
-                <div class="stat-label">Food Safety</div>
-                <p style="margin-top: 10px; color: var(--gray);">By 2029</p>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">GMP</div>
-                <div class="stat-label">Good Manufacturing Practices</div>
-                <p style="margin-top: 10px; color: var(--gray);">Full documentation & SOPs</p>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">COMESA</div>
-                <div class="stat-label">Regional Market Access</div>
-                <p style="margin-top: 10px; color: var(--gray);">Export dossiers ready</p>
-            </div>
-        </div>
+</main>
 
-        <!-- Financial Targets -->
-        <div class="overview-content" style="background: linear-gradient(135deg, var(--accent), var(--accent-hover)); margin-top: 40px;">
-            <h3 style="font-size: 1.8rem; color: var(--primary-dark); margin-bottom: 30px; text-align: center;">10.5. Financial & Market Performance By 2031</h3>
-            
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div style="text-align: center; color: var(--primary-dark);">
-                        <div style="font-size: 3rem; font-weight: 800;">$15-25M</div>
-                        <div style="font-size: 1.1rem; opacity: 0.9;">Annual Turnover</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div style="text-align: center; color: var(--primary-dark);">
-                        <div style="font-size: 3rem; font-weight: 800;">45%</div>
-                        <div style="font-size: 1.1rem; opacity: 0.9;">Gross Margin</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div style="text-align: center; color: var(--primary-dark);">
-                        <div style="font-size: 3rem; font-weight: 800;">22%</div>
-                        <div style="font-size: 1.1rem; opacity: 0.9;">EBITDA</div>
-                    </div>
-                </div>
-            </div>
-            <div class="row g-4 mt-4">
-                <div class="col-md-6">
-                    <div style="text-align: center; color: var(--primary-dark);">
-                        <div style="font-size: 2rem; font-weight: 700;">Year 3</div>
-                        <div style="font-size: 1.1rem; opacity: 0.9;">Positive Cash Flow</div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div style="text-align: center; color: var(--primary-dark);">
-                        <div style="font-size: 2rem; font-weight: 700;">30%</div>
-                        <div style="font-size: 1.1rem; opacity: 0.9;">Export Share</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Socio-Economic Impact -->
-        <div class="stats-grid" style="margin-top: 40px;">
-            <div class="stat-box">
-                <div class="stat-number">500+</div>
-                <div class="stat-label">Direct Skilled Jobs</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">5,000-10,000</div>
-                <div class="stat-label">Indirect Livelihoods</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">60%</div>
-                <div class="stat-label">Youth & Women</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">30-50%</div>
-                <div class="stat-label">Farmer Income Increase</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ADVANCED EQUIPMENT SHOWCASE -->
-<section class="section">
-    <div class="section-container">
-        <div class="section-header">
-            <span class="section-tag">Technology</span>
-            <h2 class="section-title">Advanced Laboratory Equipment</h2>
-            <p class="section-subtitle">State-of-the-art analytical and research instruments for quality control and standardization</p>
-        </div>
-
-        <div class="equipment-grid">
-            <div class="equipment-card">
-                <div class="equipment-icon"><i class="bi bi-cpu"></i></div>
-                <h3 class="equipment-name">UHPLC-MS/MS</h3>
-                <p class="equipment-desc">Ultra-high Performance Liquid Chromatography Tandem Mass Spectrometry</p>
-            </div>
-            <div class="equipment-card">
-                <div class="equipment-icon"><i class="bi bi-bar-chart"></i></div>
-                <h3 class="equipment-name">GC-MS/MS 8000</h3>
-                <p class="equipment-desc">Triple Quadruple Gas Chromatography Tandem Mass Spectrometry</p>
-            </div>
-            <div class="equipment-card">
-                <div class="equipment-icon"><i class="bi bi-thermometer"></i></div>
-                <h3 class="equipment-name">HPAAS</h3>
-                <p class="equipment-desc">High-Performance Atomic Absorption Spectrometer</p>
-            </div>
-            <div class="equipment-card">
-                <div class="equipment-icon"><i class="bi bi-scanner"></i></div>
-                <h3 class="equipment-name">AH SN600</h3>
-                <p class="equipment-desc">Laser Scanning Microscope</p>
-            </div>
-            <div class="equipment-card">
-                <div class="equipment-icon"><i class="bi bi-graph-up"></i></div>
-                <h3 class="equipment-name">Quant Studio 5</h3>
-                <p class="equipment-desc">RT-qPCR for Genetic Analysis</p>
-            </div>
-            <div class="equipment-card">
-                <div class="equipment-icon"><i class="bi bi-pie-chart"></i></div>
-                <h3 class="equipment-name">Digital Flow Cytometer</h3>
-                <p class="equipment-desc">High-Parameter Cell Analysis</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- MILESTONES VISION 2026-2031 -->
-<section class="section">
-    <div class="section-container">
-        <div class="section-header">
-            <span class="section-tag">Roadmap</span>
-            <h2 class="section-title">Our Vision 2026-2031</h2>
-            <p class="section-subtitle">Strategic milestones across key areas of development</p>
-        </div>
-
-        <div class="milestones-timeline">
-            <!-- Research & Product Development -->
-            <div class="milestone-card">
-                <div class="milestone-header">
-                    <div class="milestone-year">2026-2031</div>
-                    <div class="milestone-category">Research & Development</div>
-                </div>
-                <div class="milestone-body">
-                    <ul class="milestone-list">
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2026:</strong> Complete bioactive compound identification for top 5 chronic disease targets</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2027:</strong> Preclinical validation of lead compounds</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2028:</strong> Submission of first regulatory dossiers for clinical trials</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Clinical & Healthcare Services -->
-            <div class="milestone-card">
-                <div class="milestone-header">
-                    <div class="milestone-year">2026-2030</div>
-                    <div class="milestone-category">Clinical & Healthcare</div>
-                </div>
-                <div class="milestone-body">
-                    <ul class="milestone-list">
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2026-2027:</strong> Launch pilot on-site herbal clinic + online health platform</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2027-2028:</strong> Expand to 5 additional domestic clinics</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2028-2030:</strong> Establish "AGF ONE" AI-assisted platform</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2029:</strong> Begin first clinical trial with hospital networks</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Community Training -->
-            <div class="milestone-card">
-                <div class="milestone-header">
-                    <div class="milestone-year">2026-2030</div>
-                    <div class="milestone-category">Community Training</div>
-                </div>
-                <div class="milestone-body">
-                    <ul class="milestone-list">
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2026:</strong> Develop community training curriculum</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2027:</strong> Train first 500 community members</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2028-2030:</strong> Scale to train 5,000 members across COMESA</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Health Education -->
-            <div class="milestone-card">
-                <div class="milestone-header">
-                    <div class="milestone-year">2026-2031</div>
-                    <div class="milestone-category">Health Education</div>
-                </div>
-                <div class="milestone-body">
-                    <ul class="milestone-list">
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2026:</strong> Launch multi-channel awareness campaigns</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2027-2028:</strong> Reach 50,000 community members</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2029-2031:</strong> Scale across Southern Africa via digital platforms</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Manufacturing & Quality -->
-            <div class="milestone-card">
-                <div class="milestone-header">
-                    <div class="milestone-year">2026-2031</div>
-                    <div class="milestone-category">Manufacturing</div>
-                </div>
-                <div class="milestone-body">
-                    <ul class="milestone-list">
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2026:</strong> Construct GMP-aligned production facility</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2027:</strong> Obtain GMP and GLP certifications</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2028:</strong> Begin commercial production</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2029-2031:</strong> Achieve batch-to-batch consistency</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Partnerships & Funding -->
-            <div class="milestone-card">
-                <div class="milestone-header">
-                    <div class="milestone-year">2026-2031</div>
-                    <div class="milestone-category">Partnerships</div>
-                </div>
-                <div class="milestone-body">
-                    <ul class="milestone-list">
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2026-2027:</strong> Domestic and regional research partnerships</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2027-2028:</strong> International scientific partnerships</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2028-2031:</strong> Secure DFI and impact funding</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Impact & Scaling -->
-            <div class="milestone-card">
-                <div class="milestone-header">
-                    <div class="milestone-year">2028-2031</div>
-                    <div class="milestone-category">Impact</div>
-                </div>
-                <div class="milestone-body">
-                    <ul class="milestone-list">
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2028:</strong> Reach 50,000 patients/clients</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2029-2031:</strong> Expand across Southern Africa</li>
-                        <li><i class="bi bi-check-circle-fill"></i> <strong>2031:</strong> Recognized as regional leader in standardized phytopharmaceuticals</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-
-
-
-
-
-<!-- SUMMARY SECTION -->
-<section class="section">
-    <div class="section-container">
-        <div class="overview-content" style="background: linear-gradient(135deg, var(--primary), var(--accent));">
-            <div class="section-header" style="color: white;">
-                <span class="section-tag" style="background: rgba(255,255,255,0.2); color: white;">2031 Vision</span>
-                <h2 class="section-title" style="color: white;">Strategic Summary</h2>
-            </div>
-            <p class="overview-text" style="text-align: center; font-size: 1.2rem;">
-                These milestones translate AGF's objectives into concrete, measurable checkpoints, covering research, clinical services, community training, manufacturing, partnerships, and impact, making progress visible to investors, donors, and regulators.
-            </p>
-            <div style="display: flex; justify-content: center; margin-top: 30px;">
-                <div style="background: white; color: var(--primary); padding: 20px 40px; border-radius: 50px; font-weight: 700; font-size: 1.2rem;">
-                    Vision 2026-2031: Building Africa's Leading Phytopharmaceutical Platform
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- STRATEGIC POSITIONING CLARIFICATION -->
-<section class="section">
-    <div class="section-container">
-        <div class="row align-items-center">
-            <div class="col-lg-8 mx-auto">
-                <div class="corporate-card" style="text-align: left;">
-                    <h3 style="color: var(--primary); margin-bottom: 20px;">Strategic Positioning Shift</h3>
-                    <p style="font-size: 1.1rem; margin-bottom: 20px;">With USD 40M+ capitalization, AGF transitions from:</p>
-                    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
-                        <div style="background: var(--primary-soft); padding: 15px 25px; border-radius: var(--border-radius-md); flex: 1;">
-                            <i class="bi bi-arrow-right" style="color: var(--accent);"></i>
-                            Initial agro-processing
-                        </div>
-                        <div style="font-size: 2rem; color: var(--accent);"><i class="bi bi-arrow-right"></i></div>
-                        <div style="background: var(--accent-soft); padding: 15px 25px; border-radius: var(--border-radius-md); flex: 1;">
-                            <i class="bi bi-building" style="color: var(--primary);"></i>
-                            Large-scale processing
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        <div style="background: var(--primary-soft); padding: 15px 25px; border-radius: var(--border-radius-md); flex: 1;">
-                            <i class="bi bi-shop" style="color: var(--accent);"></i>
-                            Regional player
-                        </div>
-                        <div style="font-size: 2rem; color: var(--accent);"><i class="bi bi-arrow-right"></i></div>
-                        <div style="background: var(--accent-soft); padding: 15px 25px; border-radius: var(--border-radius-md); flex: 1;">
-                            <i class="bi bi-globe" style="color: var(--primary);"></i>
-                            Phytopharmaceutical industrial platform
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-// Scroll Progress Indicator
-window.addEventListener('scroll', () => {
-    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const scrolled = (winScroll / height) * 100;
-    document.getElementById('scrollProgress').style.width = scrolled + '%';
-    
-    // Back to top button visibility
-    const backToTop = document.getElementById('backToTop');
-    if (winScroll > 300) {
-        backToTop.classList.add('visible');
-    } else {
-        backToTop.classList.remove('visible');
-    }
-});
-
-// Back to top functionality
-document.getElementById('backToTop').addEventListener('click', () => {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
+    AOS.init({
+        duration: 700,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 60
     });
-});
-
-// Intersection Observer for animations
-document.addEventListener('DOMContentLoaded', function() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                
-                // Counter animation for stat numbers
-                if (entry.target.classList.contains('stat-number')) {
-                    const target = parseInt(entry.target.innerText.replace(/[^0-9]/g, ''));
-                    if (!isNaN(target)) {
-                        let current = 0;
-                        const increment = target / 50;
-                        const timer = setInterval(() => {
-                            current += increment;
-                            if (current >= target) {
-                                entry.target.innerText = target.toLocaleString();
-                                clearInterval(timer);
-                            } else {
-                                entry.target.innerText = Math.floor(current).toLocaleString();
-                            }
-                        }, 30);
-                    }
-                }
-            }
-        });
-    }, { threshold: 0.1, rootMargin: '50px' });
-    
-    // Observe elements
-    document.querySelectorAll('.section-header, .fact-sheet, .corporate-card, .activity-item, .vision-card, .mission-card, .objective-content, .capital-card, .milestone-card, .equipment-card, .stat-box').forEach(el => {
-        observer.observe(el);
-    });
-    
-    // Fact sheet animation
-    document.getElementById('factSheet')?.classList.add('visible');
-});
-
-// Smooth scroll for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
-// Lazy loading for images
-if ('loading' in HTMLImageElement.prototype) {
-    const images = document.querySelectorAll('img[loading="lazy"]');
-    images.forEach(img => {
-        img.src = img.dataset.src;
-    });
-}
 </script>
 
 <?php include VIEWPATH.'includes/frontend/Footer.php'; ?>

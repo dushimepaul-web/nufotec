@@ -336,7 +336,7 @@ $config['cache_query_string'] = FALSE;
 | https://codeigniter.com/user_guide/libraries/encryption.html
 |
 */
-$config['encryption_key'] = '';
+$config['encryption_key'] = 'MqzvBjxFVA0dGisJRwLYkgyS6hKUfHQ1';
 
 /*
 |--------------------------------------------------------------------------
@@ -460,7 +460,7 @@ $config['global_xss_filtering'] = FALSE;
 | 'csrf_regenerate' = Regenerate token on every submission
 | 'csrf_exclude_uris' = Array of URIs which ignore CSRF checks
 */
-$config['csrf_protection'] = FALSE;
+$config['csrf_protection'] = TRUE;
 $config['csrf_token_name'] = 'csrf_test_name';
 $config['csrf_cookie_name'] = 'csrf_cookie_name';
 $config['csrf_expire'] = 7200;
@@ -543,46 +543,6 @@ $config['proxy_ips'] = '';
 $config['modules_locations'] = array(
     APPPATH.'modules/' => '../modules/',
 );
-
-
-
-
-
-$config['zapier_webhook_url'] = 'https://hooks.zapier.com/hooks/catch/123456/abcde';
-
-//composer require sendgrid/sendgrid envoyer des email sur avec send email de tuilio
-$config['sendgrid_api_key'] = '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';
-
-
-// Configuration email pour cPanel
-$config['cpanel_from_email'] = 'info@nufotec.com'; // Remplacez par votre vrai email
-$config['cpanel_from_name'] = 'NUFOTEC BURUNDI';
-
-// Twilio Configuration
-$config['twilio_account_sid'] = 'VOTRE_ACCOUNT_SID';
-$config['twilio_auth_token']  = 'VOTRE_AUTH_TOKEN';
-$config['twilio_phone_number'] = '+1234567890';     // Votre numéro Twilio pour SMS
-$config['twilio_whatsapp_number'] = '+1234567890';   // Votre numéro Twilio pour WhatsApp (généralement le même)
-
-// Twilio Configuration (pour WhatsApp)
-$config['twilio_sid'] = 'VOTRE_TWILIO_SID';
-$config['twilio_token'] = 'VOTRE_TWILIO_TOKEN';
-$config['twilio_whatsapp_from'] = 'whatsapp:+14155238886'; // Numéro Twilio WhatsApp
-
-
-$config['csrf_exclude_uris'] = array(
-    'panier/ajouter',
-    'panier/update_quantity',
-    'panier/delete_line',
-    'panier/get_cart',
-    'panier/toggle_favori'
-);
-
-$config['csrf_exclude_uris'] = array(
-    'commande/valider'
-);
-
-
 
 $config['taux_devise'] = [
     'USD_TO_EUR' => 1,

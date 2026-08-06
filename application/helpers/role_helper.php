@@ -167,26 +167,6 @@ if (!function_exists('patient_view')) {
 }
 
 
-
-// application/helpers/patient_helper.php
-if (!function_exists('is_patient')) {
-    function is_patient() {
-        $CI =& get_instance();
-        if (!$CI->session->userdata('logged_in')) {
-            return false;
-        }
-        $user_id = $CI->session->userdata('user_id');
-        $consultation = $CI->db
-            ->select('id')
-            ->where('patient_id', $user_id)
-            ->limit(1)
-            ->get('consultations')
-            ->row();
-        return !empty($consultation);
-    }
-}
-
-
 if (!function_exists('is_medecin')) {
     function is_medecin()
     {
@@ -251,9 +231,7 @@ if (!function_exists('is_patient')) {
         redirect(base_url('Admin'));
         exit;
     }
-}
-
-/**
+}/**
  * Vérifie si l'utilisateur a l'un des rôles donnés, sinon redirige
  * @param string|array $roles
  * @return bool
@@ -330,6 +308,91 @@ if (!function_exists('can_view_consultation')) {
         }
         
         return false;
+    }
+}
+
+/**
+ * View-only : l'utilisateur connecté est un utilisateur "standard"
+ * (patient par défaut, ou broker/investisseur enregistré via la table users)
+ * Ne redirige pas — retourne juste true/false.
+ */
+if (!function_exists('user_dashboard_view')) {
+    function user_dashboard_view()
+    {
+        $CI = ci();
+        if (!is_logged_in()) return false;
+
+        $user_id = $CI->session->userdata('user_id');
+        if (!$user_id) return false;
+
+        $role_slug = $CI->session->userdata('role_slug');
+        if (in_array($role_slug, ['admin', 'medecin'])) return false;
+
+        $type = $CI->session->userdata('type_utilisateur');
+        if (in_array($type, ['admin', 'medecin'])) return false;
+
+        $user = $CI->db->select('type_utilisateur')->where('id', $user_id)->get('users')->row_array();
+        if ($user && in_array($user['type_utilisateur'], ['admin', 'medecin'])) return false;
+
+        return true;
+    }
+}
+
+/**
+ * View-only : l'utilisateur connecté est aussi dans la table "investors"
+ * (par son email ou son nom complet). Ne redirige pas.
+ */
+if (!function_exists('investor_view')) {
+    function investor_view()
+    {
+        $CI = ci();
+        if (!is_logged_in()) return false;
+
+        static $cache = null;
+        if ($cache !== null) return $cache;
+
+        $email = $CI->session->userdata('email');
+        $fullname = trim(($CI->session->userdata('prenom') ?? '') . ' ' . ($CI->session->userdata('nom') ?? ''));
+
+        if (!$email && !$fullname) return $cache = false;
+
+        $CI->db->group_start();
+        if ($email)      $CI->db->where('email', $email);
+        if ($email && $fullname) $CI->db->or_where('full_name', $fullname);
+        elseif ($fullname) $CI->db->where('full_name', $fullname);
+        $CI->db->group_end();
+
+        $found = $CI->db->get('investors', 1)->row();
+        return $cache = (bool)$found;
+    }
+}
+
+/**
+ * View-only : l'utilisateur connecté est aussi dans la table "brokers"
+ * (par son email ou son nom complet). Ne redirige pas.
+ */
+if (!function_exists('broker_view')) {
+    function broker_view()
+    {
+        $CI = ci();
+        if (!is_logged_in()) return false;
+
+        static $cache = null;
+        if ($cache !== null) return $cache;
+
+        $email = $CI->session->userdata('email');
+        $fullname = trim(($CI->session->userdata('prenom') ?? '') . ' ' . ($CI->session->userdata('nom') ?? ''));
+
+        if (!$email && !$fullname) return $cache = false;
+
+        $CI->db->group_start();
+        if ($email)      $CI->db->where('email', $email);
+        if ($email && $fullname) $CI->db->or_where('full_name', $fullname);
+        elseif ($fullname) $CI->db->where('full_name', $fullname);
+        $CI->db->group_end();
+
+        $found = $CI->db->get('brokers', 1)->row();
+        return $cache = (bool)$found;
     }
 }
 

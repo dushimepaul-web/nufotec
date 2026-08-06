@@ -441,7 +441,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                         <?= htmlspecialchars($product['title']) ?>
                     </h1>
                     <p class="mini-desc">
-                        <?= t('product_default_description') ?>
+                        Découvrez notre gamme de produits naturels, conçus avec passion et expertise pour votre bien-être. Chaque produit est élaboré à partir d'ingrédients soigneusement sélectionnés, respectueux de l'environnement et de votre santé.
                     </p>
                     <?php endif; ?>
                 </div>
@@ -535,12 +535,12 @@ include VIEWPATH.'includes/frontend/Header.php';
 
                 <?php if (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days')): ?>
                 <div class="product-badge-detail">
-                    <span class="badge">✨ <?= t('badge_new') ?></span>
+                    <span class="badge">✨ NOUVEAU</span>
                 </div>
                 <?php endif; ?>
 
                 <button class="btn zoom-detail-btn" id="zoomDetailBtn">
-                    <i class="bx bx-search-alt"></i> <?= t('zoom') ?>
+                    <i class="bx bx-search-alt"></i> Zoom
                 </button>
             </div>
         </div>
@@ -558,10 +558,10 @@ include VIEWPATH.'includes/frontend/Header.php';
 
             <div class="product-detail-description mb-4">
                 <h5 class="fw-semibold mb-3" style="color: var(--primary);">
-                    <i class="bx bx-info-circle me-2"></i><?= t('description_label') ?>
+                    <i class="bx bx-info-circle me-2"></i>Description
                 </h5>
                 <p class="text-muted lh-lg">
-                    <?= nl2br(htmlspecialchars($product['description'] ?? t('no_description_available'))) ?>
+                    <?= nl2br(htmlspecialchars($product['description'] ?? 'Aucune description disponible.')) ?>
                 </p>
             </div>
 
@@ -572,7 +572,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                             data-price="<?= htmlspecialchars($product['price']) ?>"
                             data-id="<?= $product['id'] ?>"
                             data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>">
-                        <i class="bx bxl-whatsapp"></i> <?= t('order_on_whatsapp') ?>
+                        <i class="bx bxl-whatsapp"></i> Commander sur WhatsApp
                     </button>
 
                     <button class="btn btn-outline-share flex-grow-1" id="openShareModalBtn"
@@ -580,7 +580,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                             data-url="<?= base_url('product/'.($product['slug'] ?? $product['id'])) ?>"
                             data-image="<?= base_url('attachments/Products/'.$product['main_image']) ?>"
                             data-price="<?= htmlspecialchars($product['price']) ?>">
-                        <i class="bx bx-share-alt"></i> <?= t('share') ?>
+                        <i class="bx bx-share-alt"></i> Partager
                     </button>
                 </div>
             </div>
@@ -589,7 +589,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                 <div class="row g-3">
                     <div class="col-6">
                         <small class="text-muted d-block mb-1">
-                            <i class="bx bx-calendar me-1"></i><?= t('added_on') ?>
+                            <i class="bx bx-calendar me-1"></i>Ajouté le
                         </small>
                         <strong style="color: var(--primary);">
                             <?= date('d/m/Y', strtotime($product['created_at'])) ?>
@@ -598,10 +598,10 @@ include VIEWPATH.'includes/frontend/Header.php';
                     <?php if (!empty($product['stock']) && $product['stock'] > 0): ?>
                     <div class="col-6">
                         <small class="text-muted d-block mb-1">
-                            <i class="bx bx-package me-1"></i><?= t('stock_label') ?>
+                            <i class="bx bx-package me-1"></i>Stock
                         </small>
                         <strong style="color: var(--success, #198754);">
-                            <?= $product['stock'] ?> <?= t('stock_available') ?>
+                            <?= $product['stock'] ?> disponible(s)
                         </strong>
                     </div>
                     <?php endif; ?>
@@ -615,7 +615,7 @@ include VIEWPATH.'includes/frontend/Header.php';
 <?php if (!empty($similar_products)): ?>
 <div class="similar-products">
     <div class="section-header text-center mb-4">
-        <h2 class="section-title"><?= t('similar_products') ?></h2>
+        <h2 class="section-title">Produits similaires</h2>
         <div class="title-border" style="width: 80px; height: 3px; background: var(--accent); margin: 15px auto 0; border-radius: 3px;"></div>
     </div>
     <div class="row g-4">
@@ -632,7 +632,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                     <h6 class="card-title"><?= htmlspecialchars($similar['title']) ?></h6>
                     <p class="card-price mt-auto"><?= htmlspecialchars($similar['price']) ?></p>
                     <a href="<?= base_url('product/'.($similar['slug'] ?? $similar['id'])) ?>" class="btn-view mt-2">
-                        <?= t('view_details_short') ?> <i class="bx bx-right-arrow-alt"></i>
+                        Voir détails <i class="bx bx-right-arrow-alt"></i>
                     </a>
                 </div>
             </div>
@@ -647,10 +647,10 @@ include VIEWPATH.'includes/frontend/Header.php';
     <div class="mb-4">
         <i class="bx bx-package text-muted" style="font-size: 5rem; opacity: 0.5;"></i>
     </div>
-    <h3 class="mb-3" style="color: var(--primary);"><?= t('product_not_found') ?></h3>
-    <p class="text-muted mb-4"><?= t('product_not_found_message') ?></p>
+    <h3 class="mb-3" style="color: var(--primary);">Produit non trouvé</h3>
+    <p class="text-muted mb-4">Le produit que vous recherchez n'existe pas ou a été supprimé.</p>
     <a href="<?= base_url('products') ?>" class="btn btn-lg" style="background: var(--primary); color: white; border-radius: 50px; padding: 12px 30px;">
-        <i class="bx bx-arrow-back me-2"></i><?= t('back_to_products') ?>
+        <i class="bx bx-arrow-back me-2"></i>Retour aux produits
     </a>
 </div>
 <?php endif; ?>
@@ -665,7 +665,7 @@ include VIEWPATH.'includes/frontend/Header.php';
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header" style="background: var(--primary); color: white;">
                 <h5 class="modal-title">
-                    <i class="bx bxl-whatsapp me-2"></i><?= t('finalize_order') ?>
+                    <i class="bx bxl-whatsapp me-2"></i>Finaliser votre commande
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
@@ -685,59 +685,59 @@ include VIEWPATH.'includes/frontend/Header.php';
                 <form id="orderForm">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold"><?= t('full_name') ?> <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold">Nom complet <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bx bx-user"></i></span>
                                 <input type="text" class="form-control" id="customerName" required 
-                                       placeholder="<?= t('full_name_placeholder') ?>">
+                                       placeholder="Votre nom et prénom">
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold"><?= t('phone') ?> <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold">Téléphone <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bx bx-phone"></i></span>
                                 <input type="tel" class="form-control" id="customerPhone" required 
-                                       placeholder="<?= t('phone_placeholder') ?>">
+                                       placeholder="Ex: 25779666439">
                             </div>
-                            <small class="text-muted"><?= t('whatsapp_contact_note') ?></small>
+                            <small class="text-muted">Numéro WhatsApp pour vous contacter</small>
                         </div>
                     </div>
 
                     <div class="row g-3 mt-1">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold"><?= t('country') ?> <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold">Pays <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bx bx-globe"></i></span>
                                 <input type="text" class="form-control" id="customerCountry" required 
-                                       placeholder="<?= t('country_placeholder') ?>" value="Burundi">
+                                       placeholder="Votre pays" value="Burundi">
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold"><?= t('city') ?> <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold">Ville <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bx bx-map"></i></span>
                                 <input type="text" class="form-control" id="customerCity" required 
-                                       placeholder="<?= t('city_placeholder') ?>" value="Bujumbura">
+                                       placeholder="Votre ville" value="Bujumbura">
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-3">
-                        <label class="form-label fw-bold"><?= t('full_address') ?> <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">Adresse de livraison complète <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="bx bx-home"></i></span>
                             <textarea class="form-control" id="customerAddress" rows="2" required 
-                                      placeholder="<?= t('address_placeholder') ?>"></textarea>
+                                      placeholder="Quartier, rue, numéro, point de repère..."></textarea>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bx bx-x me-1"></i><?= t('cancel') ?>
+                    <i class="bx bx-x me-1"></i>Annuler
                 </button>
                 <button type="button" class="btn btn-whatsapp-send" id="sendWhatsAppOrderBtn">
-                    <i class="bx bxl-whatsapp"></i><?= t('send_order') ?>
+                    <i class="bx bxl-whatsapp"></i>Envoyer la commande
                 </button>
             </div>
         </div>
@@ -752,7 +752,7 @@ include VIEWPATH.'includes/frontend/Header.php';
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header" style="background: var(--primary); color: white;">
                 <h5 class="modal-title">
-                    <i class="bx bx-share-alt me-2"></i><?= t('share_product_title') ?>
+                    <i class="bx bx-share-alt me-2"></i>Partager ce produit
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
@@ -798,12 +798,12 @@ include VIEWPATH.'includes/frontend/Header.php';
                         </div>
                         <div class="col-6">
                             <a href="#" id="shareEmail" class="btn btn-share email-share w-100">
-                                <i class="bx bx-envelope"></i> <?= t('email') ?>
+                                <i class="bx bx-envelope"></i> Email
                             </a>
                         </div>
                         <div class="col-6">
                             <button id="shareNativeBtn" class="btn btn-share w-100" style="background: #6c757d;">
-                                <i class="bx bx-dots-horizontal-rounded"></i> <?= t('other_apps') ?>
+                                <i class="bx bx-dots-horizontal-rounded"></i> Autres apps
                             </button>
                         </div>
                     </div>
@@ -813,12 +813,12 @@ include VIEWPATH.'includes/frontend/Header.php';
 
                 <div class="share-link">
                     <label class="form-label fw-bold mb-2">
-                        <i class="bx bx-link me-1"></i><?= t('product_link') ?>
+                        <i class="bx bx-link me-1"></i>Lien du produit
                     </label>
                     <div class="input-group input-group-lg">
                         <input type="text" id="shareLink" class="form-control bg-light" readonly>
                         <button class="btn btn-copy" type="button" id="copyLinkBtn">
-                            <i class="bx bx-copy me-1"></i><?= t('copy') ?>
+                            <i class="bx bx-copy me-1"></i>Copier
                         </button>
                     </div>
                 </div>
@@ -830,25 +830,25 @@ include VIEWPATH.'includes/frontend/Header.php';
                         </div>
                         <div class="flex-grow-1">
                             <strong style="color: var(--primary, #0f4c3a); display: block; margin-bottom: 5px;">
-                                <i class="bx bx-share-alt me-1"></i> <?= t('share_help_title') ?>
+                                <i class="bx bx-share-alt me-1"></i> Partagez et aidez ceux qui en ont besoin
                             </strong>
                             <p class="text-muted mb-2" style="font-size: 0.85rem;">
-                                <?= t('share_help_text') ?>
+                                Connaissez-vous quelqu'un qui pourrait bénéficier de ce produit ? Un proche, un ami ou une personne vulnérable ? Votre partage peut faire la différence !
                             </p>
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 <span class="badge bg-success">
-                                    <i class="bx bx-group me-1"></i> <?= t('help_a_friend') ?>
+                                    <i class="bx bx-group me-1"></i> Aidez un proche
                                 </span>
                                 <span class="badge bg-warning text-dark">
-                                    <i class="bx bx-trending-up me-1"></i> <?= t('shares_this_week') ?>
+                                    <i class="bx bx-trending-up me-1"></i> 128 partages cette semaine
                                 </span>
                                 <span class="badge bg-info text-dark">
-                                    <i class="bx bx-smile me-1"></i> <?= t('together_stronger') ?>
+                                    <i class="bx bx-smile me-1"></i> Ensemble, on est plus forts
                                 </span>
                             </div>
                             <small class="text-muted d-block mt-2">
                                 <i class="bx bx-question-mark me-1"></i> 
-                                <?= t('share_footer_text') ?>
+                                Chaque partage permet à plus de personnes de découvrir des solutions naturelles pour améliorer leur bien-être.
                             </small>
                         </div>
                     </div>
@@ -865,7 +865,7 @@ include VIEWPATH.'includes/frontend/Header.php';
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-dark border-0">
             <div class="modal-header border-0 pb-0">
-                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="<?= t('close') ?>"></button>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
             <div class="modal-body p-0 text-center d-flex align-items-center justify-content-center" style="min-height: 80vh;">
                 <img id="zoomImage" src="" class="img-fluid" style="max-height: 85vh; max-width: 95%; object-fit: contain;">
@@ -886,13 +886,13 @@ include VIEWPATH.'includes/frontend/Header.php';
 
         <div class="toast-header bg-dark text-white border-bottom border-warning">
             <i class="bx bx-info-circle me-2 text-warning fs-5"></i>
-            <strong class="me-auto"><?= t('important_info') ?></strong>
+            <strong class="me-auto">Information importante</strong>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
         </div>
 
         <div class="toast-body">
             <p class="mb-2">
-                ⚠️ <?= t('price_request_message') ?>
+                ⚠️ Veuillez nous contacter via WhatsApp (+257) 79 666 439 ou Email nufotecburundi2026@gmail.com pour connaitre le prix actualisé
             </p>
             <div class="d-flex gap-2 flex-wrap">
                 <?php if (!empty($product)): ?>
@@ -906,7 +906,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                 </button>
                 <?php endif; ?>
                 <button type="button" class="btn btn-sm btn-warning ms-auto" data-bs-dismiss="toast">
-                    <i class="bx bx-x"></i> <?= t('close') ?>
+                    <i class="bx bx-x"></i> Fermer
                 </button>
             </div>
         </div>

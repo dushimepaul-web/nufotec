@@ -372,14 +372,14 @@ public function article($slug = null)
 
  private function get_hero_section()
     {
-        $page = $this->Model->readOne('pages', ['slug' => 'blog', 'est_publiee' => 1]);
+        $page = static_pages_one(['slug' => 'blog', 'est_publiee' => 1]);
 
         if (empty($page)) {
             log_message('debug', 'Page product-categories non trouvée');
             return null;
         }
 
-        $hero = $this->Model->readOne('sections_contenu', [
+        $hero = static_sections_one([
             'id_page'      => $page['id_page'],
             'type_section' => 'hero',
             'est_active'   => 1

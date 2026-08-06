@@ -13,7 +13,6 @@ class Evenements extends MY_Controller {
     {
         // Pas de deleted_at dans cette table
         $data['evenements'] = $this->Model->read('evenements', null, 'date_debut','DESC');
-        $data['pages'] = $this->Model->read('pages', ['est_publiee' => 1], 'id_page');
         $this->load->view('Evenements_View', $data);
     }
 
@@ -35,7 +34,6 @@ class Evenements extends MY_Controller {
     function EvenementDetail($evenementDetail){
         $id = explode('_', $evenementDetail);
         $data['detail'] = $this->Model->readOne('evenements', ['id_evenement' => $id[0]]);
-        $data['pages'] = $this->Model->read('pages', ['est_publiee' => 1], 'id_page');
         $this->load->view('EvenementDetail_View', $data);
     }
 

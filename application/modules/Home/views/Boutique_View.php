@@ -1768,89 +1768,19 @@
     }
 
     function updateCartBadge() {
-        fetch(BASE_URL + 'panier/get_cart')
-            .then(r => r.json())
-            .then(data => {
-                var badge = document.getElementById('cartBadge');
-                if (badge) badge.textContent = data.nb_articles || 0;
-            })
-            .catch(() => {});
+        // Panier désactivé
     }
 
-    // Exposer les fonctions globales pour les boutons
     window.addToCart = function(productId, productName, btn) {
-        if (!btn || btn.disabled) return;
-        
-        var originalContent = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        btn.disabled = true;
-
-        fetch(BASE_URL + 'panier/ajouter', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'id=' + encodeURIComponent(productId) + '&quantite=1'
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                btn.classList.add('added');
-                btn.innerHTML = '<i class="bi bi-check-lg"></i> Added';
-                showToast(productName + ' added to cart', 'success');
-                updateCartBadge();
-                setTimeout(() => {
-                    btn.classList.remove('added');
-                    btn.innerHTML = originalContent;
-                    btn.disabled = false;
-                }, 2000);
-            } else {
-                showToast(data.message || 'Error', 'error');
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
-            }
-        })
-        .catch(() => {
-            showToast('Connection error', 'error');
-            btn.innerHTML = originalContent;
-            btn.disabled = false;
-        });
+        showToast('Fonctionnalité panier désactivée', 'info');
     };
 
     window.toggleWishlist = function(productId, btn) {
-        if (!btn || btn.disabled) return;
-        btn.disabled = true;
-
-        fetch(BASE_URL + 'panier/toggle_favori', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'produit_id=' + encodeURIComponent(productId)
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                if (data.action === 'added') {
-                    btn.classList.add('active');
-                    btn.innerHTML = '<i class="bi bi-heart-fill"></i>';
-                    showToast('Added to favorites', 'success');
-                } else {
-                    btn.classList.remove('active');
-                    btn.innerHTML = '<i class="bi bi-heart"></i>';
-                    showToast('Removed from favorites', 'success');
-                }
-            } else {
-                showToast(data.message || 'Error', 'error');
-            }
-        })
-        .catch(() => {
-            showToast('Connection error', 'error');
-        })
-        .finally(() => {
-            setTimeout(() => { btn.disabled = false; }, 500);
-        });
+        showToast('Favoris temporairement indisponibles', 'info');
     };
 
-    // Polling pour mettre à jour le badge du panier toutes les 2 secondes (optionnel)
     function startCartPolling() {
-        setInterval(updateCartBadge, 2000);
+        // Désactivé
     }
 
     function init() {

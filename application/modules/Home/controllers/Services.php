@@ -16,7 +16,6 @@ class Services extends Public_Controller{
     public function index()
     {
         $data['services'] = $this->Model->read('services', ['deleted_at' => NULL], 'ordre', 'ASC');
-        $data['pages'] = $this->Model->read('pages', ['deleted_at' => NULL], 'id_page', 'ASC');
         $this->load->view('Services_View', $data);
     }
 

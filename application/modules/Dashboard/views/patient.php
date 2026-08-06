@@ -206,7 +206,7 @@
                     <img src="<?= base_url('attachments/Users/' . (isset($user->photo) && $user->photo ? $user->photo : 'default-avatar.png')) ?>" 
                          alt="Profil" 
                          class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                         onerror="this.src='<?= base_url('assets/images/default-avatar.png') ?>'">
+                         onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'">
                     <div class="overflow-hidden">
                         <p class="font-semibold text-sm text-slate-800 truncate"><?= htmlspecialchars(isset($user->prenom) ? $user->prenom . ' ' . ($user->nom ?? '') : 'Utilisateur') ?></p>
                         <p class="text-xs text-slate-500 truncate"><?= htmlspecialchars($user->email ?? '') ?></p>
@@ -464,9 +464,9 @@
                                             <div class="space-y-3">
                                                 <?php foreach(array_slice($unread_messages, 0, 3) as $msg): ?>
                                                     <div class="flex gap-3 p-3 bg-slate-50 rounded-xl card-hover cursor-pointer" onclick="markAsRead(<?= $msg->id ?? 0 ?>)">
-                                                        <img src="<?= base_url('attachments/Users/' . (($msg->sender_photo ?? 'default-avatar.png'))) ?>" 
+                                                        <img src="<?= base_url(!empty($msg->sender_photo) ? 'attachments/Users/' . $msg->sender_photo : 'assets/frontend/img/default-avatar.jpg') ?>" 
                                                              class="w-10 h-10 rounded-full object-cover"
-                                                             onerror="this.src='<?= base_url('assets/images/default-avatar.png') ?>'">
+                                                             onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'">
                                                         <div class="flex-1 min-w-0">
                                                             <p class="font-medium text-sm text-slate-800 truncate">
                                                                 <?= htmlspecialchars(($msg->sender_prenom ?? '') . ' ' . ($msg->sender_nom ?? '')) ?>
@@ -510,9 +510,9 @@
                                                 <tr class="hover:bg-slate-50 transition-colors consultation-row" data-status="<?= $consultation->statut ?? '' ?>">
                                                     <td class="px-4 lg:px-6 py-3 lg:py-4">
                                                         <div class="flex items-center gap-2 lg:gap-3">
-                                                            <img src="<?= base_url('attachments/Users/' . (($consultation->medecin_photo ?? 'default-avatar.png'))) ?>" 
+                                                            <img src="<?= base_url(!empty($consultation->medecin_photo) ? 'attachments/Users/' . $consultation->medecin_photo : 'assets/frontend/img/default-avatar.jpg') ?>" 
                                                                  class="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover"
-                                                                 onerror="this.src='<?= base_url('assets/images/default-avatar.png') ?>'">
+                                                                 onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'">
                                                             <div>
                                                                 <p class="font-medium text-sm text-slate-800"><?= htmlspecialchars(($consultation->medecin_prenom ?? '') . ' ' . ($consultation->medecin_nom ?? '')) ?></p>
                                                                 <p class="text-xs text-slate-500"><?= htmlspecialchars($consultation->specialite ?? 'Généraliste') ?></p>
@@ -765,7 +765,7 @@
                                                  alt="Profil" 
                                                  class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
                                                  id="preview-photo"
-                                                 onerror="this.src='<?= base_url('assets/images/default-avatar.png') ?>'">
+                                                 onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'">
                                             <label class="absolute bottom-0 right-0 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-700 transition-colors shadow-md">
                                                 <i class="fas fa-camera text-sm"></i>
                                                 <input type="file" name="photo" accept="image/*" class="hidden" onchange="previewImage(this)">
@@ -862,7 +862,7 @@
                 <div class="flex items-center gap-3">
                     <img src="<?= base_url('attachments/Users/' . (isset($user->photo) && $user->photo ? $user->photo : 'default-avatar.png')) ?>" 
                          class="w-12 h-12 rounded-full object-cover"
-                         onerror="this.src='<?= base_url('assets/images/default-avatar.png') ?>'">
+                         onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'">
                     <div>
                         <p class="font-semibold text-slate-800"><?= htmlspecialchars(($user->prenom ?? '') . ' ' . ($user->nom ?? '')) ?></p>
                         <p class="text-xs text-slate-500"><?= htmlspecialchars($user->email ?? '') ?></p>

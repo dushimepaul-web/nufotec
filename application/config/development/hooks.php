@@ -22,9 +22,3 @@ $hook['pre_controller'][] = array(
 
 
 
-$hook['pre_controller'][] = [
-    'class'    => 'WebhookHook',
-    'function' => 'handle',
-    'filename' => 'webhook.php',
-    'filepath' => 'hooks'
-];

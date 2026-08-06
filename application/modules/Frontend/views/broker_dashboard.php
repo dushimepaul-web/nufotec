@@ -230,6 +230,108 @@
             color: var(--gray);
         }
 
+        /* Progression levée */
+        .raise-progress {
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-light);
+        }
+        .raise-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .raise-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .raise-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .raise-bar {
+            height: 12px;
+            background: var(--gray-soft);
+            border-radius: 99px;
+            overflow: hidden;
+            position: relative;
+        }
+        .raise-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            transition: width 1.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+        }
+        .raise-bar-fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            animation: shine 2.5s infinite;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .raise-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--gray);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .raise-meta b { color: var(--primary); }
+
+        /* Répartition engagements */
+        .commit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .commit-chip {
+            background: var(--gray-soft);
+            border-radius: var(--border-radius-sm);
+            padding: 14px 16px;
+            border: 1px solid transparent;
+            transition: var(--transition);
+            text-align: center;
+        }
+        .commit-chip:hover {
+            border-color: var(--primary-soft);
+            background: white;
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-3px);
+        }
+        .commit-chip .c-count {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+        .commit-chip .c-label {
+            font-size: 0.7rem;
+            color: var(--gray);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .commit-chip.highlight {
+            background: var(--accent-soft);
+            border-color: rgba(212, 175, 55, 0.35);
+        }
+        .commit-chip.highlight .c-count { color: var(--accent-hover); }
+
         /* Investisseurs Table */
         .investors-section {
             background: white;
@@ -549,6 +651,64 @@
                     <div class="detail-label"><i class="fas fa-flask"></i> Secteur</div>
                     <div class="detail-value">Agrochimie</div>
                     <div class="detail-desc">Engrais & phytosanitaires</div>
+                </div>
+            </div>
+
+            <!-- Progression de la levée -->
+            <?php
+                $target_raise = 5000000;
+                $raised = 0;
+                $commit_buckets = ['Below 250K' => 0, '250K-500K' => 0, '500K-1M' => 0, '1M-2M' => 0, '2M+' => 0];
+                foreach ($investors as $inv) {
+                    $r = $inv->commitment_range ?? '';
+                    if (isset($commit_buckets[$r])) $commit_buckets[$r]++;
+                    switch ($r) {
+                        case 'Below 250K': $raised += 125000; break;
+                        case '250K-500K': $raised += 375000; break;
+                        case '500K-1M': $raised += 750000; break;
+                        case '1M-2M': $raised += 1500000; break;
+                        case '2M+': $raised += 2000000; break;
+                    }
+                }
+                $raise_pct = $target_raise > 0 ? min(100, round($raised / $target_raise * 100, 1)) : 0;
+                $investor_count = count($investors);
+            ?>
+            <div class="raise-progress">
+                <div class="raise-head">
+                    <div class="raise-title"><i class="fas fa-chart-pie"></i> Progression de la levée</div>
+                    <div class="raise-amount"><?= number_format($raised, 0, ',', ' ') ?> € <span style="font-size:0.8rem;color:var(--gray);font-weight:500;">/ 5 000 000 €</span></div>
+                </div>
+                <div class="raise-bar">
+                    <div class="raise-bar-fill" style="width:<?= $raise_pct ?>%" id="raiseBar"></div>
+                </div>
+                <div class="raise-meta">
+                    <span><b><?= $raise_pct ?>%</b> engagé</span>
+                    <span><b><?= $investor_count ?></b> investisseurs</span>
+                    <span>Objectif restant : <b><?= number_format($target_raise - $raised, 0, ',', ' ') ?> €</b></span>
+                </div>
+            </div>
+
+            <!-- Répartition par fourchette -->
+            <div class="commit-grid">
+                <div class="commit-chip <?= $commit_buckets['2M+'] > 0 ? 'highlight' : '' ?>">
+                    <div class="c-count"><?= $commit_buckets['2M+'] ?></div>
+                    <div class="c-label">2M+ €</div>
+                </div>
+                <div class="commit-chip <?= $commit_buckets['1M-2M'] > 0 ? 'highlight' : '' ?>">
+                    <div class="c-count"><?= $commit_buckets['1M-2M'] ?></div>
+                    <div class="c-label">1M - 2M €</div>
+                </div>
+                <div class="commit-chip <?= $commit_buckets['500K-1M'] > 0 ? 'highlight' : '' ?>">
+                    <div class="c-count"><?= $commit_buckets['500K-1M'] ?></div>
+                    <div class="c-label">500K - 1M €</div>
+                </div>
+                <div class="commit-chip <?= $commit_buckets['250K-500K'] > 0 ? 'highlight' : '' ?>">
+                    <div class="c-count"><?= $commit_buckets['250K-500K'] ?></div>
+                    <div class="c-label">250K - 500K €</div>
+                </div>
+                <div class="commit-chip <?= $commit_buckets['Below 250K'] > 0 ? 'highlight' : '' ?>">
+                    <div class="c-count"><?= $commit_buckets['Below 250K'] ?></div>
+                    <div class="c-label">Below 250K €</div>
                 </div>
             </div>
         </div>

@@ -127,9 +127,9 @@ class Boutique extends Public_Controller {
 
     private function get_hero_section()
     {
-        $page = $this->Model->readOne('pages', ['slug' => 'product-categories', 'est_publiee' => 1]);
+        $page = static_pages_one(['slug' => 'product-categories', 'est_publiee' => 1]);
         if (empty($page)) return null;
-        $hero = $this->Model->readOne('sections_contenu', [
+        $hero = static_sections_one([
             'id_page' => $page['id_page'],
             'type_section' => 'hero',
             'est_active' => 1

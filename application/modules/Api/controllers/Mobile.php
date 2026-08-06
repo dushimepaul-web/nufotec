@@ -49,7 +49,6 @@ public function medias()
     $limit = (int)($this->input->get('limit') ?? 50);
     $offset = (int)($this->input->get('offset') ?? 0);
     $category = $this->input->get('category');
-    $lang = $this->getCurrentLang();
     
     // Définir les types à récupérer selon le paramètre
     $allowedTypes = [];
@@ -76,9 +75,9 @@ public function medias()
     $sql = "
         SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
                g.duree, g.date_media,
-               g.description_{$lang} AS description,
-               g.categorie_{$lang} AS categorie,
-               g.credits_{$lang} AS credits,
+               g.description AS description,
+               g.categorie AS categorie,
+               g.credits AS credits,
                (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
                (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
                (SELECT COUNT(*) FROM media_comments WHERE id_media = g.id_media AND is_approved = 1) as comments_count
@@ -91,7 +90,7 @@ public function medias()
     
     // Filtrage par catégorie (si spécifiée)
     if (!empty($category)) {
-        $sql .= " AND g.categorie_{$lang} = ?";
+        $sql .= " AND g.categorie = ?";
         $params[] = $category;
     }
     
@@ -108,11 +107,13 @@ public function medias()
           AND g.type IN ({$inClause})
     ";
     
+    $countParams = [];
     if (!empty($category)) {
-        $countSql .= " AND g.categorie_{$lang} = ?";
+        $countSql .= " AND g.categorie = ?";
+        $countParams[] = $category;
     }
     
-    $total = $this->db->query($countSql, $params)->row()->total ?? 0;
+    $total = $this->db->query($countSql, $countParams)->row()->total ?? 0;
     
     // Formater les médias
     foreach ($medias as &$media) {
@@ -146,16 +147,15 @@ public function medias()
      */
     public function media($identifier)
     {
-        $lang = $this->getCurrentLang();
         
         $sql = "
             SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
                    g.date_media, g.taille, g.mime_type, g.duree,
-                   g.contenu_texte_{$lang} AS contenu_texte,
-                   g.description_{$lang} AS description,
-                   g.categorie_{$lang} AS categorie,
-                   g.credits_{$lang} AS credits,
-                   g.message_reseaux_{$lang} AS message_reseaux,
+                   g.contenu_texte AS contenu_texte,
+                   g.description AS description,
+                   g.categorie AS categorie,
+                   g.credits AS credits,
+                   g.message_reseaux AS message_reseaux,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
                    (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
                    (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
@@ -203,7 +203,7 @@ public function medias()
         ", [$media['id_media']])->result_array();
         
         // Récupérer médias similaires
-        $similar = $this->getSimilarMedias($media, $lang);
+        $similar = $this->getSimilarMedias($media);
         
         $this->output->set_output(json_encode([
             'success' => true,
@@ -219,15 +219,14 @@ public function medias()
      */
     public function categories()
     {
-        $lang = $this->getCurrentLang();
         
         $categories = $this->db->query("
-            SELECT g.categorie_{$lang} as nom, COUNT(*) as total
+            SELECT g.categorie as nom, COUNT(*) as total
             FROM galerie_medias g
             WHERE g.est_actif = 1 
-            AND g.categorie_{$lang} IS NOT NULL 
-            AND g.categorie_{$lang} != ''
-            GROUP BY g.categorie_{$lang}
+            AND g.categorie IS NOT NULL 
+            AND g.categorie != ''
+            GROUP BY g.categorie
             ORDER BY total DESC
         ")->result_array();
         
@@ -245,7 +244,6 @@ public function medias()
     {
         $query = trim($this->input->get('q'));
         $limit = (int)($this->input->get('limit') ?? 20);
-        $lang = $this->getCurrentLang();
         
         if (empty($query) || strlen($query) < 2) {
             $this->output->set_output(json_encode([
@@ -260,19 +258,19 @@ public function medias()
         
         $medias = $this->db->query("
             SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature, g.duree,
-                   g.description_{$lang} AS description,
-                   g.categorie_{$lang} AS categorie,
+                   g.description AS description,
+                   g.categorie AS categorie,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count
             FROM galerie_medias g
             WHERE g.est_actif = 1 
             AND (g.titre LIKE ? 
-                 OR g.credits_{$lang} LIKE ? 
-                 OR g.description_{$lang} LIKE ?
-                 OR g.categorie_{$lang} LIKE ?)
+                 OR g.credits LIKE ? 
+                 OR g.description LIKE ?
+                 OR g.categorie LIKE ?)
             ORDER BY 
                 CASE 
                     WHEN g.titre LIKE ? THEN 10
-                    WHEN g.description_{$lang} LIKE ? THEN 5
+                    WHEN g.description LIKE ? THEN 5
                     ELSE 1
                 END DESC
             LIMIT ?
@@ -297,11 +295,10 @@ public function medias()
     public function popular()
     {
         $limit = (int)($this->input->get('limit') ?? 20);
-        $lang = $this->getCurrentLang();
         
         $medias = $this->db->query("
             SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature, g.duree,
-                   g.description_{$lang} AS description,
+                   g.description AS description,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
                    (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count
             FROM galerie_medias g
@@ -327,11 +324,10 @@ public function medias()
     public function recent()
     {
         $limit = (int)($this->input->get('limit') ?? 20);
-        $lang = $this->getCurrentLang();
         
         $medias = $this->db->query("
             SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature, g.duree,
-                   g.description_{$lang} AS description,
+                   g.description AS description,
                    g.created_at,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count
             FROM galerie_medias g
@@ -602,7 +598,7 @@ public function medias()
     /**
      * Récupérer médias similaires
      */
-    private function getSimilarMedias($media, $lang)
+    private function getSimilarMedias($media)
     {
         $sql = "
             SELECT g.id_media, g.titre, g.slug, g.type, g.miniature, g.duree,
@@ -614,7 +610,7 @@ public function medias()
         $params = [$media['id_media']];
         
         if (!empty($media['categorie'])) {
-            $sql .= " AND g.categorie_{$lang} = ?";
+            $sql .= " AND g.categorie = ?";
             $params[] = $media['categorie'];
         } else {
             $sql .= " AND g.type = ?";
@@ -1019,8 +1015,6 @@ public function categoriepro()
      */
     public function settings()
     {
-        $lang = $this->getCurrentLang();
-
         $site_name = 'NUFOTEC';
         $site_subtitle = 'BURUNDI';
 

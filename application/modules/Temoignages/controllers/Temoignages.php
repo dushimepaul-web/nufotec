@@ -14,7 +14,6 @@ class Temoignages extends MY_Controller {
     public function index()
     {
         $data['temoignages'] = $this->Model->read('temoignages', [], 'id_temoignage', 'DESC');
-        $data['pages'] = $this->Model->read('pages', ['est_publiee' => 1], 'titre_page', 'ASC');
         $this->load->view('Temoignages_View', $data);
     }
 

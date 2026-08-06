@@ -36,13 +36,13 @@ class Home extends Public_Controller {
     public function index()
     {
         // Récupérer la page d'accueil (par défaut: slug = 'accueil' ou première page publiée)
-        $homepage = $this->Model->readOne('pages', [
+        $homepage = static_pages_one( [
             'slug' => 'accueil',
             'est_publiee' => 1
         ]);
 
         if (!$homepage) {
-            $homepage = $this->Model->readOne('pages', [
+            $homepage = static_pages_one( [
                 'est_publiee' => 1,
             ], 'menu_ordre', 'ASC');
         }
@@ -79,7 +79,7 @@ class Home extends Public_Controller {
         }
 
         // Récupérer la page
-        $page = $this->Model->readOne('pages', [
+        $page = static_pages_one( [
             'slug' => $slug,
             'est_publiee' => 1
         ]);
@@ -987,7 +987,7 @@ class Home extends Public_Controller {
         $crumbs = [['label' => 'Accueil', 'url' => base_url()]];
         
         if (!empty($page['menu_parent_id'])) {
-            $parent = $this->Model->readOne('pages', ['id_page' => $page['menu_parent_id']]);
+            $parent = static_pages_one( ['id_page' => $page['menu_parent_id']]);
             if ($parent) {
                 $crumbs[] = ['label' => $parent['titre_page'], 'url' => base_url('page/' . $parent['slug'])];
             }
@@ -1003,7 +1003,7 @@ class Home extends Public_Controller {
      */
     private function getNavigation()
     {
-        return $this->Model->read('pages', [
+        return static_pages_where( [
             'est_publiee' => 1,
             'deleted_at' => NULL,
             'menu_parent_id' => NULL
@@ -1015,7 +1015,7 @@ class Home extends Public_Controller {
      */
     private function getRelatedPages($current_page)
     {
-        return $this->Model->read('pages', [
+        return static_pages_where( [
             'est_publiee' => 1,
             'deleted_at' => NULL,
             'id_page !=' => $current_page['id_page']

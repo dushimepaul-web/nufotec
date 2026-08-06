@@ -20,7 +20,7 @@ class Home extends Public_Controller
 
         $data['show_translator'] = false;
 
-        $page = $this->Model->readOne('pages', ['slug' => 'home', 'est_publiee' => 1]);
+        $page = static_pages_one(['slug' => 'home', 'est_publiee' => 1]);
         if (!$page) show_404();
 
         $data['page'] = $page;
@@ -28,8 +28,17 @@ class Home extends Public_Controller
 
         // Données spécifiques à la home
         $data['slides']   = $this->Model->read('hero_slides', ['is_active' => 1], 'slide_order', 'ASC');
-        $data['chiffres'] = $this->Model->read('chiffres_cles', ['id_page_associee' => $page['id_page']], 'ordre', 'ASC');
         $data['appels_action'] = $this->Model->get_appels_action_translated('fr');
+
+        // Produits (table advertise_product)
+        $data['produits'] = $this->db->select("id, main_image, slug, price, created_at, title, description, in_vedette")
+            ->where('is_active', 1)
+            ->where('deleted_at IS NULL')
+            ->order_by('in_vedette', 'DESC')
+            ->order_by('id', 'DESC')
+            ->limit(8)
+            ->get('advertise_product')
+            ->result_array();
 
         // Données communes (sections, enfants, etc.)
         $data = array_merge($data, $this->_get_page_data($page['id_page']));
@@ -51,14 +60,13 @@ class Home extends Public_Controller
 
         $slug = $this->security->xss_clean($slug);
 
-        $page = $this->Model->readOne('pages', ['slug' => $slug, 'est_publiee' => 1]);
+        $page = static_pages_one(['slug' => $slug, 'est_publiee' => 1]);
         if (!$page) show_404();
 
         $data['page'] = $page;
 
         // Données communes
         $data = array_merge($data, $this->_get_page_data($page['id_page']));
-        $data = array_merge($data, $this->_load_contextual_data($page));
         $data = array_merge($data, $this->_prepare_seo_data($page));
 
         $view_name = $this->_determine_view($page);
@@ -73,18 +81,18 @@ class Home extends Public_Controller
         $data = [];
 
         // ----- 1. Sections de contenu (français uniquement) -----
-        $sections = $this->Model->read('sections_contenu', ['id_page' => $page_id], 'ordre', 'ASC');
+        $sections = static_sections_where(['id_page' => $page_id, 'deleted_at' => null], 'ordre', 'ASC');
         $data['sections'] = $sections;
 
         // ----- 2. Pages enfants (sous-pages) -----
-        $children = $this->Model->read('pages', ['menu_parent_id' => $page_id, 'est_publiee' => 1], 'menu_ordre', 'ASC');
+        $children = static_pages_where(['menu_parent_id' => $page_id, 'est_publiee' => 1], 'menu_ordre', 'ASC');
         $data['children'] = $children;
 
         // ----- 3. Pages sœurs (même parent) -----
-        $parent = $this->Model->readOne('pages', ['id_page' => $page_id]);
+        $parent = static_pages_one(['id_page' => $page_id]);
         $parent_id = $parent['menu_parent_id'] ?? null;
         if ($parent_id) {
-            $siblings = $this->Model->read('pages', ['menu_parent_id' => $parent_id, 'est_publiee' => 1, 'id_page !=' => $page_id], 'menu_ordre', 'ASC');
+            $siblings = static_pages_where(['menu_parent_id' => $parent_id, 'est_publiee' => 1, 'id_page !=' => $page_id], 'menu_ordre', 'ASC');
             $data['siblings'] = $siblings;
         }
 
@@ -95,6 +103,15 @@ class Home extends Public_Controller
     }
 
     /**
+     * Détermine la vue à afficher pour une page dynamique
+     * (template générique rendant les sections statiques de la page)
+     */
+    private function _determine_view($page)
+    {
+        return 'Page_View';
+    }
+
+    /**
      * Construit le fil d'Ariane
      */
     private function _build_breadcrumb($page_id)
@@ -102,7 +119,7 @@ class Home extends Public_Controller
         $breadcrumb = [];
 
         while ($page_id) {
-            $page = $this->Model->readOne('pages', ['id_page' => $page_id]);
+            $page = static_pages_one(['id_page' => $page_id]);
             if (!$page) break;
 
             $url = ($page['slug'] === 'home')

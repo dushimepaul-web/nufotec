@@ -29,13 +29,13 @@ if ($_SERVER['SERVER_NAME'] == 'localhost') {
         'save_queries' => TRUE
     );
 } else {
-    // Configuration pour le serveur distant
+    // Configuration pour le serveur distant (identifiants via variables d'environnement)
     $db['default'] = array(
         'dsn'       => '',
 'hostname'  => 'localhost',
-'username'  => 'nufotec_nufotec',
-'password'  => '6886Paul@',
-'database'  => 'nufotec_db',
+'username'  => getenv('DB_USERNAME') ?: 'nufotec_nufotec',
+'password'  => getenv('DB_PASSWORD') ?: '',
+'database'  => getenv('DB_DATABASE') ?: 'nufotec_db',
 'dbdriver'  => 'mysqli',
 'dbprefix'  => '',
 'pconnect'  => FALSE,

@@ -178,7 +178,6 @@ class Products extends Public_Controller {
             'product_title' => $product_title,
             'product_price' => $product_price,
             'order_status' => 'pending',
-            'whatsapp_sent' => 0,
             'ip_address' => $this->input->ip_address(),
             'user_agent' => $this->agent->agent_string()
         ];
@@ -187,17 +186,6 @@ class Products extends Public_Controller {
         $order_id = $this->Model->create('order_requests', $order_data);
         
         if ($order_id) {
-            // Journaliser l'envoi WhatsApp
-            $whatsapp_data = [
-                'order_request_id' => $order_id,
-                'product_id' => $product_id,
-                'phone_number' => $customer_phone,
-                'message_type' => 'price_request',
-                'status' => 'pending',
-                'message_content' => 'Passage du commande sur le produit interesse #' . $product_id
-            ];
-            $this->Model->create('whatsapp_logs', $whatsapp_data);
-            
             $this->output
                 ->set_content_type('application/json')
                 ->set_output(json_encode([
@@ -329,7 +317,7 @@ class Products extends Public_Controller {
     }
 
     /**
-     * API: Incrémenter le compteur de demande de prix (pour le toast WhatsApp)
+     * API: Incrémenter le compteur de demande de prix
      */
     public function increment_price_request()
     {

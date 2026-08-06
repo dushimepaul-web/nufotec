@@ -1116,7 +1116,7 @@ foreach ($textes as $texte):
 
         <!-- Formulaire -->
         <form id="formulaireInvestisseur" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= $this->security->get_csrf_hash() ?>" id="csrfToken">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>" id="csrfToken">
 
             <!-- Étape 1: Identité -->
             <div class="section-formulaire active" id="etape-1">
@@ -1549,25 +1549,6 @@ foreach ($textes as $texte):
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // ==================== TRADUCTIONS JAVASCRIPT ====================
-    const traductions = {
-        champ_requis: 'Ce champ est requis',
-        min_caracteres: 'Minimum {min} caractères',
-        max_caracteres: 'Maximum {max} caractères',
-        format_invalide: 'Format invalide',
-        courriel_invalide: 'Courriel invalide',
-        selectionner_pays: 'Veuillez sélectionner votre pays',
-        selectionner_interet: 'Veuillez sélectionner au moins un type d\'intérêt',
-        erreur_validation: 'Erreur de validation',
-        succes: 'Succès',
-        erreur: 'Erreur',
-        erreur_reseau: 'Erreur de connexion au serveur'
-    };
-
-    function t(cle) {
-        return traductions[cle] || cle;
-    }
-
     // ==================== VARIABLES GLOBALES ====================
     let etapeCourante = 1;
     const totalEtapes = 5;
@@ -1738,26 +1719,26 @@ foreach ($textes as $texte):
         champ.classList.remove('valide', 'invalide');
         if (!regles) return true;
         if (regles.requis && !valeur) {
-            afficherErreurChamp(champ, idChamp + '-erreur', t('champ_requis'));
+            afficherErreurChamp(champ, idChamp + '-erreur', 'Ce champ est requis');
             return false;
         }
         if (valeur) {
             if (regles.min && valeur.length < regles.min) {
-                afficherErreurChamp(champ, idChamp + '-erreur', t('min_caracteres').replace('{min}', regles.min));
+                afficherErreurChamp(champ, idChamp + '-erreur', 'Minimum {min} caractères'.replace('{min}', regles.min));
                 return false;
             }
             if (regles.max && valeur.length > regles.max) {
-                afficherErreurChamp(champ, idChamp + '-erreur', t('max_caracteres').replace('{max}', regles.max));
+                afficherErreurChamp(champ, idChamp + '-erreur', 'Maximum {max} caractères'.replace('{max}', regles.max));
                 return false;
             }
             if (regles.pattern && !regles.pattern.test(valeur)) {
-                afficherErreurChamp(champ, idChamp + '-erreur', t('format_invalide'));
+                afficherErreurChamp(champ, idChamp + '-erreur', 'Format invalide');
                 return false;
             }
             if (regles.type === 'email') {
                 const regexCourriel = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!regexCourriel.test(valeur)) {
-                    afficherErreurChamp(champ, idChamp + '-erreur', t('courriel_invalide'));
+                    afficherErreurChamp(champ, idChamp + '-erreur', 'Courriel invalide');
                     return false;
                 }
             }
@@ -1803,7 +1784,7 @@ foreach ($textes as $texte):
         } else {
             document.getElementById(`etape-${etape}`).classList.add('secousse');
             setTimeout(() => document.getElementById(`etape-${etape}`).classList.remove('secousse'), 500);
-            afficherToast('erreur', t('erreur_validation'), 'Veuillez corriger les erreurs avant de continuer');
+            afficherToast('erreur', 'Erreur de validation', 'Veuillez corriger les erreurs avant de continuer');
         }
     };
 
@@ -1819,7 +1800,7 @@ foreach ($textes as $texte):
         let estValide = true;
         if (!document.getElementById('pays_id').value) {
             document.getElementById('pays_recherche').classList.add('invalide');
-            document.getElementById('pays-erreur').textContent = t('selectionner_pays');
+            document.getElementById('pays-erreur').textContent = 'Veuillez sélectionner votre pays';
             document.getElementById('pays-erreur').style.display = 'block';
             estValide = false;
         }
@@ -1942,7 +1923,7 @@ foreach ($textes as $texte):
     // ==================== SOUMISSION ====================
     document.getElementById('formulaireInvestisseur').addEventListener('submit', async function(e) {
         e.preventDefault();
-        if (!validerEtape5()) { afficherToast('erreur', t('erreur_validation'), 'Veuillez accepter toutes les conditions'); return; }
+        if (!validerEtape5()) { afficherToast('erreur', 'Erreur de validation', 'Veuillez accepter toutes les conditions'); return; }
         const boutonSoumettre = document.getElementById('boutonSoumettre'); boutonSoumettre.classList.add('chargement'); boutonSoumettre.disabled = true;
         const donneesFormulaire = new FormData(this); const donnees = Object.fromEntries(donneesFormulaire.entries());
         const urlSoumission = '<?= base_url('Api/investisseurs/Enregistrer') ?>';
@@ -1952,13 +1933,13 @@ foreach ($textes as $texte):
             if (resultat.succes) {
                 document.getElementById('prenomSucces').textContent = donnees.nom_complet.split(' ')[0] + ' !';
                 const modal = new bootstrap.Modal(document.getElementById('modalSucces')); modal.show();
-                this.reset(); reinitialiserFormulaire(); afficherToast('succes', t('succes'), resultat.message);
+                this.reset(); reinitialiserFormulaire(); afficherToast('succes', 'Succès', resultat.message);
                 setTimeout(() => { allerEtape(1); modal.hide(); }, 3000);
             } else {
                 if (resultat.erreurs) Object.keys(resultat.erreurs).forEach(champ => { const el = document.getElementById(champ); if (el) { el.classList.add('invalide'); const retour = document.getElementById(champ + '-erreur'); if (retour) { retour.textContent = resultat.erreurs[champ]; retour.style.display = 'block'; } } });
-                afficherToast('erreur', t('erreur'), resultat.message || 'Une erreur est survenue');
+                afficherToast('erreur', 'Erreur', resultat.message || 'Une erreur est survenue');
             }
-        } catch (erreur) { console.error('Erreur:', erreur); afficherToast('erreur', t('erreur'), t('erreur_reseau')); }
+        } catch (erreur) { console.error('Erreur:', erreur); afficherToast('erreur', 'Erreur', 'Erreur de connexion au serveur'); }
         finally { boutonSoumettre.classList.remove('chargement'); boutonSoumettre.disabled = false; }
     });
 

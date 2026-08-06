@@ -86,7 +86,7 @@
                 <button class="btn btn-light" onclick="location.reload()"><i class="bx bx-refresh"></i></button>
                 <div class="dropdown">
                     <div class="d-flex align-items-center gap-2" data-bs-toggle="dropdown">
-                        <img src="<?= base_url('uploads/' . ($user_info['photo'] ?? 'default-avatar.png')) ?>" class="avatar-sm">
+                        <img src="<?= base_url(!empty($user_info['photo']) ? 'uploads/' . $user_info['photo'] : 'assets/frontend/img/default-avatar.jpg') ?>" class="avatar-sm">
                         <span><?= htmlspecialchars(($user_info['prenom'] ?? '') . ' ' . ($user_info['nom'] ?? '')) ?></span>
                         <i class="bx bx-chevron-down"></i>
                     </div>

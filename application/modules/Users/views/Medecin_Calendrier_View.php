@@ -84,47 +84,6 @@
                                                 </a>
                                             </div>
                                         </div>
-
-                                        <!-- Modal Édition pour ce créneau -->
-                                        <div class="modal fade" id="editModal_<?= $creneau['id'] ?>" tabindex="-1">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-warning text-dark">
-                                                        <h5 class="modal-title">Modifier le créneau</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <form action="<?= base_url('calendriersave') ?>" method="POST">
-                                                        <input type="hidden" name="id" value="<?= $creneau['id'] ?>">
-                                                        <div class="modal-body">
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-bold">Jour</label>
-                                                                <select class="form-select" name="jour" required>
-                                                                    <?php foreach ($jours as $j): ?>
-                                                                        <option value="<?= $j ?>" <?= ($j == $creneau['jour_semaine']) ? 'selected' : '' ?>>
-                                                                            <?= ucfirst($j) ?>
-                                                                        </option>
-                                                                    <?php endforeach; ?>
-                                                                </select>
-                                                            </div>
-                                                            <div class="row mb-3">
-                                                                <div class="col">
-                                                                    <label class="form-label fw-bold">Heure début</label>
-                                                                    <input type="time" class="form-control" name="heure_debut" value="<?= substr($creneau['heure_debut'], 0, 5) ?>" required>
-                                                                </div>
-                                                                <div class="col">
-                                                                    <label class="form-label fw-bold">Heure fin</label>
-                                                                    <input type="time" class="form-control" name="heure_fin" value="<?= substr($creneau['heure_fin'], 0, 5) ?>" required>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                            <button type="submit" class="btn btn-warning">Enregistrer</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </td>
@@ -141,11 +100,52 @@
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+
+                <?php if (!empty($planning)): foreach ($planning as $jour => $creneaux): foreach ($creneaux as $creneau): ?>
+                <div class="modal fade" id="editModal_<?= $creneau['id'] ?>" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning text-dark">
+                                <h5 class="modal-title">Modifier le créneau</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form action="<?= base_url('calendriersave') ?>" method="POST">
+                                <input type="hidden" name="id" value="<?= $creneau['id'] ?>">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Jour</label>
+                                        <select class="form-select" name="jour" required>
+                                            <?php foreach ($jours as $j): ?>
+                                                <option value="<?= $j ?>" <?= ($j == $creneau['jour_semaine']) ? 'selected' : '' ?>>
+                                                    <?= ucfirst($j) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label class="form-label fw-bold">Heure début</label>
+                                            <input type="time" class="form-control" name="heure_debut" value="<?= substr($creneau['heure_debut'], 0, 5) ?>" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label fw-bold">Heure fin</label>
+                                            <input type="time" class="form-control" name="heure_fin" value="<?= substr($creneau['heure_fin'], 0, 5) ?>" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                    <button type="submit" class="btn btn-warning">Enregistrer</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; endforeach; endif; ?>
             </div>
         </div>
     </div>
 
-</div>
 </div>
 
 <!-- Modal Ajout -->

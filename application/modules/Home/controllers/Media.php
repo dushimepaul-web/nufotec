@@ -29,15 +29,7 @@ class Media extends Public_Controller{
     
     // Récupérer l'utilisateur connecté
     $user = $this->getCurrentUser();
-    
-    // Si l'utilisateur n'est pas connecté
-    if (!$user) {
-        // Sauvegarder l'URL demandée
-        $this->session->set_userdata('login_redirect', current_url());
-        
-        // Rediriger vers la page de connexion
-        redirect('Auth');
-    }
+
 }
 
  
@@ -62,16 +54,15 @@ class Media extends Public_Controller{
     public function index()
     {
         $user = $this->getCurrentUser();
-        $lang = $this->current_lang;
         
         $sql = "
             SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
                    g.date_media, g.taille, g.mime_type, g.duree, g.est_actif,
-                   g.description_{$lang} AS description,
-                   g.categorie_{$lang} AS categorie,
-                   g.credits_{$lang} AS credits,
-                   g.message_reseaux_{$lang} AS message_reseaux,
-                   g.contenu_texte_{$lang} AS contenu_texte,
+                   g.description AS description,
+                   g.categorie AS categorie,
+                   g.credits AS credits,
+                   g.message_reseaux AS message_reseaux,
+                   g.contenu_texte AS contenu_texte,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
                    (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
                    (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
@@ -149,17 +140,16 @@ class Media extends Public_Controller{
      */
     private function getMediasByType($type)
     {
-        $lang = $this->current_lang;
         $types_autre = ['image', 'book', 'document'];
         
         $select = "
             g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
             g.date_media, g.taille, g.mime_type, g.duree, g.est_actif,
-            g.description_{$lang} AS description,
-            g.categorie_{$lang} AS categorie,
-            g.credits_{$lang} AS credits,
-            g.message_reseaux_{$lang} AS message_reseaux,
-            g.contenu_texte_{$lang} AS contenu_texte,
+            g.description AS description,
+            g.categorie AS categorie,
+            g.credits AS credits,
+            g.message_reseaux AS message_reseaux,
+            g.contenu_texte AS contenu_texte,
             (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
             (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
             (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
@@ -255,16 +245,15 @@ class Media extends Public_Controller{
     {
         $user = $this->getCurrentUser();
         $user_id = $user ? $user['id'] : null;
-        $lang = $this->current_lang;
         
         $select = "
             g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
             g.date_media, g.taille, g.mime_type, g.duree, g.est_actif,
-            g.description_{$lang} AS description,
-            g.categorie_{$lang} AS categorie,
-            g.credits_{$lang} AS credits,
-            g.message_reseaux_{$lang} AS message_reseaux,
-            g.contenu_texte_{$lang} AS contenu_texte,
+            g.description AS description,
+            g.categorie AS categorie,
+            g.credits AS credits,
+            g.message_reseaux AS message_reseaux,
+            g.contenu_texte AS contenu_texte,
             (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
             (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
             (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'dislike') as dislikes_count,
@@ -477,7 +466,6 @@ class Media extends Public_Controller{
     {
         $query = $this->input->get('q');
         $limit = (int)($this->input->get('limit') ?? 10);
-        $lang = $this->current_lang;
         
         if (empty($query) || strlen($query) < 2) {
             redirect($this->current_lang . '/media');
@@ -488,11 +476,11 @@ class Media extends Public_Controller{
         
         $sql = "
             SELECT g.id_media, g.titre, g.type, g.slug, g.miniature,
-                   g.description_{$lang} as description,
+                   g.description as description,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count
             FROM galerie_medias g
             WHERE g.est_actif = 1 
-            AND (g.titre LIKE ? OR g.credits_{$lang} LIKE ? OR g.description_{$lang} LIKE ?)
+            AND (g.titre LIKE ? OR g.credits LIKE ? OR g.description LIKE ?)
             ORDER BY 
                 CASE 
                     WHEN g.titre LIKE ? THEN 10
@@ -637,12 +625,11 @@ class Media extends Public_Controller{
             return;
         }
         
-        $lang = $this->current_lang;
         $sql = "
             SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
-                   g.description_{$lang} AS description,
-                   g.categorie_{$lang} AS categorie,
-                   g.credits_{$lang} AS credits,
+                   g.description AS description,
+                   g.categorie AS categorie,
+                   g.credits AS credits,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
                    (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count
             FROM galerie_medias g
@@ -760,12 +747,11 @@ class Media extends Public_Controller{
 
     private function getCategoriesWithCount()
     {
-        $lang = $this->current_lang;
         $sql = "
-            SELECT g.categorie_{$lang} as categorie, COUNT(*) as count 
+            SELECT g.categorie as categorie, COUNT(*) as count 
             FROM galerie_medias g
-            WHERE g.est_actif = 1 AND g.categorie_{$lang} IS NOT NULL AND g.categorie_{$lang} != ''
-            GROUP BY g.categorie_{$lang}
+            WHERE g.est_actif = 1 AND g.categorie IS NOT NULL AND g.categorie != ''
+            GROUP BY g.categorie
             ORDER BY count DESC
         ";
         return $this->db->query($sql)->result_array();
@@ -773,12 +759,11 @@ class Media extends Public_Controller{
 
     private function getRecommendedMedias($current_media, $user_id = null, $limit = 10)
     {
-        $lang = $this->current_lang;
         $sql = "
             SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
-                   g.description_{$lang} AS description,
-                   g.categorie_{$lang} AS categorie,
-                   g.credits_{$lang} AS credits,
+                   g.description AS description,
+                   g.categorie AS categorie,
+                   g.credits AS credits,
                    (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count,
                    (SELECT COUNT(*) FROM media_likes WHERE id_media = g.id_media AND action = 'like') as likes_count,
                    (SELECT COUNT(*) FROM media_favorites WHERE id_media = g.id_media AND user_id = ?) as is_favorite
@@ -788,7 +773,7 @@ class Media extends Public_Controller{
         $params = [$user_id, $current_media['id_media']];
         
         if (!empty($current_media['categorie'])) {
-            $sql .= " AND g.categorie_{$lang} = ?";
+            $sql .= " AND g.categorie = ?";
             $params[] = $current_media['categorie'];
         } else {
             $sql .= " AND g.type = ?";

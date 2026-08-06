@@ -1,4 +1,10 @@
 <?php
+// Chargement des variables d'environnement (env.php à la racine)
+$__env_file = __DIR__.'/env.php';
+if (is_file($__env_file)) {
+    require_once $__env_file;
+}
+
 // Composer autoload
 require_once __DIR__.'/vendor/autoload.php';
 

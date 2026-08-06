@@ -401,8 +401,32 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
+    // Injection automatique du jeton CSRF dans les requêtes AJAX POST
+    (function() {
+        var CSRF_NAME = '<?= $this->security->get_csrf_token_name() ?>';
+        var CSRF_HASH = '<?= $this->security->get_csrf_hash() ?>';
+        if (window.jQuery && jQuery.ajaxSetup) {
+            jQuery.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if ((settings.type || 'GET').toUpperCase() !== 'POST' || !CSRF_HASH) return;
+                    if (xhr && xhr.setRequestHeader) xhr.setRequestHeader('X-CSRF-TOKEN', CSRF_HASH);
+                    var d = settings.data;
+                    if (d instanceof FormData) {
+                        if (!d.has(CSRF_NAME)) d.append(CSRF_NAME, CSRF_HASH);
+                    } else if (d && typeof d === 'object') {
+                        d[CSRF_NAME] = CSRF_HASH;
+                    } else if (typeof d === 'string') {
+                        settings.data = (d.length ? d + '&' : '') + encodeURIComponent(CSRF_NAME) + '=' + encodeURIComponent(CSRF_HASH);
+                    } else {
+                        settings.data = encodeURIComponent(CSRF_NAME) + '=' + encodeURIComponent(CSRF_HASH);
+                    }
+                }
+            });
+        }
+    })();
+</script>
+<script>
     const baseUrl = '<?= rtrim(base_url(), '/') ?>';
-    let resetEmail = '';
     let isLoading = false;
 
     // Fonctions SweetAlert
@@ -535,45 +559,71 @@
         return true;
     });
 
-    // MODALE RÉINITIALISATION
+    // MODALE RÉINITIALISATION (vérification d'identité - sans OTP)
     async function showResetPasswordModal() {
-        const { value: email } = await Swal.fire({
+        const { value: formValues } = await Swal.fire({
             title: 'Réinitialisation du mot de passe',
-            text: 'Entrez votre adresse email pour recevoir un code de réinitialisation',
-            input: 'email',
-            inputPlaceholder: 'exemple@nufotec.com',
+            html: `<p style="font-size:13px; color:#6c757d; margin-bottom:16px;">
+                       Saisissez les informations que vous avez utilisées lors de la création de votre compte.<br>
+                       <strong>Email</strong>, <strong>numéro de téléphone</strong>, <strong>nom</strong> et <strong>prénom</strong>.
+                   </p>
+                   <input type="email" id="swal-email" class="swal2-input" placeholder="Adresse email" style="margin-bottom:10px;">
+                   <input type="tel" id="swal-phone" class="swal2-input" placeholder="Numéro de téléphone" style="margin-bottom:10px;">
+                   <input type="text" id="swal-nom" class="swal2-input" placeholder="Nom" style="margin-bottom:10px;">
+                   <input type="text" id="swal-prenom" class="swal2-input" placeholder="Prénom">`,
             showCancelButton: true,
             confirmButtonColor: '#0a66c2',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Envoyer le code',
+            confirmButtonText: 'Vérifier',
             cancelButtonText: 'Annuler',
-            preConfirm: (email) => {
-                if (!email) {
-                    Swal.showValidationMessage('Veuillez saisir votre adresse email');
+            focusConfirm: false,
+            didOpen: () => {
+                setTimeout(() => document.getElementById('swal-email')?.focus(), 100);
+            },
+            preConfirm: () => {
+                const email = document.getElementById('swal-email')?.value?.trim();
+                const phone = document.getElementById('swal-phone')?.value?.trim();
+                const nom = document.getElementById('swal-nom')?.value?.trim();
+                const prenom = document.getElementById('swal-prenom')?.value?.trim();
+
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    Swal.showValidationMessage('Veuillez saisir une adresse email valide');
                     return false;
                 }
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    Swal.showValidationMessage('Adresse email invalide');
+                if (!phone) {
+                    Swal.showValidationMessage('Veuillez saisir votre numéro de téléphone');
                     return false;
                 }
-                return email;
+                if (!nom || nom.length < 2) {
+                    Swal.showValidationMessage('Veuillez saisir votre nom');
+                    return false;
+                }
+                if (!prenom || prenom.length < 2) {
+                    Swal.showValidationMessage('Veuillez saisir votre prénom');
+                    return false;
+                }
+                return { email, phone, nom, prenom };
             }
         });
 
-        if (email) {
-            Swal.fire({ title: 'Envoi en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        if (formValues) {
+            Swal.fire({ title: 'Vérification en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             $.ajax({
-                url: baseUrl + '/auth/send_reset_code',
+                url: baseUrl + '/auth/verify_identity',
                 method: 'POST',
-                data: { email: email },
+                data: {
+                    email: formValues.email,
+                    telephone: formValues.phone,
+                    nom: formValues.nom,
+                    prenom: formValues.prenom
+                },
                 dataType: 'json',
                 timeout: 30000,
                 success: function(res) {
                     if (res.success) {
-                        resetEmail = email;
                         Swal.close();
-                        showVerifyCodeModal(email);
+                        showNewPasswordModal();
                     } else {
                         Swal.close();
                         showError(res.message);
@@ -582,69 +632,6 @@
                 error: function() { Swal.close(); showError('Erreur de connexion au serveur.'); }
             });
         }
-    }
-
-    function showVerifyCodeModal(email) {
-        Swal.fire({
-            title: 'Code de vérification',
-            html: `<p>Code envoyé à <strong>${email}</strong></p>
-                   <div style="margin: 20px 0;">
-                       <input type="text" id="swal-code" class="swal2-input" placeholder="Code à 6 chiffres" maxlength="6" 
-                              style="text-align:center; font-size:32px; letter-spacing:8px; font-weight:bold;">
-                   </div>`,
-            showCancelButton: true,
-            confirmButtonColor: '#0a66c2',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Vérifier le code',
-            cancelButtonText: 'Annuler',
-            showDenyButton: true,
-            denyButtonText: 'Renvoyer le code',
-            denyButtonColor: '#28a745',
-            preConfirm: () => {
-                const code = document.getElementById('swal-code')?.value;
-                if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-                    Swal.showValidationMessage('Veuillez saisir un code valide à 6 chiffres');
-                    return false;
-                }
-                return code;
-            }
-        }).then((result) => {
-            if (result.isConfirmed) verifyCode(result.value);
-            else if (result.isDenied) resendCode(email);
-        });
-    }
-
-    function verifyCode(code) {
-        Swal.fire({ title: 'Vérification...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        $.ajax({
-            url: baseUrl + '/auth/verify_reset_code',
-            method: 'POST',
-            data: { code: code },
-            dataType: 'json',
-            success: function(res) {
-                if (res.success) { Swal.close(); showNewPasswordModal(); }
-                else { Swal.close(); showError(res.message); }
-            },
-            error: function() { Swal.close(); showError('Erreur de vérification.'); }
-        });
-    }
-
-    function resendCode(email) {
-        Swal.fire({ title: 'Renvoi en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        $.ajax({
-            url: baseUrl + '/auth/resend_otp',
-            method: 'POST',
-            data: { email: email },
-            dataType: 'json',
-            success: function(res) {
-                if (res.success) {
-                    Swal.close();
-                    showSuccess('Nouveau code envoyé');
-                    showVerifyCodeModal(email);
-                } else { Swal.close(); showError(res.message); }
-            },
-            error: function() { Swal.close(); showError('Erreur lors du renvoi.'); }
-        });
     }
 
     function showNewPasswordModal() {

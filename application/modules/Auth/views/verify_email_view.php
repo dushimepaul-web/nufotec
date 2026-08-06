@@ -6,6 +6,31 @@
     <title>Vérification email - NUFOTEC</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    // Injection automatique du jeton CSRF dans les requêtes AJAX POST
+    (function() {
+        var CSRF_NAME = '<?= $this->security->get_csrf_token_name() ?>';
+        var CSRF_HASH = '<?= $this->security->get_csrf_hash() ?>';
+        if (window.jQuery && jQuery.ajaxSetup) {
+            jQuery.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if ((settings.type || 'GET').toUpperCase() !== 'POST' || !CSRF_HASH) return;
+                    if (xhr && xhr.setRequestHeader) xhr.setRequestHeader('X-CSRF-TOKEN', CSRF_HASH);
+                    var d = settings.data;
+                    if (d instanceof FormData) {
+                        if (!d.has(CSRF_NAME)) d.append(CSRF_NAME, CSRF_HASH);
+                    } else if (d && typeof d === 'object') {
+                        d[CSRF_NAME] = CSRF_HASH;
+                    } else if (typeof d === 'string') {
+                        settings.data = (d.length ? d + '&' : '') + encodeURIComponent(CSRF_NAME) + '=' + encodeURIComponent(CSRF_HASH);
+                    } else {
+                        settings.data = encodeURIComponent(CSRF_NAME) + '=' + encodeURIComponent(CSRF_HASH);
+                    }
+                }
+            });
+        }
+    })();
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {

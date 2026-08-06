@@ -572,6 +572,28 @@ function googleTranslateElementInit() {
 </script>
 </head>
 <body>
+<script>
+// Injection automatique du jeton CSRF dans les requêtes fetch POST
+(function() {
+    var CSRF_NAME = '<?= $this->security->get_csrf_token_name() ?>';
+    var CSRF_HASH = '<?= $this->security->get_csrf_hash() ?>';
+    if (!CSRF_HASH || typeof window.fetch !== 'function' || window.__csrfFetchPatched) return;
+    window.__csrfFetchPatched = true;
+    var origFetch = window.fetch;
+    window.fetch = function(url, options) {
+        options = options || {};
+        if ((options.method || 'GET').toUpperCase() === 'POST') {
+            if (!options.headers) options.headers = {};
+            if (typeof options.headers.set === 'function' && !options.headers.has('X-CSRF-TOKEN')) {
+                options.headers.set('X-CSRF-TOKEN', CSRF_HASH);
+            } else if (typeof options.headers === 'object') {
+                options.headers['X-CSRF-TOKEN'] = CSRF_HASH;
+            }
+        }
+        return origFetch.call(this, url, options);
+    };
+})();
+</script>
 
 <!-- Google Translate Container -->
 <div id="google_translate_element" style="display: none;"></div>
@@ -695,7 +717,22 @@ function googleTranslateElementInit() {
                             <i class="bi bi-download"></i>
                         </button>
                     </div>
-                    
+
+                <?php elseif ($type === 'document' && !empty($fichier)): ?>
+                    <div class="document-viewer" style="background: var(--bg-card); border-radius: var(--border-radius-lg); padding: 0; overflow: hidden;">
+                        <iframe src="<?= htmlspecialchars($fichier) ?>" style="width: 100%; height: 75vh; min-height: 480px; border: none; background: #fff;" loading="eager"></iframe>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
+                        <a href="<?= htmlspecialchars($fichier) ?>" target="_blank" rel="noopener" class="btn-outline-secondary" style="text-decoration: none;">
+                            <i class="bi bi-box-arrow-up-right"></i> Ouvrir dans le navigateur
+                        </a>
+                        <?php if ($is_downloadable): ?>
+                            <button class="btn-outline-secondary" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
+                                <i class="bi bi-download"></i> Télécharger
+                            </button>
+                        <?php endif; ?>
+                    </div>
+
                 <?php else: ?>
                     <div class="text-center p-5" style="background: var(--bg-card); border-radius: var(--border-radius-lg);">
                         <i class="bi bi-file-earmark" style="font-size: 4rem; opacity: 0.5;"></i>
@@ -734,8 +771,7 @@ function googleTranslateElementInit() {
                         <?php endif; ?>
                     </div>
                 </div>
-                
-                                
+
                 <!-- Description -->
                 <div class="description-box" onclick="toggleDescription()">
                     <div class="description-text" id="descriptionText">
@@ -1046,10 +1082,6 @@ if (mediaId) {
     fetch(baseUrl + '/media/apiTrackView', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `id_media=${mediaId}` }).catch(() => {});
 }
 
-
-
-
-
 // ============================================
 // LANGUAGE MANAGEMENT - VERSION CORRIGÉE
 // ============================================
@@ -1251,7 +1283,6 @@ setInterval(removeGoogleTranslateBar, 100);
 setTimeout(removeGoogleTranslateBar, 500);
 setTimeout(removeGoogleTranslateBar, 1000);
 setTimeout(removeGoogleTranslateBar, 3000);
-
 
 </script>
 </body>

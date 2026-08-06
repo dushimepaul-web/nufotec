@@ -47,7 +47,7 @@
                              class="rounded-circle border border-3 border-primary" 
                              width="120" height="120" 
                              style="object-fit: cover;"
-                             onerror="this.src='<?= base_url('attachments/Users/default-avatar.png') ?>'"
+                             onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
                              alt="Photo de profil">
                     </div>
                     <h4 class="mb-1"><?= htmlspecialchars($user['prenom'] . ' ' . $user['nom']) ?></h4>

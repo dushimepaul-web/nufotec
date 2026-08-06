@@ -1282,7 +1282,7 @@ body {
         <?php if (!empty($medecins)): ?>
             <?php foreach ($medecins as $medecin): 
                 $is_online = !empty($medecin['est_disponible']);
-                $photo = !empty($medecin['photo']) ? base_url('attachments/Users/'.$medecin['photo']) : base_url('assets/images/default-doctor.png');
+                $photo = !empty($medecin['photo']) ? base_url('attachments/Users/'.$medecin['photo']) : base_url('assets/frontend/img/default-doctor.jpg');
                 $nom_complet = htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''));
                 $specialite_nom = htmlspecialchars($medecin['specialite'] ?? t('general_practitioner'));
                 $note = number_format($medecin['note_moyenne'] ?? 0, 1);
@@ -1330,7 +1330,7 @@ body {
                 <div class="doctor-card">
                     <div class="doctor-header">
                         <div class="doctor-avatar">
-                            <img src="<?= $photo ?>" alt="<?= $nom_complet ?>" onerror="this.src='<?= base_url('assets/images/default-doctor.png') ?>'">
+                            <img src="<?= $photo ?>" alt="<?= $nom_complet ?>" onerror="this.src='<?= base_url('assets/frontend/img/default-doctor.jpg') ?>'">
                             <span class="status-badge <?= $is_online ? '' : 'offline' ?>"></span>
                         </div>
                         <div class="doctor-main-info">

@@ -14,7 +14,6 @@ class Chiffres_cles extends MY_Controller {
     {
         // Récupérer les chiffres clés
         $data['chiffres'] = $this->Model->read('chiffres_cles', [], 'ordre', 'ASC');
-        $data['pages'] = $this->Model->read('pages', ['deleted_at' => NULL, 'est_publiee' => 1], 'titre_page', 'ASC');
         $this->load->view('Chiffres_cles_View', $data);
     }
 
@@ -57,7 +56,6 @@ class Chiffres_cles extends MY_Controller {
     function ChiffreDetail($chiffreDetail){
         $id = $chiffreDetail;
         $data['detail'] = $this->Model->readOne('chiffres_cles', ['id_chiffre' => $id[0]]);
-        $data['pages'] = $this->Model->read('pages', ['deleted_at' => NULL, 'est_publiee' => 1], 'titre_page', 'ASC');
         $this->load->view('ChiffreDetail_View', $data);
     }
 

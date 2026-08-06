@@ -11,11 +11,18 @@ if ($is_product_page) {
     $page_image = base_url('attachments/Products/'.$product['main_image']);
     $page_url   = base_url('Products/detail/'.($product['slug'] ?? $product['id']));
 } else {
-    $page_title = htmlspecialchars($this->Model->get_setting('site_name','NUFOTEC BURUNDI'));
-    $page_desc  = htmlspecialchars($this->Model->get_setting('agf_description_courte','Projet integre de transformation agro-alimentaire'));
+    // Title personnalisé par page (SEO) si fourni par le contrôleur
+    $page_title = (!empty($site_title) && !in_array($site_title, ['Frontend', 'Admin Dashboard']))
+        ? htmlspecialchars($site_title)
+        : htmlspecialchars($this->Model->get_setting('site_name','NUFOTEC BURUNDI'));
+    $page_desc  = !empty($site_description)
+        ? htmlspecialchars($site_description)
+        : htmlspecialchars($this->Model->get_setting('agf_description_courte','Projet integre de transformation agro-alimentaire'));
     $site_logo  = $this->Model->get_setting('site_logo','assets/fro.png');
-    $page_image = base_url('attachments/Configurations/'.$site_logo);
-    $page_url   = base_url();
+    $page_image = !empty($site_image)
+        ? $site_image
+        : base_url('attachments/Configurations/'.$site_logo);
+    $page_url   = !empty($site_url) ? $site_url : base_url();
 }
 $logged_in  = $this->session->userdata('logged_in') === TRUE;
 $user_name  = $this->session->userdata('username');
@@ -697,7 +704,7 @@ function googleTranslateElementInit(){
       </button>
 
       <!-- Account -->
-      <a href="<?= $logged_in ? base_url('home-patient') : base_url('auth') ?>"
+      <a href="<?= $logged_in ? base_url('Dashboard') : base_url('auth') ?>"
          class="nuf-action-btn d-none d-lg-flex"
          title="<?= $logged_in ? 'Mon compte' : 'Connexion' ?>">
         <?php if ($logged_in && !empty($user_photo) && file_exists(FCPATH.'attachments/Users/'.$user_photo)): ?>
@@ -796,13 +803,13 @@ function googleTranslateElementInit(){
 
       <li class="nuf-menu-item">
         <a href="<?= base_url('') ?>" class="nuf-menu-link">
-          <?= isset($t) ? $t('home') : 'Accueil' ?>
+          Accueil
         </a>
       </li>
 
       <li class="nuf-menu-item nuf-mega">
         <a href="#" class="nuf-menu-link">
-          <?= isset($t) ? $t('about') : 'À propos' ?>
+          À propos
           <i class="bi bi-chevron-down"></i>
         </a>
         <div class="nuf-mega-drop">
@@ -837,19 +844,19 @@ function googleTranslateElementInit(){
 
       <li class="nuf-menu-item">
         <a href="<?= base_url('Products') ?>" class="nuf-menu-link">
-          <?= isset($t) ? $t('shop') : 'Boutique' ?>
+          Boutique
         </a>
       </li>
 
       <li class="nuf-menu-item">
         <a href="<?= base_url('Medicins') ?>" class="nuf-menu-link">
-          <?= isset($t) ? $t('teleconsultation') : 'Téléconsultation' ?>
+          Téléconsultation
         </a>
       </li>
 
       <li class="nuf-menu-item nuf-mega">
         <a href="#" class="nuf-menu-link">
-          <?= isset($t) ? $t('investment') : 'Investissement' ?>
+          Investissement
           <i class="bi bi-chevron-down"></i>
         </a>
         <div class="nuf-mega-drop">
@@ -866,6 +873,8 @@ function googleTranslateElementInit(){
               <h3><i class="bi bi-bank"></i> Relations</h3>
               <ul class="nuf-mega-list">
                 <li><a href="<?= base_url('broker-commission') ?>"><i class="bi bi-chevron-right"></i> Commission courtier</a></li>
+                <li><a href="<?= base_url('broker') ?>"><i class="bi bi-chevron-right"></i> Devenir Broker</a></li>
+                <li><a href="<?= base_url('investor') ?>"><i class="bi bi-chevron-right"></i> Devenir Investisseur</a></li>
               </ul>
             </div>
           </div>
@@ -874,7 +883,7 @@ function googleTranslateElementInit(){
 
       <li class="nuf-menu-item">
         <a href="<?= base_url('media') ?>" class="nuf-menu-link">
-          <?= isset($t) ? $t('media') : 'Médias' ?>
+          Médias
         </a>
       </li>
 
@@ -882,7 +891,7 @@ function googleTranslateElementInit(){
     <div class="nuf-nav-cta">
       <a href="<?= base_url('Home/Contact') ?>" class="nuf-btn-cta">
         <i class="bi bi-headset"></i>
-        <?= isset($t) ? $t('contact') : 'Contact' ?>
+        Contact
       </a>
     </div>
   </div>
@@ -942,6 +951,8 @@ function googleTranslateElementInit(){
             <a href="<?= base_url('investment-projection') ?>" class="nuf-sub-item">Projections</a>
             <a href="<?= base_url('strategic-partnerships') ?>" class="nuf-sub-item">Partenariats</a>
             <a href="<?= base_url('broker-commission') ?>" class="nuf-sub-item">Commission courtier</a>
+            <a href="<?= base_url('broker') ?>" class="nuf-sub-item">Devenir Broker</a>
+            <a href="<?= base_url('investor') ?>" class="nuf-sub-item">Devenir Investisseur</a>
           </div>
         </li>
         <li><a href="<?= base_url('media') ?>" class="nuf-panel-link"><i class="bi bi-collection-play"></i><span>Médias</span></a></li>
@@ -1027,7 +1038,7 @@ function googleTranslateElementInit(){
     <li><a href="<?= base_url('Medicins') ?>" class="nuf-bottom-link"><i class="bi bi-camera-video"></i><span>Consult.</span></a></li>
     <li><a href="<?= base_url('media') ?>" class="nuf-bottom-link"><i class="bi bi-collection-play"></i><span>media</span></a></li>
     <li>
-      <a href="<?= $logged_in ? base_url('home-patient') : base_url('auth') ?>" class="nuf-bottom-link">
+      <a href="<?= $logged_in ? base_url('Dashboard') : base_url('auth') ?>" class="nuf-bottom-link">
         <i class="bi bi-person"></i><span><?= $logged_in ? 'Compte' : 'Connexion' ?></span>
       </a>
     </li>

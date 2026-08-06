@@ -1149,7 +1149,7 @@ foreach ($textes as $texte):
 
         <!-- Formulaire -->
         <form id="formulaireCourtier" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= $this->security->get_csrf_hash() ?>" id="csrfToken">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>" id="csrfToken">
 
             <!-- Étape 1: Identité -->
             <div class="section-formulaire active" id="etape-1">

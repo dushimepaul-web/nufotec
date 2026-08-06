@@ -1,3 +1,33 @@
+<?php
+// =====================================================================
+// PAGES STATIQUES — la table `pages` a été supprimée de la base.
+// Ces données sont définies en dur directement dans les vues.
+// =====================================================================
+$pages = array(
+    array('id_page' => 1,  'titre_page' => 'Home',                                    'slug' => 'home'),
+    array('id_page' => 2,  'titre_page' => 'About',                                   'slug' => 'about'),
+    array('id_page' => 3,  'titre_page' => 'Background & Strategic Rationale',        'slug' => 'background-strategic-rationale'),
+    array('id_page' => 4,  'titre_page' => 'ESG & Sustainability',                    'slug' => 'esg-sustainability'),
+    array('id_page' => 5,  'titre_page' => 'Research & Innovation',                   'slug' => 'research-innovation'),
+    array('id_page' => 6,  'titre_page' => 'Corporate Structure & Governance',        'slug' => 'corporate-structure-governance'),
+    array('id_page' => 7,  'titre_page' => 'nufotec-phytomed-industries-facility',    'slug' => 'nufotec-phytomed-industries-facility'),
+    array('id_page' => 8,  'titre_page' => 'Our Product Categories',                  'slug' => 'product-categories'),
+    array('id_page' => 9,  'titre_page' => 'Raw Material Acquisition',                'slug' => 'raw-material-acquisition'),
+    array('id_page' => 10, 'titre_page' => 'Industrial Technology & Processing Systems', 'slug' => 'industrial-technology'),
+    array('id_page' => 11, 'titre_page' => 'Market & Industry Outlook',               'slug' => 'market-outlook'),
+    array('id_page' => 12, 'titre_page' => 'Digital Growth & Market Expansion Platform', 'slug' => 'digital-growth'),
+    array('id_page' => 13, 'titre_page' => 'Digital Health Consultation',             'slug' => 'digital-health'),
+    array('id_page' => 14, 'titre_page' => 'Phased Investment Projection',            'slug' => 'investment-projection'),
+    array('id_page' => 15, 'titre_page' => 'Our Investor & Partner Commitment',       'slug' => 'investor-commitment'),
+    array('id_page' => 16, 'titre_page' => 'Commission Fee Payment to Brokers',       'slug' => 'broker-commission'),
+    array('id_page' => 17, 'titre_page' => 'Risk Analysis & Mitigation Strategies',   'slug' => 'risk-analysis'),
+    array('id_page' => 18, 'titre_page' => 'Strategic Partnerships',                  'slug' => 'strategic-partnerships'),
+    array('id_page' => 19, 'titre_page' => 'Our Services',                            'slug' => 'our-services'),
+    array('id_page' => 22, 'titre_page' => 'Vision & Mission',                        'slug' => 'vision-mission'),
+    array('id_page' => 23, 'titre_page' => 'Brokers Form',                            'slug' => 'brokers-form'),
+    array('id_page' => 24, 'titre_page' => 'Investors form',                          'slug' => 'investors-form'),
+);
+$pages_list = $pages; ?>
 <?php include VIEWPATH.'includes/backend/Header.php'; ?>
 <?php include VIEWPATH.'includes/backend/Sidebar.php'; ?>
 <?php include VIEWPATH.'includes/backend/Topheader.php'; ?>
@@ -128,7 +158,7 @@ $type_labels = [
                     </thead>
                     <tbody>
                     <?php if (!empty($temoignages)): $i = 1; foreach ($temoignages as $value): 
-                        $photo_path = !empty($value['photo_url']) ? 'attachments/Temoignages/'.$value['photo_url'] : 'attachments/Temoignages/default-avatar.png';
+                        $photo_path = !empty($value['photo_url']) ? 'attachments/Temoignages/'.$value['photo_url'] : 'assets/frontend/img/default-avatar.jpg';
                         $type_badge = $type_badges[$value['type'] ?? 'client'] ?? '<span class="badge bg-light text-dark">Inconnu</span>';
                         
                         // Tronquer le message
@@ -141,7 +171,7 @@ $type_labels = [
                                 <img src="<?= base_url($photo_path) ?>" 
                                      class="rounded-circle border"
                                      style="width:50px; height:50px; object-fit:cover;"
-                                     onerror="this.src='<?= base_url('attachments/Temoignages/default-avatar.png') ?>'"
+                                     onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
                                      alt="Photo">
                             </td>
 
@@ -241,7 +271,7 @@ $type_labels = [
                                                 <img src="<?= base_url($photo_path) ?>" 
                                                      class="rounded-circle border border-3 border-primary mb-3"
                                                      style="width:120px; height:120px; object-fit:cover;"
-                                                     onerror="this.src='<?= base_url('attachments/Temoignages/default-avatar.png') ?>'"
+                                                     onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
                                                      alt="Photo">
                                                 <h5 class="mb-1"><?= htmlspecialchars($value['nom_personne'] ?? '') ?></h5>
                                                 <?php if (!empty($value['fonction'])): ?>
@@ -296,9 +326,9 @@ $type_labels = [
                                                         <label class="text-muted small">Page associée</label>
                                                         <p class="mb-0">
                                                             <?php if (!empty($value['id_page_associee'])): ?>
-                                                                <a href="<?= base_url('Pages/edit/'.$value['id_page_associee']) ?>" class="badge bg-secondary text-decoration-none">
+                                                                <span class="badge bg-secondary">
                                                                     Page #<?= $value['id_page_associee'] ?>
-                                                                </a>
+                                                                </span>
                                                             <?php else: ?>
                                                                 <span class="text-muted">Aucune</span>
                                                             <?php endif; ?>
@@ -559,7 +589,7 @@ $type_labels = [
 $(document).ready(function() {
     $('#temoignagesTable').DataTable({
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+            url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>'
         },
         order: [[0, 'desc']],
         pageLength: 25,

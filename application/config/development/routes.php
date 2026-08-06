@@ -12,7 +12,7 @@ $route['translate_uri_dashes'] = FALSE;
 // ============================================
 // CHANGEMENT DE LANGUE
 // ============================================
-$route['switch_lang/(fr|en|sw)'] = 'Home/Home/switch_lang/$1';
+// $route['switch_lang/(fr|en|sw)'] = 'Home/Home/switch_lang/$1';
 
 // ============================================
 // ROUTES ADMIN
@@ -72,8 +72,8 @@ $route['product-categories/view/(:num)'] = 'Advertise_product/Product_categories
 // ============================================
 // ROUTES PRODUITS
 // ============================================
-$route['Produits'] = 'Produits/index';
-$route['produits'] = 'Produits/index';
+$route['Produits'] = 'Favoris/Produits/index';
+$route['produits'] = 'Favoris/Produits/index';
 
 // ============================================
 // ROUTES DASHBOARD
@@ -90,28 +90,6 @@ $route['dashboard/patient'] = 'Dashboard/patient_dashboard';
 $route['dashboard/user'] = 'Dashboard/user_dashboard';
 
 // ============================================
-// ROUTES SECTIONS (Gestion des sections de contenu)
-// ============================================
-$route['Sections'] = 'Sections/index';
-$route['sections'] = 'Sections/index';
-$route['Sections/add'] = 'Sections/add';
-$route['sections/add'] = 'Sections/add';
-$route['Sections/edit/(:num)'] = 'Sections/edit/$1';
-$route['sections/edit/(:num)'] = 'Sections/edit/$1';
-$route['Sections/delete'] = 'Sections/delete';
-$route['sections/delete'] = 'Sections/delete';
-$route['Sections/ChangeOrdre'] = 'Sections/ChangeOrdre';
-$route['sections/ChangeOrdre'] = 'Sections/ChangeOrdre';
-$route['Sections/SectionDetail/(:num)'] = 'Sections/SectionDetail/$1';
-$route['sections/SectionDetail/(:num)'] = 'Sections/SectionDetail/$1';
-$route['Sections/ToggleStatus'] = 'Sections/ToggleStatus';
-$route['sections/ToggleStatus'] = 'Sections/ToggleStatus';
-$route['Sections/uploadImage'] = 'Sections/uploadImage';
-$route['sections/uploadImage'] = 'Sections/uploadImage';
-$route['Sections/browseImages'] = 'Sections/browseImages';
-$route['sections/browseImages'] = 'Sections/browseImages';
-
-// ============================================
 // ROUTES AUTHENTIFICATION (COMPLÈTES)
 // ============================================
 
@@ -122,11 +100,9 @@ $route['auth/login'] = 'Auth/login';
 $route['auth/register'] = 'Auth/register';
 $route['auth/logout'] = 'Auth/logout';
 
-// Routes pour mot de passe oublié (OTP)
-$route['auth/send_reset_code'] = 'Auth/send_reset_code';
-$route['auth/verify_reset_code'] = 'Auth/verify_reset_code';
+// Routes pour mot de passe oublié (vérification d'identité - sans OTP)
+$route['auth/verify_identity'] = 'Auth/verify_identity';
 $route['auth/reset_password'] = 'Auth/reset_password';
-$route['auth/resend_otp'] = 'Auth/resend_otp';
 
 // Routes pour effacer les messages flash (AJAX)
 $route['auth/clear_flash'] = 'Auth/clear_flash';
@@ -148,10 +124,8 @@ $route['Auth/index'] = 'Auth/index';
 $route['Auth/login'] = 'Auth/login';
 $route['Auth/register'] = 'Auth/register';
 $route['Auth/logout'] = 'Auth/logout';
-$route['Auth/send_reset_code'] = 'Auth/send_reset_code';
-$route['Auth/verify_reset_code'] = 'Auth/verify_reset_code';
+$route['Auth/verify_identity'] = 'Auth/verify_identity';
 $route['Auth/reset_password'] = 'Auth/reset_password';
-$route['Auth/resend_otp'] = 'Auth/resend_otp';
 $route['Auth/clear_flash'] = 'Auth/clear_flash';
 $route['Auth/verify_email_page'] = 'Auth/verify_email_page';
 $route['Auth/verify_email_code'] = 'Auth/verify_email_code';
@@ -186,17 +160,6 @@ $route['boutique/categorie/(:num)/(:num)'] = 'Home/boutique/categorie/$1/$2';
 $route['boutique/detail/(:any)'] = 'Home/boutique/detail/$1';
 $route['boutique/recherche'] = 'Home/boutique/recherche';
 $route['boutique/ajax_get_products'] = 'Home/Boutique/ajax_get_products';
-$route['panier'] = 'Home/panier/index';
-$route['panier/get_cart'] = 'Home/Panier/get_cart';
-$route['panier/ajouter'] = 'Home/Panier/ajouter';
-$route['panier/update_quantity'] = 'Home/Panier/update_quantity';
-$route['panier/delete_line'] = 'Home/Panier/delete_line';
-$route['panier/toggle_favori'] = 'Home/Panier/toggle_favori';
-$route['commande'] = 'Home/commande/index';
-$route['commande/valider'] = 'Home/commande/valider';
-$route['commande/confirmation/(:num)'] = 'Home/commande/confirmation/$1';
-$route['commande/paiement/(:num)'] = 'Home/commande/paiement/$1';
-$route['commande/verifier_paiement/(:num)'] = 'Home/Commande/verifier_paiement/$1';
 
 // ============================================
 // ROUTES MÉDECINS & CONSULTATIONS
@@ -205,7 +168,6 @@ $route['Medicins'] = 'Consultations/PatientForm/medicin';
 $route['patient-form'] = 'Consultations/PatientForm';
 $route['patient-form/index'] = 'Consultations/PatientForm/index';
 $route['patient-form/create'] = 'Consultations/PatientForm/create';
-$route['consultation/payment/(:any)'] = 'Consultations/Payment/index/$1';
 $route['swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
 $route['consultations/get_countries'] = 'Consultations/PatientForm/get_countries';
 $route['home-patient'] = 'Dashboard/PatientDashboard/index';
@@ -231,20 +193,29 @@ $route['configurations/delete'] = 'Configurations/delete';
 $route['Configurations/test_upload_path'] = 'Configurations/test_upload_path';
 $route['configurations/test_upload_path'] = 'Configurations/test_upload_path';
 
+
+
+
+
+
+
+
 // ============================================
 // ROUTES MÉDIAS (VIDEO, AUDIO, AUTRE)
 // ============================================
-$route['media'] = 'Home/media/index';
-$route['media/search'] = 'Home/media/search';
-$route['media/search/(:any)'] = 'Home/media/search/$1';
-$route['media/view/(:any)'] = 'Home/media/view/$1';
-$route['media/category/(:any)'] = 'Home/media/category/$1';
-$route['media/detail/(:any)'] = 'Home/media/detail/$1';
-$route['media/type/(:any)'] = 'Home/media/type/$1';
-$route['media/favorites'] = 'Home/media/favorites';
-$route['media/player/(:any)'] = 'Home/media/player/$1';
-$route['media/downloader'] = 'Home/media/downloader';
-$route['media/downloader/(:any)'] = 'Home/media/downloader/$1';
+$route['media'] = 'Home/Media/index';
+$route['media/search'] = 'Home/Media/search';
+$route['media/search/(:any)'] = 'Home/Media/search/$1';
+$route['media/view/(:any)'] = 'Home/Media/view/$1';
+$route['media/category/(:any)'] = 'Home/Media/category/$1';
+$route['media/detail/(:any)'] = 'Home/Media/detail/$1';
+$route['media/type/(:any)'] = 'Home/Media/type/$1';
+$route['media/favorites'] = 'Home/Media/favorites';
+$route['media/player/(:any)'] = 'Home/Media/player/$1';
+$route['media/downloader'] = 'Home/Media/downloader';
+$route['media/downloader/(:any)'] = 'Home/Media/downloader/$1';
+$route['media/trending'] = 'Home/Media/trending';
+$route['media/news'] = 'Home/Media/news';
 
 // ROUTES API MÉDIAS
 $route['media/apiTrackView'] = 'Home/Media/apiTrackView';
@@ -267,39 +238,38 @@ $route['media/getMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
 $route['media/getStats'] = 'Home/Media/apiGetStats';
 $route['media/searchAjax'] = 'Home/Media/apiSearch';
 
-// Backend Médias
-$route['video'] = 'media/Video/index';
-$route['video/Create'] = 'media/Video/Create';
-$route['video/Update'] = 'media/Video/Update';
-$route['video/Delete'] = 'media/Video/Delete';
-$route['video/ChangeStatus'] = 'media/Video/ChangeStatus';
-$route['video/toggleField'] = 'media/Video/toggleField';
-$route['video/initUpload'] = 'media/Video/initUpload';
-$route['video/uploadChunk'] = 'media/Video/uploadChunk';
-$route['video/checkStatus'] = 'media/Video/checkStatus';
-$route['video/completeUpload'] = 'media/Video/completeUpload';
-$route['video/cancelUpload'] = 'media/Video/cancelUpload';
-$route['video/stream/progressive/(:num)'] = 'media/Video/stream/progressive/$1';
-$route['video/uploadThumbnail'] = 'media/Video/uploadThumbnail';
+// Backend Médias (Unifié) - préfixé admin/ pour ne pas écraser le frontend
+$route['admin/media'] = 'admin_galerie/Media/index';
+$route['admin/media/index'] = 'admin_galerie/Media/index';
+$route['admin/media/index/(:any)'] = 'admin_galerie/Media/index/$1';
+$route['admin/media/Create'] = 'admin_galerie/Media/Create';
+$route['admin/media/Update'] = 'admin_galerie/Media/Update';
+$route['admin/media/Delete'] = 'admin_galerie/Media/Delete';
+$route['admin/media/ChangeStatus'] = 'admin_galerie/Media/ChangeStatus';
+$route['admin/media/toggleField'] = 'admin_galerie/Media/toggleField';
+$route['admin/media/initUpload'] = 'admin_galerie/Media/initUpload';
+$route['admin/media/uploadChunk'] = 'admin_galerie/Media/uploadChunk';
+$route['admin/media/uploadStatus'] = 'admin_galerie/Media/uploadStatus';
+$route['admin/media/completeUpload'] = 'admin_galerie/Media/completeUpload';
+$route['admin/media/uploadThumbnail'] = 'admin_galerie/Media/uploadThumbnail';
+$route['admin/media/checkServerLimits'] = 'admin_galerie/Media/checkServerLimits';
+$route['admin/media/stream/(:any)/(:num)'] = 'admin_galerie/Media/stream/$1/$2';
+$route['admin/media/getJson/(:num)'] = 'admin_galerie/Media/getJson/$1';
+$route['admin/media/searchAjax'] = 'admin_galerie/Media/searchAjax';
+$route['cli/jobs/run'] = 'admin_galerie/Media/jobs';
 
-$route['audio'] = 'media/Audio/index';
-$route['audio/Create'] = 'media/Audio/Create';
-$route['audio/Update'] = 'media/Audio/Update';
-$route['audio/Delete'] = 'media/Audio/Delete';
-$route['audio/ChangeStatus'] = 'media/Audio/ChangeStatus';
-$route['audio/toggleField'] = 'media/Audio/toggleField';
-$route['audio/initUpload'] = 'media/Audio/initUpload';
-$route['audio/uploadChunk'] = 'media/Audio/uploadChunk';
-$route['audio/completeUpload'] = 'media/Audio/completeUpload';
-$route['audio/uploadThumbnail'] = 'media/Audio/uploadThumbnail';
-$route['audio/stream/(:num)'] = 'media/Audio/stream/$1';
 
-$route['Autre/admin_liste'] = 'media/Autre/admin_liste';
-$route['autre/admin_liste'] = 'media/Autre/admin_liste';
-$route['autre/admin_ajouter'] = 'media/Autre/admin_ajouter';
-$route['autre/admin_modifier/(:num)'] = 'media/Autre/admin_modifier/$1';
-$route['autre/admin_supprimer/(:num)'] = 'media/Autre/admin_supprimer/$1';
-$route['autre/get_json/(:num)'] = 'media/Autre/get_json/$1';
+// Anciennes routes vidéo/audio/autre - redirection vers le controller frontend public
+$route['video'] = 'Home/Media/type/video';
+$route['audio'] = 'Home/Media/type/audio';
+$route['autre'] = 'Home/Media/type/autre';
+
+
+
+
+
+
+
 
 // ============================================
 // ROUTES BLOG & ACTUALITÉS
@@ -326,6 +296,8 @@ $route['contact'] = 'Home/contact';
 // ============================================
 // ROUTES INVESTISSEMENT (Frontend)
 // ============================================
+$route['About/presentation'] = 'Frontend/About/presentation';
+$route['about/presentation'] = 'Frontend/About/presentation';
 $route['profile-entreprise'] = 'Frontend/Profile_Entreprise/index';
 $route['background-strategic-rationale'] = 'Frontend/Background_Strategic_Rationale/index';
 $route['nufotec-phytomed-facility'] = 'Frontend/NUFOTEC_PHYTOMED_INDUSTRIES_Facility/index';
@@ -466,48 +438,6 @@ $route['api/mobile/products/increment_price_request'] = 'Api/Mobile/increment_pr
 
 
 
-$route['webhook/whatsapp']        = 'Webhook_whapi/Webhook_whapi/index';
-$route['webhook/whatsapp/(:any)'] = 'Webhook_whapi/Webhook_whapi/index/$1';
-// ==============================================
-// CRON ROUTES (Execution automatique)
-// ==============================================
-// Traitement de la file d'attente
-$route['cron/process-queue'] = 'Cron_whapi/process_queue';
-$route['cron/process-queue/(:any)'] = 'Cron_whapi/process_queue/$1';
-
-// Réessayer les messages échoués
-$route['cron/retry-failed'] = 'Cron_whapi/retry_failed';
-
-// Nettoyage des logs
-$route['cron/cleanup'] = 'Cron_whapi/cleanup_logs';
-$route['cron/cleanup/(:any)'] = 'Cron_whapi/cleanup_logs/$1';
-
-// Monitoring système
-$route['cron/monitor'] = 'Cron_whapi/monitor_whatsapp';
-
-// Anti-spam
-$route['cron/antispam'] = 'Cron_whapi/anti_spam_control';
-
-// Optimisation base de données
-$route['cron/optimize'] = 'Cron_whapi/optimize_database';
-
-// ==============================================
-// SYNC ROUTES (Synchronisation)
-// ==============================================
-// Synchronisation complète
-$route['cron/sync'] = 'Sync_whapi/sync_all';
-$route['sync/all'] = 'Sync_whapi/sync_all';
-
-// Synchronisation groupes uniquement
-$route['cron/sync-groups'] = 'Sync_whapi/sync_groups';
-$route['sync/groups'] = 'Sync_whapi/sync_groups';
-
-// Synchronisation participants
-$route['cron/sync-participants'] = 'Sync_whapi/sync_participants';
-$route['sync/participants'] = 'Sync_whapi/sync_participants';
-
-// Nettoyage groupes supprimés
-$route['sync/cleanup'] = 'Sync_whapi/cleanup_deleted_groups';
 
 
 
@@ -544,6 +474,40 @@ $route['test/sync'] = 'test/sync/index';
 // RECHERCHE
 // ============================================
 $route['search/ajax_search'] = 'Home/search/ajax_search';
+
+// ============================================
+// MODULES ADMIN (PAGES DU SIDEBAR BACKEND)
+// ============================================
+$route['Evenements'] = 'Evenements/index';
+$route['Equipe'] = 'Equipe/index';
+$route['Partenaires'] = 'Partenaires/index';
+$route['Temoignages'] = 'Temoignages/index';
+$route['Services'] = 'Services/index';
+$route['Appels_action'] = 'Appels_action/index';
+$route['Chiffres_cles'] = 'Chiffres_cles/index';
+$route['Statistiques_reseaux'] = 'Statistiques_reseaux/index';
+$route['Galerie_medias'] = 'admin_galerie/Media/index';
+$route['Ressources_telechargeables'] = 'Ressources_telechargeables/index';
+$route['Faq'] = 'faq/Faq/index';
+$route['Licences_certifications'] = 'Licences_certifications/index';
+$route['Visionmission'] = 'Visionmission/index';
+$route['Consultations'] = 'Consultations/index';
+$route['Categories'] = 'Categories/index';
+$route['Commandes'] = 'Commandes/index';
+$route['Adresses'] = 'Adresses/index';
+$route['Investissement'] = 'Investissement/index';
+$route['Investissement_phases'] = 'Investissement_phases/index';
+$route['Etapes_projet'] = 'Etapes_projet/index';
+$route['Risques_mitigations'] = 'Risques_mitigations/index';
+$route['Brokers'] = 'Brokers/index';
+$route['Investors'] = 'Investors/index';
+$route['Roles'] = 'Roles/index';
+$route['Slides'] = 'Slides/index';
+$route['Newsletter'] = 'Newsletter/index';
+$route['Email_templates'] = 'Email_templates/index';
+$route['Publication'] = 'Publication/index';
+$route['Mode_payement'] = 'Mode_payement/index';
+$route['contact_us/Contact_Us'] = 'contact_us/Contact_Us/index';
 
 // ============================================
 // ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (DOIT ÊTRE LA DERNIÈRE)

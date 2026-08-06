@@ -10,8 +10,8 @@ class Search_model extends CI_Model {
 
     public function search_all($term) {
         return [
-            'produits' => $this->_search_produits($term)
-            //'pages'    => //$this->_search_pages($term)
+            'produits' => $this->_search_produits($term),
+            'pages'    => $this->_search_pages($term)
         ];
     }
 
@@ -36,13 +36,6 @@ class Search_model extends CI_Model {
 }
 
     private function _search_pages($term) {
-        $this->db->select('id_page as id, titre_page as titre, meta_description as extrait, "page" as type, slug');
-        $this->db->group_start();
-        $this->db->like('titre_page', $term);
-        $this->db->or_like('meta_description', $term);
-        $this->db->group_end();
-        $this->db->limit(10);
-        $query = $this->db->get('pages');
-        return $query->num_rows() > 0 ? $query->result_array() : [];
+        return static_pages_search($term);
     }
 }

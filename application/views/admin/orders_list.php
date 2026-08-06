@@ -139,23 +139,7 @@ $orders = $orders ?? [];
     display: inline-block;
 }
 
-/* Désactiver ApexCharts */
-.apexcharts-canvas, [id*="chart"], [class*="apexcharts"], #chart, .chart-container {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
 </style>
-
-<script>
-// Bloquer ApexCharts avant qu'il ne se charge
-window.ApexCharts = undefined;
-Object.defineProperty(window, 'ApexCharts', {
-    get: function() { return undefined; },
-    set: function() { return undefined; }
-});
-</script>
 
 <div class="page-wrapper">
     <div class="page-content">
@@ -356,7 +340,7 @@ Object.defineProperty(window, 'ApexCharts', {
                                                 data-id="<?= $order['id'] ?>" 
                                                 style="width: 130px; font-size: 0.75rem;">
                                             <option value="pending" <?= $order['order_status'] == 'pending' ? 'selected' : '' ?>>
-                                                ⏳ En attente
+                                                â³ En attente
                                             </option>
                                             <option value="processing" <?= $order['order_status'] == 'processing' ? 'selected' : '' ?>>
                                                 🔄 En traitement
@@ -445,11 +429,8 @@ Object.defineProperty(window, 'ApexCharts', {
     </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- SweetAlert2 (local) -->
+<script src="<?= base_url() ?>assets/backend/plugins/sweetalert2/sweetalert2.all.min.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -462,7 +443,7 @@ $(document).ready(function() {
     if ($('#ordersTable tbody tr').length > 0) {
         try {
             dataTable = $('#ordersTable').DataTable({
-                language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' },
+                language: { url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>' },
                 order: [[0, 'desc']],
                 pageLength: isMobile ? 10 : 25,
                 responsive: isMobile,
@@ -490,7 +471,7 @@ $(document).ready(function() {
         currentPhone = data.phone;
         
         const statusBadge = {
-            'pending': '<span class="badge bg-warning">⏳ En attente</span>',
+            'pending': '<span class="badge bg-warning">â³ En attente</span>',
             'processing': '<span class="badge bg-info">🔄 En traitement</span>',
             'completed': '<span class="badge bg-success">✅ Terminée</span>',
             'cancelled': '<span class="badge bg-danger">❌ Annulée</span>'

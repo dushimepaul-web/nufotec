@@ -29,7 +29,7 @@ class Broker extends MX_Controller {
         $user_id = $this->session->userdata('user_id');
         
         if (!$broker_id && !$user_id) {
-            redirect('broker/login');
+            redirect('Auth');
         }
         
         $broker = $this->Broker_model->get_broker_by_id($broker_id);
@@ -43,7 +43,7 @@ class Broker extends MX_Controller {
         if (!$broker) {
             $this->session->unset_userdata('broker_id');
             $this->session->unset_userdata('user_id');
-            redirect('broker/login');
+            redirect('Auth');
         }
         
         $investors = $this->Broker_model->get_investors_by_broker($broker->id);
@@ -75,13 +75,13 @@ class Broker extends MX_Controller {
     }
     
     /**
-     * Page de connexion
+     * Page de connexion (redirigée vers la connexion unifiée Auth)
      */
     public function login() {
         if ($this->session->userdata('broker_id') || $this->session->userdata('user_id')) {
             redirect('broker/dashboard');
         }
-        $this->load->view('broker_login');
+        redirect('Auth');
     }
     
     /**
@@ -108,13 +108,20 @@ class Broker extends MX_Controller {
                 $this->session->set_userdata('user_email', $user->email);
                 $this->session->set_userdata('user_name', $user->prenom . ' ' . $user->nom);
                 $this->session->set_userdata('user_type', $user->type_utilisateur);
+                // Session unifiée (sidebar + dashboard commun)
+                $this->session->set_userdata('email', $user->email);
+                $this->session->set_userdata('prenom', $user->prenom);
+                $this->session->set_userdata('nom', $user->nom);
+                $this->session->set_userdata('type_utilisateur', $user->type_utilisateur);
+                $this->session->set_userdata('role_slug', 'user');
+                $this->session->set_userdata('logged_in', TRUE);
                 
                 if ($broker) {
                     $this->session->set_userdata('broker_id', $broker->id);
                     $this->session->set_userdata('broker_name', $broker->full_name);
                 }
                 
-                echo json_encode(['success' => true, 'message' => 'Connexion réussie.']);
+                echo json_encode(['success' => true, 'message' => 'Connexion réussie.', 'redirect' => base_url('Dashboard')]);
                 return;
             } else {
                 echo json_encode(['success' => false, 'message' => 'Compte non autorisé.']);

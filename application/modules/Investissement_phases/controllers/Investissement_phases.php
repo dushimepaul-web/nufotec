@@ -16,14 +16,12 @@ class Investissement_phases extends MY_Controller {
     public function index()
     {
         $data['phases'] = $this->Model->read('investissement_phases', [], 'annee_debut', 'ASC');
-        $data['pages'] = $this->Model->read('pages', ['deleted_at' => NULL, 'est_publiee' => 1], 'titre_page', 'ASC');
         $this->load->view('Investissement_phases_View', $data);
     }
 
     function PhaseDetail($phaseDetail){
         $id = explode('_', $phaseDetail);
         $data['detail'] = $this->Model->readOne('investissement_phases', ['id_phase' => $id[0]]);
-        $data['pages'] = $this->Model->read('pages', ['deleted_at' => NULL, 'est_publiee' => 1], 'titre_page', 'ASC');
         $this->load->view('PhaseDetail_View', $data);
     }
 

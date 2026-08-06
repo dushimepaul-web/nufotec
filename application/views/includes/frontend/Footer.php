@@ -26,6 +26,61 @@
     })();
 </script>
 
+<script>
+// Injection automatique du jeton CSRF dans toutes les requêtes fetch POST
+(function() {
+    'use strict';
+    var CSRF_NAME = '<?= $this->security->get_csrf_token_name() ?>';
+    var CSRF_HASH = '<?= $this->security->get_csrf_hash() ?>';
+    if (!CSRF_HASH || typeof window.fetch !== 'function' || window.__csrfFetchPatched) return;
+    window.__csrfFetchPatched = true;
+
+    var origFetch = window.fetch;
+    window.fetch = function(url, options) {
+        options = options || {};
+        var method = (options.method || 'GET').toUpperCase();
+        if (method === 'POST') {
+            if (!options.headers) options.headers = {};
+            if (typeof options.headers.set === 'function' && !options.headers.has('X-CSRF-TOKEN')) {
+                options.headers.set('X-CSRF-TOKEN', CSRF_HASH);
+            } else if (typeof options.headers === 'object') {
+                options.headers['X-CSRF-TOKEN'] = CSRF_HASH;
+            }
+            if (typeof options.body === 'string') {
+                try {
+                    var parsed = JSON.parse(options.body);
+                    if (parsed && typeof parsed === 'object' && Array.isArray(parsed) === false && parsed[CSRF_NAME] === undefined) {
+                        parsed[CSRF_NAME] = CSRF_HASH;
+                        options.body = JSON.stringify(parsed);
+                    }
+                } catch (e) { /* body non-JSON : laissé tel quel */ }
+            }
+        }
+        return origFetch.call(this, url, options);
+    };
+
+    if (window.jQuery && jQuery.ajaxSetup) {
+        jQuery.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if ((settings.type || 'GET').toUpperCase() !== 'POST') return;
+                if (!CSRF_HASH) return;
+                if (xhr && xhr.setRequestHeader) xhr.setRequestHeader('X-CSRF-TOKEN', CSRF_HASH);
+                var d = settings.data;
+                if (d instanceof FormData) {
+                    if (!d.has(CSRF_NAME)) d.append(CSRF_NAME, CSRF_HASH);
+                } else if (d && typeof d === 'object') {
+                    d[CSRF_NAME] = CSRF_HASH;
+                } else if (typeof d === 'string') {
+                    settings.data = (d.length ? d + '&' : '') + encodeURIComponent(CSRF_NAME) + '=' + encodeURIComponent(CSRF_HASH);
+                } else {
+                    settings.data = encodeURIComponent(CSRF_NAME) + '=' + encodeURIComponent(CSRF_HASH);
+                }
+            }
+        });
+    }
+})();
+</script>
+
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- MODERN FOOTER - 3 COLUMNS ONLY -->
 <!-- ═══════════════════════════════════════════════════════ -->

@@ -5,13 +5,11 @@ class Public_Controller extends MX_Controller
 {
     public $data = [];
 
-    public $current_lang;
-    public $available_langs = ['fr', 'en', 'sw'];
+    public $current_lang = 'fr';
+    public $available_langs = ['fr'];
 
     public $lang_names = [
-        'fr' => ['name' => 'Français', 'flag' => 'fr', 'dir' => 'ltr'],
-        'en' => ['name' => 'English', 'flag' => 'us', 'dir' => 'ltr'],
-        'sw' => ['name' => 'Kiswahili', 'flag' => 'tz', 'dir' => 'ltr']
+        'fr' => ['name' => 'Français', 'flag' => 'fr', 'dir' => 'ltr']
     ];
 
     public function __construct()
@@ -20,13 +18,9 @@ class Public_Controller extends MX_Controller
 
         $this->load->model('Model');
 
-        $this->_setup_language();
-
-        $this->lang->load('site', $this->current_lang);
-
         $this->data['menu_items'] = $this->_get_menu();
-        $this->data['lang'] = $this->current_lang;
-        $this->data['available_langs'] = $this->available_langs;
+        $this->data['lang'] = 'fr';
+        $this->data['available_langs'] = ['fr'];
         $this->data['lang_names'] = $this->lang_names;
 
         $this->load->vars($this->data);
@@ -67,9 +61,7 @@ class Public_Controller extends MX_Controller
      */
     private function _get_menu()
     {
-        $lang = $this->current_lang;
-
-        $pages = $this->Model->read('pages', [
+        $pages = static_pages_where([
             'est_publiee' => 1,
             'deleted_at' => null
         ], 'menu_ordre', 'ASC');
@@ -77,11 +69,7 @@ class Public_Controller extends MX_Controller
         $menu = [];
 
         foreach ($pages as $page) {
-            $titre_field = "titre_page_{$lang}";
-            $page['titre_page'] = $page[$titre_field]
-                ?? $page['titre_page_fr']
-                ?? $page['titre_page'];
-
+            $page['titre_page'] = $page['titre_page'] ?? 'Page';
             $menu[] = $page;
         }
 
@@ -93,9 +81,7 @@ class Public_Controller extends MX_Controller
      */
     public function get_page($slug)
     {
-        $lang = $this->current_lang;
-
-        $page = $this->Model->read_one('pages', [
+        $page = static_pages_one([
             'slug' => $slug,
             'est_publiee' => 1,
             'deleted_at' => null
@@ -103,9 +89,9 @@ class Public_Controller extends MX_Controller
 
         if (!$page) return null;
 
-        $page['titre'] = $page["titre_page_{$lang}"] ?? $page['titre_page_fr'];
-        $page['contenu'] = $page["contenu_page_{$lang}"] ?? '';
-        $page['meta_desc'] = $page["meta_description_{$lang}"] ?? '';
+        $page['titre'] = $page['titre_page'] ?? '';
+        $page['contenu'] = $page['contenu_page'] ?? '';
+        $page['meta_desc'] = $page['meta_description'] ?? '';
 
         return $page;
     }
@@ -116,52 +102,12 @@ class Public_Controller extends MX_Controller
      */
     public function switch_lang($new_lang)
     {
-        // Vérifier que la langue est valide
-        if (!in_array($new_lang, $this->available_langs)) {
-            $new_lang = 'fr';
-        }
-
-        // Changer la langue en session
-        $this->session->set_userdata('lang', $new_lang);
-        $this->current_lang = $new_lang;
-
-        // Récupérer l'URI actuelle
-        $current_uri = $this->uri->uri_string();
-        
-        // Enlever 'switch_lang' et la langue de l'URI si présents
-        $segments = explode('/', $current_uri);
-        
-        // Si on est sur une URL de type switch_lang/xx, on l'enlève
-        if (isset($segments[0]) && $segments[0] === 'switch_lang') {
-            array_shift($segments); // Enlever 'switch_lang'
-            if (isset($segments[0]) && in_array($segments[0], $this->available_langs)) {
-                array_shift($segments); // Enlever la langue
-            }
-        }
-        
-        // Enlever l'ancien préfixe langue s'il existe (pour compatibilité)
-        if (isset($segments[0]) && in_array($segments[0], $this->available_langs)) {
-            array_shift($segments);
-        }
-        
-        // Reconstruire l'URI
-        $new_uri = implode('/', array_filter($segments));
-        
-        // Rediriger vers la même page (sans préfixe langue)
-        if (empty($new_uri)) {
-            redirect(base_url());
-        } else {
-            redirect(base_url($new_uri));
-        }
+        redirect(base_url());
     }
 
-    /**
-     * TRANSLATION HELPER
-     */
     public function t($key)
     {
-        $text = $this->lang->line($key);
-        return $text ?: $key;
+        return $key;
     }
 }
 

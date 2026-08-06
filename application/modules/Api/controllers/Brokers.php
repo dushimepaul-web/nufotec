@@ -297,8 +297,14 @@ class Courtiers extends Public_Controller
      * Récupération des sections du CMS
      */
     private function obtenir_sections($alias = 'formulaire-courtiers') {
-        $page = $this->Modele->lireUn('pages', [
-            'alias' => $alias,
+        $slug_map = [
+            'formulaire-investisseurs' => 'investors-form',
+            'formulaire-courtiers'     => 'brokers-form'
+        ];
+        $slug = $slug_map[$alias] ?? $alias;
+
+        $page = static_pages_one([
+            'slug' => $slug,
             'est_publiee' => 1
         ]);
 
@@ -307,20 +313,22 @@ class Courtiers extends Public_Controller
             return null;
         }
 
-        $hero = $this->Modele->lireUn('sections_contenu', [
+        $hero = static_sections_one([
             'id_page'      => $page['id_page'],
             'type_section' => 'hero',
-            'est_active'   => 1
+            'est_active'   => 1,
+            'deleted_at'   => null
         ]);
 
         if (!empty($hero) && !empty($hero['options_json'])) {
             $hero['options'] = json_decode($hero['options_json'], true);
         }
 
-        $textes = $this->Modele->lire('sections_contenu', [
+        $textes = static_sections_where([
             'id_page'      => $page['id_page'],
             'type_section' => 'texte',
-            'est_active'   => 1
+            'est_active'   => 1,
+            'deleted_at'   => null
         ], 'ordre', 'ASC');
 
         if (empty($textes)) {

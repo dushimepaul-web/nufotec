@@ -640,23 +640,19 @@ function googleTranslateElementInit() {
             transform: translateY(-4px);
         }
         
-        .media-card:hover .thumbnail-img {
-            transform: scale(1.05);
-        }
-        
         .thumbnail-container { 
             position: relative; 
             border-radius: 12px;
             overflow: hidden;
             background: var(--bg-tertiary);
             aspect-ratio: 16 / 9;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .thumbnail-img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        .media-card:hover .thumbnail-container {
+            transform: scale(1.05);
         }
         
         .play-overlay {
@@ -747,18 +743,399 @@ function googleTranslateElementInit() {
             margin-right: 2px;
         }
 
-        /* Empty State */
-        .empty-state { 
-            text-align: center; 
-            padding: 4rem 2rem; 
-            color: var(--text-tertiary); 
+    /* ============================================ */
+    /* AUDIO-SPECIFIC STYLES — SPOTIFY INSPIRED */
+    /* ============================================ */
+    
+    /* Hero banner for audio section */
+    .audio-hero {
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        border-radius: 16px;
+        padding: 2rem 2.5rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .audio-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(0, 208, 132, 0.15), transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    
+    .audio-hero::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(62, 166, 255, 0.1), transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    
+    .audio-hero-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #00d084, #00a86b);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .audio-hero-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+    
+    .audio-hero-text {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .audio-hero-text h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        background: linear-gradient(135deg, #fff, #aaa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .audio-hero-text p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 400;
+    }
+    
+    .audio-hero-text p i {
+        color: var(--accent-green);
+        margin-right: 0.25rem;
+    }
+    
+    /* Audio list container */
+    .audio-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    /* Audio card — elegant list item */
+    .audio-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .audio-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 0;
+        background: var(--accent-green);
+        border-radius: 0 3px 3px 0;
+        transition: height 0.2s ease;
+    }
+    
+    .audio-card:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+    
+    .audio-card:hover::before {
+        height: 60%;
+    }
+    
+    .audio-card.playing {
+        background: rgba(0, 208, 132, 0.08);
+    }
+    
+    .audio-card.playing::before {
+        height: 60%;
+    }
+    
+    .audio-card.playing .audio-index {
+        color: var(--accent-green);
+    }
+    
+    .audio-card.playing .audio-title {
+        color: var(--accent-green);
+    }
+    
+    /* Audio index number */
+    .audio-index {
+        width: 24px;
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--text-tertiary);
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+    }
+    
+    .audio-card:hover .audio-index {
+        display: none;
+    }
+    
+    .audio-card:hover .audio-play-indicator {
+        display: flex;
+    }
+    
+    .audio-play-indicator {
+        display: none;
+        width: 24px;
+        height: 24px;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+    }
+    
+    /* Thumbnail — circular album art */
+    .audio-thumb-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .audio-thumb-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .audio-thumb-wrapper .audio-play-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .audio-card:hover .audio-thumb-wrapper .audio-play-overlay {
+        opacity: 1;
+    }
+    
+    .audio-play-overlay i {
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    /* Audio info section */
+    .audio-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .audio-title {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.3;
+    }
+    
+    .audio-artist {
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.2s ease;
+    }
+    
+    .audio-card:hover .audio-artist {
+        color: var(--text-secondary);
+    }
+    
+    /* Audio metadata (right side) */
+    .audio-meta {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+    }
+    
+    .audio-duration {
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+        min-width: 40px;
+        text-align: right;
+    }
+    
+    .audio-views i {
+        margin-right: 3px;
+        font-size: 0.7rem;
+    }
+    
+    /* Like button */
+    .audio-like-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-tertiary);
+        font-size: 1rem;
+        padding: 0.25rem;
+        cursor: pointer;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        opacity: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .audio-card:hover .audio-like-btn {
+        opacity: 1;
+    }
+    
+    .audio-like-btn:hover {
+        color: var(--accent-green);
+        transform: scale(1.15);
+    }
+    
+    .audio-like-btn.liked {
+        color: var(--accent-green);
+        opacity: 1;
+    }
+    
+    /* Audio section divider */
+    .audio-section-divider {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem 0 0.75rem;
+        margin-top: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    
+    .audio-section-divider:first-of-type {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+    }
+    
+    .audio-section-divider h5 {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .audio-section-divider hr {
+        flex: 1;
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        margin: 0;
+    }
+    
+    /* Pulse animation for playing */
+    @keyframes audio-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(0, 208, 132, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(0, 208, 132, 0); }
+    }
+    
+    .audio-card.playing .audio-thumb-wrapper {
+        animation: audio-pulse 2s infinite;
+    }
+    
+    /* Spin animation for playing vinyl */
+    @keyframes spin-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .audio-card.playing .audio-thumb-wrapper img {
+        animation: spin-slow 8s linear infinite;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .audio-hero {
+            padding: 1.25rem 1.5rem;
+            gap: 1rem;
         }
-        
-        .empty-state i { 
-            font-size: 4rem; 
-            margin-bottom: 1rem; 
-            opacity: 0.5;
+        .audio-hero-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
         }
+        .audio-hero-icon i {
+            font-size: 1.75rem;
+        }
+        .audio-hero-text h2 {
+            font-size: 1.25rem;
+        }
+        .audio-card {
+            padding: 0.5rem 0.75rem;
+        }
+        .audio-thumb-wrapper {
+            width: 40px;
+            height: 40px;
+        }
+        .audio-meta {
+            gap: 0.75rem;
+        }
+        .audio-views {
+            display: none;
+        }
+        .audio-index {
+            width: 20px;
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Empty State */
+    .empty-state { 
+        text-align: center; 
+        padding: 4rem 2rem; 
+        color: var(--text-tertiary); 
+    }
+    
+    .empty-state i { 
+        font-size: 4rem; 
+        margin-bottom: 1rem; 
+        opacity: 0.5;
+    }
 
         /* Toast Container */
         .toast-container { 
@@ -1003,10 +1380,10 @@ function googleTranslateElementInit() {
         <a href="<?= base_url('media') ?>" class="sidebar-item <?= empty($current_type) && empty($search_query) ? 'active' : '' ?>">
             <i class="bi bi-house-fill"></i><span>Accueil</span>
         </a>
-        <a href="javascript:void(0)" class="sidebar-item">
+        <a href="<?= base_url('media/trending') ?>" class="sidebar-item <?= (!empty($current_type) && $current_type === 'trending') ? 'active' : '' ?>">
             <i class="bi bi-fire"></i><span>Tendances</span>
         </a>
-        <a href="javascript:void(0)" class="sidebar-item">
+        <a href="<?= base_url('media/news') ?>" class="sidebar-item <?= (!empty($current_type) && $current_type === 'news') ? 'active' : '' ?>">
             <i class="bi bi-newspaper"></i><span>Actualités</span>
         </a>
     </div>
@@ -1018,7 +1395,7 @@ function googleTranslateElementInit() {
             'video'    => ['icon' => 'camera-video-fill',   'label' => 'Vidéos'],
             'audio'    => ['icon' => 'music-note-beamed',   'label' => 'Audio'],
             'image'    => ['icon' => 'image-fill',          'label' => 'Images'],
-            'document' => ['icon' => 'file-earmark-text-fill', 'label' => 'Documents']
+            'book'     => ['icon' => 'book-fill',           'label' => 'Livres']
         ];
         ?>
         <?php foreach ($types as $type => $info): ?>
@@ -1094,6 +1471,32 @@ function googleTranslateElementInit() {
     <?php endif; ?>
 
     <div class="media-grid" id="mediaGrid">
+        <?php if (!empty($current_type) && $current_type === 'news' && !empty($articles)): ?>
+            <div class="news-section w-100 mb-4">
+                <h4 class="mb-3"><i class="bi bi-newspaper"></i> Actualités</h4>
+                <div class="row">
+                    <?php foreach ($articles as $article): ?>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <?php if (!empty($article['image_principale'])): ?>
+                                    <img src="<?= base_url($article['image_principale']) ?>" class="card-img-top" alt="<?= htmlspecialchars($article['titre']) ?>" style="height:180px;object-fit:cover;">
+                                <?php else: ?>
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:180px;">
+                                        <i class="bi bi-newspaper" style="font-size:3rem;color:#ccc;"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="card-body">
+                                    <small class="text-muted"><?= date('d/m/Y', strtotime($article['date_publication'] ?? '')) ?></small>
+                                    <h6 class="card-title mt-1"><?= htmlspecialchars($article['titre']) ?></h6>
+                                    <p class="card-text small text-muted"><?= character_limiter(strip_tags($article['resume'] ?? $article['contenu'] ?? ''), 100) ?></p>
+                                    <a href="<?= base_url('actualite/' . ($article['slug'] ?? $article['id_actualite'])) ?>" class="btn btn-sm btn-outline-primary">Lire plus</a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
         <?php if (!empty($medias)): ?>
             <?php foreach ($medias as $media): ?>
                 <?= createMediaCard($media, $lang ?? 'fr') ?>
@@ -1163,11 +1566,6 @@ function showToast(message, type = 'info') {
     bsToast.show();
     setTimeout(() => toast.remove(), 3000);
 }
-
-
-
-
-
 
 // ============================================
 // LANGUAGE MANAGEMENT - VERSION CORRIGÉE
@@ -1476,16 +1874,22 @@ function createMediaCard($media, $lang) {
             ? base_url('attachments/Video/Thumbnails/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_thumb.jpg')
             : base_url('assets/images/video-default.jpg');
     } elseif ($type === 'audio' && !empty($media['fichier'])) {
-        $cover_path = FCPATH . 'attachments/Audio/Covers/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_cover.jpg';
-        $thumbUrl = file_exists($cover_path)
-            ? base_url('attachments/Audio/Covers/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_cover.jpg')
-            : base_url('assets/images/audio-default.png');
+        $base_name = pathinfo($media['fichier'], PATHINFO_FILENAME);
+        $cover_path = FCPATH . 'attachments/Audio/Thumbnails/' . $base_name . '_cover.jpg';
+        $wave_path  = FCPATH . 'attachments/Audio/Thumbnails/' . $base_name . '_waveform.jpg';
+        if (file_exists($cover_path)) {
+            $thumbUrl = base_url('attachments/Audio/Thumbnails/' . $base_name . '_cover.jpg');
+        } elseif (file_exists($wave_path)) {
+            $thumbUrl = base_url('attachments/Audio/Thumbnails/' . $base_name . '_waveform.jpg');
+        } else {
+            $thumbUrl = base_url('assets/images/audio-default.png');
+        }
     } elseif ($type === 'image' && !empty($media['fichier_url'])) {
         $thumbUrl = $media['fichier_url'];
     } else {
         $defaults = [
             'video' => base_url('assets/images/video-default.jpg'),
-            'audio' => base_url('assets/images/audio-default.png'),
+            'audio' => base_url('attachments/Configurations/site_logo_20260320151223_69bd47b771f92.jpeg'),
             'image' => base_url('assets/images/image-default.jpg'),
             'document' => base_url('assets/images/document-default.jpg')
         ];
@@ -1499,8 +1903,7 @@ function createMediaCard($media, $lang) {
     
     return '
     <div class="media-card" onclick="openMedia(\'' . addslashes($identifier) . '\')">
-        <div class="thumbnail-container">
-            <img src="' . $thumbUrl . '" class="thumbnail-img" loading="lazy" alt="' . $title . '">
+        <div class="thumbnail-container" style="background-image: url(\'' . $thumbUrl . '\')">
             <div class="play-overlay">
                 <i class="bi bi-play-circle-fill"></i>
             </div>

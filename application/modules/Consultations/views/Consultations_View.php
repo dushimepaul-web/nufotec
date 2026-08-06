@@ -741,18 +741,19 @@
                         </div>
 
                         <!-- MODAL STATUT (JavaScript pur) -->
-                        <div id="statusModal_<?= $value['id'] ?>" class="custom-modal" style="display: none;">
-                            <div class="modal-overlay" onclick="closeStatusModal_<?= $value['id'] ?>()"></div>
-                            <div class="modal-content-js">
-                                <div class="modal-header-js">
-                                    <h5><i class="bx bx-transfer me-2"></i>Changer le statut</h5>
-                                    <button type="button" class="btn-close-js" onclick="closeStatusModal_<?= $value['id'] ?>()">&times;</button>
+                        <div id="statusModal_<?= $value['id'] ?>" class="modal" style="display: none;">
+                            <div class="modal-backdrop" style="position:fixed;" onclick="closeStatusModal_<?= $value['id'] ?>()"></div>
+                            <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg">
+                                <div class="modal-header bg-info text-white">
+                                    <h5 class="modal-title"><i class="bx bx-transfer me-2"></i>Changer le statut</h5>
+                                    <button type="button" class="btn-close btn-close-white" onclick="closeStatusModal_<?= $value['id'] ?>()"></button>
                                 </div>
                                 
                                 <form action="<?= base_url('Consultations/ChangeStatus') ?>" method="POST" id="statusForm_<?= $value['id'] ?>">
                                     <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                     
-                                    <div class="modal-body-js">
+                                    <div class="modal-body">
                                         <p>Consultation: <strong><?= htmlspecialchars($value['numero_consultation']) ?></strong></p>
                                         
                                         <div class="mb-3">
@@ -793,13 +794,14 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="modal-footer-js">
+                                    <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" onclick="closeStatusModal_<?= $value['id'] ?>()">Annuler</button>
                                         <button type="submit" class="btn btn-info text-white">
                                             <i class="bx bx-save me-2"></i>Mettre à jour
                                         </button>
                                     </div>
                                 </form>
+                            </div>
                             </div>
                         </div>
 
@@ -920,129 +922,11 @@
     </div>
 </div>
 
-<!-- CSS POUR MODALS JAVASCRIPT -->
-<style>
-.custom-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    font-family: inherit;
-}
-
-.modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
-}
-
-.modal-content-js {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    animation: modalSlideIn 0.3s ease;
-    overflow: hidden;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -55%);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-}
-
-.modal-header-js {
-    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
-    color: white;
-    padding: 16px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-header-js h5 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.btn-close-js {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.btn-close-js:hover {
-    background: rgba(255,255,255,0.3);
-    transform: rotate(90deg);
-}
-
-.modal-body-js {
-    padding: 24px;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.modal-footer-js {
-    padding: 16px 24px;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: #f8f9fa;
-}
-
-.status-field {
-    animation: fieldFadeIn 0.3s ease;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-top: 16px;
-}
-
-@keyframes fieldFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-</style>
-
 <!-- SCRIPT GLOBAL DataTable -->
 <script>
 $(document).ready(function() {
     $('#consultationsTable').DataTable({
-        language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' },
+        language: { url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>' },
         order: [[0, 'desc']],
         pageLength: 25,
         responsive: true,

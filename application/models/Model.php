@@ -228,10 +228,7 @@ public function getActivePaymentMethods() {
 
 public function get_products_translated($lang, $limit = null, $offset = 0)
 {
-    $title_col = "title_{$lang} AS title";
-    $desc_col  = "description_{$lang} AS description";
-    
-    $this->db->select("id, main_image, slug, price, created_at, $title_col, $desc_col");
+    $this->db->select("id, main_image, title, description, slug, price, created_at");
     $this->db->where('is_active', 1);
     $this->db->where('deleted_at IS NULL');
     $this->db->order_by('id', 'DESC');
@@ -256,9 +253,9 @@ public function get_appels_action_translated($lang = null)
     
     $this->db->select("
         id_cta,
-        titre_{$lang} AS titre,
-        sous_titre_{$lang} AS sous_titre,
-        bouton_texte_{$lang} AS bouton_texte,
+        titre,
+        sous_titre,
+        bouton_texte,
         bouton_lien,
         type_public,
         image_fond_url,

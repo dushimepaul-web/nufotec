@@ -26,7 +26,7 @@ class Corporate_profile extends Public_Controller {
         $slug = 'about';
 
         // Récupération de la page
-        $page = $this->Model->readOne('pages', [
+        $page = static_pages_one([
             'slug' => $slug,
             'est_publiee' => 1
         ]);
@@ -35,37 +35,36 @@ class Corporate_profile extends Public_Controller {
             show_404();
         }
 
-        // Traduction des champs de la page
-        $page['titre_page']       = $page["titre_page_{$lang}"] ?? $page['titre_page_fr'] ?? $page['titre_page'];
-        $page['contenu_page']     = $page["contenu_page_{$lang}"] ?? $page['contenu_page_fr'] ?? '';
-        $page['meta_description'] = $page["meta_description_{$lang}"] ?? $page['meta_description_fr'] ?? '';
+        // Champs de la page
+        $page['titre_page']       = $page['titre_page'] ?? '';
+        $page['contenu_page']     = $page['contenu_page'] ?? '';
+        $page['meta_description'] = $page['meta_description'] ?? '';
 
         // Récupération des sections actives
-        $sections = $this->Model->read('sections_contenu', [
+        $sections = static_sections_where([
             'id_page'    => $page['id_page'],
-            'est_active' => 1
+            'est_active' => 1,
+            'deleted_at' => null
         ], 'ordre', 'ASC');
 
-        // Traduction des sections et décodage JSON
+        // Décodage JSON
         foreach ($sections as &$sec) {
-            $sec['titre_section'] = $sec["titre_section_{$lang}"] ?? $sec['titre_section_fr'] ?? $sec['titre_section'] ?? '';
-            $sec['sous_titre']    = $sec["sous_titre_{$lang}"]    ?? $sec['sous_titre_fr']    ?? $sec['sous_titre']    ?? '';
-            $sec['contenu_texte'] = $sec["contenu_texte_{$lang}"] ?? $sec['contenu_texte_fr'] ?? $sec['contenu_texte'] ?? '';
-            $sec['bouton_texte']  = $sec["bouton_texte_{$lang}"]  ?? $sec['bouton_texte_fr']  ?? $sec['bouton_texte']  ?? '';
+            $sec['titre_section'] = $sec['titre_section'] ?? '';
+            $sec['sous_titre']    = $sec['sous_titre']    ?? '';
+            $sec['contenu_texte'] = $sec['contenu_texte'] ?? '';
+            $sec['bouton_texte']  = $sec['bouton_texte']  ?? '';
 
             $sec['options'] = !empty($sec['options_json']) ? json_decode($sec['options_json'], true) : [];
             if (!is_array($sec['options'])) $sec['options'] = [];
-
-            unset($sec["titre_section_{$lang}"], $sec["sous_titre_{$lang}"], $sec["contenu_texte_{$lang}"], $sec["bouton_texte_{$lang}"]);
         }
 
-        // Pages enfants pour sous-menu (traduites)
-        $children = $this->Model->read('pages', [
+        // Pages enfants pour sous-menu
+        $children = static_pages_where([
             'menu_parent_id' => $page['id_page'],
             'est_publiee' => 1
         ], 'menu_ordre', 'ASC');
         foreach ($children as &$child) {
-            $child['titre_page'] = $child["titre_page_{$lang}"] ?? $child['titre_page_fr'] ?? $child['titre_page'];
+            $child['titre_page'] = $child['titre_page'] ?? '';
         }
 
         // Données SEO
@@ -158,11 +157,10 @@ class Corporate_profile extends Public_Controller {
 
     private function _load_team($options = [], $lang) {
         $members = $this->Model->read('equipe', ['est_actif' => 1], 'ordre_affichage', 'ASC');
-        // Traduction des champs de l'équipe si nécessaire (ex: poste_fr, etc.)
         foreach ($members as &$member) {
-            $member['nom_complet'] = $member["nom_complet_{$lang}"] ?? $member['nom_complet_fr'] ?? $member['nom_complet'];
-            $member['poste'] = $member["poste_{$lang}"] ?? $member['poste_fr'] ?? $member['poste'];
-            $member['bio']   = $member["bio_{$lang}"]   ?? $member['bio_fr']   ?? $member['bio'];
+            $member['nom_complet'] = $member['nom_complet'] ?? '';
+            $member['poste'] = $member['poste'] ?? '';
+            $member['bio']   = $member['bio']   ?? '';
         }
         return ['members' => $members];
     }
@@ -170,8 +168,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_partners($options = [], $lang) {
         $partners = $this->Model->read('partenaires', ['est_actif' => 1], 'ordre_affichage', 'ASC');
         foreach ($partners as &$partner) {
-            $partner['nom'] = $partner["nom_{$lang}"] ?? $partner['nom_fr'] ?? $partner['nom'];
-            $partner['description'] = $partner["description_{$lang}"] ?? $partner['description_fr'] ?? $partner['description'];
+            $partner['nom'] = $partner['nom'] ?? '';
+            $partner['description'] = $partner['description'] ?? '';
         }
         return ['partners' => $partners];
     }
@@ -179,8 +177,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_testimonials($options = [], $lang) {
         $testimonials = $this->Model->read('temoignages', ['est_approuve' => 1], 'date_reception', 'DESC');
         foreach ($testimonials as &$test) {
-            $test['contenu'] = $test["contenu_{$lang}"] ?? $test['contenu_fr'] ?? $test['contenu'];
-            $test['auteur']  = $test["auteur_{$lang}"]  ?? $test['auteur_fr']  ?? $test['auteur'];
+            $test['contenu'] = $test['contenu'] ?? '';
+            $test['auteur']  = $test['auteur']  ?? '';
         }
         return ['testimonials' => $testimonials];
     }
@@ -188,8 +186,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_stats($options = [], $lang) {
         $stats = $this->Model->read('chiffres_cles', ['est_actif' => 1], 'ordre_affichage', 'ASC');
         foreach ($stats as &$stat) {
-            $stat['titre'] = $stat["titre_{$lang}"] ?? $stat['titre_fr'] ?? $stat['titre'];
-            $stat['description'] = $stat["description_{$lang}"] ?? $stat['description_fr'] ?? $stat['description'];
+            $stat['titre'] = $stat['titre'] ?? '';
+            $stat['description'] = $stat['description'] ?? '';
         }
         return ['statistics' => $stats];
     }
@@ -197,8 +195,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_certifications($options = [], $lang) {
         $certs = $this->Model->read('licences_certifications', ['est_actif' => 1], 'date_obtention', 'DESC');
         foreach ($certs as &$cert) {
-            $cert['nom'] = $cert["nom_{$lang}"] ?? $cert['nom_fr'] ?? $cert['nom'];
-            $cert['description'] = $cert["description_{$lang}"] ?? $cert['description_fr'] ?? $cert['description'];
+            $cert['nom'] = $cert['nom'] ?? '';
+            $cert['description'] = $cert['description'] ?? '';
         }
         return ['certifications' => $certs];
     }
@@ -206,8 +204,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_phases($options = [], $lang) {
         $phases = $this->Model->read('investissement_phases', [], 'annee_debut', 'ASC');
         foreach ($phases as &$phase) {
-            $phase['titre'] = $phase["titre_{$lang}"] ?? $phase['titre_fr'] ?? $phase['titre'];
-            $phase['description'] = $phase["description_{$lang}"] ?? $phase['description_fr'] ?? $phase['description'];
+            $phase['titre'] = $phase['titre'] ?? '';
+            $phase['description'] = $phase['description'] ?? '';
         }
         return ['phases' => $phases];
     }
@@ -222,9 +220,9 @@ class Corporate_profile extends Public_Controller {
         $this->db->limit($limit);
         $products = $this->db->get()->result_array();
         foreach ($products as &$prod) {
-            $prod['nom_produit'] = $prod["nom_produit_{$lang}"] ?? $prod['nom_produit_fr'] ?? $prod['nom_produit'];
-            $prod['description_courte'] = $prod["description_courte_{$lang}"] ?? $prod['description_courte_fr'] ?? $prod['description_courte'];
-            $prod['description_longue'] = $prod["description_longue_{$lang}"] ?? $prod['description_longue_fr'] ?? $prod['description_longue'];
+            $prod['nom_produit'] = $prod['nom_produit'] ?? '';
+            $prod['description_courte'] = $prod['description_courte'] ?? '';
+            $prod['description_longue'] = $prod['description_longue'] ?? '';
         }
         return ['products' => $products];
     }
@@ -233,9 +231,9 @@ class Corporate_profile extends Public_Controller {
         $limit = $options['limit'] ?? 3;
         $posts = $this->Model->read('actualites_blog', ['est_publiee' => 1], 'date_publication', 'DESC', $limit);
         foreach ($posts as &$post) {
-            $post['titre'] = $post["titre_{$lang}"] ?? $post['titre_fr'] ?? $post['titre'];
-            $post['contenu'] = $post["contenu_{$lang}"] ?? $post['contenu_fr'] ?? $post['contenu'];
-            $post['extrait'] = $post["extrait_{$lang}"] ?? $post['extrait_fr'] ?? $post['extrait'];
+            $post['titre'] = $post['titre'] ?? '';
+            $post['contenu'] = $post['contenu'] ?? '';
+            $post['extrait'] = $post['extrait'] ?? '';
         }
         return ['posts' => $posts];
     }
@@ -243,8 +241,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_faq($options = [], $lang) {
         $faqs = $this->Model->read('faq', ['est_publiee' => 1], 'ordre', 'ASC');
         foreach ($faqs as &$faq) {
-            $faq['question'] = $faq["question_{$lang}"] ?? $faq['question_fr'] ?? $faq['question'];
-            $faq['reponse']  = $faq["reponse_{$lang}"]  ?? $faq['reponse_fr']  ?? $faq['reponse'];
+            $faq['question'] = $faq['question'] ?? '';
+            $faq['reponse']  = $faq['reponse']  ?? '';
         }
         return ['faqs' => $faqs];
     }
@@ -252,8 +250,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_gallery($options = [], $lang) {
         $medias = $this->Model->read('galerie_medias', [], 'date_prise', 'DESC');
         foreach ($medias as &$media) {
-            $media['titre'] = $media["titre_{$lang}"] ?? $media['titre_fr'] ?? $media['titre'];
-            $media['description'] = $media["description_{$lang}"] ?? $media['description_fr'] ?? $media['description'];
+            $media['titre'] = $media['titre'] ?? '';
+            $media['description'] = $media['description'] ?? '';
         }
         return ['medias' => $medias];
     }
@@ -261,9 +259,9 @@ class Corporate_profile extends Public_Controller {
     private function _load_events($options = [], $lang) {
         $events = $this->Model->read('evenements', ['est_public' => 1, 'date_debut >= ' => date('Y-m-d')], 'date_debut', 'ASC');
         foreach ($events as &$event) {
-            $event['titre'] = $event["titre_{$lang}"] ?? $event['titre_fr'] ?? $event['titre'];
-            $event['description'] = $event["description_{$lang}"] ?? $event['description_fr'] ?? $event['description'];
-            $event['lieu'] = $event["lieu_{$lang}"] ?? $event['lieu_fr'] ?? $event['lieu'];
+            $event['titre'] = $event['titre'] ?? '';
+            $event['description'] = $event['description'] ?? '';
+            $event['lieu'] = $event['lieu'] ?? '';
         }
         return ['events' => $events];
     }
@@ -271,8 +269,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_resources($options = [], $lang) {
         $resources = $this->Model->read('ressources_telechargeables', ['est_public' => 1], 'date_publication', 'DESC');
         foreach ($resources as &$res) {
-            $res['titre'] = $res["titre_{$lang}"] ?? $res['titre_fr'] ?? $res['titre'];
-            $res['description'] = $res["description_{$lang}"] ?? $res['description_fr'] ?? $res['description'];
+            $res['titre'] = $res['titre'] ?? '';
+            $res['description'] = $res['description'] ?? '';
         }
         return ['resources' => $resources];
     }
@@ -280,8 +278,8 @@ class Corporate_profile extends Public_Controller {
     private function _load_risks($options = [], $lang) {
         $risks = $this->Model->read('risques_mitigations', [], 'ordre', 'ASC');
         foreach ($risks as &$risk) {
-            $risk['risque'] = $risk["risque_{$lang}"] ?? $risk['risque_fr'] ?? $risk['risque'];
-            $risk['mitigation'] = $risk["mitigation_{$lang}"] ?? $risk['mitigation_fr'] ?? $risk['mitigation'];
+            $risk['risque'] = $risk['risque'] ?? '';
+            $risk['mitigation'] = $risk['mitigation'] ?? '';
         }
         return ['risks' => $risks];
     }

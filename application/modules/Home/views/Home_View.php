@@ -1,2097 +1,944 @@
 <?php include VIEWPATH.'includes/frontend/Header.php'; ?>
 
-
-<section class="hero">
-    <div class="hero-content">
-
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- HERO SECTION PREMIUM (2026-2027) -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="hero-section-premium mb-4">
+    <div class="hero-bg-overlay"></div>
+    <div class="container hero-container">
         <?php 
             $site_logo = $this->Model->get_setting('site_logo');
             $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
         ?>
-
-        <!-- LOGO -->
-        <?php if (!empty($site_logo)): ?>
-            <div class="hero-logo">
-                <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" 
-                     alt="<?= htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8') ?>">
+        <div class="row align-items-center justify-content-center text-center">
+            <div class="col-lg-10 col-xl-9">
+                <?php if (!empty($site_logo)): ?>
+                    <div class="hero-badge-logo mb-4 animate-fade-in">
+                        <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" 
+                             alt="<?= htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8') ?>" class="img-fluid">
+                    </div>
+                <?php endif; ?>
+                
+                <span class="badge-tag-pill mb-3 animate-fade-in">NUFOTEC BURUNDI</span>
+                
+                <h1 class="hero-main-title display-4 fw-bold text-white mb-4 animate-fade-up">
+                    Bienvenue sur NUFOTEC BURUNDI
+                </h1>
+                
+                <p class="hero-lead-text fs-5 text-light opacity-9 mb-5 mx-auto animate-fade-up" style="max-width: 800px;">
+                    Votre plateforme de commerce en ligne rapide, fiable et sécurisée
+                </p>
+                
+                <div class="hero-cta-group d-flex justify-content-center gap-3 flex-wrap animate-fade-up">
+                    <a href="<?= base_url('Medicins') ?>" class="btn btn-gold-premium px-4 py-3 rounded-pill fw-semibold shadow-lg">
+                        <i class="bi bi-calendar-check me-2"></i>Être consulté
+                    </a>
+                    <a href="<?= base_url('Products') ?>" class="btn btn-outline-light-custom px-4 py-3 rounded-pill fw-semibold">
+                        <i class="bi bi-box-seam me-2"></i>Acheter les produits
+                    </a>
+                </div>
             </div>
-        <?php endif; ?>
-
-        <h1>Bienvenue sur <?= htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8') ?></h1>
-
-        <p>Votre plateforme de commerce en ligne rapide, fiable et sécurisée</p>
-        
-        <div class="hero-buttons">
-            <a href="<?= base_url('Medicins') ?>" class="btn-primary">Être consulté</a>
-            <a href="<?= base_url('Products') ?>" class="btn-secondary">Acheter les produits</a>
         </div>
-
     </div>
 </section>
 
-<style type="text/css">
-    /* HERO SECTION */
-.hero {
-    height: 90vh;
-    background: linear-gradient(
-        rgba(15, 76, 58, 0.85),
-        rgba(10, 51, 38, 0.9)
-    ),
-    url('<?= base_url('attachments/Configurations/' . $site_logo) ?>') center/cover no-repeat;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
-    color: var(--light);
-}
 
-/* CONTENU */
-.hero-content {
-    max-width: 700px;
-    animation: fadeUp 1s ease-in-out;
-}
-
-/* LOGO */
-.hero-logo img {
-    width: 110px;
-    margin-bottom: 20px;
-    filter: drop-shadow(var(--shadow-glow));
-    transition: var(--transition);
-}
-
-.hero-logo img:hover {
-    transform: scale(1.1);
-}
-
-/* TITRE */
-.hero-content h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 15px;
-}
-
-/* TEXTE */
-.hero-content p {
-    font-size: 1.2rem;
-    color: var(--gray-light);
-    margin-bottom: 30px;
-}
-
-/* BOUTONS */
-.hero-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-/* BTN PRIMARY */
-.btn-primary {
-    background: var(--accent);
-    color: var(--dark);
-    padding: 12px 28px;
-    border-radius: 30px;
-    text-decoration: none;
-    font-weight: 600;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-}
-
-.btn-primary:hover {
-    background: var(--accent-hover);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-xl);
-}
-
-/* BTN SECONDARY */
-.btn-secondary {
-    border: 2px solid var(--accent);
-    color: var(--accent);
-    padding: 12px 28px;
-    border-radius: 30px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: var(--transition);
-}
-
-.btn-secondary:hover {
-    background: var(--accent);
-    color: var(--dark);
-    box-shadow: var(--shadow-glow);
-}
-
-/* ANIMATION */
-@keyframes fadeUp {
-    from {
-        opacity: 0;
-        transform: translateY(40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    .hero {
-        height: auto;
-        padding: 60px 20px;
-    }
-
-    .hero-content h1 {
-        font-size: 2rem;
-    }
-
-    .hero-logo img {
-        width: 90px;
-    }
-}
-</style>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SECTIONS DE CONTENU DYNAMIQUES - ERGONOMIE OPTIMISÉE -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<?php
-// Fonctions utilitaires pour le traitement du contenu
-if (!function_exists('fix_image_path')) {
-    function fix_image_path($image_path) {
-        if (empty($image_path)) return null;
-        $image_path = trim($image_path);
-        if (filter_var($image_path, FILTER_VALIDATE_URL)) return $image_path;
-        $image_path = preg_replace('/\.\.\//', '', $image_path);
-        $image_path = ltrim($image_path, '/');
-        return base_url($image_path);
-    }
-}
-
-if (!function_exists('clean_html_content')) {
-    function clean_html_content($content) {
-        if (empty($content)) return '';
-        $allowed_tags = '<p><br><strong><b><em><i><u><strike><span><div><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><a><img><td><thead><tbody><tfoot><tr><tr><th><caption><pre><code><hr><figure><figcaption>';
-        $content = strip_tags($content, $allowed_tags);
-        $content = preg_replace('/(<[^>]+)\s+on\w+\s*=\s*["\'][^"\']*["\']/i', '$1', $content);
-        $content = preg_replace('/href\s*=\s*["\']javascript:[^"\']*["\']/i', 'href="#"', $content);
-        return $content;
-    }
-}
-
-if (!function_exists('get_placeholder_image')) {
-    function get_placeholder_image() {
-        return base_url('assets/images/placeholder-section.jpg');
-    }
-}
-?>
-
-<section class="content-sections" id="content">
-    <div class="container-fluid px-3 px-lg-4">
-        
-        <?php if (!empty($sections)): ?>
-            <?php foreach ($sections as $index => $section): ?>
-                
-                <?php 
-                $image_left = empty($section['image_droite']) || $section['image_droite'] == 0; 
-                $has_image = !empty($section['image_url']);
-                $image_url = $has_image ? fix_image_path($section['image_url']) : null;
-                
-                $raw_content = $section['contenu_texte'] ?? '';
-                $safe_content = clean_html_content($raw_content);
-                
-                $content_id = 'content-' . $index;
-                $text_length = strlen(strip_tags($safe_content));
-                $is_long_content = $text_length > 400;
-                $section_class = $index % 2 === 0 ? 'bg-white' : 'bg-light';
-                ?>
-
-                <article class="content-block <?= $section_class ?>" data-aos="fade-up">
-                    <div class="container py-5 py-lg-6">
-                        
-                        <!-- Type: Texte Seul -->
-                        <?php if ($section['type_section'] == 'texte'): ?>
-                            <div class="row justify-content-center">
-                                <div class="col-lg-10 col-xl-8 text-center">
-                                    <?php if (!empty($section['titre_section'])): ?>
-                                        <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (!empty($section['sous_titre'])): ?>
-                                        <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                                    <?php endif; ?>
-                                    
-                                    <div class="content-wrapper">
-                                        <div class="content-text tinymce-content <?= $is_long_content ? 'content-collapsed' : '' ?>" id="<?= $content_id ?>">
-                                            <?= $safe_content ?>
-                                        </div>
-                                        
-                                        <?php if ($is_long_content): ?>
-                                        <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                            <span>Lire la suite</span>
-                                            <i class="bi bi-chevron-down"></i>
-                                        </button>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                        <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
-                                            <?= htmlspecialchars($section['bouton_texte']) ?> 
-                                            <i class="bi bi-arrow-right"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-
-                        <!-- Type: Image + Texte -->
-                        <?php elseif ($section['type_section'] == 'image_texte'): ?>
-                            <div class="row align-items-center g-4 g-lg-5">
-                                
-                                <?php if ($has_image && $image_left): ?>
-                                    <!-- Image Gauche -->
-                                    <div class="col-lg-6" data-aos="fade-right">
-                                        <figure class="image-wrapper">
-                                            <div class="image-container">
-                                                <img src="<?= $image_url ?>" 
-                                                     alt="<?= htmlspecialchars($section['titre_section'] ?? 'Image') ?>" 
-                                                     loading="lazy"
-                                                     onerror="this.src='<?= get_placeholder_image() ?>'">
-                                                
-                                                <?php if (!empty($section['options_json'])): 
-                                                    $options = json_decode($section['options_json'], true);
-                                                    if (!empty($options['badge'])): ?>
-                                                    <div class="floating-badge">
-                                                        <span class="number"><?= htmlspecialchars($options['badge']['number']) ?></span>
-                                                        <span class="text"><?= htmlspecialchars($options['badge']['text']) ?></span>
-                                                    </div>
-                                                    <?php endif; ?>
-                                                <?php endif; ?>
-                                            </div>
-                                        </figure>
-                                    </div>
-                                    
-                                    <div class="col-lg-6" data-aos="fade-left">
-                                        <div class="content-wrapper">
-                                            <?php if (!empty($section['titre_section'])): ?>
-                                                <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (!empty($section['sous_titre'])): ?>
-                                                <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                                            <?php endif; ?>
-                                            
-                                            <div class="content-text tinymce-content <?= $is_long_content ? 'content-collapsed' : '' ?>" id="<?= $content_id ?>">
-                                                <?= $safe_content ?>
-                                            </div>
-                                            
-                                            <?php if ($is_long_content): ?>
-                                            <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span>Lire la suite</span>
-                                                <i class="bi bi-chevron-down"></i>
-                                            </button>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                                <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
-                                                    <?= htmlspecialchars($section['bouton_texte']) ?> 
-                                                    <i class="bi bi-arrow-right"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-
-                                <?php elseif ($has_image && !$image_left): ?>
-                                    <!-- Image Droite -->
-                                    <div class="col-lg-6 order-2 order-lg-1" data-aos="fade-right">
-                                        <div class="content-wrapper">
-                                            <?php if (!empty($section['titre_section'])): ?>
-                                                <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (!empty($section['sous_titre'])): ?>
-                                                <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                                            <?php endif; ?>
-                                            
-                                            <div class="content-text tinymce-content <?= $is_long_content ? 'content-collapsed' : '' ?>" id="<?= $content_id ?>">
-                                                <?= $safe_content ?>
-                                            </div>
-                                            
-                                            <?php if ($is_long_content): ?>
-                                            <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span>Lire la suite</span>
-                                                <i class="bi bi-chevron-down"></i>
-                                            </button>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                                <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-3">
-                                                    <?= htmlspecialchars($section['bouton_texte']) ?> 
-                                                    <i class="bi bi-arrow-right"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-lg-6 order-1 order-lg-2" data-aos="fade-left">
-                                        <figure class="image-wrapper">
-                                            <div class="image-container">
-                                                <img src="<?= $image_url ?>" 
-                                                     alt="<?= htmlspecialchars($section['titre_section'] ?? 'Image') ?>" 
-                                                     loading="lazy"
-                                                     onerror="this.src='<?= get_placeholder_image() ?>'">
-                                                
-                                                <?php if (!empty($section['options_json'])): 
-                                                    $options = json_decode($section['options_json'], true);
-                                                    if (!empty($options['badge'])): ?>
-                                                    <div class="floating-badge">
-                                                        <span class="number"><?= htmlspecialchars($options['badge']['number']) ?></span>
-                                                        <span class="text"><?= htmlspecialchars($options['badge']['text']) ?></span>
-                                                    </div>
-                                                    <?php endif; ?>
-                                                <?php endif; ?>
-                                            </div>
-                                        </figure>
-                                    </div>
-
-                                <?php else: ?>
-                                    <!-- Sans Image -->
-                                    <div class="col-12 text-center">
-                                        <?php if (!empty($section['titre_section'])): ?>
-                                            <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (!empty($section['sous_titre'])): ?>
-                                            <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                                        <?php endif; ?>
-                                        
-                                        <div class="content-wrapper max-width-800 mx-auto">
-                                            <div class="content-text tinymce-content <?= $is_long_content ? 'content-collapsed' : '' ?>" id="<?= $content_id ?>">
-                                                <?= $safe_content ?>
-                                            </div>
-                                            
-                                            <?php if ($is_long_content): ?>
-                                            <button class="read-more-btn" onclick="toggleContent('<?= $content_id ?>', this)" aria-expanded="false">
-                                                <span>Lire la suite</span>
-                                                <i class="bi bi-chevron-down"></i>
-                                            </button>
-                                            <?php endif; ?>
-                                        </div>
-                                        
-                                        <?php if (!empty($section['bouton_texte']) && !empty($section['bouton_lien'])): ?>
-                                            <a href="<?= base_url(ltrim($section['bouton_lien'], '/')) ?>" class="btn btn-primary-custom mt-4">
-                                                <?= htmlspecialchars($section['bouton_texte']) ?> 
-                                                <i class="bi bi-arrow-right"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-
-                        <!-- Type: Liste -->
-                        <?php elseif ($section['type_section'] == 'liste'): ?>
-                            <div class="row">
-                                <div class="col-12 text-center mb-5">
-                                    <?php if (!empty($section['titre_section'])): ?>
-                                        <span class="section-tag"><?= htmlspecialchars($section['titre_section']) ?></span>
-                                    <?php endif; ?>
-                                    <?php if (!empty($section['sous_titre'])): ?>
-                                        <h2 class="section-title"><?= htmlspecialchars($section['sous_titre']) ?></h2>
-                                    <?php endif; ?>
-                                </div>
-                                
-                                <?php if (!empty($raw_content)): ?>
-                                    <?php
-                                    $list_items = [];
-                                    if (strpos($raw_content, '<li>') !== false) {
-                                        preg_match_all('/<li>(.*?)<\/li>/', $raw_content, $matches);
-                                        $list_items = $matches[1] ?? [];
-                                    } else {
-                                        $lines = array_filter(array_map('trim', explode("\n", strip_tags($raw_content))));
-                                        $list_items = $lines;
-                                    }
-                                    ?>
-                                    
-                                    <div class="row g-4">
-                                        <?php foreach (array_slice($list_items, 0, 6) as $i => $item): 
-                                            $item = trim(strip_tags($item));
-                                            if (empty($item)) continue;
-                                            
-                                            $parts = explode(':', $item, 2);
-                                            $title = trim($parts[0]);
-                                            $desc = trim($parts[1] ?? '');
-                                        ?>
-                                        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="<?= $i * 50 ?>">
-                                            <div class="feature-card h-100">
-                                                <div class="feature-icon">
-                                                    <i class="bi bi-check-circle-fill"></i>
-                                                </div>
-                                                <div class="feature-content">
-                                                    <h5><?= htmlspecialchars($title) ?></h5>
-                                                    <?php if ($desc): ?>
-                                                        <p><?= htmlspecialchars($desc) ?></p>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1 : PRÉSENTATION DE NUFOTEC-PHYTOMED INDUSTRIES -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="section-presentation py-100 bg-white">
+    <div class="container container-1320">
+        <div class="row presentation-row g-5">
+            <!-- Colonne image à gauche (40%) -->
+            <div class="col-lg-5 presentation-col" data-aos="fade-right">
+                <div class="presentation-image-card">
+                    <div class="presentation-image-inner">
+                        <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1000&q=80" 
+                             alt="NUFOTEC-PHYTOMED Industries - Laboratoire & Usine Moderne" 
+                             onerror="this.src='https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80'">
                     </div>
-                </article>
-            <?php endforeach; ?>
-        <?php endif; ?>
-
-
-
-
-
-
-
-
-
-
-
-        <!-- Pages Enfants -->
-        <?php if (!empty($children)): ?>
-        <div class="children-section">
-            <div class="container py-5 py-lg-6">
-                <div class="text-center mb-5" data-aos="fade-up">
-                    <span class="section-tag light">Explorer</span>
-                    <h2 class="section-title text-white">Pages Connexes</h2>
+                    <!-- Espace sous l'image avant le badge Normes ISO & GMP -->
+                    <div class="presentation-iso-badge d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 48px; height: 48px; background: #EAF6EF; color: #0B5D3B; flex-shrink: 0;">
+                            <i class="bi bi-shield-check fs-4"></i>
+                        </div>
+                        <div>
+                            <span class="d-block fw-bold text-dark fs-6">Normes ISO & GMP</span>
+                            <span class="text-muted small">Recherche & Innovation</span>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="row g-4">
-                    <?php foreach ($children as $i => $child): ?>
-                    <div class="col-6 col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="<?= $i * 100 ?>">
-                        <a href="<?= base_url('Home/PageDetail/' . $child['id_page'] . '_' . $child['slug']) ?>" class="child-card">
-                            <div class="child-card-inner">
-                                <?php if (!empty($child['icone_menu'])): ?>
-                                <div class="child-icon">
-                                    <i class="bi bi-<?= htmlspecialchars($child['icone_menu']) ?>"></i>
-                                </div>
-                                <?php endif; ?>
-                                <h5><?= htmlspecialchars($child['titre_page']) ?></h5>
-                                <?php if (!empty($child['meta_description'])): ?>
-                                <p><?= htmlspecialchars(substr($child['meta_description'], 0, 80)) ?>...</p>
-                                <?php endif; ?>
-                                <span class="child-link">Découvrir <i class="bi bi-arrow-right"></i></span>
-                            </div>
+            </div>
+
+            <!-- Colonne texte à droite (60%) -->
+            <div class="col-lg-7 presentation-col" data-aos="fade-left">
+                <div class="presentation-content ps-lg-4">
+                    <div class="badge-pill-green presentation-badge">
+                        <span>Vision 2026-2031</span>
+                    </div>
+
+                    <h2 class="presentation-title">
+                        NUFOTEC-PHYTOMED INDUSTRIES – Industrialisation de l'économie des plantes médicinales en Afrique
+                    </h2>
+
+                    <p class="presentation-subtitle">INVESTISSEZ EN NOUS OU DEVENEZ NOTRE COURTIER CONTRACTUEL DÈS AUJOURD'HUI !</p>
+
+                    <!-- Texte clampé à hauteur de l'image, fondu en bas, le texte ne grandit jamais la section -->
+                    <div class="presentation-text-clamp position-relative overflow-hidden w-100">
+                        <div class="text-secondary fs-6 presentation-paragraphs" style="line-height: 1.7;">
+                            <p>Avec plus de 40 millions USD de capital d'amorçage dans le cadre de la vision quinquennale (Vision 2026-2031), NUFOTEC Limited est une entreprise de biotechnologie agro-industrielle privée, intégrée verticalement, basée au Burundi, qui s'emploie régulièrement à transformer l'agriculture biologique commerciale de plantes médicinales ciblées et sélectionnées, de cultures fonctionnelles, de fruits et de ressources agricoles riches en nutriments en MTCAs standardisées à base de plantes (Médecines Traditionnelles, Complémentaires et Alternatives), en Nutraceutiques/Compléments Alimentaires, en produits alimentaires et boissons santé fortifiés clean-label totalement exempts de sucres et de produits chimiques nocifs ajoutés, en engrais organiques haute-nutrition ainsi qu'en formulations phyto-médicinales et phyto-pharmaceutiques scientifiquement avancées soumises à des essais précliniques et cliniques via notre laboratoire de recherche scientifique et notre installation d'élevage d'animaux de laboratoire.</p>
+                            <p>En intégrant l'agriculture biologique commerciale climato-intelligente, des réseaux structurés d'agriculteurs sous contrat, le profilage de produits piloté par le laboratoire, la standardisation, les essais précliniques et cliniques, et une infrastructure de transformation scalable, NUFOTEC fait passer l'agriculture d'une production de matières premières à faible marge à une agriculture industrielle et une fabrication à haute valeur ajoutée.</p>
+                            <p>L'entreprise construit une plateforme de croissance conçue pour étendre la superficie cultivée, augmenter la capacité de transformation, renforcer la pénétration des exportations régionales et générer un emploi durable, en particulier pour les jeunes et les femmes, tout en contribuant à la transformation économique du Burundi et au développement de la chaîne de valeur de la santé naturelle.</p>
+                            <p class="fw-medium text-green presentation-closing">Nous visons un chiffre d'affaires annuel de plusieurs millions de dollars, une performance EBITDA durable et une expansion des exportations scalable d'ici 2031 (Vision 2026-2031).</p>
+                        </div>
+                        <!-- Dégradé de fondu vers le blanc dans la partie basse du texte -->
+                        <div class="presentation-fade-overlay position-absolute bottom-0 start-0 w-100" style="height: 90px; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 70%, #FFFFFF 100%); pointer-events: none;"></div>
+                    </div>
+
+                    <!-- Bouton Voir plus sous le texte -->
+                    <div class="presentation-actions">
+                        <a href="<?= base_url('About/presentation') ?>" class="btn btn-green-premium px-5 py-3 rounded-pill fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-2" style="background: #0B5D3B; transition: all 0.3s ease;">
+                            <span>Voir plus</span>
+                            <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        <?php endif; ?>
-
-        <?php if (empty($sections) && empty($children)): ?>
-        <div class="empty-state">
-            <i class="bi bi-inbox"></i>
-            <p>Aucun contenu disponible</p>
-        </div>
-        <?php endif; ?>
-        
     </div>
 </section>
 
-<script>
-function toggleContent(contentId, btn) {
-    const content = document.getElementById(contentId);
-    const span = btn.querySelector('span');
-    const icon = btn.querySelector('i');
-    const isExpanded = content.classList.contains('content-expanded');
-    
-    if (!isExpanded) {
-        content.classList.remove('content-collapsed');
-        content.classList.add('content-expanded');
-        span.textContent = 'Réduire';
-        icon.classList.replace('bi-chevron-down', 'bi-chevron-up');
-        btn.setAttribute('aria-expanded', 'true');
-        btn.classList.add('active');
-    } else {
-        content.classList.add('content-collapsed');
-        content.classList.remove('content-expanded');
-        span.textContent = 'Lire la suite';
-        icon.classList.replace('bi-chevron-up', 'bi-chevron-down');
-        btn.setAttribute('aria-expanded', 'false');
-        btn.classList.remove('active');
-        content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2 : NOTRE VALEUR AJOUTÉE -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="section-value-addition py-100 bg-gray-light" style="background-color: #F8F9FA;">
+    <div class="container container-1320">
+        <div class="text-center mx-auto mb-5" style="max-width: 700px;" data-aos="fade-up">
+            <span class="badge-pill-green mb-3">Excellence & Distinction</span>
+            <h2 class="section-heading-main fw-bold mb-3" style="color: #083D2A; font-family: 'Poppins', sans-serif; font-size: clamp(2rem, 3.5vw, 2.5rem);">
+                Notre valeur ajoutée
+            </h2>
+            <p class="text-secondary fs-6">
+                Pourquoi choisir notre plateforme de téléconsultation ?
+            </p>
+        </div>
+
+        <div class="row g-4 align-items-stretch">
+            <!-- Carte 1 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="value-card-item bg-white p-4 rounded-25 shadow-hover h-100 d-flex flex-column border-custom">
+                    <div class="value-icon-wrapper mb-4">
+                        <div class="icon-circle-green d-flex align-items-center justify-content-center rounded-circle mx-auto" style="width: 72px; height: 72px; background: #EAF6EF; color: #0B5D3B;">
+                            <i class="bi bi-clock-history fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Consultations rapides</h4>
+                        <p class="text-secondary small mb-0" style="line-height: 1.7;">
+                            Consultations rapides disponibles 7 jours sur 7.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carte 2 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="value-card-item bg-white p-4 rounded-25 shadow-hover h-100 d-flex flex-column border-custom">
+                    <div class="value-icon-wrapper mb-4">
+                        <div class="icon-circle-green d-flex align-items-center justify-content-center rounded-circle mx-auto" style="width: 72px; height: 72px; background: #EAF6EF; color: #0B5D3B;">
+                            <i class="bi bi-award fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Professionnels de santé</h4>
+                        <p class="text-secondary small mb-0" style="line-height: 1.7;">
+                            Professionnels de santé qualifiés et certifiés.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carte 3 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="value-card-item bg-white p-4 rounded-25 shadow-hover h-100 d-flex flex-column border-custom">
+                    <div class="value-icon-wrapper mb-4">
+                        <div class="icon-circle-green d-flex align-items-center justify-content-center rounded-circle mx-auto" style="width: 72px; height: 72px; background: #EAF6EF; color: #0B5D3B;">
+                            <i class="bi bi-shield-lock fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Sécurité & Confidentialité</h4>
+                        <p class="text-secondary small mb-0" style="line-height: 1.7;">
+                            Plateforme 100 % sécurisée et confidentielle.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carte 4 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="value-card-item bg-white p-4 rounded-25 shadow-hover h-100 d-flex flex-column border-custom">
+                    <div class="value-icon-wrapper mb-4">
+                        <div class="icon-circle-green d-flex align-items-center justify-content-center rounded-circle mx-auto" style="width: 72px; height: 72px; background: #EAF6EF; color: #0B5D3B;">
+                            <i class="bi bi-calendar-check fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Prise de rendez-vous</h4>
+                        <p class="text-secondary small mb-0" style="line-height: 1.7;">
+                            Prise de rendez-vous facile en quelques clics.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 : TÉLÉCONSULTATION -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="section-teleconsultation py-100 bg-white">
+    <div class="container container-1320">
+        <div class="row align-items-center g-5">
+            <!-- Texte à gauche -->
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="teleconsultation-content pe-lg-4">
+                    <div class="badge-pill-green mb-3">
+                        <span>Santé Connectée</span>
+                    </div>
+                    
+                    <h2 class="section-heading-main fw-bold mb-3" style="color: #083D2A; font-family: 'Poppins', sans-serif; font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.25;">
+                        Consultez un professionnel de santé, où que vous soyez.
+                    </h2>
+                    
+                    <p class="text-green fw-semibold fs-6 mb-3">
+                        Téléconsultation simple, rapide et sécurisée avec des agents qualifiés à votre service.
+                    </p>
+
+                    <p class="text-secondary fs-6 mb-4" style="line-height: 1.8;">
+                        Accédez à des services de téléconsultation fiables et sécurisés en quelques clics. Notre plateforme vous met en relation avec des agents qualifiés et des professionnels de santé disponibles pour répondre rapidement et efficacement à vos besoins. Que vous ayez besoin d'un avis médical, d'un suivi ou de conseils, nous vous accompagnons à distance avec confidentialité et professionnalisme. Évitez les déplacements inutiles et les longues attentes : réservez votre rendez-vous en ligne et consultez depuis chez vous, à tout moment. Notre priorité est de vous offrir un service accessible, humain et sécurisé.
+                    </p>
+
+                    <div>
+                        <a href="<?= base_url('Medicins') ?>" class="btn btn-white-border-green px-5 py-3 rounded-pill fw-semibold shadow-sm text-dark">
+                            <i class="bi bi-calendar-plus text-green me-2"></i>Prendre rendez-vous
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grande image à droite -->
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="teleconsultation-image-wrapper position-relative">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80" 
+                         alt="Téléconsultation NUFOTEC" 
+                         class="img-fluid rounded-24 shadow-xl w-100 object-fit-cover"
+                         style="min-height: 480px; max-height: 550px;"
+                         onerror="this.src='https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1000&q=80'">
+                    
+                    <!-- Floating stat card -->
+                    <div class="teleconsultation-floating-card bg-white p-4 rounded-20 shadow-lg">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-gold text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #D4A017;">
+                                <i class="bi bi-star-fill fs-5"></i>
+                            </div>
+                            <div>
+                                <span class="d-block fw-bold text-dark fs-5">98.4%</span>
+                                <span class="text-muted small">Satisfaction Patients</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4 : CHIFFRES CLÉS -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="section-key-figures py-100 bg-green-dark text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #083D2A 0%, #0B5D3B 100%);">
+    <div class="container container-1320 position-relative z-index-2">
+        <div class="text-center mx-auto mb-5" style="max-width: 700px;" data-aos="fade-up">
+            <span class="badge-tag-pill light mb-3">Impact & Envergure</span>
+            <h2 class="section-heading-main fw-bold text-white mb-3" style="font-family: 'Poppins', sans-serif; font-size: clamp(2rem, 3.5vw, 2.5rem);">
+                Chiffres Clés
+            </h2>
+            <p class="text-light opacity-8 fs-6">
+                Notre croissance mesurée en chiffres témoigne de notre engagement indéfectible envers l'excellence et le développement.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Carte 1 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
+                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
+                        <i class="bi bi-graph-up fs-1"></i>
+                    </div>
+                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">40M+</div>
+                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Investissement USD</p>
+                </div>
+            </div>
+
+            <!-- Carte 2 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
+                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
+                        <i class="bi bi-tree fs-1"></i>
+                    </div>
+                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">2,000+</div>
+                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Hectares de Plantations</p>
+                </div>
+            </div>
+
+            <!-- Carte 3 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
+                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
+                        <i class="bi bi-people fs-1"></i>
+                    </div>
+                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">500+</div>
+                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Emplois Directs Créés</p>
+                </div>
+            </div>
+
+            <!-- Carte 4 -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
+                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
+                        <i class="bi bi-award fs-1"></i>
+                    </div>
+                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">100%</div>
+                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Standards de Qualité</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5 : NOS APPELS À L'ACTION -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="section-cta-cards py-100 bg-white">
+    <div class="container container-1320">
+        <div class="text-center mx-auto mb-5" style="max-width: 700px;" data-aos="fade-up">
+            <span class="badge-pill-green mb-3">Rejoignez-nous</span>
+            <h2 class="section-heading-main fw-bold mb-3" style="color: #083D2A; font-family: 'Poppins', sans-serif; font-size: clamp(2rem, 3.5vw, 2.5rem);">
+                Nos Appels à l'Action
+            </h2>
+            <p class="text-secondary fs-6">
+                Que vous soyez investisseur, courtier, acheteur ou patient, découvrez des opportunités et des services sur mesure adaptés à vos besoins.
+            </p>
+        </div>
+
+        <div class="row g-4 align-items-stretch">
+            <!-- 1. Investisseurs (Vert clair) -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="cta-card-premium p-4 rounded-25 h-100 d-flex flex-column border-custom shadow-hover" style="background-color: #EAF6EF;">
+                    <div class="cta-icon-circle rounded-circle d-flex align-items-center justify-content-center mb-4 mx-auto shadow-xs" style="width: 72px; height: 72px; background: #FFFFFF; color: #0B5D3B;">
+                        <i class="bi bi-briefcase fs-2"></i>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Investisseurs</h4>
+                        <p class="text-secondary small mb-4" style="line-height: 1.7;">
+                            Participez à un projet biotechnologique d'envergure internationale à fort rendement et impact durable.
+                        </p>
+                        <a href="<?= base_url('Frontend/investor-commitment') ?>" class="btn btn-custom-green w-100 py-3 rounded-pill fw-semibold shadow-sm text-white" style="background-color: #0B5D3B;">
+                            Investir <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Courtiers (Jaune clair) -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="cta-card-premium p-4 rounded-25 h-100 d-flex flex-column border-custom shadow-hover" style="background-color: #FDF8EC;">
+                    <div class="cta-icon-circle rounded-circle d-flex align-items-center justify-content-center mb-4 mx-auto shadow-xs" style="width: 72px; height: 72px; background: #FFFFFF; color: #D4A017;">
+                        <i class="bi bi-people fs-2"></i>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Courtiers</h4>
+                        <p class="text-secondary small mb-4" style="line-height: 1.7;">
+                            Rejoignez notre réseau de partenaires et facilitez la mise en relation avec des investisseurs qualifiés.
+                        </p>
+                        <a href="<?= base_url('Frontend/broker-commission') ?>" class="btn btn-custom-yellow w-100 py-3 rounded-pill fw-semibold shadow-sm text-dark" style="background-color: #D4A017;">
+                            Devenir courtier <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Acheteurs (Bleu clair) -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="cta-card-premium p-4 rounded-25 h-100 d-flex flex-column border-custom shadow-hover" style="background-color: #EBF3FA;">
+                    <div class="cta-icon-circle rounded-circle d-flex align-items-center justify-content-center mb-4 mx-auto shadow-xs" style="width: 72px; height: 72px; background: #FFFFFF; color: #1E6091;">
+                        <i class="bi bi-cart3 fs-2"></i>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Acheteurs</h4>
+                        <p class="text-secondary small mb-4" style="line-height: 1.7;">
+                            Commandez nos produits nutraceutiques, alimentaires et cosmétiques d'une qualité et pureté exceptionnelles.
+                        </p>
+                        <a href="<?= base_url('Products') ?>" class="btn btn-custom-blue w-100 py-3 rounded-pill fw-semibold shadow-sm text-white" style="background-color: #1E6091;">
+                            Acheter <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Patients (Rouge clair) -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="cta-card-premium p-4 rounded-25 h-100 d-flex flex-column border-custom shadow-hover" style="background-color: #FDF2F2;">
+                    <div class="cta-icon-circle rounded-circle d-flex align-items-center justify-content-center mb-4 mx-auto shadow-xs" style="width: 72px; height: 72px; background: #FFFFFF; color: #C92A2A;">
+                        <i class="bi bi-heart-pulse fs-2"></i>
+                    </div>
+                    <div class="text-center mt-auto">
+                        <h4 class="fw-bold text-dark fs-5 mb-3">Patients</h4>
+                        <p class="text-secondary small mb-4" style="line-height: 1.7;">
+                            Bénéficiez de téléconsultations médicales professionnelles et d'un suivi de santé personnalisé et sécurisé.
+                        </p>
+                        <a href="<?= base_url('Medicins') ?>" class="btn btn-custom-red w-100 py-3 rounded-pill fw-semibold shadow-sm text-white" style="background-color: #C92A2A;">
+                            Se faire soigner <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6 : NOS PRODUITS PREMIUM -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="section-products-premium py-100 bg-white">
+    <div class="container container-1320">
+        <div class="text-center mx-auto mb-5" data-aos="fade-up">
+            <span class="badge-pill-green mb-3">NOS PRODUITS</span>
+            <h2 class="section-heading-main fw-bold mb-3" style="color: #083D2A; font-family: 'Poppins', sans-serif; font-size: clamp(2rem, 3.5vw, 3.2rem); line-height: 1.2;">
+                Découvrez nos produits naturels
+            </h2>
+            <div class="section-title-underline mx-auto"></div>
+            <p class="text-secondary fs-6 mt-4" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+                Découvrez notre gamme de produits naturels développés à partir de plantes médicinales sélectionnées avec soin, conçus pour contribuer au bien-être et à une meilleure qualité de vie.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <?php if (!empty($produits)): 
+                foreach ($produits as $produit):
+                    $image_path = !empty($produit['main_image']) 
+                        ? base_url('attachments/Products/' . $produit['main_image']) 
+                        : base_url('attachments/Products/default-product.png');
+                    $is_new = (strtotime($produit['created_at'] ?? 'now') > strtotime('-30 days'));
+            ?>
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="product-card-premium bg-white rounded-20 h-100 border-custom shadow-product">
+                    <div class="product-image-wrapper text-center mb-3 position-relative">
+                        <?php if ($is_new): ?>
+                        <span class="product-badge-new bg-danger text-white fs-12 px-3 py-1 rounded-pill fw-bold position-absolute z-2 top-0 start-0 m-3">NOUVEAU</span>
+                        <?php endif; ?>
+                        <img src="<?= $image_path ?>" 
+                             alt="<?= htmlspecialchars($produit['title']) ?>" 
+                             class="img-fluid rounded-18 mx-auto d-block"
+                             style="max-height: 200px; object-fit: contain; width: 100%; background: #F8F9FA;"
+                             onerror="this.src='<?= base_url('attachments/Products/default-product.png') ?>'">
+                    </div>
+                    <div class="product-info p-3">
+                        <h4 class="fw-bold text-dark fs-6 mb-2" style="max-height: 2.5rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                            <?= htmlspecialchars($produit['title']) ?>
+                        </h4>
+                        <p class="text-muted small mb-3" style="line-height: 1.6;">
+                            <?= htmlspecialchars(substr(strip_tags($produit['description'] ?? ''), 0, 100)) ?><?= strlen(strip_tags($produit['description'] ?? '')) > 100 ? '...' : '' ?>
+                        </p>
+                        <div class="product-price mb-3">
+                            <span class="fw-bold text-green fs-4" style="color: #083D2A; font-family: 'Poppins', sans-serif;"><?= htmlspecialchars($produit['price']) ?></span>
+                        </div>
+                        <a href="<?= base_url('Products/detail/' . ($produit['slug'] ?? $produit['id'])) ?>" class="btn btn-green-premium w-100 py-3 rounded-pill fw-semibold text-white shadow-sm">
+                            <i class="bi bi-eye me-2"></i>Voir les détails
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; else: ?>
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">Aucun produit disponible pour le moment</p>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7 : NEWSLETTER PREMIUM -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="section-newsletter-premium py-100 bg-white">
+    <div class="container container-1320">
+        <div class="newsletter-card-premium bg-white rounded-25 shadow-lg border-custom mx-auto overflow-hidden">
+            <div class="row g-0">
+                <!-- Illustration à gauche (desktop) -->
+                <div class="col-lg-6 d-none d-lg-block newsletter-illustration-col" style="background: linear-gradient(135deg, #EAF6EF 0%, #FFFFFF 100%);">
+                    <div class="newsletter-illustration d-flex align-items-center justify-content-center h-100 p-5">
+                        <div class="text-center">
+                            <div class="newsletter-illustration-icon mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#0B5D3B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                                <div class="newsletter-envelope-overlay">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 4h16v16H4z"></path>
+                                        <polyline points="22,6 12,13 2,6"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3 class="fw-bold text-green" style="color: #0B5D3B;">Recevez nos actualités</h3>
+                            <p class="text-secondary small mt-2">Ne manquez aucune de nos innovations</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contenu à droite (ou center mobile) -->
+                <div class="col-lg-6 newsletter-content-col d-flex flex-column justify-content-center p-4 p-lg-5">
+                    <div class="newsletter-badge mb-3 d-none d-lg-block">
+                        <span class="badge-pill-green">RESTEZ INFORMÉ</span>
+                    </div>
+                    
+                    <div class="newsletter-badge mb-3 d-block d-lg-none text-center">
+                        <span class="badge-pill-green">RESTEZ INFORMÉ</span>
+                    </div>
+                    
+                    <h2 class="section-heading-main fw-bold mb-4" style="color: #083D2A; font-family: 'Poppins', sans-serif; font-size: clamp(1.8rem, 3vw, 2.4rem);">
+                        Abonnez-vous à notre newsletter
+                    </h2>
+                    
+                    <p class="text-secondary fs-6 mb-4" style="line-height: 1.7;">
+                        Recevez nos nouveautés, nos conseils santé, nos offres exclusives et les dernières actualités de NUFOTEC directement dans votre boîte mail.
+                    </p>
+
+                    <form action="<?= base_url('Home/Abonner') ?>" method="post" class="newsletter-form">
+                        <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+                        
+                        <div class="mb-3">
+                            <input type="email" name="email" class="form-control py-3 px-4 rounded-18 border-custom fw-medium text-dark" 
+                                   placeholder="Votre adresse email" required style="background: #F8F9FA;">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <input type="tel" name="telephone" class="form-control py-3 px-4 rounded-18 border-custom fw-medium text-dark" 
+                                   placeholder="Votre numéro de téléphone (optionnel)" style="background: #F8F9FA;">
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-green-premium w-100 py-3 rounded-18 fw-semibold text-white shadow-sm">
+                                Je m'abonne
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="newsletter-security mt-4 text-center">
+                        <p class="text-secondary small mb-0">
+                            <i class="bi bi-shield-lock text-green me-1"></i>🔒 Vos informations restent confidentielles. Vous pourrez vous désabonner à tout moment.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+    --green-primary: #0B5D3B;
+    --green-dark: #083D2A;
+    --green-light: #EAF6EF;
+    --gold: #D4A017;
+    --text-color: #2E2E2E;
+    --gray-light: #F8F9FA;
+}
+
+/* ═════════════════════════════════════════════════════════════════ */
+/* SYSTÈME DE RYTHME VISUEL ET D'ESPACEMENT PREMIUM (APPLE / STRIPE STYLE) */
+/* ═════════════════════════════════════════════════════════════════ */
+
+/* Espacement global des sections (100px top & bottom) avec séparation subtile */
+.py-100 {
+    padding-top: 100px !important;
+    padding-bottom: 100px !important;
+    position: relative;
+}
+
+.py-100 + .py-100::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(11, 93, 59, 0.12), transparent);
+}
+
+/* Hiérarchie rigoureuse des titres et badges de section */
+.section-heading-main {
+    margin-top: 40px !important;
+    margin-bottom: 25px !important;
+}
+
+.badge-pill-green, .badge-tag-pill {
+    margin-top: 40px !important;
+    margin-bottom: 20px !important;
+    display: inline-block;
+}
+
+/* Espacement sous les paragraphes d'introduction avant les grilles/cartes */
+.presentation-content p, 
+.section-presentation p.text-secondary,
+.section-products-premium p.text-muted,
+.section-newsletter-premium p.text-secondary,
+.container .text-secondary.fs-6,
+.container .lead {
+    margin-bottom: 40px !important;
+}
+
+/* Espacement uniforme des grilles et cartes */
+.row.g-4, .row.g-3, .row.g-lg-4, .row.g-lg-5 {
+    margin-top: 20px !important;
+}
+
+/* Espacement entre les lignes de cartes */
+.row > [class*="col-"] {
+    margin-bottom: 30px !important;
+}
+
+/* Hauteur strictement identique et alignée pour toutes les cartes */
+.product-card-premium, 
+.value-card-item, 
+.cta-card-premium, 
+.mini-feature-card,
+.stat-card-premium {
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card-premium .product-info,
+.cta-card-premium .p-4,
+.value-card-item {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+@media (max-width: 991px) {
+    .py-100 {
+        padding-top: 60px;
+        padding-bottom: 60px;
     }
 }
 
-// Intersection Observer pour animations au scroll
-document.addEventListener('DOMContentLoaded', function() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-            }
-        });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-    
-    document.querySelectorAll('.content-block, .feature-card, .child-card').forEach(el => {
-        observer.observe(el);
-    });
-});
-</script>
-
-<style>
-/* Styles Sections Contenu */
-.content-sections {
-    overflow: hidden;
+/* Container 1320px */
+.container-1320 {
+    max-width: 1320px;
 }
 
-.content-block {
+/* Hero Section Premium */
+.hero-section-premium {
     position: relative;
-    transition: var(--transition);
-}
-
-.content-block.bg-light {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.py-6 {
-    padding-top: 5rem;
-    padding-bottom: 5rem;
-}
-
-.section-tag {
-    display: inline-flex;
+    min-height: 85vh;
+    background: linear-gradient(135deg, rgba(8, 61, 42, 0.92) 0%, rgba(11, 93, 59, 0.88) 100%),
+                url('<?= base_url('attachments/Configurations/' . $site_logo) ?>') center/cover no-repeat;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 20px;
-    background: rgba(15, 76, 58, 0.1);
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border-radius: 50px;
-    margin-bottom: 16px;
+    padding: 100px 0;
+    text-align: center;
 }
 
-.section-tag.light {
-    background: rgba(255,255,255,0.15);
-    color: white;
+.hero-badge-logo img {
+    max-width: 120px;
+    height: auto;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
 }
 
-.section-tag::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-}
-
-.section-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(1.75rem, 4vw, 2.25rem);
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 24px;
-    line-height: 1.3;
-}
-
-.section-title.text-white {
-    color: white;
-}
-
-/* Content Text */
-.content-wrapper {
-    position: relative;
-}
-
-.content-text {
-    font-size: 1.05rem;
-    line-height: 1.8;
-    color: #555;
-    transition: max-height 0.4s ease;
-}
-
-.content-text.content-collapsed {
-    max-height: 180px;
-    overflow: hidden;
-    position: relative;
-}
-
-.content-text.content-collapsed::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: linear-gradient(transparent, rgba(255,255,255,0.95));
-    pointer-events: none;
-}
-
-.content-text.content-expanded {
-    max-height: none;
-}
-
-.read-more-btn {
-    background: transparent;
-    border: 2px solid var(--primary);
-    color: var(--primary);
-    padding: 10px 24px;
-    border-radius: 25px;
+.badge-tag-pill {
+    display: inline-block;
+    padding: 8px 24px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #FFFFFF;
+    font-size: 13px;
     font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 20px;
-    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
 }
 
-.read-more-btn:hover,
-.read-more-btn.active {
-    background: var(--primary);
-    color: white;
+.badge-tag-pill.light {
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+}
+
+.badge-pill-green {
+    display: inline-block;
+    padding: 6px 18px;
+    background: #EAF6EF;
+    color: #0B5D3B;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 50px;
+}
+
+.btn-gold-premium {
+    background: #D4A017;
+    color: #FFFFFF;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-gold-premium:hover {
+    background: #b88a13;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(212, 160, 23, 0.3);
+}
+
+.btn-green-premium {
+    background: #0B5D3B;
+    color: #FFFFFF;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-green-premium:hover {
+    background: #083D2A;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(11, 93, 59, 0.3);
+}
+
+.btn-outline-light-custom {
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    color: #FFFFFF;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-light-custom:hover {
+    background: #FFFFFF;
+    color: #0B5D3B;
+    border-color: #FFFFFF;
     transform: translateY(-2px);
 }
 
-.max-width-800 {
-    max-width: 800px;
+.btn-white-border-green {
+    border: 2px solid #0B5D3B;
+    background: #FFFFFF;
+    color: #0B5D3B;
+    transition: all 0.3s ease;
 }
 
-/* Image Wrapper */
-.image-wrapper {
-    position: relative;
-    margin: 0;
+.btn-white-border-green:hover {
+    background: #0B5D3B;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(11, 93, 59, 0.2);
 }
 
-.image-container {
-    position: relative;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: var(--shadow-xl);
-    transform: perspective(1000px) rotateY(-3deg);
-    transition: var(--transition);
+/* Coins arrondis généreux (20 à 25px) */
+.rounded-20 { border-radius: 20px !important; }
+.rounded-24 { border-radius: 24px !important; }
+.rounded-25 { border-radius: 25px !important; }
+
+/* Ombres élégantes et bordures discrètes */
+.shadow-xl {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
 
-.image-container:hover {
-    transform: perspective(1000px) rotateY(0deg) scale(1.02);
+.border-custom {
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.image-container img {
-    width: 100%;
-    height: 350px;
-    object-fit: cover;
-    transition: transform 0.6s ease;
-}
-
-.image-container:hover img {
-    transform: scale(1.05);
-}
-
-.floating-badge {
-    position: absolute;
-    bottom: 24px;
-    right: -16px;
-    background: var(--primary);
-    color: white;
-    padding: 16px 20px;
-    border-radius: 12px;
-    box-shadow: var(--shadow-xl);
-    text-align: center;
-    animation: float 3s ease-in-out infinite;
-    z-index: 10;
-    border: 2px solid var(--accent);
-}
-
-.floating-badge .number {
-    display: block;
-    font-size: 28px;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--accent);
-}
-
-.floating-badge .text {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-}
-
-/* Buttons */
-.btn-primary-custom {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 14px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: var(--transition);
-    box-shadow: 0 4px 15px rgba(15, 76, 58, 0.3);
-    text-decoration: none;
-}
-
-.btn-primary-custom:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(15, 76, 58, 0.4);
-    color: white;
-}
-
-/* Feature Cards */
-.feature-card {
+/* Section 1 : Presentation — alignement premium (image / texte au même départ) */
+.presentation-row {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
-    padding: 24px;
-    background: white;
-    border-radius: 16px;
-    box-shadow: var(--shadow-sm);
-    transition: var(--transition);
-    height: 100%;
+}
+
+.presentation-col {
+    display: flex;
+    align-items: flex-start;
+}
+
+/* Carte image : fond blanc, coins 24px, ombre douce, padding intérieur 20px */
+.presentation-image-card {
+    width: 100%;
+    padding: 20px;
+    background: #FFFFFF;
+    border-radius: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+.presentation-image-inner {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #F8F9FA;
+}
+
+.presentation-image-inner img {
+    display: block;
+    width: 100%;
+    height: 520px;
+    object-fit: cover;
+}
+
+/* Espace sous l'image avant le badge */
+.presentation-iso-badge {
+    margin-top: 20px;
+    padding: 14px 18px;
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Contenu texte : même hauteur que la carte image, départ identique */
+.presentation-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 656px;
+}
+
+/* Espacements rigoureux du bloc texte (badge 20px / titre 20px / sous-titre 30px / texte 30px) */
+.section-presentation .badge-pill-green {
+    margin-top: 0 !important;
+    margin-bottom: 20px !important;
+}
+
+.presentation-title {
+    margin: 0 0 20px 0 !important;
+    color: #083D2A;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.7rem, 2.5vw, 2.2rem);
+    line-height: 1.25;
+}
+
+.presentation-subtitle {
+    margin: 0 0 30px 0 !important;
+    font-weight: 600;
+    color: #0B5D3B;
+    font-size: 1rem;
+}
+
+/* Texte clampé : remplit l'espace restant, masque le surplus, ne grandit jamais la section */
+.presentation-text-clamp {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.section-presentation .presentation-content p {
+    margin-bottom: 16px !important;
+}
+
+.presentation-paragraphs .presentation-closing {
+    margin-bottom: 0 !important;
+}
+
+/* Bouton Voir plus : 30px sous le texte */
+.presentation-actions {
+    margin-top: 30px;
+    flex-shrink: 0;
+}
+
+.mini-feature-card {
+    background: #F8F9FA;
+    transition: all 0.3s ease;
+}
+
+.mini-feature-card:hover {
+    background: #EAF6EF;
+    transform: translateY(-3px);
+}
+
+.vision-card-premium {
+    background: #EAF6EF;
+    border-left: 6px solid #0B5D3B;
+}
+
+/* Section 2 : Value Addition Cards */
+.value-card-item {
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.35s ease;
+}
+
+.shadow-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 35px rgba(11, 93, 59, 0.08);
+    border-color: rgba(11, 93, 59, 0.15);
+}
+
+/* Section 3 : Teleconsultation */
+.teleconsultation-image-wrapper {
+    position: relative;
+}
+
+.teleconsultation-floating-card {
+    position: absolute;
+    bottom: -20px;
+    left: 25px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12);
     border: 1px solid rgba(0,0,0,0.05);
 }
 
-.feature-card:hover {
+/* Section 4 : Key Figures */
+.bg-white-glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+.stat-card-premium:hover .bg-white-glass {
+    background: rgba(255, 255, 255, 0.14);
     transform: translateY(-5px);
-    box-shadow: var(--shadow-xl);
-    border-color: rgba(15, 76, 58, 0.1);
 }
 
-.feature-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(15, 76, 58, 0.1);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--primary);
-    font-size: 22px;
-    flex-shrink: 0;
-    transition: var(--transition);
+/* Section 5 : CTA Cards */
+.cta-card-premium {
+    transition: all 0.35s ease;
 }
 
-.feature-card:hover .feature-icon {
-    background: var(--primary);
-    color: white;
-    transform: scale(1.1);
+.cta-card-premium:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 35px rgba(0, 0, 0, 0.08);
 }
 
-.feature-content h5 {
-    color: var(--primary);
-    margin-bottom: 6px;
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-.feature-content p {
-    color: var(--gray);
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.5;
-}
-
-/* Children Section */
-.children-section {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-.children-section::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 600px;
-    height: 600px;
-    background: rgba(212, 175, 55, 0.1);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.child-card {
-    display: block;
-    text-decoration: none;
-    height: 100%;
-}
-
-.child-card-inner {
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 24px;
-    height: 100%;
-    transition: var(--transition);
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-.child-card:hover .child-card-inner {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    background: white;
-}
-
-.child-icon {
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-    transition: var(--transition);
-}
-
-.child-icon i {
-    font-size: 26px;
-    color: var(--primary-dark);
-}
-
-.child-card:hover .child-icon {
-    transform: scale(1.1) rotate(5deg);
-}
-
-.child-card h5 {
-    color: var(--primary);
-    font-weight: 700;
-    margin-bottom: 8px;
-    font-size: 1.1rem;
-}
-
-.child-card p {
-    color: var(--gray);
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 16px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.child-link {
-    color: var(--primary);
-    font-weight: 600;
-    font-size: 13px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: var(--transition);
-}
-
-.child-card:hover .child-link {
-    color: var(--accent-hover);
-    gap: 10px;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 80px 20px;
-    color: var(--gray);
-}
-
-.empty-state i {
-    font-size: 48px;
-    color: var(--gray-light);
-    margin-bottom: 16px;
-    display: block;
-}
-
-/* TinyMCE Content Styles */
-.tinymce-content h1 {
-    font-size: 1.8rem;
-    color: var(--primary);
-    margin: 24px 0 16px;
-    font-weight: 700;
-}
-
-.tinymce-content h2 {
-    font-size: 1.5rem;
-    color: var(--primary);
-    margin: 20px 0 12px;
-    font-weight: 600;
-}
-
-.tinymce-content h3 {
-    font-size: 1.25rem;
-    color: var(--primary);
-    margin: 16px 0 10px;
-    font-weight: 600;
-}
-
-.tinymce-content p {
-    margin-bottom: 16px;
-}
-
-.tinymce-content ul {
-    padding-left: 20px;
-    margin: 16px 0;
-}
-
-.tinymce-content ul li {
-    margin-bottom: 8px;
-    position: relative;
-}
-
-.tinymce-content blockquote {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-left: 4px solid var(--primary);
-    padding: 20px 24px;
-    margin: 20px 0;
-    border-radius: 0 12px 12px 0;
-    font-style: italic;
-    color: var(--primary-dark);
-}
-
-.tinymce-content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 12px;
-    margin: 20px 0;
-}
-
-.tinymce-content table {
-    width: 100%;
-    margin: 20px 0;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-}
-
-.tinymce-content table th {
-    background: var(--primary);
-    color: white;
-    padding: 14px;
-    font-weight: 600;
-    text-align: left;
-}
-
-.tinymce-content table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--gray-light);
-}
-
-.tinymce-content table tr:hover {
-    background: #f8f9fa;
-}
-
-/* Responsive */
-@media (max-width: 992px) {
-    .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
-    .image-container { transform: none; }
-    .image-container:hover { transform: scale(1.02); }
-    .floating-badge {
-        right: 12px;
-        bottom: 12px;
-        padding: 12px 16px;
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .presentation-content {
+        height: auto;
     }
-    .floating-badge .number { font-size: 24px; }
+    .presentation-image-inner img {
+        height: 420px;
+    }
+    .presentation-row {
+        row-gap: 40px;
+    }
 }
 
 @media (max-width: 768px) {
-    .py-6 { padding-top: 3rem; padding-bottom: 3rem; }
-    .content-text { font-size: 1rem; }
-    .feature-card { 
-        flex-direction: column; 
-        text-align: center; 
-        padding: 20px;
+    .hero-main-title {
+        font-size: 2.25rem !important;
     }
-    .feature-icon { margin: 0 auto 12px; }
-    .child-card-inner { padding: 20px; }
-    .child-icon {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 12px;
+    .presentation-image-inner img {
+        height: 320px;
     }
-    .child-icon i { font-size: 22px; }
-    .image-container img { height: 280px; }
-}
-
-@media (max-width: 576px) {
-    .section-title { font-size: 1.5rem; }
-    .read-more-btn { width: 100%; justify-content: center; }
-    .btn-primary-custom { width: 100%; justify-content: center; }
-    .feature-card { padding: 16px; }
-    .child-card-inner { padding: 16px; }
-    .child-card h5 { font-size: 1rem; }
-    .child-card p { font-size: 0.85rem; -webkit-line-clamp: 2; }
-}
-</style>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- CHIFFRES CLÉS - STATS INTERACTIVES -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<?php if (!empty($chiffres)): ?>
-<section class="stats-section" id="stats">
-    <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <span class="section-tag light"><?= t('our_achievements') ?></span>
-            <h2 class="section-title text-white"><?= t('key_figures') ?></h2>
-        </div>
-        
-        <div class="row g-4">
-            <?php foreach ($chiffres as $index => $chiffre): ?>
-                <div class="col-6 col-lg-3" data-aos="fade-up" data-aos-delay="<?= $index * 100 ?>">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-<?= htmlspecialchars($chiffre['icone']) ?>"></i>
-                        </div>
-                        
-                        <div class="stat-number">
-                            <?php 
-                            $valeur_numerique = preg_replace('/[^0-9]/', '', $chiffre['valeur']);
-                            $suffixe = preg_replace('/[0-9]/', '', $chiffre['valeur']);
-                            ?>
-                            <span class="counter" 
-                                  data-target="<?= $valeur_numerique ?>" 
-                                  data-suffix="<?= htmlspecialchars($suffixe) ?>">
-                                0
-                            </span>
-                        </div>
-                        
-                        <h5 class="stat-label"><?= htmlspecialchars($chiffre['etiquette']) ?></h5>
-                        
-                        <?php if (!empty($chiffre['description'])): ?>
-                            <p class="stat-desc"><?= htmlspecialchars($chiffre['description']) ?></p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const counters = document.querySelectorAll('.counter');
-    
-    const animateCounter = (el) => {
-        const target = parseInt(el.getAttribute('data-target'));
-        const suffix = el.getAttribute('data-suffix') || '';
-        const duration = 2000;
-        let startTime = null;
-        
-        const animate = (currentTime) => {
-            if (!startTime) startTime = currentTime;
-            const progress = Math.min((currentTime - startTime) / duration, 1);
-            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-            const current = Math.floor(easeOutQuart * target);
-            
-            el.innerText = current.toLocaleString() + suffix;
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                el.innerText = target.toLocaleString() + suffix;
-            }
-        };
-        
-        requestAnimationFrame(animate);
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const counter = entry.target.querySelector('.counter');
-                if (counter) animateCounter(counter);
-                observer.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.5 });
-    
-    document.querySelectorAll('.stat-card').forEach(card => observer.observe(card));
-});
-</script>
-
-<style>
-.stats-section {
-    padding: 80px 0;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-.stats-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    opacity: 0.5;
-}
-
-.stat-card {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 32px 24px;
-    text-align: center;
-    transition: var(--transition);
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-}
-
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-    transform: scaleX(0);
-    transition: transform 0.6s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-8px);
-    background: rgba(255,255,255,0.1);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-}
-
-.stat-card:hover::before {
-    transform: scaleX(1);
-}
-
-.stat-icon {
-    width: 64px;
-    height: 64px;
-    background: rgba(212, 175, 55, 0.2);
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 28px;
-    color: var(--accent);
-    transition: var(--transition);
-}
-
-.stat-card:hover .stat-icon {
-    background: var(--accent);
-    color: var(--primary-dark);
-    transform: rotateY(360deg);
-}
-
-.stat-number {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: white;
-    line-height: 1;
-    margin-bottom: 12px;
-}
-
-.stat-label {
-    color: rgba(255,255,255,0.9);
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.stat-desc {
-    color: rgba(255,255,255,0.6);
-    font-size: 0.85rem;
-    margin: 0;
-    line-height: 1.5;
-}
-
-@media (max-width: 768px) {
-    .stats-section { padding: 60px 0; }
-    .stat-card { padding: 24px 16px; }
-    .stat-number { font-size: 2rem; }
-    .stat-icon { width: 56px; height: 56px; font-size: 24px; }
-    .stat-label { font-size: 0.9rem; }
-}
-</style>
-
-
-
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- APPELS À L'ACTION - GRILLE DYNAMIQUE -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<?php if (!empty($appels_action)): ?>
-<section class="cta-section" id="cta">
-    <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <span class="section-tag"><?= t('act_now') ?></span>
-            <h2 class="section-title"><?= t('our_cta') ?></h2>
-        </div>
-        
-        <div class="cta-grid">
-            <?php 
-            $active_ctas = array_filter($appels_action, function($cta) {
-                if (!empty($cta['est_active']) && $cta['est_active'] == 0) return false;
-                if (!empty($cta['date_expiration']) && $cta['date_expiration'] < date('Y-m-d')) return false;
-                return true;
-            });
-
-            foreach ($active_ctas as $cta): 
-                $bg_style = !empty($cta['image_fond_url']) ? 
-                    'style="background-image: url(\'' . htmlspecialchars($cta['image_fond_url']) . '\');"' : '';
-                
-                // Nettoyer le lien : enlever le préfixe de langue s'il existe
-                $lien = ltrim($cta['bouton_lien'], '/');
-                // Enlever le préfixe de langue (fr/, en/, sw/) s'il est présent
-                $lien = preg_replace('/^(fr|en|sw)\//', '', $lien);
-            ?>
-            
-            <article class="cta-card" <?= $bg_style ?> data-aos="zoom-in">
-                <div class="cta-overlay">
-                    <?php if (!empty($cta['type_public']) && $cta['type_public'] !== 'all'): ?>
-                        <span class="cta-badge"><?= htmlspecialchars($cta['type_public']) ?></span>
-                    <?php endif; ?>
-                    
-                    <div class="cta-content">
-                        <h3><?= htmlspecialchars($cta['titre']) ?></h3>
-                        <p><?= htmlspecialchars($cta['sous_titre']) ?></p>
-                    </div>
-                    
-                    <a href="<?= base_url($lien) ?>" class="cta-btn">
-                        <?= htmlspecialchars($cta['bouton_texte']) ?>
-                        <i class="bi bi-arrow-right-circle"></i>
-                    </a>
-                </div>
-                
-                <div class="cta-shine"></div>
-            </article>
-            
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
-
-<style>
-.cta-section {
-    padding: 80px 0;
-    background: #f8f9fa;
-}
-
-.cta-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
-}
-
-.cta-card {
-    position: relative;
-    border-radius: 20px;
-    overflow: hidden;
-    min-height: 380px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    display: flex;
-    flex-direction: column;
-    transition: var(--transition);
-    cursor: pointer;
-}
-
-.cta-card[style*="background-image"] {
-    background-size: cover;
-    background-position: center;
-}
-
-.cta-overlay {
-    flex: 1;
-    padding: 32px;
-    background: linear-gradient(to bottom, rgba(15, 76, 58, 0.85), rgba(10, 51, 38, 0.95));
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    z-index: 2;
-    transition: var(--transition);
-}
-
-.cta-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 25px 50px rgba(0,0,0,0.2);
-}
-
-.cta-card:hover .cta-overlay {
-    background: linear-gradient(to bottom, rgba(15, 76, 58, 0.9), rgba(10, 51, 38, 0.98));
-}
-
-.cta-badge {
-    align-self: flex-start;
-    background: var(--accent);
-    color: var(--primary-dark);
-    font-size: 11px;
-    font-weight: 800;
-    padding: 6px 14px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 16px;
-}
-
-.cta-content h3 {
-    color: white;
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-bottom: 12px;
-    line-height: 1.3;
-}
-
-.cta-content p {
-    color: rgba(255,255,255,0.85);
-    font-size: 0.95rem;
-    line-height: 1.6;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.cta-btn {
-    background: transparent;
-    border: 2px solid var(--accent);
-    color: var(--accent);
-    padding: 12px 24px;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 20px;
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.cta-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: var(--accent);
-    transition: left 0.3s ease;
-    z-index: -1;
-}
-
-.cta-btn:hover {
-    color: var(--primary-dark);
-}
-
-.cta-btn:hover::before {
-    left: 0;
-}
-
-.cta-shine {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.6s ease;
-    z-index: 3;
-    pointer-events: none;
-}
-
-.cta-card:hover .cta-shine {
-    left: 150%;
-}
-
-@media (max-width: 768px) {
-    .cta-section { padding: 60px 0; }
-    .cta-grid { grid-template-columns: 1fr; gap: 20px; }
-    .cta-card { min-height: 320px; }
-    .cta-overlay { padding:
-            24px; }
-    .cta-content h3 { font-size: 1.2rem; }
-}
-</style>
-
-
-
-
-
-
-<?php 
-        // Vérifier si la variable $products existe et contient des données
-        if (!isset($products)) {
-            // Si les produits ne sont pas encore chargés, on les récupère
-            $products = $this->Model->get_products_translated($this->current_lang);
-        }
-        ?>
-<?php include VIEWPATH.'sections/Products_Section.php'; ?>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- NEWSLETTER - FORMULAIRE INTERACTIF -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="newsletter-section" id="newsletter">
-    <div class="container">
-        <div class="row align-items-center g-4 g-lg-5">
-            
-            <!-- Illustration -->
-            <div class="col-lg-5 d-none d-lg-block" data-aos="fade-right">
-                <div class="newsletter-illustration">
-                    <div class="envelope-container">
-                        <div class="envelope-flap"></div>
-                        <div class="envelope-body"></div>
-                        <div class="letter">
-                            <div class="letter-line"></div>
-                            <div class="letter-line short"></div>
-                            <div class="letter-line shorter"></div>
-                        </div>
-                        <div class="floating-circle"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Formulaire -->
-            <div class="col-lg-7" data-aos="fade-left">
-                <div class="newsletter-content">
-                    <span class="section-tag"><?= t('stay_informed') ?></span>
-                    <h2 class="section-title"><?= t('subscribe_newsletter') ?></h2>
-                    <p class="newsletter-desc">
-                        <?= t('newsletter_desc') ?>
-                    </p>
-
-                    <form id="subscribeForm" method="POST" action="<?= base_url('Home/Abonner'); ?>" class="newsletter-form" novalidate>
-                        
-                        <!-- Choix du type -->
-                        <div class="subscription-toggle mb-4">
-                            <div class="btn-group w-100" role="group">
-                                <input type="radio" class="btn-check" name="sub_type" id="type_email" value="email" checked>
-                                <label class="btn btn-toggle" for="type_email">
-                                    <i class="bi bi-envelope"></i> <?= t('email') ?>
-                                </label>
-
-                                <input type="radio" class="btn-check" name="sub_type" id="type_phone" value="phone">
-                                <label class="btn btn-toggle" for="type_phone">
-                                    <i class="bi bi-phone"></i> <?= t('phone_number') ?>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Champ Email -->
-                        <div class="form-group email-group" id="emailGroup">
-                            <div class="input-wrapper">
-                                <i class="bi bi-envelope input-icon"></i>
-                                <input type="email" 
-                                       name="email" 
-                                       id="emailInput"
-                                       class="form-control form-control-lg" 
-                                       placeholder="<?= t('your_email') ?>" 
-                                       required>
-                                <div class="invalid-feedback">
-                                    <i class="bi bi-exclamation-circle"></i> <?= t('invalid_email') ?>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Champ Téléphone (caché par défaut) -->
-                        <div class="form-group phone-group d-none" id="phoneGroup">
-                            <div class="row g-2">
-                                <div class="col-4">
-                                    <div class="input-wrapper">
-                                        <input type="text" 
-                                               id="paysSearch" 
-                                               class="form-control form-control-lg" 
-                                               placeholder="<?= t('country') ?>" 
-                                               autocomplete="off"
-                                               disabled>
-                                        <input type="hidden" name="pays_code" id="paysCode">
-                                        <input type="hidden" name="indicatif_complet" id="indicatifComplet">
-                                        
-                                        <!-- Dropdown pays -->
-                                        <div id="paysDropdown" class="pays-dropdown">
-                                            <?php if (!empty($pays)): ?>
-                                                <?php foreach ($pays as $p): ?>
-                                                    <?php 
-                                                    $indicatif = str_replace('+', '', $p['ITU_T_Telephone_Code'] ?? '');
-                                                    $searchTerms = strtolower(($p['pays'] ?? '') . ' ' . ($p['ISO_3166_1_2_Letter_Code'] ?? '') . ' ' . $indicatif);
-                                                    ?>
-                                                    <div class="pays-option" 
-                                                         data-value="<?= htmlspecialchars($p['ISO_3166_1_2_Letter_Code'] ?? '') ?>" 
-                                                         data-indicatif="<?= htmlspecialchars($indicatif) ?>"
-                                                         data-pays="<?= htmlspecialchars($p['pays'] ?? '') ?>"
-                                                         data-search="<?= htmlspecialchars($searchTerms) ?>">
-                                                        <span class="pays-nom"><?= htmlspecialchars($p['pays'] ?? '') ?></span>
-                                                        <span class="pays-indicatif">+<?= htmlspecialchars($indicatif) ?></span>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-8">
-                                    <div class="input-wrapper">
-                                        <span class="input-indicatif" id="displayIndicatif">+</span>
-                                        <input type="tel" 
-                                               name="telephone" 
-                                               id="phoneInput"
-                                               class="form-control form-control-lg" 
-                                               placeholder="<?= t('phone_number_placeholder') ?>"
-                                               disabled>
-                                        <div class="invalid-feedback">
-                                            <i class="bi bi-exclamation-circle"></i> <?= t('invalid_phone') ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bouton Submit -->
-                        <button type="submit" id="submitBtn" class="btn btn-submit btn-lg w-100 mt-4">
-                            <span class="btn-text"><?= t('subscribe_now') ?></span>
-                            <span class="btn-loading d-none">
-                                <i class="bi bi-arrow-repeat spin"></i> <?= t('sending') ?>
-                            </span>
-                            <span class="btn-success d-none">
-                                <i class="bi bi-check-lg"></i> <?= t('subscribed') ?>
-                            </span>
-                        </button>
-
-                        <p class="privacy-note mt-3">
-                            <i class="bi bi-shield-check"></i> <?= t('privacy_note') ?>
-                        </p>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<script>
-(function() {
-    'use strict';
-    
-    const form = document.getElementById('subscribeForm');
-    const emailGroup = document.getElementById('emailGroup');
-    const phoneGroup = document.getElementById('phoneGroup');
-    const emailInput = document.getElementById('emailInput');
-    const phoneInput = document.getElementById('phoneInput');
-    const paysSearch = document.getElementById('paysSearch');
-    const paysDropdown = document.getElementById('paysDropdown');
-    const displayIndicatif = document.getElementById('displayIndicatif');
-    const submitBtn = document.getElementById('submitBtn');
-    
-    // Toggle Email/Téléphone
-    document.querySelectorAll('input[name="sub_type"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'email') {
-                phoneGroup.classList.add('d-none');
-                emailGroup.classList.remove('d-none');
-                emailInput.disabled = false;
-                phoneInput.disabled = true;
-                paysSearch.disabled = true;
-                emailInput.focus();
-            } else {
-                emailGroup.classList.add('d-none');
-                phoneGroup.classList.remove('d-none');
-                emailInput.disabled = true;
-                phoneInput.disabled = false;
-                paysSearch.disabled = false;
-                paysSearch.focus();
-            }
-            
-            // Reset validation
-            [emailInput, phoneInput, paysSearch].forEach(input => {
-                input?.classList.remove('is-invalid');
-            });
-        });
-    });
-    
-    // Recherche pays
-    let searchTimeout;
-    paysSearch?.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const query = this.value.toLowerCase().trim();
-        
-        searchTimeout = setTimeout(() => {
-            const options = paysDropdown.querySelectorAll('.pays-option');
-            let hasResults = false;
-            
-            options.forEach(option => {
-                const searchTerms = option.getAttribute('data-search') || '';
-                if (searchTerms.includes(query)) {
-                    option.style.display = 'flex';
-                    hasResults = true;
-                } else {
-                    option.style.display = 'none';
-                }
-            });
-            
-            paysDropdown.style.display = hasResults ? 'block' : 'none';
-        }, 100);
-    });
-    
-    // Focus sur pays montre tous
-    paysSearch?.addEventListener('focus', function() {
-        paysDropdown.querySelectorAll('.pays-option').forEach(opt => {
-            opt.style.display = 'flex';
-        });
-        paysDropdown.style.display = 'block';
-    });
-    
-    // Sélection pays
-    window.selectPays = function(element) {
-        const code = element.getAttribute('data-value');
-        const indicatif = element.getAttribute('data-indicatif');
-        const pays = element.getAttribute('data-pays');
-        
-        document.getElementById('paysCode').value = code;
-        document.getElementById('indicatifComplet').value = indicatif;
-        paysSearch.value = pays.substring(0, 20);
-        displayIndicatif.textContent = '+' + indicatif;
-        
-        paysSearch.classList.remove('is-invalid');
-        paysDropdown.style.display = 'none';
-        phoneInput.focus();
-    };
-    
-    // Clic extérieur ferme dropdown
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('#paysSearch') && !e.target.closest('#paysDropdown')) {
-            paysDropdown.style.display = 'none';
-        }
-    });
-    
-    // Clic sur option pays
-    paysDropdown?.querySelectorAll('.pays-option').forEach(option => {
-        option.addEventListener('click', function() {
-            selectPays(this);
-        });
-    });
-    
-    // Validation et soumission
-    form?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        let isValid = true;
-        
-        const isEmail = document.getElementById('type_email').checked;
-        
-        if (isEmail) {
-            const email = emailInput.value.trim();
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            
-            if (!emailRegex.test(email)) {
-                emailInput.classList.add('is-invalid');
-                shakeElement(emailInput);
-                isValid = false;
-            }
-        } else {
-            const paysCode = document.getElementById('paysCode').value;
-            const phone = phoneInput.value.trim();
-            
-            if (!paysCode) {
-                paysSearch.classList.add('is-invalid');
-                shakeElement(paysSearch);
-                isValid = false;
-            }
-            
-            if (!phone || phone.length < 8) {
-                phoneInput.classList.add('is-invalid');
-                shakeElement(phoneInput);
-                isValid = false;
-            }
-        }
-        
-        if (isValid) {
-            // Animation loading
-            submitBtn.querySelector('.btn-text').classList.add('d-none');
-            submitBtn.querySelector('.btn-loading').classList.remove('d-none');
-            submitBtn.disabled = true;
-            
-            // Simulation envoi (remplacer par vrai envoi)
-            setTimeout(() => {
-                submitBtn.querySelector('.btn-loading').classList.add('d-none');
-                submitBtn.querySelector('.btn-success').classList.remove('d-none');
-                submitBtn.style.background = 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)';
-                
-                setTimeout(() => {
-                    form.submit();
-                }, 1000);
-            }, 1500);
-        }
-    });
-    
-    // Retirer erreur à la saisie
-    [emailInput, phoneInput, paysSearch].forEach(input => {
-        input?.addEventListener('input', function() {
-            this.classList.remove('is-invalid');
-        });
-    });
-    
-    function shakeElement(el) {
-        el.style.animation = 'shake 0.5s ease-in-out';
-        setTimeout(() => {
-            el.style.animation = '';
-        }, 500);
-    }
-})();
-</script>
-
-<style>
-.newsletter-section {
-    padding: 80px 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e2e8f0 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-.newsletter-section::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 400px;
-    height: 400px;
-    background: rgba(15, 76, 58, 0.05);
-    border-radius: 50%;
-}
-
-.newsletter-illustration {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-}
-
-.envelope-container {
-    position: relative;
-    width: 280px;
-    height: 220px;
-    transform: perspective(1000px) rotateY(-5deg);
-    animation: floatEnvelope 4s ease-in-out infinite;
-}
-
-@keyframes floatEnvelope {
-    0%, 100% { transform: perspective(1000px) rotateY(-5deg) translateY(0); }
-    50% { transform: perspective(1000px) rotateY(-5deg) translateY(-15px); }
-}
-
-.envelope-flap {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 110px;
-    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-    border-radius: 16px 16px 0 0;
-    z-index: 2;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.envelope-body {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 140px;
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%);
-    border-radius: 0 0 16px 16px;
-    z-index: 1;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.letter {
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 75%;
-    height: 160px;
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-    border-radius: 8px;
-    z-index: 3;
-    padding: 20px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-    animation: slideLetter 3s ease-in-out infinite;
-}
-
-@keyframes slideLetter {
-    0%, 100% { transform: translateX(-50%) translateY(20px); }
-    50% { transform: translateX(-50%) translateY(0); }
-}
-
-.letter-line {
-    height: 6px;
-    background: rgba(255,255,255,0.6);
-    border-radius: 3px;
-    margin-bottom: 10px;
-    width: 80%;
-}
-
-.letter-line.short { width: 60%; }
-.letter-line.shorter { width: 40%; }
-
-.floating-circle {
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    border-radius: 50%;
-    top: -60px;
-    right: -10px;
-    z-index: 0;
-    opacity: 0.9;
-    animation: pulseCircle 2s ease-in-out infinite;
-}
-
-@keyframes pulseCircle {
-    0%, 100% { transform: scale(1); opacity: 0.9; }
-    50% { transform: scale(1.1); opacity: 0.7; }
-}
-
-.newsletter-content {
-    position: relative;
-    z-index: 1;
-}
-
-.newsletter-desc {
-    font-size: 1.1rem;
-    color: #5a6c7d;
-    margin-bottom: 32px;
-    line-height: 1.7;
-}
-
-.newsletter-desc strong {
-    color: var(--primary);
-}
-
-/* Form Styles */
-.subscription-toggle .btn-group {
-    background: rgba(255,255,255,0.6);
-    padding: 4px;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.1);
-}
-
-.btn-toggle {
-    border: none;
-    background: transparent;
-    color: #6c757d;
-    font-weight: 500;
-    padding: 12px 24px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.btn-toggle:hover {
-    color: var(--primary);
-}
-
-.btn-check:checked + .btn-toggle {
-    background: white;
-    color: var(--primary);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.input-wrapper {
-    position: relative;
-}
-
-.input-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--primary);
-    font-size: 20px;
-    z-index: 10;
-}
-
-.form-control-lg {
-    height: 56px;
-    padding: 12px 20px;
-    font-size: 16px;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    background: white;
-    transition: all 0.3s ease;
-}
-
-.form-control-lg:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(15, 76, 58, 0.1);
-    outline: none;
-}
-
-.input-icon + .form-control-lg {
-    padding-left: 48px;
-}
-
-.input-indicatif {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 16px;
-    z-index: 10;
-}
-
-.input-indicatif + .form-control-lg {
-    padding-left: 60px;
-}
-
-/* Pays Dropdown */
-.pays-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    max-height: 250px;
-    overflow-y: auto;
-    z-index: 1000;
-    display: none;
-    border: 1px solid #e2e8f0;
-}
-
-.pays-option {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 1px solid #f1f3f5;
-}
-
-.pays-option:hover {
-    background: #f8f9fa;
-}
-
-.pays-option:last-child {
-    border-bottom: none;
-}
-
-.pays-nom {
-    font-weight: 500;
-    color: #2d3748;
-}
-
-.pays-indicatif {
-    color: var(--primary);
-    font-weight: 600;
-    font-size: 14px;
-}
-
-/* Validation */
-.is-invalid {
-    border-color: #e53e3e !important;
-    background-color: #fff5f5 !important;
-}
-
-.is-invalid:focus {
-    box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.1) !important;
-}
-
-.invalid-feedback {
-    display: none;
-    color: #e53e3e;
-    font-size: 13px;
-    margin-top: 6px;
-    font-weight: 500;
-}
-
-.is-invalid ~ .invalid-feedback {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* Submit Button */
-.btn-submit {
-    height: 56px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-submit:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(15, 76, 58, 0.3);
-}
-
-.btn-submit:disabled {
-    opacity: 0.8;
-    cursor: not-allowed;
-}
-
-.spin {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* Privacy Note */
-.privacy-note {
-    font-size: 13px;
-    color: #718096;
-    text-align: center;
-    margin-bottom: 0;
-}
-
-.privacy-note i {
-    color: var(--primary);
-}
-
-/* Shake Animation */
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-    20%, 40%, 60%, 80% { transform: translateX(5px); }
-}
-
-/* Responsive */
-@media (max-width: 992px) {
-    .newsletter-section { padding: 60px 0; }
-    .envelope-container { width: 240px; height: 190px; }
-    .letter { height: 140px; }
-}
-
-@media (max-width: 576px) {
-    .newsletter-section { padding: 40px 0; }
-    .newsletter-desc { font-size: 1rem; }
-    .btn-toggle { padding: 10px 16px; font-size: 14px; }
-    .form-control-lg { height: 52px; font-size: 16px; }
-    .btn-submit { height: 52px; }
 }
 </style>
 

@@ -13,7 +13,6 @@ class Faq extends MY_Controller {
     {
         // SANS filtre deleted_at - la table n'a pas cette colonne
         $data['faq'] = $this->Model->read('faq', null, 'ordre','ASC');
-        $data['pages'] = $this->Model->read('pages', ['est_publiee' => 1], 'id_page');
         
         // Passer les catégories à la vue
         $data['categories_list'] = [

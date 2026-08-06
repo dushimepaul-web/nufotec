@@ -94,7 +94,7 @@ class Investors extends MX_Controller {
 private function obtenir_sections($slug = 'formulaire-investisseurs') {
     
     // Récupérer la page par son slug
-    $page = $this->Model->read('pages', [
+    $page = static_pages_one([
         'slug' => $slug,
         'est_publiee' => 1
     ]);
@@ -105,10 +105,11 @@ private function obtenir_sections($slug = 'formulaire-investisseurs') {
     }
 
     // Récupérer la section hero
-    $hero = $this->Model->read('sections_contenu', [
+    $hero = static_sections_one([
         'id_page'      => $page['id_page'],
         'type_section' => 'hero',
-        'est_active'   => 1
+        'est_active'   => 1,
+        'deleted_at'   => null
     ]);
 
     if (!empty($hero) && !empty($hero['options_json'])) {
@@ -118,10 +119,11 @@ private function obtenir_sections($slug = 'formulaire-investisseurs') {
     }
 
     // Récupérer les sections texte
-    $textes = $this->Model->read('sections_contenu', [
+    $textes = static_sections_where([
         'id_page'      => $page['id_page'],
         'type_section' => 'texte',
-        'est_active'   => 1
+        'est_active'   => 1,
+        'deleted_at'   => null
     ], 'ordre', 'ASC');
 
     // S'assurer que $textes est toujours un tableau

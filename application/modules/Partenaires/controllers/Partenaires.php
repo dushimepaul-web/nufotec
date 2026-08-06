@@ -16,7 +16,6 @@ class Partenaires extends MY_Controller {
     public function index()
     {
         $data['partenaires'] = $this->Model->read('partenaires', ['deleted_at' => NULL], 'id_partenaire', 'DESC');
-        $data['pages'] = $this->Model->read('pages', ['deleted_at' => NULL], 'id_page', 'ASC');
         $this->load->view('Partenaires_View', $data);
     }
 

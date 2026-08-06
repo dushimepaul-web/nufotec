@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Investissements extends MY_Controller {
+class Investissement extends MY_Controller {
 
 	function __construct()
     {
@@ -41,7 +41,7 @@ class Investissements extends MY_Controller {
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);
-		redirect(base_url('Investissements'));	
+		redirect(base_url('Investissement'));	
 	}
 
 	function ChangePaiementStatus(){
@@ -69,7 +69,7 @@ class Investissements extends MY_Controller {
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);
-		redirect(base_url('Investissements'));	
+		redirect(base_url('Investissement'));	
 	}
 
 	function InvestissementDetail($investissementDetail){
@@ -131,7 +131,7 @@ class Investissements extends MY_Controller {
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);
-		redirect(base_url('Investissements'));
+		redirect(base_url('Investissement'));
 	}
 
 	function Update(){
@@ -175,7 +175,7 @@ class Investissements extends MY_Controller {
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);
-		redirect(base_url('Investissements'));
+		redirect(base_url('Investissement'));
 	}
 
 	function Delete(){
@@ -202,7 +202,7 @@ class Investissements extends MY_Controller {
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);
-		redirect(base_url('Investissements'));
+		redirect(base_url('Investissement'));
 	}
 
 	// Génération numéro unique

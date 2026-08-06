@@ -6,13 +6,13 @@
 <div class="page-content">
 
     <!--breadcrumb-->
-    <div class="page-breadcrumb d-none d-sm-flex align-s-center mb-3">
+    <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
         <div class="breadcrumb-title pe-3">Télémédecine</div>
         <div class="ps-3">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0 p-0">
-                    <li class="breadcrumb-"><a href="<?= base_url('Dashboard') ?>"><i class="bx bx-home-alt"></i></a></li>
-                    <li class="breadcrumb- active" aria-current="page">Gestion des Consultations</li>
+                    <li class="breadcrumb-item"><a href="<?= base_url('Dashboard') ?>"><i class="bx bx-home-alt"></i></a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Gestion des Consultations</li>
                 </ol>
             </nav>
         </div>
@@ -275,7 +275,7 @@
                                             
                                             <?php if (!empty($value['traent'])): ?>
                                                 <div class="col-md-12 mt-3">
-                                                    <h6 class="text-primary border-bottom pb-2"><i class="bx bx-capsule me-2"></i>Traent</h6>
+                                                    <h6 class="text-primary border-bottom pb-2"><i class="bx bx-capsule me-2"></i>Traitement</h6>
                                                     <div class="p-3 bg-light rounded">
                                                         <?= nl2br(htmlspecialchars($value['traent'])) ?>
                                                     </div>
@@ -442,7 +442,7 @@
                                                             <textarea class="form-control" name="diagnostic" rows="3"><?= htmlspecialchars($value['diagnostic'] ?? '') ?></textarea>
                                                         </div>
                                                         <div class="col-md-6">
-                                                            <label class="form-label fw-bold">Traent</label>
+                                                            <label class="form-label fw-bold">Traitement</label>
                                                             <textarea class="form-control" name="traent" rows="3"><?= htmlspecialchars($value['traent'] ?? '') ?></textarea>
                                                         </div>
                                                         <div class="col-md-12">
@@ -757,7 +757,7 @@ $(document).ready(function() {
     // Initialisation DataTable
     $('#consultationsTable').DataTable({
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+            url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>'
         },
         order: [[0, 'desc']],
         pageLength: 25,

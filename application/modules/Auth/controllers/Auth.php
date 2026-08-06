@@ -46,6 +46,7 @@ class Auth extends Public_Controller {
         }
 
         $user = $result['user'];
+        $role_slug = $user['role_id'] == 1 ? 'admin' : ($user['role_id'] == 2 ? 'medecin' : 'user');
         $this->session->set_userdata([
             'user_id' => $user['id'],
             'uuid' => $user['uuid'],
@@ -55,6 +56,7 @@ class Auth extends Public_Controller {
             'fullname' => trim($user['prenom'] . ' ' . $user['nom']),
             'type_utilisateur' => $user['type_utilisateur'] ?? 'patient',
             'role_id' => $user['role_id'],
+            'role_slug' => $role_slug,
             'is_active' => $user['is_active'],
             'logged_in' => TRUE
         ]);
@@ -65,7 +67,9 @@ class Auth extends Public_Controller {
 
         $redirect = $this->session->userdata('login_redirect');
         $this->session->unset_userdata('login_redirect');
-        redirect($redirect ?: 'home-patient');
+
+        // Tout utilisateur connecté → routeur Dashboard (admin/medecin ou espace unifié)
+        redirect($redirect ?: 'Dashboard');
     }
 
 
@@ -201,116 +205,42 @@ class Auth extends Public_Controller {
     }
 
     // ============================================
-    // MOT DE PASSE OUBLIÉ - ENVOI DU CODE OTP
+    // MOT DE PASSE OUBLIÉ - VÉRIFICATION D'IDENTITÉ (SANS OTP)
     // ============================================
 
-    public function send_reset_code() {
+    public function verify_identity() {
         $this->output->set_content_type('application/json');
+
         $email = trim($this->input->post('email'));
+        $telephone = trim($this->input->post('telephone'));
+        $nom = trim($this->input->post('nom'));
+        $prenom = trim($this->input->post('prenom'));
 
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(['success' => false, 'message' => 'Email invalide.']);
             return;
         }
 
-        $user = $this->Login->get_by_email($email);
-        
-        if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'Aucun compte trouvé avec cet email.']);
+        if (empty($telephone)) {
+            echo json_encode(['success' => false, 'message' => 'Veuillez saisir votre numéro de téléphone.']);
             return;
         }
-        
-        $otp_code = sprintf("%06d", mt_rand(1, 999999));
-        $expiration = date('Y-m-d H:i:s', strtotime('+15 minutes'));
-        
-        // Supprimer les anciens codes
-        $this->db->where('user_id', $user['id']);
-        $this->db->where('type_otp', 'reinitialisation_mdp');
-        $this->db->delete('codes_otp');
-        
-        $otp_data = [
-            'user_id' => $user['id'],
-            'code' => $otp_code,
-            'type_otp' => 'reinitialisation_mdp',
-            'email' => $email,
-            'tentatives' => 0,
-            'date_expiration' => $expiration,
-            'utilise' => 0,
-            'created_at' => date('Y-m-d H:i:s')
-        ];
-        
-        $this->db->insert('codes_otp', $otp_data);
-        
-        // Utiliser la librairie cPanel
-        $user_name = trim($user['prenom'] . ' ' . $user['nom']);
-        $result = $this->cpanel_email_lib->send_otp_code($email, $user_name, $otp_code, 'reset');
-        
-        if ($result['success']) {
-            $this->session->set_tempdata('reset_email', $email, 900);
-            echo json_encode(['success' => true, 'message' => 'Code envoyé avec succès à votre adresse email.', 'code' => $otp_code]);
-        } else {
-            // Mode développement - Afficher le code en cas d'erreur
-            $this->session->set_tempdata('reset_email', $email, 900);
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Code: ' . $otp_code . ' (Vérifiez votre configuration email)',
-                'code' => $otp_code,
-                'dev_mode' => true
-            ]);
-        }
-    }
 
-    // ============================================
-    // VÉRIFICATION DU CODE OTP
-    // ============================================
+        if (empty($nom) || empty($prenom)) {
+            echo json_encode(['success' => false, 'message' => 'Veuillez saisir votre nom et votre prénom.']);
+            return;
+        }
 
-    public function verify_reset_code() {
-        $this->output->set_content_type('application/json');
-        $email = $this->session->tempdata('reset_email');
-        $code = trim($this->input->post('code'));
-        
-        if (!$email) {
-            echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez recommencer.']);
-            return;
-        }
-        
-        if (empty($code)) {
-            echo json_encode(['success' => false, 'message' => 'Veuillez entrer le code reçu par email.']);
-            return;
-        }
-        
-        $user = $this->Login->get_by_email($email);
-        
+        $user = $this->Login->verify_user_identity($email, $telephone, $nom, $prenom);
+
         if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'Utilisateur non trouvé.']);
+            echo json_encode(['success' => false, 'message' => 'Les informations fournies ne correspondent à aucun compte. Vérifiez votre email, téléphone, nom et prénom.']);
             return;
         }
-        
-        $otp = $this->db->where('user_id', $user['id'])
-                        ->where('code', $code)
-                        ->where('type_otp', 'reinitialisation_mdp')
-                        ->where('utilise', 0)
-                        ->where('date_expiration >', date('Y-m-d H:i:s'))
-                        ->get('codes_otp')
-                        ->row();
-        
-        if (!$otp) {
-            // Incrémenter les tentatives
-            $this->db->where('user_id', $user['id'])
-                     ->where('type_otp', 'reinitialisation_mdp')
-                     ->set('tentatives', 'tentatives+1', FALSE)
-                     ->update('codes_otp');
-            
-            echo json_encode(['success' => false, 'message' => 'Code invalide ou expiré.']);
-            return;
-        }
-        
-        $this->db->where('id', $otp->id)->update('codes_otp', ['utilise' => 1]);
-        
-        $this->session->set_tempdata('code_validated', true, 900);
+
         $this->session->set_tempdata('reset_user_id', $user['id'], 900);
-        
-        echo json_encode(['success' => true, 'message' => 'Code valide. Vous pouvez maintenant changer votre mot de passe.', 'action' => 'set_password']);
+
+        echo json_encode(['success' => true, 'message' => 'Identité vérifiée. Vous pouvez maintenant définir un nouveau mot de passe.']);
     }
 
     // ============================================
@@ -319,12 +249,10 @@ class Auth extends Public_Controller {
 
     public function reset_password() {
         $this->output->set_content_type('application/json');
-        
-        $email = $this->session->tempdata('reset_email');
-        $code_validated = $this->session->tempdata('code_validated');
+
         $user_id = $this->session->tempdata('reset_user_id');
-        
-        if (!$email || !$code_validated || !$user_id) {
+
+        if (!$user_id) {
             echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez recommencer la procédure.']);
             return;
         }
@@ -351,69 +279,13 @@ class Auth extends Public_Controller {
         $updated = $this->Login->update_password($user_id, $hashed_password);
         
         if ($updated) {
+            $this->session->unset_tempdata('reset_user_id');
             $this->session->unset_tempdata('reset_email');
             $this->session->unset_tempdata('code_validated');
-            $this->session->unset_tempdata('reset_user_id');
-            
-            $this->db->where('user_id', $user_id)->where('type_otp', 'reinitialisation_mdp')->delete('codes_otp');
             
             echo json_encode(['success' => true, 'message' => 'Mot de passe modifié avec succès. Veuillez vous connecter.']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification du mot de passe.']);
-        }
-    }
-
-    // ============================================
-    // RENVOYER UN NOUVEAU CODE OTP
-    // ============================================
-
-    public function resend_otp() {
-        $this->output->set_content_type('application/json');
-        $email = $this->session->tempdata('reset_email');
-        
-        if (!$email) {
-            echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez recommencer.']);
-            return;
-        }
-        
-        $user = $this->Login->get_by_email($email);
-        
-        if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'Utilisateur non trouvé.']);
-            return;
-        }
-        
-        $otp_code = sprintf("%06d", mt_rand(1, 999999));
-        $expiration = date('Y-m-d H:i:s', strtotime('+15 minutes'));
-        
-        $this->db->where('user_id', $user['id'])->where('type_otp', 'reinitialisation_mdp')->delete('codes_otp');
-        
-        $otp_data = [
-            'user_id' => $user['id'],
-            'code' => $otp_code,
-            'type_otp' => 'reinitialisation_mdp',
-            'email' => $email,
-            'tentatives' => 0,
-            'date_expiration' => $expiration,
-            'utilise' => 0,
-            'created_at' => date('Y-m-d H:i:s')
-        ];
-        
-        $this->db->insert('codes_otp', $otp_data);
-        
-        // Utiliser la librairie cPanel
-        $user_name = trim($user['prenom'] . ' ' . $user['nom']);
-        $result = $this->cpanel_email_lib->send_otp_code($email, $user_name, $otp_code, 'reset');
-        
-        if ($result['success']) {
-            echo json_encode(['success' => true, 'message' => 'Un nouveau code a été envoyé à votre adresse email.']);
-        } else {
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Code: ' . $otp_code,
-                'code' => $otp_code,
-                'dev_mode' => true
-            ]);
         }
     }
 

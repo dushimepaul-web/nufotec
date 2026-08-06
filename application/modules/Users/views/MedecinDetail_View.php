@@ -26,7 +26,7 @@
     <?php if (empty($detail)): ?>
         <div class="alert alert-danger">Médecin non trouvé</div>
     <?php else: 
-        $photo_path = !empty($detail['photo']) ? 'attachments/Users/'.$detail['photo'] : 'assets/images/default-avatar.png';
+        $photo_path = !empty($detail['photo']) ? 'attachments/Users/'.$detail['photo'] : 'assets/frontend/img/default-avatar.jpg';
         $est_dispo = isset($detail['est_disponible']) && $detail['est_disponible'] == 1;
         $est_verifie = isset($detail['est_verifie']) && $detail['est_verifie'] == 1;
     ?>
@@ -39,7 +39,7 @@
                     <img src="<?= base_url($photo_path) ?>" 
                          class="rounded-circle border border-3 border-white shadow mb-3"
                          style="width:150px; height:150px; object-fit:cover;"
-                         onerror="this.src='<?= base_url('assets/images/default-avatar.png') ?>'"
+                         onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
                          alt="Photo">
                     <h4 class="mb-1">Dr. <?= htmlspecialchars(($detail['prenom'] ?? '').' '.($detail['nom'] ?? '')) ?></h4>
                     <p class="text-muted mb-3"><?= htmlspecialchars($detail['specialite'] ?? 'Spécialité non définie') ?></p>

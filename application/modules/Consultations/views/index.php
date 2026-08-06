@@ -164,6 +164,82 @@
                                 </div>
                             </td>
                         </tr>
+                    <?php } ?>
+                    </tbody>
+
+                    <tfoot>
+                        <tr>
+                            <th>#</th>
+                            <th>N° Consultation</th>
+                            <th>Patient</th>
+                            <th>Médecin</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Prix</th>
+                            <th>Statut</th>
+                            <th>Paiement</th>
+                            <th>Action</th>
+                        </tr>
+                    </tfoot>
+
+                </table>
+
+                <?php foreach ($consultations as $value) { 
+                        // Récupérer le nom du patient
+                        $patient_nom = '-';
+                        foreach ($patients as $pat) {
+                            if ($pat['id'] == $value['patient_id']) {
+                                $patient_nom = $pat['prenom'] . ' ' . $pat['nom'];
+                                break;
+                            }
+                        }
+                        
+                        // Récupérer le nom du médecin
+                        $medecin_nom = '-';
+                        if ($value['medecin_id']) {
+                            foreach ($medecins as $med) {
+                                if ($med['id'] == $value['medecin_id']) {
+                                    $medecin_nom = $med['prenom'] . ' ' . $med['nom'];
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Badge type
+                        $type_badges = [
+                            'video' => 'primary',
+                            'presentiel' => 'success',
+                            'telephone' => 'info'
+                        ];
+                        
+                        // Badges statut
+                        $statut_badges = [
+                            'en_attente' => 'warning',
+                            'confirmee' => 'info',
+                            'en_cours' => 'primary',
+                            'terminee' => 'success',
+                            'annulee' => 'danger',
+                            'refusee' => 'dark'
+                        ];
+                        
+                        // Labels statut
+                        $statut_labels = [
+                            'en_attente' => 'En attente',
+                            'confirmee' => 'Confirmée',
+                            'en_cours' => 'En cours',
+                            'terminee' => 'Terminée',
+                            'annulee' => 'Annulée',
+                            'refusee' => 'Refusée'
+                        ];
+                        
+                        // Badges paiement
+                        $paiement_badges = [
+                            'en_attente' => 'warning',
+                            'paye' => 'success',
+                            'echoue' => 'danger',
+                            'rembourse' => 'info'
+                        ];
+                    ?>
 
                         <!-- ========= MODAL DETAIL ========= -->
                         <div class="modal fade" id="detail_<?= $value['id'] ?>">
@@ -444,33 +520,14 @@
                                 </div>
                             </div>
                         </div>
-
                     <?php } ?>
-                    </tbody>
 
-                    <tfoot>
-                        <tr>
-                            <th>#</th>
-                            <th>N° Consultation</th>
-                            <th>Patient</th>
-                            <th>Médecin</th>
-                            <th>Type</th>
-                            <th>Date</th>
-                            <th>Prix</th>
-                            <th>Statut</th>
-                            <th>Paiement</th>
-                            <th>Action</th>
-                        </tr>
-                    </tfoot>
-
-                </table>
             </div>
         </div>
     </div>
 
     <hr/>
 
-</div>
 </div>
 
 <!-- ========= MODAL NEW CONSULTATION ========= -->

@@ -90,7 +90,7 @@
                         $type_badge = $type_badges[$value['type_utilisateur'] ?? 'entreprise'] ?? '<span class="badge bg-light text-dark">Inconnu</span>';
                         
                         // Photo
-                        $photo_path = !empty($value['photo']) ? 'attachments/Users/'.$value['photo'] : 'attachments/Users/default-avatar.png';
+                        $photo_path = !empty($value['photo']) ? 'attachments/Users/'.$value['photo'] : 'assets/frontend/img/default-avatar.jpg';
                     ?>
                         <tr>
                             <td><?= $i++ ?></td>
@@ -99,7 +99,7 @@
                                 <img src="<?= base_url($photo_path) ?>" 
                                      class="rounded-circle border"
                                      style="width:45px; height:45px; object-fit:cover;"
-                                     onerror="this.src='<?= base_url('attachments/Users/default-avatar.png') ?>'"
+                                     onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
                                      alt="Photo">
                             </td>
 
@@ -192,7 +192,7 @@
                                                 <img src="<?= base_url($photo_path) ?>" 
                                                      class="rounded-circle border border-3 border-primary mb-3"
                                                      style="width:120px; height:120px; object-fit:cover;"
-                                                     onerror="this.src='<?= base_url('attachments/Users/default-avatar.png') ?>'"
+                                                     onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
                                                      alt="Photo">
                                                 <h5 class="mb-1"><?= htmlspecialchars(($value['nom'] ?? '').' '.($value['prenom'] ?? '')) ?></h5>
                                                 <p class="text-muted mb-2"><?= htmlspecialchars($value['email'] ?? '') ?></p>
@@ -675,7 +675,7 @@ $(document).ready(function() {
     // Initialisation DataTable
     $('#usersTable').DataTable({
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+            url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>'
         },
         order: [[0, 'desc']],
         pageLength: 25,

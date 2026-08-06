@@ -162,7 +162,7 @@ class Login extends CI_Model {
         
         if ($user) {
             $user['fullname'] = trim($user['prenom'] . ' ' . $user['nom']);
-            $user['photo_url'] = base_url('uploads/photos/' . ($user['photo'] ?? 'default-avatar.png'));
+            $user['photo_url'] = base_url(!empty($user['photo']) ? 'uploads/photos/' . $user['photo'] : 'assets/frontend/img/default-avatar.jpg');
             $user['is_email_verified'] = !is_null($user['email_verified_at']);
         }
         
@@ -244,6 +244,45 @@ public function phone_exists($phone) {
         $this->db->where('deleted_at IS NULL');
         $query = $this->db->get('users');
         return $query->row_array();
+    }
+
+    /**
+     * Vérifier l'identité d'un utilisateur (mot de passe oublié sans OTP)
+     * Compare email, téléphone, nom et prénom (insensible à la casse)
+     * @param string $email
+     * @param string $telephone
+     * @param string $nom
+     * @param string $prenom
+     * @return array|null
+     */
+    public function verify_user_identity($email, $telephone, $nom, $prenom) {
+        $this->db->where("LOWER(email) = " . $this->db->escape(strtolower(trim($email))));
+        $this->db->where('deleted_at IS NULL');
+        $user = $this->db->get('users')->row_array();
+
+        if (!$user) {
+            return null;
+        }
+
+        $clean_phone_input = preg_replace('/[^0-9]/', '', $telephone);
+        $user_phone = preg_replace('/[^0-9]/', '', $user['telephone'] ?? '');
+
+        if (empty($clean_phone_input) || empty($user_phone) || $clean_phone_input !== $user_phone) {
+            return null;
+        }
+
+        $user_nom = mb_strtolower(trim($user['nom'] ?? ''));
+        $user_prenom = mb_strtolower(trim($user['prenom'] ?? ''));
+
+        if ($user_nom !== mb_strtolower(trim($nom))) {
+            return null;
+        }
+
+        if ($user_prenom !== mb_strtolower(trim($prenom))) {
+            return null;
+        }
+
+        return $user;
     }
 
     /**

@@ -7,7 +7,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * ============================================================
  * Tableaux de bord complets pour Admin et Médecin.
  * Couvre : utilisateurs, e-commerce, télémédecine, investisseurs,
- * courtiers, newsletter, WhatsApp, médias, visiteurs, finances.
+ * courtiers, newsletter, médias, visiteurs, finances.
  * ============================================================
  */
 class Dashboard extends MY_Controller {
@@ -38,9 +38,112 @@ class Dashboard extends MY_Controller {
      * ══════════════════════════════════════════════════════ */
     public function index() {
         $slug = $this->session->userdata('role_slug');
-        $map  = ['admin' => 'admin_dashboard', 'medecin' => 'medecin_dashboard'];
-        if (!isset($map[$slug])) redirect('Admin');
-        $this->{$map[$slug]}();
+
+        if ($slug === 'admin' || $this->_is_admin()) {
+            $this->admin_dashboard();
+            return;
+        }
+        if ($slug === 'medecin' || $this->_is_medecin()) {
+            $this->medecin_dashboard();
+            return;
+        }
+        // Tout utilisateur standard (patient, broker, investisseur) → dashboard unifié
+        $this->user_dashboard();
+    }
+
+    /* ══════════════════════════════════════════════════════
+     *  DASHBOARD UTILISATEUR UNIFIÉ (patient / broker / investisseur)
+     * ══════════════════════════════════════════════════════ */
+    public function user_dashboard() {
+        if (!$this->session->userdata('user_id')) redirect('Auth');
+
+        $user_id = $this->session->userdata('user_id');
+        $user = $this->db->where('id', $user_id)->get('users')->row();
+        if (!$user) redirect('Auth/logout');
+
+        // Identité investisseur / courtier (email ou nom dans les tables dédiées)
+        $email    = $user->email;
+        $fullname = trim(($user->prenom ?? '') . ' ' . ($user->nom ?? ''));
+
+        $investor = null;
+        $this->db->group_start();
+        $this->db->where('email', $email);
+        if ($fullname) $this->db->or_where('full_name', $fullname);
+        $this->db->group_end();
+        $investor = $this->db->get('investors', 1)->row();
+
+        $broker = null;
+        $this->db->group_start();
+        $this->db->where('email', $email);
+        if ($fullname) $this->db->or_where('full_name', $fullname);
+        $this->db->group_end();
+        $broker = $this->db->get('brokers', 1)->row();
+
+        // Statistiques patient
+        $stats = [
+            'total_consultations' => 0,
+            'upcoming_appointments' => 0,
+            'consultations_this_month' => 0,
+            'active_prescriptions' => 0,
+        ];
+        if ($this->db->table_exists('consultations')) {
+            $stats['total_consultations'] = (int)$this->db->where('patient_id', $user_id)->count_all_results('consultations');
+            $stats['upcoming_appointments'] = (int)$this->db
+                ->where('patient_id', $user_id)
+                ->where('date_souhaitee >=', date('Y-m-d H:i:s'))
+                ->where_in('statut', ['en_attente', 'confirmee'])
+                ->count_all_results('consultations');
+            $stats['consultations_this_month'] = (int)$this->db
+                ->where('patient_id', $user_id)
+                ->where('MONTH(created_at)', date('m'))
+                ->where('YEAR(created_at)', date('Y'))
+                ->count_all_results('consultations');
+            $stats['active_prescriptions'] = (int)$this->db
+                ->where('patient_id', $user_id)
+                ->where('created_at >=', date('Y-m-d H:i:s', strtotime('-30 days')))
+                ->where('ordonnances IS NOT NULL')
+                ->where('ordonnances !=', '')
+                ->count_all_results('consultations');
+        }
+
+        // Dernières consultations
+        $consultations = [];
+        if ($this->db->table_exists('consultations')) {
+            $consultations = $this->db
+                ->select('c.id, c.numero_consultation, c.date_souhaitee, c.type, c.statut, c.symptomes, m.specialite, u.nom as medecin_nom, u.prenom as medecin_prenom')
+                ->from('consultations c')
+                ->join('medecins m', 'm.id = c.medecin_id', 'left')
+                ->join('users u', 'u.id = m.user_id', 'left')
+                ->where('c.patient_id', $user_id)
+                ->order_by('c.date_souhaitee', 'DESC')
+                ->limit(10)
+                ->get()->result();
+        }
+
+        // Données courtier (investisseurs gérés par le broker)
+        $broker_investors = [];
+        if ($broker) {
+            $broker_investors = $this->db
+                ->where('broker_id', $broker->id)
+                ->order_by('created_at', 'DESC')
+                ->limit(10)
+                ->get('broker_investors')->result();
+        }
+
+        // Phases d'investissement pour l'investisseur
+        $phases = $this->_investment_phases();
+
+        $data = [
+            'page_title' => 'Mon Espace',
+            'user' => $user,
+            'investor' => $investor,
+            'broker' => $broker,
+            'stats' => $stats,
+            'consultations' => $consultations,
+            'broker_investors' => $broker_investors,
+            'phases' => $phases,
+        ];
+        $this->load->view('user', $data);
     }
 
     /* ══════════════════════════════════════════════════════
@@ -66,7 +169,6 @@ class Dashboard extends MY_Controller {
                 /* ── Modules ── */
                 'visitor_stats'     => $this->_visitor_stats(),
                 'newsletter_stats'  => $this->_newsletter_stats(),
-                'whatsapp_stats'    => $this->_whatsapp_stats(),
                 'investor_stats'    => $this->_investor_stats(),
                 'broker_stats'      => $this->_broker_stats(),
                 'investment_phases' => $this->_investment_phases(),
@@ -87,7 +189,7 @@ class Dashboard extends MY_Controller {
                 'latest_brokers'    => $this->_latest_brokers(5),
 
                 /* ── Graphiques ── */
-                'chart_revenue_30d' => $this->_chart_series('commandes', 'total_ttc', 30, "statut != 'annulee'"),
+               
                 'chart_users_30d'   => $this->_chart_count('users', 30),
                 'chart_consult_30d' => $this->_chart_count('consultations', 30),
                 'chart_visits_30d'  => $this->_chart_visits_30d(),
@@ -97,7 +199,6 @@ class Dashboard extends MY_Controller {
 
                 /* ── Répartitions (Doughnut / Pie) ── */
                 'dist_user_types'   => $this->_dist('users',         'type_utilisateur'),
-                'dist_order_status' => $this->_dist('commandes',     'statut'),
                 'dist_consult_type' => $this->_dist('consultations', 'type'),
                 'dist_consult_stat' => $this->_dist('consultations', 'statut'),
                 'dist_media_type'   => $this->_dist('galerie_medias','type'),
@@ -127,6 +228,18 @@ class Dashboard extends MY_Controller {
     /* ══════════════════════════════════════════════════════
      *  DASHBOARD MÉDECIN
      * ══════════════════════════════════════════════════════ */
+    public function investisseur_dashboard() {
+        if (!$this->_is_admin()) redirect('Admin');
+
+        $data = [
+            'page_title'  => 'Espace Investisseurs & Opportunités',
+            'investor_stats' => $this->_investor_stats(),
+            'phases'      => $this->_investment_phases(),
+            'latest'      => $this->_latest_investors(20),
+        ];
+        $this->load->view('investisseur', $data);
+    }
+
     public function medecin_dashboard() {
         if (!$this->_is_medecin()) redirect('Admin');
 
@@ -152,7 +265,15 @@ class Dashboard extends MY_Controller {
                 'completed' => $this->db->where('medecin_id',$mid)->where('statut','terminee')->count_all_results('consultations'),
                 'revenue'   => $this->db->select('COALESCE(SUM(honoraires_consultation),0) as t')->where('medecin_id',$mid)->where('statut','terminee')->get('consultations')->row()->t,
             ],
-            'upcoming' => $this->db->where('medecin_id',$mid)->where('date_souhaitee >=', date('Y-m-d H:i:s'))->where_in('statut',['confirmee','en_attente'])->order_by('date_souhaitee','ASC')->limit(10)->get('consultations')->result_array(),
+            'upcoming' => $this->db->select('c.*, u.prenom as patient_prenom, u.nom as patient_nom, u.telephone as patient_telephone')
+                ->from('consultations c')
+                ->join('users u', 'c.patient_id = u.id', 'left')
+                ->where('c.medecin_id', $mid)
+                ->where('c.date_souhaitee >=', date('Y-m-d H:i:s'))
+                ->where_in('c.statut', ['confirmee','en_attente'])
+                ->order_by('c.date_souhaitee', 'ASC')
+                ->limit(10)
+                ->get()->result_array(),
             'recent_patients' => $this->db->select('c.*, u.prenom, u.nom, u.telephone')->from('consultations c')->join('users u','c.patient_id = u.id')->where('c.medecin_id',$mid)->order_by('c.created_at','DESC')->limit(10)->get()->result_array(),
             'chart_labels' => $this->_chart_labels(30),
             'chart_consults'=> $this->_chart_medecin_consults($mid, 30),
@@ -263,9 +384,10 @@ class Dashboard extends MY_Controller {
 
     /** KPI Produits */
     private function _kpi_products(): array {
+        $has_catalogue = $this->db->table_exists('produits');
         return [
-            'catalogue_total'  => $this->db->where('est_actif',1)->count_all_results('produits'),
-            'catalogue_vedette'=> $this->db->where('est_vedette',1)->where('est_actif',1)->count_all_results('produits'),
+            'catalogue_total'  => $has_catalogue ? $this->db->where('est_actif',1)->count_all_results('produits') : 0,
+            'catalogue_vedette'=> $has_catalogue ? $this->db->where('est_vedette',1)->where('est_actif',1)->count_all_results('produits') : 0,
             'advertise_total'  => $this->db->where('is_active',1)->count_all_results('advertise_product'),
             'advertise_vedette'=> $this->db->where('in_vedette',1)->count_all_results('advertise_product'),
             'total_price_requests'=> (int)($this->db->select_sum('price_request_count')->get('advertise_product')->row()->price_request_count ?? 0),
@@ -339,34 +461,6 @@ class Dashboard extends MY_Controller {
         return compact('total','total_email','total_phone','today','week','month');
     }
 
-    /** Statistiques WhatsApp */
-    private function _whatsapp_stats(): array {
-        $groups     = $this->db->where('actif',1)->count_all_results('groupes_whatsapp');
-        $total_logs = $this->db->count_all_results('whatsapp_logs');
-        $sent       = $this->db->where('status','sent')->count_all_results('whatsapp_logs');
-        $received   = $this->db->where('status','received')->count_all_results('whatsapp_logs');
-        $failed     = $this->db->where('status','failed')->count_all_results('whatsapp_logs');
-        $queue_pending = $this->db->where('status','pending')->count_all_results('whatsapp_queue');
-        $blacklisted= $this->db->count_all_results('whatsapp_blacklist');
-        $templates  = $this->db->count_all_results('whatsapp_templates');
-
-        // Réseau stats (WhatsApp)
-        $wa_network = $this->db->where('plateforme','WhatsApp')->get('statistiques_reseaux')->row_array() ?? [];
-
-        return [
-            'groups'        => $groups,
-            'total_logs'    => $total_logs,
-            'sent'          => $sent,
-            'received'      => $received,
-            'failed'        => $failed,
-            'queue_pending' => $queue_pending,
-            'blacklisted'   => $blacklisted,
-            'templates'     => $templates,
-            'wa_groups'     => $wa_network['nombre_groupes'] ?? 0,
-            'wa_members'    => $wa_network['nombre_participants'] ?? 0,
-        ];
-    }
-
     /** Statistiques investisseurs */
     private function _investor_stats(): array {
         $total       = $this->db->count_all_results('investors');
@@ -437,43 +531,11 @@ class Dashboard extends MY_Controller {
 
     /** E-commerce approfondissement */
     private function _ecommerce_deep(): array {
-        $cart = $this->db->query("
-            SELECT
-                COUNT(*) as total_carts,
-                SUM(CASE WHEN est_actif=1 THEN 1 ELSE 0 END) as active_carts,
-                AVG(total_ttc) as avg_cart_value,
-                MAX(total_ttc) as max_cart_value,
-                SUM(nombre_articles) as total_items
-            FROM paniers
-        ")->row_array();
-
-        $abandoned = $this->db->query("
-            SELECT COUNT(*) as cnt
-            FROM paniers p
-            WHERE p.est_actif=1
-            AND p.updated_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
-            AND EXISTS (SELECT 1 FROM panier_lignes pl WHERE pl.panier_id = p.id)
-        ")->row()->cnt;
-
-        $top_cat = $this->db->query("
-            SELECT c.name, COUNT(p.id_produit) as cnt
-            FROM product_categories c
-            LEFT JOIN produits p ON c.id = p.id_categorie AND p.est_actif=1
-            GROUP BY c.id ORDER BY cnt DESC
-        ")->result_array();
-
-        $favorites = $this->db->query("
-            SELECT p.nom_produit, COUNT(f.id) as fav_count
-            FROM favoris f
-            JOIN produits p ON f.produit_id = p.id_produit
-            GROUP BY f.produit_id ORDER BY fav_count DESC LIMIT 5
-        ")->result_array();
-
         return [
-            'cart'        => $cart,
-            'abandoned'   => (int)$abandoned,
-            'top_cat'     => $top_cat,
-            'favorites'   => $favorites,
+            'cart'        => ['total_carts' => 0, 'active_carts' => 0, 'avg_cart_value' => 0, 'max_cart_value' => 0, 'total_items' => 0],
+            'abandoned'   => 0,
+            'top_cat'     => [],
+            'favorites'   => [],
         ];
     }
 
@@ -500,7 +562,7 @@ class Dashboard extends MY_Controller {
         ")->result_array();
 
         $products = $this->db->query("
-            SELECT product_title, COUNT(*) as cnt, SUM(whatsapp_sent) as wa_sent
+            SELECT product_title, COUNT(*) as cnt
             FROM order_requests GROUP BY product_id ORDER BY cnt DESC LIMIT 6
         ")->result_array();
 
@@ -792,10 +854,6 @@ class Dashboard extends MY_Controller {
         if ($pending_req > 0)
             $a[] = ['type'=>'success','icon'=>'bx bx-shopping-bag','title'=>'Demandes de commande','msg'=>"{$pending_req} demande(s) de produits",'link'=>base_url('OrderRequests')];
 
-        $wa_queue = $this->db->where('status','pending')->count_all_results('whatsapp_queue');
-        if ($wa_queue > 0)
-            $a[] = ['type'=>'warning','icon'=>'bx bxl-whatsapp','title'=>'File WhatsApp','msg'=>"{$wa_queue} message(s) en file",'link'=>base_url('Whatsapp')];
-
         return $a;
     }
 
@@ -806,7 +864,6 @@ class Dashboard extends MY_Controller {
             ['title'=>'Planifier consultation','icon'=>'bx bx-calendar-plus','color'=>'info',    'link'=>base_url('Consultations/create')],
             ['title'=>'Ajouter média',         'icon'=>'bx bx-image-add',    'color'=>'warning', 'link'=>base_url('Galerie/create')],
             ['title'=>'Envoyer newsletter',    'icon'=>'bx bx-mail-send',    'color'=>'danger',  'link'=>base_url('Newsletter')],
-            ['title'=>'Broadcast WhatsApp',    'icon'=>'bx bxl-whatsapp',    'color'=>'success', 'link'=>base_url('Whatsapp/broadcast')],
             ['title'=>'Paramètres',            'icon'=>'bx bx-cog',          'color'=>'dark',    'link'=>base_url('Configurations')],
         ];
     }
@@ -849,7 +906,6 @@ class Dashboard extends MY_Controller {
                     'today_visits'  => $this->db->where('visit_date',date('Y-m-d'))->count_all_results('visitors_logs'),
                     'pending_orders'=> $this->db->where('statut','en_attente')->count_all_results('commandes'),
                     'pending_req'   => $this->db->where('order_status','pending')->count_all_results('order_requests'),
-                    'wa_queue'      => $this->db->where('status','pending')->count_all_results('whatsapp_queue'),
                     'server_time'   => date('H:i:s'),
                 ];
                 break;

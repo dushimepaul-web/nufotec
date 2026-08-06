@@ -61,55 +61,56 @@
                                     </button>
                                 </td>
                             </tr>
-
-                            <div class="modal fade" id="detail_<?=$value['id']?>" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Détails du Log #<?=$value['id']?></h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <table class="table table-bordered">
-                                                <tr><th>Description</th><td><?=$value['description']?></td></tr>
-                                                <tr><th>URL</th><td><code><?=$value['url']?></code></td></tr>
-                                                <tr><th>Méthode</th><td><span class="badge bg-secondary"><?=strtoupper($value['method'])?></span></td></tr>
-                                                <tr><th>User Agent</th><td><small><?=$value['user_agent']?></small></td></tr>
-                                            </table>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal fade" id="delete_<?=$value['id']?>">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form action="<?=base_url('Logs/Delete')?>" method="POST">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Supprimer ce log ?</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <input type="hidden" name="id" value="<?=$value['id']?>">
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                <button type="submit" class="btn btn-danger">Confirmer la suppression</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
                         <?php } ?>
                         </tbody>
                     </table>
+
+                    <?php if (!empty($logs)): foreach ($logs as $value): ?>
+                    <div class="modal fade" id="detail_<?=$value['id']?>" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Détails du Log #<?=$value['id']?></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <table class="table table-bordered">
+                                        <tr><th>Description</th><td><?=$value['description']?></td></tr>
+                                        <tr><th>URL</th><td><code><?=$value['url']?></code></td></tr>
+                                        <tr><th>Méthode</th><td><span class="badge bg-secondary"><?=strtoupper($value['method'])?></span></td></tr>
+                                        <tr><th>User Agent</th><td><small><?=$value['user_agent']?></small></td></tr>
+                                    </table>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="delete_<?=$value['id']?>">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form action="<?=base_url('Logs/Delete')?>" method="POST">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Supprimer ce log ?</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <input type="hidden" name="id" value="<?=$value['id']?>">
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                        <button type="submit" class="btn btn-danger">Confirmer la suppression</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; endif; ?>
+
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 <div class="modal fade" id="clearLogs">
     <div class="modal-dialog">

@@ -4,7 +4,7 @@
     <!-- Header avec profil -->
     <div class="dashboard-header">
         <div class="patient-info">
-            <img src="<?= base_url('attachments/Users/' . ($patient['photo'] ?? 'default-avatar.png')) ?>" 
+            <img src="<?= base_url(!empty($patient['photo']) ? 'attachments/Users/' . $patient['photo'] : 'assets/frontend/img/default-avatar.jpg') ?>" 
                  alt="Photo" class="patient-avatar">
             <div>
                 <h1>Bonjour, <?= htmlspecialchars($patient['prenom'] . ' ' . $patient['nom']) ?></h1>
@@ -50,7 +50,7 @@
         <h3><i class="bi bi-calendar-event"></i> Prochain Rendez-vous</h3>
         <div class="appointment-card">
             <div class="doctor-info">
-                <img src="<?= base_url('attachments/Users/' . ($prochain_rdv['medecin_photo'] ?? 'default-doctor.png')) ?>" 
+                <img src="<?= !empty($prochain_rdv['medecin_photo']) ? base_url('attachments/Users/' . $prochain_rdv['medecin_photo']) : base_url('assets/frontend/img/default-doctor.jpg') ?>" 
                      alt="Dr. <?= $prochain_rdv['nom'] ?>">
                 <div>
                     <h4>Dr. <?= htmlspecialchars($prochain_rdv['prenom'] . ' ' . $prochain_rdv['nom']) ?></h4>

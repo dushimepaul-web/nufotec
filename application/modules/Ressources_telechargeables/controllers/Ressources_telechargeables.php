@@ -14,7 +14,6 @@ class Ressources_telechargeables extends MY_Controller {
     public function index()
 {
     $data['ressources'] = $this->Model->read('ressources_telechargeables', ['deleted_at' => NULL], 'id_ressource','DESC');
-    $data['pages'] = $this->Model->read('pages', ['est_publiee' => 1], 'id_page');
     
     // Ajouter les méthodes au tableau $data
     $data['get_type_icon'] = function($type) {
@@ -64,7 +63,6 @@ class Ressources_telechargeables extends MY_Controller {
     function RessourceDetail($ressourceDetail){
         $id = explode('_', $ressourceDetail);
         $data['detail'] = $this->Model->readOne('ressources_telechargeables', ['id_ressource' => $id[0]]);
-        $data['pages'] = $this->Model->read('pages', ['est_publiee' => 1], 'id_page');
         $this->load->view('RessourceDetail_View', $data);
     }
 

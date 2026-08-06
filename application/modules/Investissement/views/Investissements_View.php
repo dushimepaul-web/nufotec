@@ -210,7 +210,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
 
-                                    <form action="<?= base_url('Investissements/Update') ?>" method="POST">
+                                    <form action="<?= base_url('Investissement/Update') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
 
                                         <div class="modal-body">
@@ -308,7 +308,7 @@
                                         </div>
                                     </div>
 
-                                    <form action="<?= base_url('Investissements/Delete') ?>" method="POST">
+                                    <form action="<?= base_url('Investissement/Delete') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
 
                                         <div class="modal-footer">
@@ -329,7 +329,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
 
-                                    <form action="<?= base_url('Investissements/ChangeStatus') ?>" method="POST">
+                                    <form action="<?= base_url('Investissement/ChangeStatus') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         <input type="hidden" name="statut" value="<?= $value['statut'] ?>">
 
@@ -356,7 +356,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
 
-                                    <form action="<?= base_url('Investissements/ChangePaiementStatus') ?>" method="POST">
+                                    <form action="<?= base_url('Investissement/ChangePaiementStatus') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         <input type="hidden" name="statut_paiement" value="<?= $value['statut_paiement'] ?>">
 
@@ -400,7 +400,7 @@
     <hr/>
 
 </div>
-</div>
+
 
 <!-- ========= MODAL NEW INVESTISSEMENT ========= -->
 <div class="modal fade" id="investissement" data-bs-backdrop="static">
@@ -412,7 +412,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form action="<?= base_url('Investissements/Create') ?>" method="POST">
+            <form action="<?= base_url('Investissement/Create') ?>" method="POST">
                 <div class="modal-body">
 
                     <div class="row">

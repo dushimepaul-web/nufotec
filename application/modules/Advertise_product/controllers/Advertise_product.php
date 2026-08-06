@@ -181,11 +181,11 @@ private function _log_email_error($email, $result, $context)
         $site_url = base_url();
         $product_url = base_url('product/' . $product['slug']);
         
-        $subject = "NOUVEAU PRODUIT CHEZ NUFOTEC : " . htmlspecialchars($product['title_fr'] ?: $product['title']);
+        $subject = "NOUVEAU PRODUIT CHEZ NUFOTEC : " . htmlspecialchars($product['title'] ?? '');
         $message = $this->buildProductNotificationTemplate(
-            htmlspecialchars($product['title_fr'] ?: $product['title']),
+            htmlspecialchars($product['title'] ?? ''),
             $this->formatPrice($product['price']),
-            nl2br(htmlspecialchars($product['description_fr'] ?: $product['description'])),
+            nl2br(htmlspecialchars($product['description'] ?? '')),
             $product_image_url,
             $product_url,
             $subject,
@@ -442,9 +442,9 @@ private function _log_email_error($email, $result, $context)
             
             $product_url = base_url('product/' . $product['slug']);
             
-            $product_title = htmlspecialchars($product['title_fr'] ?: $product['title']);
+            $product_title = htmlspecialchars($product['title'] ?? '');
             $product_price = $this->formatPrice($product['price']);
-            $product_description = htmlspecialchars($product['description_fr'] ?: $product['description']);
+            $product_description = htmlspecialchars($product['description'] ?? '');
             
             $html .= '
             <div style="background: #ffffff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2f6;">
@@ -592,9 +592,9 @@ private function _log_email_error($email, $result, $context)
 
     function Create()
     {
-        $this->form_validation->set_rules('title_fr', 'Titre (FR)', 'required');
+        $this->form_validation->set_rules('title', 'Titre', 'required');
         $this->form_validation->set_rules('price', 'Prix', 'required');
-        $this->form_validation->set_rules('description_fr', 'Description (FR)', 'required');
+        $this->form_validation->set_rules('description', 'Description', 'required');
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
@@ -602,15 +602,11 @@ private function _log_email_error($email, $result, $context)
             return;
         }
 
-        $title_fr = $this->input->post('title_fr');
-        $slug = $this->generate_slug($title_fr);
+        $title = $this->input->post('title');
+        $slug = $this->generate_slug($title);
         $category_id = $this->input->post('category_id') ?: NULL;
         
-        $title_en = $this->input->post('title_en');
-        $title_sw = $this->input->post('title_sw');
-        $description_fr = $this->input->post('description_fr');
-        $description_en = $this->input->post('description_en');
-        $description_sw = $this->input->post('description_sw');
+        $description = $this->input->post('description');
         
         $main_image = 'default-product.png';
         if (!empty($_FILES['main_image']['name'])) {
@@ -629,15 +625,9 @@ private function _log_email_error($email, $result, $context)
         $data = array(
             'category_id' => $category_id,
             'main_image' => $main_image,
-            'title' => $title_fr,
-            'title_fr' => $title_fr,
-            'title_en' => $title_en,
-            'title_sw' => $title_sw,
+            'title' => $title,
             'slug' => $slug,
-            'description' => $description_fr,
-            'description_fr' => $description_fr,
-            'description_en' => $description_en,
-            'description_sw' => $description_sw,
+            'description' => $description,
             'price' => $this->input->post('price'),
             'is_active' => 1,
             'in_vedette' => 0,
@@ -662,9 +652,9 @@ private function _log_email_error($email, $result, $context)
     {
         $id = $this->input->post('id');
         
-        $this->form_validation->set_rules('title_fr', 'Titre (FR)', 'required');
+        $this->form_validation->set_rules('title', 'Titre', 'required');
         $this->form_validation->set_rules('price', 'Prix', 'required');
-        $this->form_validation->set_rules('description_fr', 'Description (FR)', 'required');
+        $this->form_validation->set_rules('description', 'Description', 'required');
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
@@ -672,29 +662,19 @@ private function _log_email_error($email, $result, $context)
             return;
         }
 
-        $title_fr = $this->input->post('title_fr');
-        $slug = $this->generate_slug($title_fr, $id);
+        $title = $this->input->post('title');
+        $slug = $this->generate_slug($title, $id);
         $category_id = $this->input->post('category_id') ?: NULL;
         $is_active = $this->input->post('is_active') ? 1 : 0;
         $in_vedette = $this->input->post('in_vedette') ? 1 : 0;
         
-        $title_en = $this->input->post('title_en');
-        $title_sw = $this->input->post('title_sw');
-        $description_fr = $this->input->post('description_fr');
-        $description_en = $this->input->post('description_en');
-        $description_sw = $this->input->post('description_sw');
+        $description = $this->input->post('description');
 
         $data = array(
             'category_id' => $category_id,
-            'title' => $title_fr,
-            'title_fr' => $title_fr,
-            'title_en' => $title_en,
-            'title_sw' => $title_sw,
+            'title' => $title,
             'slug' => $slug,
-            'description' => $description_fr,
-            'description_fr' => $description_fr,
-            'description_en' => $description_en,
-            'description_sw' => $description_sw,
+            'description' => $description,
             'price' => $this->input->post('price'),
             'is_active' => $is_active,
             'in_vedette' => $in_vedette,

@@ -73,113 +73,6 @@
                                     </div> 
                                 </td>
                             </tr>
-
-                            <div class="modal fade" id="view_<?=$value['IdContact']?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content border-top border-0 border-4 border-info">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Détails du message</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="window.location.reload()"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Nom complet</label>
-                                                    <p class="form-control-plaintext border-bottom"><?=$value['FullName']?></p>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Email</label>
-                                                    <p class="form-control-plaintext border-bottom"><?=$value['Email']?></p>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Téléphone</label>
-                                                    <p class="form-control-plaintext border-bottom"><?=$value['PhoneNumber']?></p>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Date d'envoi</label>
-                                                    <p class="form-control-plaintext border-bottom"><?=$value['Date_creation']?></p>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label class="form-label fw-bold">Sujet</label>
-                                                    <p class="form-control-plaintext border-bottom"><?=$value['Subject']?></p>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label class="form-label fw-bold">Message</label>
-                                                    <div class="bg-light p-3 rounded shadow-sm" style="white-space: pre-wrap;"><?= htmlspecialchars($value['Message']) ?></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.location.reload()">Fermer</button>
-                                            <a href="mailto:<?=$value['Email']?>" class="btn btn-primary">Répondre par Email</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal fade" id="update_<?=$value['IdContact']?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-info">
-                                            <h5 class="modal-title text-white">Modifier Contact</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form action="<?=base_url('Contact_Us/Update')?>" method="POST">
-                                            <input type="hidden" name="IdContact" value="<?=$value['IdContact']?>">
-                                            <div class="modal-body">
-                                                <div class="row g-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Nom complet</label>
-                                                        <input type="text" class="form-control" value="<?=$value['FullName']?>" name="FullName" required>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Email</label>
-                                                        <input type="email" class="form-control" value="<?=$value['Email']?>" name="Email" required>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Objet</label>
-                                                        <input type="text" class="form-control" value="<?=$value['Subject']?>" name="Subject" required>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Téléphone</label>
-                                                        <input type="text" class="form-control" value="<?=$value['PhoneNumber']?>" name="PhoneNumber" required>
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <label class="form-label">Message</label>
-                                                        <textarea class="form-control" rows="4" name="Message" required><?=$value['Message']?></textarea>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                <button type="submit" class="btn btn-info">Mettre à jour</button>  
-                                            </div>                   
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal fade" id="delete_<?=$value['IdContact']?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-danger">
-                                            <h5 class="modal-title text-white">Confirmation</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form action="<?=base_url('Contact_Us/Delete')?>" method="POST">
-                                            <div class="modal-body">
-                                                <input type="hidden" name="IdContact" value="<?=$value['IdContact']?>">
-                                                <p>Voulez-vous vraiment supprimer le message de <strong><?=$value['FullName']?></strong> ?</p>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non</button>
-                                                <button type="submit" class="btn btn-danger">Oui, Supprimer</button>  
-                                            </div>                   
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
                             <?php endforeach; ?>
                         </tbody>
                         <tfoot>
@@ -194,11 +87,119 @@
                             </tr>
                         </tfoot>
                     </table>
+
+                    <?php if (!empty($contacts)): foreach ($contacts as $value): ?>
+                    <div class="modal fade" id="view_<?=$value['IdContact']?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content border-top border-0 border-4 border-info">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Détails du message</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="window.location.reload()"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Nom complet</label>
+                                            <p class="form-control-plaintext border-bottom"><?=$value['FullName']?></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Email</label>
+                                            <p class="form-control-plaintext border-bottom"><?=$value['Email']?></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Téléphone</label>
+                                            <p class="form-control-plaintext border-bottom"><?=$value['PhoneNumber']?></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Date d'envoi</label>
+                                            <p class="form-control-plaintext border-bottom"><?=$value['Date_creation']?></p>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">Sujet</label>
+                                            <p class="form-control-plaintext border-bottom"><?=$value['Subject']?></p>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">Message</label>
+                                            <div class="bg-light p-3 rounded shadow-sm" style="white-space: pre-wrap;"><?= htmlspecialchars($value['Message']) ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.location.reload()">Fermer</button>
+                                    <a href="mailto:<?=$value['Email']?>" class="btn btn-primary">Répondre par Email</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="update_<?=$value['IdContact']?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-info">
+                                    <h5 class="modal-title text-white">Modifier Contact</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form action="<?=base_url('Contact_Us/Update')?>" method="POST">
+                                    <input type="hidden" name="IdContact" value="<?=$value['IdContact']?>">
+                                    <div class="modal-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Nom complet</label>
+                                                <input type="text" class="form-control" value="<?=$value['FullName']?>" name="FullName" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Email</label>
+                                                <input type="email" class="form-control" value="<?=$value['Email']?>" name="Email" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Objet</label>
+                                                <input type="text" class="form-control" value="<?=$value['Subject']?>" name="Subject" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Téléphone</label>
+                                                <input type="text" class="form-control" value="<?=$value['PhoneNumber']?>" name="PhoneNumber" required>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label">Message</label>
+                                                <textarea class="form-control" rows="4" name="Message" required><?=$value['Message']?></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                        <button type="submit" class="btn btn-info">Mettre à jour</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="delete_<?=$value['IdContact']?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger">
+                                    <h5 class="modal-title text-white">Confirmation</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form action="<?=base_url('Contact_Us/Delete')?>" method="POST">
+                                    <div class="modal-body">
+                                        <input type="hidden" name="IdContact" value="<?=$value['IdContact']?>">
+                                        <p>Voulez-vous vraiment supprimer le message de <strong><?=$value['FullName']?></strong> ?</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non</button>
+                                        <button type="submit" class="btn btn-danger">Oui, Supprimer</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; endif; ?>
+
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 <div class="modal fade" id="contactus" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
@@ -245,8 +246,6 @@
     </div>
 </div>
 
-<?php include VIEWPATH.'includes/backend/Footer.php' ;?>
-
 <script>
 function markAsRead(id) {
     $.ajax({
@@ -258,3 +257,5 @@ function markAsRead(id) {
     });
 }
 </script>
+
+<?php include VIEWPATH.'includes/backend/Footer.php' ;?>

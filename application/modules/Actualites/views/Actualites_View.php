@@ -94,9 +94,9 @@ if (!function_exists('format_tags')) {
                 </div>
             </div>
             <div class="col-xl-2 col-md-4 col-6">
-                <div class="card border-0 shadow-sm h-100 bg-purple bg-opacity-10">
+                <div class="card border-0 shadow-sm h-100" style="background-color: rgba(111, 66, 193, 0.1);">
                     <div class="card-body text-center">
-                        <i class="bx bxl-facebook text-purple fs-2 mb-2" style="color: #6f42c1;"></i>
+                        <i class="bx bxl-facebook fs-2 mb-2" style="color: #6f42c1;"></i>
                         <h4 class="mb-0 fw-bold"><?= $stats['in_socialmedia'] ?? 0 ?></h4>
                         <small class="text-muted">Réseaux</small>
                     </div>
@@ -114,10 +114,10 @@ if (!function_exists('format_tags')) {
         </div>
 
         <!-- Articles Grid -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3 border-bottom">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <h5 class="mb-0"><i class="bx bx-news me-2 text-danger"></i>Gestion des Actualités</h5>
+                    <h5 class="card-title mb-0"><i class="bx bx-news me-2 text-danger"></i>Gestion des Actualités</h5>
                     <div class="d-flex gap-2">
                         <select class="form-select form-select-sm" id="filterCategorie" style="width: auto;">
                             <option value="">Toutes catégories</option>
@@ -172,7 +172,7 @@ if (!function_exists('format_tags')) {
                                 data-categorie="<?= htmlspecialchars($item['categorie'] ?? '') ?>"
                                 data-statut="<?= $is_archive ? 'archive' : 'publie' ?>">
                                 <td>
-                                    <div class="article-thumb-wrapper position-relative" style="width: 100px; height: 70px;">
+                                    <div class="position-relative" style="width: 100px; height: 70px;">
                                         <img src="<?= $image_url ?>" 
                                              class="rounded w-100 h-100" 
                                              style="object-fit: cover; background: #f8f9fa;"
@@ -181,7 +181,7 @@ if (!function_exists('format_tags')) {
                                         
                                         <?php if ($is_en_avant && !$is_archive): ?>
                                             <div class="position-absolute top-0 start-0 m-1">
-                                                <span class="badge bg-warning"><i class="bx bx-star"></i></span>
+                                                <span class="badge text-bg-warning"><i class="bx bx-star"></i></span>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -200,7 +200,7 @@ if (!function_exists('format_tags')) {
                                         </small>
                                         
                                         <?php if (!empty($item['categorie'])): ?>
-                                            <span class="badge bg-light text-dark border w-fit-content mb-1" style="font-size: 0.7rem;">
+                                            <span class="badge text-bg-light border mb-1" style="font-size: 0.7rem; width: fit-content;">
                                                 <?= htmlspecialchars($item['categorie']) ?>
                                             </span>
                                         <?php endif; ?>
@@ -226,16 +226,16 @@ if (!function_exists('format_tags')) {
                                 </td>
 
                                 <td>
-                                    <span class="badge bg-light text-dark border">
+                                    <span class="badge text-bg-light border">
                                         <i class="bx bx-show me-1 text-info"></i><?= number_format($item['vues'] ?? 0, 0, ',', ' ') ?>
                                     </span>
                                 </td>
 
                                 <td class="text-center">
                                     <?php if (!$is_archive): ?>
-                                        <span class="badge bg-success">Publié</span>
+                                        <span class="badge text-bg-success">Publié</span>
                                     <?php else: ?>
-                                        <span class="badge bg-secondary">Archivé</span>
+                                        <span class="badge text-bg-secondary">Archivé</span>
                                     <?php endif; ?>
                                 </td>
 
@@ -398,7 +398,7 @@ if (!function_exists('format_tags')) {
                                                                     
                                                                     <div class="col-md-12">
                                                                         <label class="form-label small text-muted">Changer l'image</label>
-                                                                        <div class="upload-thumbnail-zone border rounded p-3 text-center mb-2" 
+                                                                        <div class="border rounded p-3 text-center mb-2" 
                                                                              style="border-style: dashed !important; cursor: pointer; background: #f8f9fa;"
                                                                              onclick="document.getElementById('updateImageInput<?= $item['id_actualite'] ?>').click()">
                                                                             <i class="bx bx-cloud-upload fs-3 text-muted mb-2"></i>
@@ -512,8 +512,8 @@ if (!function_exists('format_tags')) {
                         <?php endforeach; else: ?>
                             <tr>
                                 <td colspan="9" class="text-center py-5">
-                                    <div class="empty-state">
-                                        <i class="bx bx-news fs-1 text-muted mb-3"></i>
+                                    <div class="text-center py-5">
+                                        <i class="bx bx-news fs-1 text-muted mb-3 d-block"></i>
                                         <h5>Aucune actualité</h5>
                                         <p class="text-muted">Commencez par créer votre premier article</p>
                                         <a href="javascript:;" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#uploadModal">
@@ -544,8 +544,8 @@ if (!function_exists('format_tags')) {
                 <div class="modal-body p-0">
                     
                     <!-- ÉTAPE 1: Sélection du fichier image -->
-                    <div id="uploadStep1" class="upload-zone p-5 text-center">
-                        <div class="upload-illustration mb-4">
+                    <div id="uploadStep1" class="p-5 text-center bg-light-subtle border border-dashed rounded-3" style="cursor: pointer;">
+                        <div class="mb-4">
                             <div class="position-relative d-inline-block">
                                 <i class="bx bx-cloud-upload text-danger" style="font-size: 5rem;"></i>
                                 <div class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2">
@@ -556,15 +556,15 @@ if (!function_exists('format_tags')) {
                         
                         <h4 class="mb-3">Glissez-déposez une image</h4>
                         <p class="text-muted mb-4">
-                            ou <span class="text-danger fw-bold cursor-pointer" onclick="document.getElementById('fileInput').click()">parcourir</span> pour sélectionner
+                            ou <span class="text-danger fw-bold" style="cursor: pointer;" onclick="document.getElementById('fileInput').click()">parcourir</span> pour sélectionner
                         </p>
                         
                         <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
-                            <span class="badge bg-light text-dark border">JPG</span>
-                            <span class="badge bg-light text-dark border">JPEG</span>
-                            <span class="badge bg-light text-dark border">PNG</span>
-                            <span class="badge bg-light text-dark border">GIF</span>
-                            <span class="badge bg-light text-dark border">WEBP</span>
+                            <span class="badge text-bg-light border">JPG</span>
+                            <span class="badge text-bg-light border">JPEG</span>
+                            <span class="badge text-bg-light border">PNG</span>
+                            <span class="badge text-bg-light border">GIF</span>
+                            <span class="badge text-bg-light border">WEBP</span>
                         </div>
                         
                         <div class="alert alert-light border mx-auto" style="max-width: 500px;">
@@ -580,7 +580,7 @@ if (!function_exists('format_tags')) {
 
                     <!-- ÉTAPE 2: Upload progress et détection automatique -->
                     <div id="uploadStep2" class="d-none p-4">
-                        <div class="upload-item mb-4">
+                        <div class="mb-4">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="flex-shrink-0">
                                     <div class="bg-danger bg-opacity-10 rounded p-2">
@@ -644,21 +644,21 @@ if (!function_exists('format_tags')) {
                                                 <div class="d-flex align-items-center p-2 bg-white rounded border">
                                                     <i class="bx bx-check-circle text-success me-2" id="step-upload-icon"></i>
                                                     <span class="flex-grow-1">Upload terminé</span>
-                                                    <span class="badge bg-success">OK</span>
+                                                    <span class="badge text-bg-success">OK</span>
                                                 </div>
                                             </div>
                                             <div class="col-12">
                                                 <div class="d-flex align-items-center p-2 bg-white rounded border">
                                                     <i class="bx bx-loader-alt bx-spin text-danger me-2" id="step-analysis-icon"></i>
                                                     <span class="flex-grow-1">Analyse image</span>
-                                                    <span class="badge bg-secondary" id="step-analysis-status">En cours</span>
+                                                    <span class="badge text-bg-secondary" id="step-analysis-status">En cours</span>
                                                 </div>
                                             </div>
                                             <div class="col-12">
                                                 <div class="d-flex align-items-center p-2 bg-white rounded border">
                                                     <i class="bx bx-circle text-muted me-2" id="step-thumbnail-icon"></i>
                                                     <span class="flex-grow-1">Génération miniature</span>
-                                                    <span class="badge bg-secondary" id="step-thumbnail-status">En attente</span>
+                                                    <span class="badge text-bg-secondary" id="step-thumbnail-status">En attente</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -824,11 +824,11 @@ if (!function_exists('format_tags')) {
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
 <!-- Scripts -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<link rel="stylesheet" href="<?= base_url() ?>assets/backend/plugins/toastr/toastr.min.css">
+<script src="<?= base_url() ?>assets/backend/plugins/toastr/toastr.min.js"></script>
+<link rel="stylesheet" href="<?= base_url() ?>assets/backend/plugins/datatable/css/dataTables.bootstrap5.min.css">
+<script src="<?= base_url() ?>assets/backend/plugins/datatable/js/jquery.dataTables.min.js"></script>
+<script src="<?= base_url() ?>assets/backend/plugins/datatable/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
 // ==========================================
@@ -1426,34 +1426,3 @@ $(document).ready(function() {
     });
 });
 </script>
-
-<style>
-.bg-purple { background-color: #6f42c1; }
-.text-purple { color: #6f42c1; }
-.upload-zone {
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-.upload-zone.border-danger {
-    border: 2px dashed #dc3545 !important;
-    background-color: #f8f9fa;
-}
-.upload-thumbnail-zone {
-    transition: all 0.3s ease;
-}
-.upload-thumbnail-zone:hover {
-    background: #e9ecef !important;
-    border-color: #dc3545 !important;
-}
-.cursor-pointer {
-    cursor: pointer;
-}
-.w-fit-content {
-    width: fit-content;
-}
-</style>

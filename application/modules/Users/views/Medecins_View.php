@@ -76,7 +76,7 @@
                             '<span class="badge bg-success"><i class="bx bx-shield"></i></span>' : 
                             '<span class="badge bg-warning text-dark"><i class="bx bx-time"></i></span>';
                         
-                        $photo_path = !empty($value['photo']) ? 'attachments/Users/'.$value['photo'] : 'assets/images/default-avatar.png';
+                        $photo_path = !empty($value['photo']) ? 'attachments/Users/'.$value['photo'] : 'assets/frontend/img/default-avatar.jpg';
                         
                         $note = $value['note_moyenne'] ?? 0;
                         $nb_avis = $value['nombre_avis'] ?? 0;
@@ -99,7 +99,7 @@
                                 <img src="<?= base_url($photo_path) ?>" 
                                      class="rounded-circle border"
                                      style="width:45px; height:45px; object-fit:cover;"
-                                     onerror="this.src='<?= base_url('assets/images/default-avatar.png') ?>'"
+                                     onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
                                      alt="Photo">
                             </td>
 
@@ -155,6 +155,21 @@
                                 </div>
                             </td>
                         </tr>
+                    <?php endforeach; else: ?>
+                        <tr>
+                            <td colspan="10" class="text-center py-5">
+                                <i class="bx bx-plus-medical text-muted" style="font-size: 4rem;"></i>
+                                <p class="mt-3 text-muted">Aucun médecin trouvé</p>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+
+                <?php if (!empty($medecins)): foreach ($medecins as $value):
+                    $est_dispo = isset($value['est_disponible']) && $value['est_disponible'] == 1;
+                    $est_verifie = isset($value['est_verifie']) && $value['est_verifie'] == 1;
+                ?>
 
                         <!-- MODAL STATUS -->
                         <div class="modal fade" id="status_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
@@ -242,21 +257,12 @@
                             </div>
                         </div>
 
-                    <?php endforeach; else: ?>
-                        <tr>
-                            <td colspan="10" class="text-center py-5">
-                                <i class="bx bx-plus-medical text-muted" style="font-size: 4rem;"></i>
-                                <p class="mt-3 text-muted">Aucun médecin trouvé</p>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
+                    <?php endforeach; endif; ?>
+
             </div>
         </div>
     </div>
 
-</div>
 </div>
 
 <!-- ==================== MODAL UPDATE UNIQUE (chargée dynamiquement) ==================== -->
@@ -455,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (document.getElementById('medecinsTable')) {
             $('#medecinsTable').DataTable({
                 language: { 
-                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json',
+                    url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>',
                     emptyTable: "Aucun médecin disponible",
                     zeroRecords: "Aucun médecin trouvé"
                 },

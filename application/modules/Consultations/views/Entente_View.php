@@ -218,6 +218,61 @@
                             </td>
                         </tr>
 
+                    <?php endforeach; else: ?>
+                        <tr>
+                            <td colspan="10" class="text-center py-5">
+                                <i class="bx bx-health text-muted" style="font-size: 4rem;"></i>
+                                <p class="mt-3 text-muted">Aucune consultation trouvée</p>
+                                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#create_consultation">
+                                    <i class="bx bx-plus"></i> Créer la première consultation
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+
+                <?php if (!empty($consultations)): foreach ($consultations as $value):
+                        // Badges type
+                        $type_badges = [
+                            'video' => '<span class="badge bg-info"><i class="bx bx-video"></i> Vidéo</span>',
+                            'presentiel' => '<span class="badge bg-primary"><i class="bx bx-building"></i> Présentiel</span>',
+                            'telephone' => '<span class="badge bg-secondary"><i class="bx bx-phone"></i> Téléphone</span>'
+                        ];
+                        $type_badge = $type_badges[$value['type']] ?? '<span class="badge bg-light text-dark">Inconnu</span>';
+                        
+                        // Badges statut
+                        $statut_badges = [
+                            'en_attente' => '<span class="badge bg-warning text-dark"><i class="bx bx-time"></i> En attente</span>',
+                            'confirmee' => '<span class="badge bg-info"><i class="bx bx-check"></i> Confirmée</span>',
+                            'en_cours' => '<span class="badge bg-primary"><i class="bx bx-play"></i> En cours</span>',
+                            'terminee' => '<span class="badge bg-success"><i class="bx bx-check-double"></i> Terminée</span>',
+                            'annulee' => '<span class="badge bg-danger"><i class="bx bx-x"></i> Annulée</span>',
+                            'refusee' => '<span class="badge bg-dark"><i class="bx bx-block"></i> Refusée</span>'
+                        ];
+                        $statut_badge = $statut_badges[$value['statut']] ?? '<span class="badge bg-light text-dark">Inconnu</span>';
+                        
+                        // Badge paiement
+                        $paiement_badges = [
+                            'en_attente' => '<span class="badge bg-warning text-dark">En attente</span>',
+                            'paye' => '<span class="badge bg-success">Payé</span>',
+                            'echoue' => '<span class="badge bg-danger">Échoué</span>',
+                            'rembourse' => '<span class="badge bg-info">Remboursé</span>'
+                        ];
+                        $paiement_badge = $paiement_badges[$value['paiement_statut']] ?? '<span class="badge bg-light text-dark">-</span>';
+                        
+                        // Patient info
+                        $patient_nom = htmlspecialchars(($value['patient_prenom'] ?? '') . ' ' . ($value['patient_nom'] ?? 'Inconnu'));
+                        $patient_contact = !empty($value['patient_telephone']) ? $value['patient_telephone'] : ($value['patient_email'] ?? '-');
+                        
+                        // Médecin info
+                        $medecin_nom = !empty($value['medecin_nom']) ? 
+                            htmlspecialchars(($value['medecin_prenom'] ?? '') . ' ' . $value['medecin_nom']) : 
+                            '<span class="text-muted">Non assigné</span>';
+                        $medecin_spec = !empty($value['medecin_specialite']) ? 
+                            '<small class="text-muted">' . htmlspecialchars($value['medecin_specialite']) . '</small>' : '';
+                    ?>
+
                         <!-- ==================== MODAL VIEW DÉTAILS (avec fichiers) ==================== -->
                         <div class="modal fade" id="view_<?= $value['id'] ?>" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -619,18 +674,18 @@
                         </div>
 
                        <!-- MODAL STATUS PURE JAVASCRIPT -->
-                        <div id="statusModal_<?= $value['id'] ?>" class="custom-modal" style="display: none;">
-                            <div class="modal-overlay" onclick="closeStatusModal_<?= $value['id'] ?>()"></div>
-                            <div class="modal-content-js">
-                                <div class="modal-header-js">
+                        <div id="statusModal_<?= $value['id'] ?>" class="modal fade" style="display: none;">
+                            <div class="modal-backdrop" onclick="closeStatusModal_<?= $value['id'] ?>()"></div>
+                            <div class="modal-dialog">
+                                <div class="modal-header text-white" style="background:linear-gradient(135deg,#0dcaf0 0%,#0aa2c0 100%);">
                                     <h5><i class="bx bx-transfer me-2"></i>Changer le statut</h5>
-                                    <button type="button" class="btn-close-js" onclick="closeStatusModal_<?= $value['id'] ?>()">&times;</button>
+                                    <button type="button" class="btn-close btn-close-white" onclick="closeStatusModal_<?= $value['id'] ?>()">&times;</button>
                                 </div>
                                 
                                 <form action="<?= base_url('Consultations/Entente/ChangeStatus') ?>" method="POST" id="statusForm_<?= $value['id'] ?>">
                                     <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                     
-                                    <div class="modal-body-js">
+                                    <div class="modal-body">
                                         <p>Consultation: <strong><?= htmlspecialchars($value['numero_consultation']) ?></strong></p>
                                         
                                         <div class="mb-3">
@@ -662,7 +717,7 @@
                                             <input type="datetime-local" 
                                                    class="form-control border-success" 
                                                    name="date_fin" 
-                                                   id="dateInput_<?= $value['id'] ?>"
+                                                   id="dateInputFin_<?= $value['id'] ?>"
                                                    value="<?= !empty($value['date_fin']) ? date('Y-m-d\TH:i', strtotime($value['date_fin'])) : '' ?>">
                                             <small class="text-muted"> Date et heure de la fin téléconsultation </small>
                                         </div>
@@ -681,7 +736,7 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="modal-footer-js">
+                                    <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" onclick="closeStatusModal_<?= $value['id'] ?>()">Annuler</button>
                                         <button type="submit" class="btn btn-info text-white">
                                             <i class="bx bx-save me-2"></i>Mettre à jour
@@ -720,6 +775,7 @@
                                 document.getElementById('dateField_<?= $value['id'] ?>').style.display = 'none';
                                 document.getElementById('motifField_<?= $value['id'] ?>').style.display = 'none';
                                 document.getElementById('dateInput_<?= $value['id'] ?>').required = false;
+                                document.getElementById('dateInputFin_<?= $value['id'] ?>').required = false;
                                 document.getElementById('motifInput_<?= $value['id'] ?>').required = false;
                             }
 
@@ -732,18 +788,24 @@
                                 if (status === 'confirmee') {
                                     var dateField = document.getElementById('dateField_<?= $value['id'] ?>');
                                     var dateInput = document.getElementById('dateInput_<?= $value['id'] ?>');
+                                    var dateInputFin = document.getElementById('dateInputFin_<?= $value['id'] ?>');
                                     
                                     dateField.style.display = 'block';
                                     dateInput.required = true;
+                                    dateInputFin.required = true;
                                     
                                     // Date minimum = maintenant
                                     var now = new Date();
                                     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                                     dateInput.min = now.toISOString().slice(0, 16);
+                                    dateInputFin.min = now.toISOString().slice(0, 16);
                                     
                                     // Valeur par défaut = maintenant si vide
                                     if (!dateInput.value) {
                                         dateInput.value = now.toISOString().slice(0, 16);
+                                    }
+                                    if (!dateInputFin.value) {
+                                        dateInputFin.value = now.toISOString().slice(0, 16);
                                     }
                                 } 
                                 else if (status === 'refusee') {
@@ -767,23 +829,13 @@
                         })();
                         </script>
 
-                    <?php endforeach; else: ?>
-                        <tr>
-                            <td colspan="10" class="text-center py-5">
-                                <i class="bx bx-health text-muted" style="font-size: 4rem;"></i>
-                                <p class="mt-3 text-muted">Aucune consultation trouvée</p>
-                                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#create_consultation">
-                                    <i class="bx bx-plus"></i> Créer la première consultation
-                                </button>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
+                    <?php endforeach; endif; ?>
+
             </div>
         </div>
     </div>
 
+</div>
 </div>
 
 <!-- ==================== MODAL CREATE CONSULTATION ==================== -->
@@ -921,129 +973,11 @@
     </div>
 </div>
 
-<!-- CSS POUR MODALS JAVASCRIPT -->
-<style>
-.custom-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    font-family: inherit;
-}
-
-.modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
-}
-
-.modal-content-js {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    animation: modalSlideIn 0.3s ease;
-    overflow: hidden;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -55%);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-}
-
-.modal-header-js {
-    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
-    color: white;
-    padding: 16px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-header-js h5 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.btn-close-js {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.btn-close-js:hover {
-    background: rgba(255,255,255,0.3);
-    transform: rotate(90deg);
-}
-
-.modal-body-js {
-    padding: 24px;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.modal-footer-js {
-    padding: 16px 24px;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: #f8f9fa;
-}
-
-.status-field {
-    animation: fieldFadeIn 0.3s ease;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-top: 16px;
-}
-
-@keyframes fieldFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-</style>
-
 <!-- SCRIPT GLOBAL DataTable -->
 <script>
 $(document).ready(function() {
     $('#consultationsTable').DataTable({
-        language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json' },
+        language: { url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>' },
         order: [[0, 'desc']],
         pageLength: 25,
         responsive: true,

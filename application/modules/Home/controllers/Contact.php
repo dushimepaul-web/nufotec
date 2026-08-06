@@ -177,11 +177,6 @@ class Contact extends Public_Controller
             log_message('error', 'Contact: Échec envoi email pour le message ID: ' . $insert_id);
         }
 
-        // ✅ ENVOI WHATSAPP SI NUMÉRO FOURNI (optionnel)
-        if (!empty($phone)) {
-            $this->_send_whatsapp_notification($contact_data);
-        }
-
         $this->db->trans_complete();
 
         if ($this->db->trans_status() === FALSE) {
@@ -283,31 +278,6 @@ class Contact extends Public_Controller
     }
 
     /**
-     * ✅ Envoyer une notification WhatsApp (optionnel)
-     */
-    private function _send_whatsapp_notification($data)
-    {
-        try {
-            // Numéro formaté sans espace
-            $phone = preg_replace('/[^0-9]/', '', $data['PhoneNumber']);
-            
-            if (strlen($phone) >= 10) {
-                $message = "Bonjour {$data['FullName']},\n\n";
-                $message .= "Nous avons bien reçu votre message concernant '{$data['Subject']}'. ";
-                $message .= "Nous vous répondrons dans les plus brefs délais.\n\n";
-                $message .= "Merci de nous avoir contactés.\n";
-                $message .= "L'équipe Nufotec";
-                
-                return $this->sendgrid_lib->send_whatsapp($phone, $message);
-            }
-            return false;
-        } catch (Exception $e) {
-            log_message('error', 'Contact: Erreur WhatsApp - ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
      * Rafraîchir le token CSRF (endpoint optionnel)
      */
     public function refreshCsrf()
@@ -322,14 +292,14 @@ class Contact extends Public_Controller
 
     private function get_hero_section()
     {
-        $page = $this->Model->readOne('pages', ['slug' => 'blog', 'est_publiee' => 1]);
+        $page = static_pages_one(['slug' => 'contact', 'est_publiee' => 1]);
 
         if (empty($page)) {
-            log_message('debug', 'Page product-categories non trouvée');
+            log_message('debug', 'Page contact non trouvée');
             return null;
         }
 
-        $hero = $this->Model->readOne('sections_contenu', [
+        $hero = static_sections_one([
             'id_page'      => $page['id_page'],
             'type_section' => 'hero',
             'est_active'   => 1

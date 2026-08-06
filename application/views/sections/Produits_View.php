@@ -464,8 +464,8 @@
         <div class="row">
             <div class="col-12 text-center">
                 <i class="fas fa-store fa-2x fa-md-3x mb-2 mb-md-3"></i>
-                <h1><?= t('catalog_title') ?></h1>
-                <p><?= t('catalog_subtitle') ?></p>
+                <h1>Notre Catalogue</h1>
+                <p>Découvrez notre sélection de produits de qualité</p>
             </div>
         </div>
     </div>
@@ -478,14 +478,14 @@
             <div class="col-12">
                 <div class="search-input-group">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" class="form-control" placeholder="<?= t('search_placeholder') ?>" autocomplete="off">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Rechercher un produit..." autocomplete="off">
                 </div>
             </div>
             <div class="col-12 col-md-7">
                 <div class="category-filter-wrapper">
                     <div class="category-filter" id="categoryFilter">
                         <button class="category-btn active" data-category="all">
-                            <i class="fas fa-th-large"></i> <?= t('all') ?>
+                            <i class="fas fa-th-large"></i> Tous
                         </button>
                         <?php foreach ($categories as $cat): ?>
                             <button class="category-btn" data-category="<?= $cat['id'] ?>">
@@ -497,7 +497,7 @@
             </div>
             <div class="col-12 col-md-5">
                 <div class="per-page-selector">
-                    <label><i class="fas fa-eye"></i> <?= t('show') ?> :</label>
+                    <label><i class="fas fa-eye"></i> Afficher :</label>
                     <select id="perPageSelect">
                         <option value="12">12</option>
                         <option value="24">24</option>
@@ -515,13 +515,13 @@
     <!-- Loading Spinner -->
     <div class="loading-spinner" id="loadingSpinner">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden"><?= t('loading') ?></span>
+            <span class="visually-hidden">Chargement...</span>
         </div>
     </div>
     
     <!-- Pagination -->
     <div class="pagination-container" id="paginationContainer" style="display: none;">
-        <nav aria-label="<?= t('page_navigation') ?>">
+        <nav aria-label="Navigation des pages">
             <ul class="pagination" id="pagination"></ul>
         </nav>
         <div class="results-info" id="resultsInfo"></div>

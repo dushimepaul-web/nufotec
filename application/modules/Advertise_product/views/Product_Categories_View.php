@@ -190,7 +190,7 @@
     </div>
 
 </div>
-</div>
+
 
 <!-- MODAL CREATE CATEGORY -->
 <div class="modal fade" id="create_category" data-bs-backdrop="static" tabindex="-1">
@@ -227,7 +227,7 @@ $(document).ready(function() {
     // Initialisation DataTable
     $('#categoriesTable').DataTable({
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+            url: '<?= base_url("assets/backend/plugins/datatable/js/fr-FR.json") ?>'
         },
         order: [[0, 'asc']],
         pageLength: 25,
