@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Home extends Public_Controller
@@ -12,7 +12,7 @@ class Home extends Public_Controller
     }
 
     /**
-     * Page d'accueil dynamique (français uniquement)
+     * Page d'accueil dynamique (franÃ§ais uniquement)
      */
     public function index()
     {
@@ -26,10 +26,6 @@ class Home extends Public_Controller
         $data['page'] = $page;
         $data['pays'] = $this->Model->read('pays', [], 'pays', 'ASC');
 
-        // Données spécifiques à la home
-        $data['slides']   = $this->Model->read('hero_slides', ['is_active' => 1], 'slide_order', 'ASC');
-        $data['appels_action'] = $this->Model->get_appels_action_translated('fr');
-
         // Produits (table advertise_product)
         $data['produits'] = $this->db->select("id, main_image, slug, price, created_at, title, description, in_vedette")
             ->where('is_active', 1)
@@ -40,7 +36,14 @@ class Home extends Public_Controller
             ->get('advertise_product')
             ->result_array();
 
-        // Données communes (sections, enfants, etc.)
+        // Chiffres clés (table chiffres_cles)
+        $data['chiffres_cles'] = $this->db->select('id_chiffre, etiquette, valeur, unite, description, icone, ordre, annee_vision')
+            ->order_by('ordre', 'ASC')
+            ->order_by('id_chiffre', 'ASC')
+            ->get('chiffres_cles')
+            ->result_array();
+
+        // DonnÃ©es communes (sections, enfants, etc.)
         $data = array_merge($data, $this->_get_page_data($page['id_page']));
 
         // SEO
@@ -52,7 +55,7 @@ class Home extends Public_Controller
     }
 
     /**
-     * Afficher une page dynamique par slug (français uniquement)
+     * Afficher une page dynamique par slug (franÃ§ais uniquement)
      */
     public function view($slug = null)
     {
@@ -65,7 +68,7 @@ class Home extends Public_Controller
 
         $data['page'] = $page;
 
-        // Données communes
+        // DonnÃ©es communes
         $data = array_merge($data, $this->_get_page_data($page['id_page']));
         $data = array_merge($data, $this->_prepare_seo_data($page));
 
@@ -74,13 +77,13 @@ class Home extends Public_Controller
     }
 
     /**
-     * Récupère toutes les données communes à une page (sections, enfants, breadcrumb)
+     * RÃ©cupÃ¨re toutes les donnÃ©es communes Ã  une page (sections, enfants, breadcrumb)
      */
     private function _get_page_data($page_id)
     {
         $data = [];
 
-        // ----- 1. Sections de contenu (français uniquement) -----
+        // ----- 1. Sections de contenu (franÃ§ais uniquement) -----
         $sections = static_sections_where(['id_page' => $page_id, 'deleted_at' => null], 'ordre', 'ASC');
         $data['sections'] = $sections;
 
@@ -88,7 +91,7 @@ class Home extends Public_Controller
         $children = static_pages_where(['menu_parent_id' => $page_id, 'est_publiee' => 1], 'menu_ordre', 'ASC');
         $data['children'] = $children;
 
-        // ----- 3. Pages sœurs (même parent) -----
+        // ----- 3. Pages sÅ“urs (mÃªme parent) -----
         $parent = static_pages_one(['id_page' => $page_id]);
         $parent_id = $parent['menu_parent_id'] ?? null;
         if ($parent_id) {
@@ -103,8 +106,8 @@ class Home extends Public_Controller
     }
 
     /**
-     * Détermine la vue à afficher pour une page dynamique
-     * (template générique rendant les sections statiques de la page)
+     * DÃ©termine la vue Ã  afficher pour une page dynamique
+     * (template gÃ©nÃ©rique rendant les sections statiques de la page)
      */
     private function _determine_view($page)
     {
@@ -139,12 +142,12 @@ class Home extends Public_Controller
     }
 
     /**
-     * Prépare les métadonnées SEO
+     * PrÃ©pare les mÃ©tadonnÃ©es SEO
      */
     private function _prepare_seo_data($page)
     {
         $site_name = $this->Model->get_setting('site_name', 'AGF Phytomed');
-        $site_description = $this->Model->get_setting('site_description', 'Pionniers de la phytothérapie africaine');
+        $site_description = $this->Model->get_setting('site_description', 'Pionniers de la phytothÃ©rapie africaine');
 
         $meta_title = (!empty($page['meta_title']) ? $page['meta_title'] : $page['titre_page']) . ' - ' . $site_name;
         $meta_description = !empty($page['meta_description']) ? $page['meta_description'] : $site_description;
@@ -163,40 +166,70 @@ class Home extends Public_Controller
 
 
     public function Abonner() {
-    // Charger la librairie email personnalisée
+    // Charger la librairie email personnalisÃ©e
     $this->load->library('Cpanel_email_lib');
     
-    // Vérification du token CSRF pour sécurité
-    if ($this->input->post('csrf_test_name') !== $this->security->get_csrf_hash()) {
-        $this->session->set_flashdata('error', 'Token de sécurité invalide');
-        redirect($_SERVER['HTTP_REFERER']);
-    }
+    $is_ajax = $this->input->is_ajax_request();
+    
+    // RÃ©ponse JSON si la requÃªte est AJAX
+    $respond = function ($type, $message) use ($is_ajax) {
+        if ($type !== 'error' && $type !== 'warning' && $type !== 'success') {
+            $type = 'success';
+        }
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $type === 'success', 'status' => $type, 'message' => $message]);
+            exit;
+        }
+        $this->session->set_flashdata($type, $message);
+        redirect(!empty($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : base_url());
+    };
+    
+// La protection CSRF globale de CodeIgniter est deja active (verifiee avant l'appel du controleur)
 
     $sub_type = $this->input->post('sub_type', TRUE);
-    
+    $email = $this->input->post('email', TRUE);
+    $telephone = $this->input->post('telephone', TRUE);
+
+    // DÃ©tection automatique du type si sub_type absent (ancien formulaire Home_View)
+    if (empty($sub_type)) {
+        if (!empty($email)) {
+            $sub_type = 'email';
+        } elseif (!empty($telephone)) {
+            $sub_type = 'phone';
+        } else {
+            $respond('error', 'Veuillez saisir votre email ou votre numÃ©ro de tÃ©lÃ©phone');
+            return;
+        }
+    }
+
     // Validation en fonction du type d'abonnement
     if ($sub_type === 'email') {
         $email = $this->input->post('email', TRUE);
         
         // Validation email
         if (empty($email) || !$this->cpanel_email_lib->validate_email($email)) {
-            $this->session->set_flashdata('error', 'Adresse email invalide');
-            redirect($_SERVER['HTTP_REFERER']);
+            $respond('error', 'Adresse email invalide');
+            return;
         }
         
-        // Vérifier si l'email existe déjà
+        // VÃ©rifier si l'email existe dÃ©jÃ 
         $this->db->where('email', $email);
         $exists = $this->db->get('newsletter')->row();
         
         if ($exists) {
-            $this->session->set_flashdata('warning', 'Cet email est déjà inscrit à la newsletter');
-            redirect($_SERVER['HTTP_REFERER']);
+            $respond('warning', 'Cet email est dÃ©jÃ  inscrit Ã  la newsletter');
+            return;
         }
+        
+        // TÃ©lÃ©phone optionnel (prÃ©sent dans le formulaire Home)
+        $telephone = $this->input->post('telephone', TRUE);
+        $telephone_clean = !empty($telephone) ? preg_replace('/[^0-9]/', '', $telephone) : null;
         
         // Insertion par email
         $data = [
             'email' => $email,
-            'telephone' => null,
+            'telephone' => !empty($telephone_clean) ? $telephone_clean : null,
             'date_inscription' => date('Y-m-d H:i:s')
         ];
         
@@ -205,34 +238,34 @@ class Home extends Public_Controller
         $indicatif = $this->input->post('indicatif_complet', TRUE);
         $telephone = $this->input->post('telephone', TRUE);
         
-        // Validation téléphone
-        if (empty($pays_code) || empty($indicatif) || empty($telephone)) {
-            $this->session->set_flashdata('error', 'Veuillez sélectionner un pays et saisir un numéro valide');
-            redirect($_SERVER['HTTP_REFERER']);
+        // Validation tÃ©lÃ©phone (l'indicatif est optionnel)
+        if (empty($telephone)) {
+            $respond('error', 'Veuillez saisir un numÃ©ro de tÃ©lÃ©phone valide');
+            return;
         }
         
-        // Nettoyage du numéro
+        // Nettoyage du numÃ©ro
         $telephone_clean = preg_replace('/[^0-9]/', '', $telephone);
         
-        // Vérifier longueur minimale
+        // VÃ©rifier longueur minimale
         if (strlen($telephone_clean) < 8) {
-            $this->session->set_flashdata('error', 'Numéro de téléphone trop court');
-            redirect($_SERVER['HTTP_REFERER']);
+            $respond('error', 'NumÃ©ro de tÃ©lÃ©phone trop court');
+            return;
         }
         
-        // Insertion par téléphone
+        // Insertion par tÃ©lÃ©phone
         $data = [
             'email' => null,
-            'telephone' => '+' . $indicatif . ' ' . $telephone_clean,
+            'telephone' => (!empty($indicatif) ? '+' . $indicatif . ' ' : '') . $telephone_clean,
             'date_inscription' => date('Y-m-d H:i:s')
         ];
         
     } else {
-        $this->session->set_flashdata('error', 'Type d\'abonnement invalide');
-        redirect($_SERVER['HTTP_REFERER']);
+        $respond('error', 'Type d\'abonnement invalide');
+        return;
     }
     
-    // Insertion en base de données
+    // Insertion en base de donnÃ©es
     try {
         // La table newsletter doit accepter NULL pour email ou telephone
         $inserted = $this->db->insert('newsletter', $data);
@@ -240,45 +273,46 @@ class Home extends Public_Controller
         if ($inserted) {
             // Envoyer email de confirmation (si email)
             if ($sub_type === 'email') {
-                // Récupérer les informations du site pour personnaliser l'email
+                // RÃ©cupÃ©rer les informations du site pour personnaliser l'email
                 $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
                 
-                // Générer un code de confirmation (optionnel)
+                // GÃ©nÃ©rer un code de confirmation (optionnel)
                 $confirmation_code = random_string('numeric', 6);
                 
-                // Envoyer l'email de confirmation avec la librairie personnalisée
+                // Envoyer l'email de confirmation avec la librairie personnalisÃ©e
                 $email_result = $this->sendNewsletterConfirmation($data['email'], $confirmation_code);
                 
                 if ($email_result['success']) {
-                    log_message('info', 'Email de confirmation newsletter envoyé à: ' . $data['email']);
+                    log_message('info', 'Email de confirmation newsletter envoyÃ© Ã : ' . $data['email']);
                 } else {
                     log_message('error', 'Erreur envoi email newsletter: ' . $email_result['message']);
                 }
             }
             
-            // Envoyer SMS de confirmation (si téléphone)
+            // Envoyer SMS de confirmation (si tÃ©lÃ©phone)
             if ($sub_type === 'phone') {
                 $this->sendConfirmationSMS($data['telephone']);
             }
             
-            $this->session->set_flashdata('success', 'Félicitations ! Vous êtes bien inscrit à notre newsletter');
+            $respond('success', 'FÃ©licitations ! Vous Ãªtes bien inscrit Ã  notre newsletter');
+            return;
         } else {
-            $this->session->set_flashdata('error', 'Erreur lors de l\'inscription. Veuillez réessayer');
+            $respond('error', 'Erreur lors de l\'inscription. Veuillez rÃ©essayer');
+            return;
         }
         
     } catch (Exception $e) {
         log_message('error', 'Newsletter subscription error: ' . $e->getMessage());
-        $this->session->set_flashdata('error', 'Une erreur technique est survenue');
+        $respond('error', 'Une erreur technique est survenue');
+        return;
     }
-    
-    redirect($_SERVER['HTTP_REFERER']);
 }
 
 /**
  * Envoi d'email de confirmation pour la newsletter
  */
 private function sendNewsletterConfirmation($email, $confirmation_code = null) {
-    // Récupérer les informations du site
+    // RÃ©cupÃ©rer les informations du site
     $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
     $site_logo = $this->Model->get_setting('site_logo');
     $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
@@ -378,7 +412,7 @@ private function sendNewsletterConfirmation($email, $confirmation_code = null) {
                 align-items: center;
             }
             .benefits li:before {
-                content: "✓";
+                content: "âœ“";
                 color: #00b894;
                 font-weight: bold;
                 margin-right: 10px;
@@ -423,35 +457,35 @@ private function sendNewsletterConfirmation($email, $confirmation_code = null) {
             </div>
             
             <div class="content">
-                <div class="greeting">Bienvenue dans notre communauté !</div>
+                <div class="greeting">Bienvenue dans notre communautÃ© !</div>
                 
                 <div class="message-text">
-                    Merci de vous être inscrit à notre newsletter. Vous recevrez désormais nos actualités, 
-                    promotions exclusives et dernières nouveautés directement dans votre boîte mail.
+                    Merci de vous Ãªtre inscrit Ã  notre newsletter. Vous recevrez dÃ©sormais nos actualitÃ©s, 
+                    promotions exclusives et derniÃ¨res nouveautÃ©s directement dans votre boÃ®te mail.
                 </div>
                 
                 <div class="success-icon">
-                    <i>✅</i>
+                    <i>âœ…</i>
                 </div>
                 
                 <div class="benefits">
                     <h3>Ce que vous recevrez :</h3>
                     <ul>
-                        <li>Nos actualités et événements à venir</li>
+                        <li>Nos actualitÃ©s et Ã©vÃ©nements Ã  venir</li>
                         <li>Offres promotionnelles exclusives</li>
-                        <li>Nouveautés et innovations technologiques</li>
-                        <li>Conseils et astuces pour réussir</li>
+                        <li>NouveautÃ©s et innovations technologiques</li>
+                        <li>Conseils et astuces pour rÃ©ussir</li>
                     </ul>
                 </div>
                 
                 <div class="message-text" style="font-size: 13px; text-align: center; color: #8a9aaa;">
-                    Vous pouvez vous désinscrire à tout moment en cliquant sur le lien de désabonnement 
-                    présent dans chaque newsletter.
+                    Vous pouvez vous dÃ©sinscrire Ã  tout moment en cliquant sur le lien de dÃ©sabonnement 
+                    prÃ©sent dans chaque newsletter.
                 </div>
             </div>
             
             <div class="footer">
-                <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>';
+                <div class="footer-text">Â© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits rÃ©servÃ©s</div>';
     
     if (!empty($logo_url)) {
         $message .= '
@@ -464,22 +498,22 @@ private function sendNewsletterConfirmation($email, $confirmation_code = null) {
     </body>
     </html>';
     
-    // Envoyer l'email avec la librairie personnalisée
+    // Envoyer l'email avec la librairie personnalisÃ©e
     return $this->cpanel_email_lib->send_email($email, $subject, $message);
 }
 
 /**
- * Envoi de SMS de confirmation (à implémenter avec une API SMS)
+ * Envoi de SMS de confirmation (Ã  implÃ©menter avec une API SMS)
  */
 private function sendConfirmationSMS($phoneNumber) {
-    // Intégration avec une API SMS (Twilio, Vonage, etc.)
+    // IntÃ©gration avec une API SMS (Twilio, Vonage, etc.)
     // Exemple avec CURL vers un service SMS
     /*
     $ch = curl_init('https://api.sms-service.com/send');
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
         'to' => $phoneNumber,
-        'message' => 'Merci pour votre inscription à la newsletter NUFOTEC !'
+        'message' => 'Merci pour votre inscription Ã  la newsletter NUFOTEC !'
     ]));
     curl_exec($ch);
     curl_close($ch);
@@ -490,7 +524,7 @@ private function sendConfirmationSMS($phoneNumber) {
 }
 
 /**
- * Méthode pour désabonner un utilisateur
+ * MÃ©thode pour dÃ©sabonner un utilisateur
  */
 public function Desabonner($email = null) {
     if ($email) {
@@ -498,9 +532,9 @@ public function Desabonner($email = null) {
         $this->db->delete('newsletter');
         
         if ($this->db->affected_rows() > 0) {
-            $this->session->set_flashdata('success', 'Vous avez été désinscrit de la newsletter');
+            $this->session->set_flashdata('success', 'Vous avez Ã©tÃ© dÃ©sinscrit de la newsletter');
         } else {
-            $this->session->set_flashdata('error', 'Email non trouvé dans notre liste');
+            $this->session->set_flashdata('error', 'Email non trouvÃ© dans notre liste');
         }
     }
     
@@ -508,7 +542,7 @@ public function Desabonner($email = null) {
 }
 
 /**
- * Méthode pour envoyer une newsletter à tous les abonnés
+ * MÃ©thode pour envoyer une newsletter Ã  tous les abonnÃ©s
  */
 public function sendMassNewsletter($subject, $message) {
     $this->db->select('email');
@@ -528,7 +562,7 @@ public function sendMassNewsletter($subject, $message) {
             log_message('error', 'Failed to send newsletter to: ' . $subscriber->email);
         }
         
-        // Petite pause pour éviter la surcharge du serveur
+        // Petite pause pour Ã©viter la surcharge du serveur
         usleep(100000); // 0.1 seconde
     }
     
@@ -539,7 +573,7 @@ public function sendMassNewsletter($subject, $message) {
     ];
 }
     /**
-     * Changer de langue - redirige simplement vers l'accueil (plus utilisé)
+     * Changer de langue - redirige simplement vers l'accueil (plus utilisÃ©)
      */
     public function switch_lang($lang = 'fr')
     {

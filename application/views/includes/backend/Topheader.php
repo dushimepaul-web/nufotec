@@ -100,18 +100,6 @@ $recent_messages = [];
 $message_non_lus = 0;
 
 if (!empty($logged_in) && !empty($idUser) && isset($this->Model)) {
-    // Compter les notifications non lues
-    $notif_count = $this->Model->count('notifications', ['user_id' => $idUser, 'is_read' => 0]);
-    
-    // Récupérer les notifications récentes
-    $recent_notifications = $this->db->where('user_id', $idUser)
-                                    ->or_where('user_id IS NULL', NULL, FALSE)
-                                    ->where('is_read', 0)
-                                    ->order_by('created_at', 'DESC')
-                                    ->limit(5)
-                                    ->get('notifications')
-                                    ->result_array();
-    
     // Compter les messages non lus
     $msg_count = $this->Model->count('contact_us', ['is_readed' => 0]);
     $message_non_lus = $msg_count;

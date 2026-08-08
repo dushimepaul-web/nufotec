@@ -57,6 +57,7 @@
                         </tr>
                     </thead>
                     <tbody>
+                    <?php $modals_html = ''; ?>
                     <?php if (!empty($product_categories)): $i = 1; foreach ($product_categories as $value): ?>
                          <tr>
                             <td><?= $i++ ?></td>
@@ -89,6 +90,8 @@
                                 </div>
                             </td>
                         </tr>
+
+                        <?php ob_start(); ?>
 
                         <!-- MODAL VIEW DETAILS -->
                         <div class="modal fade" id="view_<?= $value['id'] ?>" tabindex="-1">
@@ -125,7 +128,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
 
-                                    <form action="<?= base_url('product_categories/update') ?>" method="POST">
+                                    <form action="<?= base_url('product-categories/update') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         
                                         <div class="modal-body p-4">
@@ -162,7 +165,7 @@
                                         <p class="text-muted">Vous êtes sur le point de supprimer la catégorie <strong><?= htmlspecialchars($value['name']) ?></strong>.</p>
                                         <p class="text-danger small">Cette action est irréversible.</p>
                                     </div>
-                                    <form action="<?= base_url('product_categories/delete') ?>" method="POST">
+                                    <form action="<?= base_url('product-categories/delete') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         <div class="modal-footer bg-light justify-content-center">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -175,6 +178,8 @@
                             </div>
                         </div>
 
+                            <?php $modals_html .= ob_get_clean(); ?>
+
                     <?php endforeach; else: ?>
                         <tr>
                             <td colspan="3" class="text-center py-5">
@@ -185,6 +190,7 @@
                     <?php endif; ?>
                     </tbody>
                 </table>
+                <?= $modals_html ?>
             </div>
         </div>
     </div>
@@ -201,7 +207,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <form action="<?= base_url('product_categories/create') ?>" method="POST">
+            <form action="<?= base_url('product-categories/create') ?>" method="POST">
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-12">

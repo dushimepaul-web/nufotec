@@ -40,7 +40,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                 <li class="nav-header">Contenu du Site</li>
                 <?php
                 $content_count = static_pages_count() + count($this->Model->read('temoignages'));
-                $content_active = in_array($this->uri->segment(1), ['Actualites','Evenements','Partenaires','Temoignages','Chiffres_cles','Galerie_medias','Ressources_telechargeables','Faq','Categories_produits']);
+                $content_active = in_array($this->uri->segment(1), ['Actualites','Partenaires','Temoignages','Chiffres_cles','Galerie_medias','Faq','Categories_produits']);
                 ?>
                 <li class="nav-item <?= $content_active ? 'menu-open' : '' ?>">
                     <a href="#" class="nav-link <?= $content_active ? 'active' : '' ?>">
@@ -53,7 +53,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item"><a href="<?= base_url('Actualites') ?>" class="nav-link <?= $this->uri->segment(1) == 'Actualites' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Actualités</p></a></li>
-                        <li class="nav-item"><a href="<?= base_url('Evenements') ?>" class="nav-link <?= $this->uri->segment(1) == 'Evenements' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Événements</p></a></li>
                         
                         <li class="nav-item"><a href="<?= base_url('Partenaires') ?>" class="nav-link <?= $this->uri->segment(1) == 'Partenaires' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Partenaires</p></a></li>
                         <li class="nav-item"><a href="<?= base_url('Temoignages') ?>" class="nav-link <?= $this->uri->segment(1) == 'Temoignages' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Témoignages</p></a></li>
@@ -62,7 +61,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                         <li class="nav-item"><a href="<?= base_url('Chiffres_cles') ?>" class="nav-link <?= $this->uri->segment(1) == 'Chiffres_cles' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Chiffres Clés</p></a></li>
                         
                        
-                        <li class="nav-item"><a href="<?= base_url('Ressources_telechargeables') ?>" class="nav-link <?= $this->uri->segment(1) == 'Ressources_telechargeables' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Ressources</p></a></li>
 
                         <li class="nav-item"><a href="<?= base_url('Faq') ?>" class="nav-link <?= $this->uri->segment(1) == 'Faq' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>FAQ</p></a></li>
                     
@@ -123,7 +121,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
                 <!-- SECTION: INVESTMENT -->
                 <li class="nav-header">Investissement</li>
-                <?php $investment_active = in_array($this->uri->segment(1), ['Investissement','Investissement_phases','Brokers','Investors']); ?>
+                <?php $investment_active = in_array($this->uri->segment(1), ['Investissement_phases','Brokers','Investors']); ?>
                 <li class="nav-item <?= $investment_active ? 'menu-open' : '' ?>">
                     <a href="#" class="nav-link <?= $investment_active ? 'active' : '' ?>">
                         <i class="nav-icon bi bi-cash-coin"></i>
@@ -133,7 +131,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="<?= base_url('Investissement') ?>" class="nav-link <?= $this->uri->segment(1) == 'Investissement' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Investissements</p></a></li>
+                        
                         <li class="nav-item"><a href="<?= base_url('Investissement_phases') ?>" class="nav-link <?= $this->uri->segment(1) == 'Investissement_phases' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Phases</p></a></li>
                         
                         <li class="nav-item"><a href="<?= base_url('Brokers') ?>" class="nav-link <?= $this->uri->segment(1) == 'Brokers' ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Brokers</p></a></li>
@@ -186,25 +184,27 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 
 <?php if (admin_view()): ?>
-        <!-- Médias -->
-        <li class="<?= $this->uri->segment(2) == 'media' ? 'mm-active' : '' ?>">
-            <a href="#" class="has-arrow">
-                <div class="parent-icon">
-                    <i class='bx bx-photo-album'></i>
-                </div>
-                <div class="menu-title">Médias</div>
-            </a>
-            <ul>
-                <li><a href="<?= base_url('admin/media') ?>" class="<?= $this->uri->segment(2) == 'media' && $this->uri->segment(3) == '' ? 'active' : '' ?>"><i class='bx bx-grid-alt'></i>Tous</a></li>
-                <li><a href="<?= base_url('admin/media/index/audio') ?>" class="<?= $this->uri->segment(3) == 'audio' ? 'active' : '' ?>"><i class='bx bx-music'></i>Audio</a></li>
-                <li><a href="<?= base_url('admin/media/index/video') ?>" class="<?= $this->uri->segment(3) == 'video' ? 'active' : '' ?>"><i class='bx bx-video'></i>Vidéo</a></li>
-                <li><a href="<?= base_url('admin/media/index/image') ?>" class="<?= $this->uri->segment(3) == 'image' ? 'active' : '' ?>"><i class='bx bx-image'></i>Image</a></li>
-                <li><a href="<?= base_url('admin/media/index/document') ?>" class="<?= $this->uri->segment(3) == 'document' ? 'active' : '' ?>"><i class='bx bx-file'></i>Document</a></li>
-                <li><a href="<?= base_url('admin/media/index/link') ?>" class="<?= $this->uri->segment(3) == 'link' ? 'active' : '' ?>"><i class='bx bx-link'></i>Lien</a></li>
-            </ul>
-        </li>
-
-<?php endif; ?>
+                <!-- SECTION: MÉDIAS -->
+                <li class="nav-header">Médias</li>
+                <?php $media_active = $this->uri->segment(2) == 'media'; ?>
+                <li class="nav-item <?= $media_active ? 'menu-open' : '' ?>">
+                    <a href="#" class="nav-link <?= $media_active ? 'active' : '' ?>">
+                        <i class="nav-icon bi bi-images"></i>
+                        <p>
+                            Médias
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item"><a href="<?= base_url('admin/media') ?>" class="nav-link <?= $media_active && !$this->uri->segment(3) ? 'active' : '' ?>"><i class="nav-icon bi bi-circle"></i><p>Tous</p></a></li>
+                        <li class="nav-item"><a href="<?= base_url('admin/media/index/audio') ?>" class="nav-link <?= $this->uri->segment(3) == 'audio' ? 'active' : '' ?>"><i class="nav-icon bi bi-music-note-beamed"></i><p>Audio</p></a></li>
+                        <li class="nav-item"><a href="<?= base_url('admin/media/index/video') ?>" class="nav-link <?= $this->uri->segment(3) == 'video' ? 'active' : '' ?>"><i class="nav-icon bi bi-camera-video"></i><p>Vidéo</p></a></li>
+                        <li class="nav-item"><a href="<?= base_url('admin/media/index/image') ?>" class="nav-link <?= $this->uri->segment(3) == 'image' ? 'active' : '' ?>"><i class="nav-icon bi bi-image"></i><p>Image</p></a></li>
+                        <li class="nav-item"><a href="<?= base_url('admin/media/index/document') ?>" class="nav-link <?= $this->uri->segment(3) == 'document' ? 'active' : '' ?>"><i class="nav-icon bi bi-file-earmark-text"></i><p>Documents</p></a></li>
+                        <li class="nav-item"><a href="<?= base_url('admin/media/index/link') ?>" class="nav-link <?= $this->uri->segment(3) == 'link' ? 'active' : '' ?>"><i class="nav-icon bi bi-link-45deg"></i><p>Liens</p></a></li>
+                    </ul>
+                </li>
+                <?php endif; ?>
 
 
 

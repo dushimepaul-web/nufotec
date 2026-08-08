@@ -21,6 +21,10 @@
         
         <hr/>
 
+        <?php if ($this->session->flashdata('sms')): ?>
+            <?= $this->session->flashdata('sms') ?>
+        <?php endif; ?>
+
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
@@ -38,14 +42,14 @@
                         </thead>
                         <tbody>
                             <?php $i=1; foreach ($contactus as $value): 
-                            $is_unread = ($value['is_readed'] == 0);
+                            $is_unread = (isset($value['is_readed']) && $value['is_readed'] == 0);
                              $row_class = $is_unread ? 'unread-row' : 'read-row';
                               ?>
-                            <tr class="<?= $row_class ?>">
+                            <tr class="<?= $row_class ?>" data-id="<?= $value['IdContact'] ?>">
                                 <td><?=$i++;?></td>
-                                <td><?=$value['FullName']?></td>
-                                <td><?=$value['Email']?></td>
-                                <td><?=substr($value['Subject'], 0, 30)?>...</td>
+                                <td><?=htmlspecialchars($value['FullName'])?></td>
+                                <td><?=htmlspecialchars($value['Email'])?></td>
+                                <td><?php $sujet = htmlspecialchars($value['Subject']); echo (mb_strlen($sujet) > 30) ? mb_substr($sujet, 0, 30).'...' : $sujet; ?></td>
                                 <td class="text-center">
                                   <?php if($is_unread): ?>
                                       <span class="badge bg-danger px-3 py-2">
@@ -57,7 +61,7 @@
                                       </span>
                                   <?php endif; ?>
                               </td>
-                                <td><?=date('d/m/Y', strtotime($value['Date_creation']))?></td>
+                                <td><?= $value['Date_creation'] ? date('d/m/Y', strtotime($value['Date_creation'])) : '—' ?></td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-bs-toggle="dropdown">Options</button>
                                     <div class="dropdown-menu">
@@ -88,7 +92,7 @@
                         </tfoot>
                     </table>
 
-                    <?php if (!empty($contacts)): foreach ($contacts as $value): ?>
+                    <?php if (!empty($contactus)): foreach ($contactus as $value): ?>
                     <div class="modal fade" id="view_<?=$value['IdContact']?>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content border-top border-0 border-4 border-info">
@@ -100,23 +104,23 @@
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold">Nom complet</label>
-                                            <p class="form-control-plaintext border-bottom"><?=$value['FullName']?></p>
+                                            <p class="form-control-plaintext border-bottom"><?=htmlspecialchars($value['FullName'])?></p>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold">Email</label>
-                                            <p class="form-control-plaintext border-bottom"><?=$value['Email']?></p>
+                                            <p class="form-control-plaintext border-bottom"><?=htmlspecialchars($value['Email'])?></p>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold">Téléphone</label>
-                                            <p class="form-control-plaintext border-bottom"><?=$value['PhoneNumber']?></p>
+                                            <p class="form-control-plaintext border-bottom"><?=htmlspecialchars($value['PhoneNumber'])?></p>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold">Date d'envoi</label>
-                                            <p class="form-control-plaintext border-bottom"><?=$value['Date_creation']?></p>
+                                            <p class="form-control-plaintext border-bottom"><?=htmlspecialchars($value['Date_creation'])?></p>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label fw-bold">Sujet</label>
-                                            <p class="form-control-plaintext border-bottom"><?=$value['Subject']?></p>
+                                            <p class="form-control-plaintext border-bottom"><?=htmlspecialchars($value['Subject'])?></p>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label fw-bold">Message</label>
@@ -126,7 +130,10 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.location.reload()">Fermer</button>
-                                    <a href="mailto:<?=$value['Email']?>" class="btn btn-primary">Répondre par Email</a>
+                                    <?php $mailto_subject = rawurlencode('Re: ' . $value['Subject']); $mailto_body = rawurlencode('Bonjour ' . $value['FullName'] . ",\n\n"); ?>
+                                    <a href="mailto:<?=htmlspecialchars($value['Email'])?>?subject=<?= $mailto_subject ?>&amp;body=<?= $mailto_body ?>" class="btn btn-primary">
+                                        <i class="bx bx-envelope"></i> Répondre par Email
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -139,29 +146,30 @@
                                     <h5 class="modal-title text-white">Modifier Contact</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <form action="<?=base_url('Contact_Us/Update')?>" method="POST">
-                                    <input type="hidden" name="IdContact" value="<?=$value['IdContact']?>">
+                                <form action="<?=base_url('contact_us/Contact_Us/Update')?>" method="POST">
+                                    <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+                                    <input type="hidden" name="IdContact" value="<?=htmlspecialchars($value['IdContact'])?>">
                                     <div class="modal-body">
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label class="form-label">Nom complet</label>
-                                                <input type="text" class="form-control" value="<?=$value['FullName']?>" name="FullName" required>
+                                                <input type="text" class="form-control" value="<?=htmlspecialchars($value['FullName'])?>" name="FullName" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Email</label>
-                                                <input type="email" class="form-control" value="<?=$value['Email']?>" name="Email" required>
+                                                <input type="email" class="form-control" value="<?=htmlspecialchars($value['Email'])?>" name="Email" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Objet</label>
-                                                <input type="text" class="form-control" value="<?=$value['Subject']?>" name="Subject" required>
+                                                <input type="text" class="form-control" value="<?=htmlspecialchars($value['Subject'])?>" name="Subject" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Téléphone</label>
-                                                <input type="text" class="form-control" value="<?=$value['PhoneNumber']?>" name="PhoneNumber" required>
+                                                <input type="text" class="form-control" value="<?=htmlspecialchars($value['PhoneNumber'])?>" name="PhoneNumber" required>
                                             </div>
                                             <div class="col-12">
                                                 <label class="form-label">Message</label>
-                                                <textarea class="form-control" rows="4" name="Message" required><?=$value['Message']?></textarea>
+                                                <textarea class="form-control" rows="4" name="Message" required><?=htmlspecialchars($value['Message'])?></textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -181,10 +189,11 @@
                                     <h5 class="modal-title text-white">Confirmation</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <form action="<?=base_url('Contact_Us/Delete')?>" method="POST">
+                                <form action="<?=base_url('contact_us/Contact_Us/Delete')?>" method="POST">
+                                    <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                                     <div class="modal-body">
-                                        <input type="hidden" name="IdContact" value="<?=$value['IdContact']?>">
-                                        <p>Voulez-vous vraiment supprimer le message de <strong><?=$value['FullName']?></strong> ?</p>
+                                        <input type="hidden" name="IdContact" value="<?=htmlspecialchars($value['IdContact'])?>">
+                                        <p>Voulez-vous vraiment supprimer le message de <strong><?=htmlspecialchars($value['FullName'])?></strong> ?</p>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non</button>
@@ -208,7 +217,8 @@
                 <h5 class="modal-title">Nouveau Message</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="<?=base_url('Contact_Us/Create')?>" method="POST">
+            <form action="<?=base_url('contact_us/Contact_Us/Create')?>" method="POST">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -249,10 +259,20 @@
 <script>
 function markAsRead(id) {
     $.ajax({
-        url: "<?= base_url('Contact_Us/MarkAsRead/') ?>" + id,
+        url: "<?= base_url('contact_us/Contact_Us/MarkAsRead/') ?>" + id,
         type: "GET",
         success: function(response) {
-            console.log("Statut mis à jour en base de données.");
+            if (response && response.status) {
+                var row = $('tr[data-id="' + id + '"]');
+                row.removeClass('unread-row').addClass('read-row');
+                row.find('.badge')
+                    .removeClass('bg-danger')
+                    .addClass('bg-success')
+                    .html('<i class="bx bx-check"></i> Lu');
+            }
+        },
+        error: function(xhr) {
+            console.error("Erreur lors de la mise à jour du statut.");
         }
     });
 }

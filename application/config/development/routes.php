@@ -70,6 +70,21 @@ $route['product-categories/delete'] = 'Advertise_product/Product_categories/dele
 $route['product-categories/view/(:num)'] = 'Advertise_product/Product_categories/view/$1';
 
 // ============================================
+// ROUTES COMMANDES WHATSAPP (order_requests)
+// ============================================
+$route['commande_whatsapp'] = 'Commande_whatsapp/index';
+$route['Commande_whatsapp'] = 'Commande_whatsapp/index';
+$route['commande_whatsapp/index'] = 'Commande_whatsapp/index';
+$route['commande_whatsapp/search'] = 'Commande_whatsapp/search';
+$route['commande_whatsapp/view_order/(:num)'] = 'Commande_whatsapp/view_order/$1';
+$route['commande_whatsapp/ChangeStatus'] = 'Commande_whatsapp/ChangeStatus';
+$route['commande_whatsapp/change-status'] = 'Commande_whatsapp/ChangeStatus';
+$route['commande_whatsapp/Delete'] = 'Commande_whatsapp/Delete';
+$route['commande_whatsapp/delete'] = 'Commande_whatsapp/Delete';
+$route['commande_whatsapp/export'] = 'Commande_whatsapp/export_csv';
+$route['commande_whatsapp/export_csv'] = 'Commande_whatsapp/export_csv';
+
+// ============================================
 // ROUTES PRODUITS
 // ============================================
 $route['Produits'] = 'Favoris/Produits/index';
@@ -169,6 +184,7 @@ $route['patient-form'] = 'Consultations/PatientForm';
 $route['patient-form/index'] = 'Consultations/PatientForm/index';
 $route['patient-form/create'] = 'Consultations/PatientForm/create';
 $route['swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
+$route['Swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
 $route['consultations/get_countries'] = 'Consultations/PatientForm/get_countries';
 $route['home-patient'] = 'Dashboard/PatientDashboard/index';
 $route['update-profile'] = 'Dashboard/PatientDashboard/update_home';
@@ -275,7 +291,7 @@ $route['autre'] = 'Home/Media/type/autre';
 // ROUTES BLOG & ACTUALITÉS
 // ============================================
 $route['blog'] = 'Home/blog/index';
-$route['actualites'] = 'Home/actualites/index';
+$route['actualites'] = 'Home/blog/index';
 $route['actualite/(:any)'] = 'Home/blog/article/$1';
 $route['blog/categorie/(:any)'] = 'Home/blog/categorie/$1';
 $route['blog/recherche'] = 'Home/blog/recherche';
@@ -362,6 +378,8 @@ $route['users'] = 'Users/Users/index';
 $route['users-create'] = 'Users/Users/Create';
 $route['users-update'] = 'Users/Users/Update';
 $route['users-delete'] = 'Users/Users/Delete';
+$route['users-change-status'] = 'Users/Users/ChangeStatus';
+$route['Users/ChangeStatus'] = 'Users/Users/ChangeStatus';
 
 // ============================================
 // ROUTES WORKFLOW CATEGORIES
@@ -473,12 +491,12 @@ $route['test/sync'] = 'test/sync/index';
 // ============================================
 // RECHERCHE
 // ============================================
+$route['search/index'] = 'Home/search/index';
 $route['search/ajax_search'] = 'Home/search/ajax_search';
 
 // ============================================
 // MODULES ADMIN (PAGES DU SIDEBAR BACKEND)
 // ============================================
-$route['Evenements'] = 'Evenements/index';
 $route['Equipe'] = 'Equipe/index';
 $route['Partenaires'] = 'Partenaires/index';
 $route['Temoignages'] = 'Temoignages/index';
@@ -497,6 +515,15 @@ $route['Commandes'] = 'Commandes/index';
 $route['Adresses'] = 'Adresses/index';
 $route['Investissement'] = 'Investissement/index';
 $route['Investissement_phases'] = 'Investissement_phases/index';
+$route['Investissement_phases/index'] = 'Investissement_phases/index';
+$route['Investissement_phases/Create'] = 'Investissement_phases/Create';
+$route['Investissement_phases/Update'] = 'Investissement_phases/Update';
+$route['Investissement_phases/Delete'] = 'Investissement_phases/Delete';
+$route['Investissement_phases/PhaseDetail/(:any)'] = 'Investissement_phases/PhaseDetail/$1';
+$route['investissement_phases/create'] = 'Investissement_phases/Create';
+$route['investissement_phases/update'] = 'Investissement_phases/Update';
+$route['investissement_phases/delete'] = 'Investissement_phases/Delete';
+$route['investissement_phases/phasedetail/(:any)'] = 'Investissement_phases/PhaseDetail/$1';
 $route['Etapes_projet'] = 'Etapes_projet/index';
 $route['Risques_mitigations'] = 'Risques_mitigations/index';
 $route['Brokers'] = 'Brokers/index';

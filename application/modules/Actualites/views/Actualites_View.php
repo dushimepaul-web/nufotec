@@ -57,7 +57,7 @@ if (!function_exists('format_tags')) {
 
         <!-- Stats Dashboard -->
         <div class="row mb-4 g-3">
-            <div class="col-xl-2 col-md-4 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="card border-0 shadow-sm h-100 bg-primary bg-opacity-10">
                     <div class="card-body text-center">
                         <i class="bx bx-news text-primary fs-2 mb-2"></i>
@@ -66,7 +66,7 @@ if (!function_exists('format_tags')) {
                     </div>
                 </div>
             </div>
-            <div class="col-xl-2 col-md-4 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="card border-0 shadow-sm h-100 bg-success bg-opacity-10">
                     <div class="card-body text-center">
                         <i class="bx bx-check-circle text-success fs-2 mb-2"></i>
@@ -75,7 +75,7 @@ if (!function_exists('format_tags')) {
                     </div>
                 </div>
             </div>
-            <div class="col-xl-2 col-md-4 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="card border-0 shadow-sm h-100 bg-warning bg-opacity-10">
                     <div class="card-body text-center">
                         <i class="bx bx-star text-warning fs-2 mb-2"></i>
@@ -84,25 +84,7 @@ if (!function_exists('format_tags')) {
                     </div>
                 </div>
             </div>
-            <div class="col-xl-2 col-md-4 col-6">
-                <div class="card border-0 shadow-sm h-100 bg-info bg-opacity-10">
-                    <div class="card-body text-center">
-                        <i class="bx bx-crown text-info fs-2 mb-2"></i>
-                        <h4 class="mb-0 fw-bold"><?= $stats['for_subscriber'] ?? 0 ?></h4>
-                        <small class="text-muted">Abonnés</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-2 col-md-4 col-6">
-                <div class="card border-0 shadow-sm h-100" style="background-color: rgba(111, 66, 193, 0.1);">
-                    <div class="card-body text-center">
-                        <i class="bx bxl-facebook fs-2 mb-2" style="color: #6f42c1;"></i>
-                        <h4 class="mb-0 fw-bold"><?= $stats['in_socialmedia'] ?? 0 ?></h4>
-                        <small class="text-muted">Réseaux</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-2 col-md-4 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="card border-0 shadow-sm h-100 bg-secondary bg-opacity-10">
                     <div class="card-body text-center">
                         <i class="bx bx-show text-secondary fs-2 mb-2"></i>
@@ -144,15 +126,14 @@ if (!function_exists('format_tags')) {
                                 <th width="8%">Vues</th>
                                 <th width="8%">Statut</th>
                                 <th width="8%">En avant</th>
-                                <th width="8%">Abonnés</th>
-                                <th width="8%">Réseaux</th>
                                 <th width="15%">Actions</th>
                             </tr>
                         </thead>
+                        <?php $edit_modals = ''; ?>
                         <tbody>
                         <?php if (!empty($actualites)): foreach ($actualites as $item): 
                             // Image principale
-                            $image_url = base_url('assets/images/news-placeholder.jpg');
+                            $image_url = base_url('assets/backend/images/defaut-logo.jpeg');
                             if (!empty($item['image_principale'])) {
                                 $image_url = (strpos($item['image_principale'], 'http') === 0) 
                                     ? $item['image_principale'] 
@@ -165,8 +146,6 @@ if (!function_exists('format_tags')) {
                             
                             // Booléens
                             $is_en_avant = !empty($item['est_en_avant']) && $item['est_en_avant'] == 1;
-                            $is_for_subscriber = !empty($item['for_subscriber']) && $item['for_subscriber'] == 1;
-                            $is_in_socialmedia = !empty($item['in_socialmedia']) && $item['in_socialmedia'] == 1;
                         ?>
                             <tr data-id="<?= $item['id_actualite'] ?>" 
                                 data-categorie="<?= htmlspecialchars($item['categorie'] ?? '') ?>"
@@ -177,7 +156,7 @@ if (!function_exists('format_tags')) {
                                              class="rounded w-100 h-100" 
                                              style="object-fit: cover; background: #f8f9fa;"
                                              loading="lazy"
-                                             onerror="this.src='<?= base_url('assets/images/news-placeholder.jpg') ?>'">
+                                             onerror="this.src='<?= base_url('assets/backend/images/defaut-logo.jpeg') ?>'">
                                         
                                         <?php if ($is_en_avant && !$is_archive): ?>
                                             <div class="position-absolute top-0 start-0 m-1">
@@ -251,30 +230,6 @@ if (!function_exists('format_tags')) {
                                     <?php endif; ?>
                                 </td>
 
-                                <td class="text-center">
-                                    <?php if (!$is_archive): ?>
-                                        <div class="form-check form-switch form-check-sm d-flex justify-content-center">
-                                            <input class="form-check-input toggle-field" type="checkbox" 
-                                                   data-id="<?= $item['id_actualite'] ?>" data-field="for_subscriber"
-                                                   <?= $is_for_subscriber ? 'checked' : '' ?>>
-                                        </div>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <td class="text-center">
-                                    <?php if (!$is_archive): ?>
-                                        <div class="form-check form-switch form-check-sm d-flex justify-content-center">
-                                            <input class="form-check-input toggle-field" type="checkbox" 
-                                                   data-id="<?= $item['id_actualite'] ?>" data-field="in_socialmedia"
-                                                   <?= $is_in_socialmedia ? 'checked' : '' ?>>
-                                        </div>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
-
                                 <td>
                                     <div class="d-flex gap-1 justify-content-center">
                                         <a href="<?= base_url('Actualites/view/' . ($item['slug'] ?? '')) ?>" 
@@ -317,6 +272,8 @@ if (!function_exists('format_tags')) {
                                 </td>
                             </tr>
 
+                            <?php ob_start(); ?>
+
                             <!-- ========================================== -->
                             <!-- MODAL EDIT - AVEC GESTION D'IMAGE COMPLÈTE -->
                             <!-- ========================================== -->
@@ -335,7 +292,8 @@ if (!function_exists('format_tags')) {
                                                     <div class="col-md-8">
                                                         <div class="mb-3">
                                                             <label class="form-label fw-bold">Titre <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control form-control-lg" name="titre" 
+                                                            <input type="text" class="form-control form-control-lg" name="titre"
+                                                                   id="editTitle<?= $item['id_actualite'] ?>"
                                                                    value="<?= htmlspecialchars($item['titre'] ?? '') ?>" required maxlength="255"
                                                                    onchange="generateSlug(<?= $item['id_actualite'] ?>)">
                                                         </div>
@@ -343,6 +301,7 @@ if (!function_exists('format_tags')) {
                                                         <div class="mb-3">
                                                             <label class="form-label fw-bold">Slug <span class="text-danger">*</span></label>
                                                             <input type="text" class="form-control" name="slug" 
+                                                                   id="editSlug<?= $item['id_actualite'] ?>"
                                                                    value="<?= htmlspecialchars($item['slug'] ?? '') ?>" required maxlength="255">
                                                             <small class="text-muted">URL: /actualite/<span id="slugPreview<?= $item['id_actualite'] ?>"><?= htmlspecialchars($item['slug'] ?? '') ?></span></small>
                                                         </div>
@@ -386,13 +345,13 @@ if (!function_exists('format_tags')) {
                                                                         <div class="position-relative mb-3">
                                                                             <?php 
                                                                             $current_image = $item['image_principale'] ?? '';
-                                                                            $image_display = $current_image ? base_url($current_image) : base_url('assets/images/news-placeholder.jpg');
+                                                                            $image_display = $current_image ? base_url($current_image) : base_url('assets/backend/images/defaut-logo.jpeg');
                                                                             ?>
                                                                             <img src="<?= $image_display ?>" 
                                                                                  class="rounded w-100" 
                                                                                  style="height: 150px; object-fit: cover; border: 1px solid #dee2e6;"
                                                                                  id="currentImage<?= $item['id_actualite'] ?>"
-                                                                                 onerror="this.src='<?= base_url('assets/images/news-placeholder.jpg') ?>'">
+                                                                                 onerror="this.src='<?= base_url('assets/backend/images/defaut-logo.jpeg') ?>'">
                                                                         </div>
                                                                     </div>
                                                                     
@@ -472,22 +431,6 @@ if (!function_exists('format_tags')) {
                                                                     </div>
                                                                 </div>
 
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="for_subscriber" value="1" 
-                                                                               <?= $is_for_subscriber ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label"><i class="bx bx-crown text-info me-1"></i>Abonnés</label>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="mb-3">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox" name="in_socialmedia" value="1" 
-                                                                               <?= $is_in_socialmedia ? 'checked' : '' ?>>
-                                                                        <label class="form-check-label"><i class="bx bxl-facebook text-primary me-1"></i>Réseaux</label>
-                                                                    </div>
-                                                                </div>
-
                                                                 <hr>
 
                                                                 <h6 class="mb-2">Statistiques</h6>
@@ -509,9 +452,11 @@ if (!function_exists('format_tags')) {
                                 </div>
                             </div>
 
+                            <?php $edit_modals .= ob_get_clean(); ?>
+
                         <?php endforeach; else: ?>
                             <tr>
-                                <td colspan="9" class="text-center py-5">
+                                <td colspan="7" class="text-center py-5">
                                     <div class="text-center py-5">
                                         <i class="bx bx-news fs-1 text-muted mb-3 d-block"></i>
                                         <h5>Aucune actualité</h5>
@@ -525,6 +470,8 @@ if (!function_exists('format_tags')) {
                         <?php endif; ?>
                         </tbody>
                     </table>
+
+                    <?= $edit_modals ?>
                 </div>
             </div>
         </div>
@@ -734,19 +681,7 @@ if (!function_exists('format_tags')) {
                                         </div>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="for_subscriber" value="1" id="forSubscriber">
-                                            <label class="form-check-label"><i class="bx bx-crown text-info me-1"></i>Réservé aux abonnés</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="in_socialmedia" value="1" id="inSocialMedia">
-                                            <label class="form-check-label"><i class="bx bxl-facebook text-primary me-1"></i>Publié sur réseaux</label>
-                                        </div>
-                                    </div>
+                                    <hr>
                                     
                                     <hr>
                                     
@@ -1282,7 +1217,7 @@ function removeUpdateImage(id) {
 $(document).ready(function() {
     console.log('Actualités Blog v5.0 initialisé');
     
-    if ($.fn.DataTable && $('#articlesTable tbody tr').length > 0) {
+    if ($.fn.DataTable && $('#articlesTable tbody tr[data-id]').length > 0) {
         $('#articlesTable').DataTable({
             language: {
                 "sProcessing": "Traitement...",

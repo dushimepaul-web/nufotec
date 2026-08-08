@@ -48,7 +48,8 @@ class PatientForm extends Public_Controller {
             'medicin',        // Liste des médecins (accessible sans connexion)
             'checkDisponibiliteMaintenant', // Vérification disponibilité
             'index',          // Formulaire patient (public)
-            'create'          // Soumission formulaire patient (public)
+            'create',         // Soumission formulaire patient (public)
+            'changeDoctor'    // Changer de médecin -> retour à la liste (public)
         ];
         
         $current_method = $this->router->fetch_method();
@@ -120,6 +121,7 @@ class PatientForm extends Public_Controller {
             'user_id'        => $user_id,
             'user'           => $user,
             'medecin'        => $medecin,
+            'doctor_count'   => $this->_count_active_doctors(),
             'prix_usd'       => $prix_usd,
             'prix_eur'       => $prix_eur,
             'prix_bif'       => $prix_bif,
@@ -143,6 +145,14 @@ class PatientForm extends Public_Controller {
             ", [$this->session->userdata('user_id')])->row_array();
         }
         return null;
+    }
+
+    private function _count_active_doctors()
+    {
+        $this->db->from('medecins');
+        $this->db->join('users', 'users.id = medecins.user_id');
+        $this->db->where('users.is_active', 1);
+        return (int)$this->db->count_all_results();
     }
 
     public function changeDoctor()
@@ -429,11 +439,10 @@ class PatientForm extends Public_Controller {
         $message .= "*DÉTAILS DE LA CONSULTATION*\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "• N° suivi : " . $numero_consultation . "\n";
-        $message .= "• Médecin : " . $doctor_name . "\n";
         $message .= "• Âge : " . $this->input->post('age', TRUE) . " ans\n";
         $message .= "• Pays : " . $this->input->post('country', TRUE) . "\n";
-        $message .= "• Poids : " . $this->input->post('weight', TRUE) . " kg | Taille : " . $this->input->post('height', TRUE) . " cm\n";
-        $message .= "• Symptômes : " . $this->input->post('symptoms', TRUE) . "\n";
+        $message .= "• Poids : " . $this->input->post('weight', TRUE) . " kg | Taille : " . $this->input->post('height', TRUE) . " cm\n\n";
+        $message .= "• Symptômes : " . $this->input->post('symptoms', TRUE) . "\n\n";
         if (!empty($this->input->post('symptoms_duration', TRUE))) {
             $message .= "• Durée des symptômes : " . $this->input->post('symptoms_duration', TRUE) . "\n";
         }
@@ -570,6 +579,23 @@ class PatientForm extends Public_Controller {
 
     public function Medicin()
     {    
+        // Si un seul médecin actif existe, rediriger directement vers le formulaire
+        $this->db->from('medecins');
+        $this->db->join('users', 'users.id = medecins.user_id');
+        $this->db->where('users.is_active', 1);
+        $total_medecins = $this->db->count_all_results();
+
+        if ($total_medecins === 1) {
+            $this->db->select('medecins.uuid');
+            $this->db->from('medecins');
+            $this->db->join('users', 'users.id = medecins.user_id');
+            $this->db->where('users.is_active', 1);
+            $unique_medecin = $this->db->get()->row_array();
+            if (!empty($unique_medecin['uuid'])) {
+                redirect('patient-form?doctor_uuid=' . $unique_medecin['uuid']);
+            }
+        }
+
         $this->db->select("
             medecins.id,
             medecins.uuid,

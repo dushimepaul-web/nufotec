@@ -235,6 +235,85 @@ include VIEWPATH.'includes/frontend/Header.php';
 .share-btn.linkedin { background: #0077b5; }
 .share-btn.whatsapp { background: #25d366; }
 
+/* ================= SOCIAL FOLLOW ================= */
+.social-follow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.social-follow-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--light-bg);
+    text-decoration: none;
+    color: #333;
+    border: 1px solid #eef1f0;
+    transition: all 0.3s ease;
+}
+
+.social-follow-item:hover {
+    background: white;
+    transform: translateX(4px);
+    box-shadow: 0 5px 15px rgba(0,0,0,.1);
+    border-color: var(--primary-teal);
+}
+
+.social-follow-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.social-follow-item.facebook .social-follow-icon { background: #3b5998; }
+.social-follow-item.twitter .social-follow-icon { background: #1da1f2; }
+.social-follow-item.linkedin .social-follow-icon { background: #0077b5; }
+.social-follow-item.instagram .social-follow-icon { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.social-follow-item.youtube .social-follow-icon { background: #ff0000; }
+.social-follow-item.whatsapp .social-follow-icon { background: #25d366; }
+.social-follow-item.tiktok .social-follow-icon { background: #010101; }
+
+.social-follow-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.social-follow-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.social-follow-count {
+    color: var(--primary-teal);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.social-follow-arrow {
+    color: #bbb;
+    font-size: 0.9rem;
+    transition: transform 0.3s ease;
+}
+
+.social-follow-item:hover .social-follow-arrow {
+    color: var(--primary-teal);
+    transform: translate(2px, -2px);
+}
+
 /* ================= RESPONSIVE ================= */
 @media (max-width: 768px) {
     .article-header { padding: 80px 0 40px; }
@@ -275,7 +354,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                          alt="<?= htmlspecialchars($article['title']) ?>"
                          class="img-fluid rounded-3 mb-4 w-100"
                          style="max-height: 400px; object-fit: cover;"
-                         onerror="this.src='<?= base_url('assets/images/news-placeholder.jpg') ?>'">
+                         onerror="this.src='<?= base_url('assets/backend/images/defaut-logo.jpeg') ?>'">
                     
                     <!-- Content -->
                     <div class="article-content">
@@ -302,7 +381,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                     
                     <!-- Author Box -->
                     <div class="author-box">
-                        <img src="<?= base_url('assets/images/avatar-default.png') ?>" 
+                        <img src="<?= base_url('assets/backend/images/default-avatar.jpg') ?>" 
                              alt="<?= htmlspecialchars($article['author']) ?>"
                              class="author-avatar"
                              onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($article['author']) ?>&background=1a8c78&color=fff'">
@@ -347,7 +426,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                         <?php foreach ($related_articles as $related): ?>
                         <div class="related-card">
                             <img src="<?= $related['image'] ?>" class="related-img" alt=""
-                                 onerror="this.src='<?= base_url('assets/images/news-placeholder.jpg') ?>'">
+                                 onerror="this.src='<?= base_url('assets/backend/images/defaut-logo.jpeg') ?>'">
                             <div class="related-content">
                                 <small class="text-teal fw-bold"><?= htmlspecialchars($related['category']) ?></small>
                                 <h5 class="mt-2 mb-3">
@@ -394,6 +473,37 @@ include VIEWPATH.'includes/frontend/Header.php';
                             </a>
                         </div>
                     </div>
+
+                    <!-- Suivez-nous -->
+                    <?php if (!empty($social_links)): ?>
+                    <div class="sidebar-widget">
+                        <h5 class="widget-title"><i class="fas fa-users me-2"></i>Suivez-nous</h5>
+                        <div class="social-follow-list">
+                            <?php foreach ($social_links as $social): 
+                                $icon = !empty($social['icon_class']) && $social['icon_class'] !== 'bi'
+                                    ? $social['icon_class'] . ' ' . $social['icon_name']
+                                    : 'bi bi-' . $social['icon_name'];
+                                $brand = strtolower($social['platform']);
+                            ?>
+                            <a href="<?= htmlspecialchars($social['url']) ?>" 
+                               class="social-follow-item <?= htmlspecialchars($brand) ?>"
+                               target="_blank" rel="noopener noreferrer"
+                               title="<?= htmlspecialchars($social['label']) ?>">
+                                <span class="social-follow-icon"><i class="<?= $icon ?>"></i></span>
+                                <span class="social-follow-info">
+                                    <span class="social-follow-name"><?= htmlspecialchars($social['label']) ?></span>
+                                    <?php if (!empty($social['followers'])): ?>
+                                    <span class="social-follow-count">
+                                        <i class="bi bi-people-fill"></i> <?= htmlspecialchars($social['followers']) ?> abonnés
+                                    </span>
+                                    <?php endif; ?>
+                                </span>
+                                <i class="bi bi-arrow-up-right social-follow-arrow"></i>
+                            </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     
                     <!-- Popular -->
                     <?php if (!empty($popular_articles)): ?>
@@ -402,7 +512,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                         <?php foreach($popular_articles as $pop): ?>
                         <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
                             <img src="<?= $pop['image'] ?>" width="80" height="60" class="rounded object-fit-cover" alt=""
-                                 onerror="this.src='<?= base_url('assets/images/news-placeholder.jpg') ?>'">
+                                 onerror="this.src='<?= base_url('assets/backend/images/defaut-logo.jpeg') ?>'">
                             <div>
                                 <h6 class="mb-1" style="font-size: 0.95rem;">
                                     <a href="<?= $pop['url'] ?>" class="text-dark text-decoration-none">

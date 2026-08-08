@@ -15,6 +15,7 @@ class Media extends Public_Controller{
     parent::__construct();
     $this->load->model('Model');
     $this->load->helper('cookie');
+    $this->load->helper('text');
     $this->load->library('user_agent');
     $this->load->helper('string');
     
@@ -91,6 +92,35 @@ class Media extends Public_Controller{
     }
 
     /**
+     * Page Actualités / News - Affiche les articles du blog (public)
+     */
+    public function news()
+    {
+        $user = $this->getCurrentUser();
+
+        $articles = $this->db->select('id_actualite, titre, slug, resume, contenu, image_principale, auteur, date_publication, categorie, tags, vues, est_en_avant')
+            ->from('actualites_blog')
+            ->where('deleted_at', null)
+            ->order_by('date_publication', 'DESC')
+            ->limit(12)
+            ->get()
+            ->result_array();
+
+        $data = [
+            'articles'      => $articles,
+            'medias'        => [],
+            'categories'    => $this->getCategoriesWithCount(),
+            'current_type'  => 'news',
+            'search_query'  => null,
+            'results_count' => count($articles),
+            'page_title'    => 'Actualités',
+            'user'          => $user
+        ];
+
+        $this->load->view('Media_View', $data);
+    }
+
+    /**
      * Vue filtrée par type de média (multilingue)
      */
     public function type($type)
@@ -105,9 +135,9 @@ class Media extends Public_Controller{
         $types_autre = ['image', 'book', 'document'];
         
         if (in_array($type, $types_autre)) {
-            $display_type = 'autre';
+            $display_type = $type;
             $sub_type = $type;
-            $page_title = 'Autre';
+            $page_title = ($type === 'book') ? 'Livres' : (($type === 'image') ? 'Images' : 'Autre');
         } else {
             $display_type = $type;
             $sub_type = null;
@@ -178,14 +208,30 @@ class Media extends Public_Controller{
                 ORDER BY CASE WHEN g.type = 'video' THEN 0 ELSE 1 END, g.created_at DESC
             ";
             return $this->db->query($sql)->result_array();
+        } elseif ($type === 'book') {
+            $sql = "
+                SELECT {$select}, 0 as is_video_content, 'book' as sub_type_filter
+                FROM galerie_medias g
+                WHERE g.est_actif = 1 AND g.sous_type = 'book'
+                ORDER BY g.created_at DESC
+            ";
+            return $this->db->query($sql)->result_array();
+        } elseif ($type === 'image') {
+            $sql = "
+                SELECT {$select}, 0 as is_video_content, 'image' as sub_type_filter
+                FROM galerie_medias g
+                WHERE g.est_actif = 1 AND (g.sous_type = 'photo' OR g.type = 'image')
+                ORDER BY g.created_at DESC
+            ";
+            return $this->db->query($sql)->result_array();
         } elseif (in_array($type, $types_autre)) {
             $sql = "
-                SELECT {$select}, 0 as is_video_content, '{$type}' as sub_type_filter
+                SELECT {$select}, 0 as is_video_content, ? as sub_type_filter
                 FROM galerie_medias g
                 WHERE g.est_actif = 1 AND g.type = ?
                 ORDER BY g.created_at DESC
             ";
-            return $this->db->query($sql, [$type])->result_array();
+            return $this->db->query($sql, [$type, $type])->result_array();
         } else {
             $sql = "
                 SELECT {$select}, 0 as is_video_content
@@ -247,7 +293,7 @@ class Media extends Public_Controller{
         $user_id = $user ? $user['id'] : null;
         
         $select = "
-            g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
+            g.id_media, g.titre, g.slug, g.type, g.sous_type, g.fichier, g.lien, g.miniature,
             g.date_media, g.taille, g.mime_type, g.duree, g.est_actif,
             g.description AS description,
             g.categorie AS categorie,

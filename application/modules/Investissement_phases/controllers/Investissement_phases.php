@@ -6,10 +6,9 @@ class Investissement_phases extends MY_Controller {
     function __construct()
     {
         parent::__construct();
-        if ($this->session->userdata('logged_in') !== TRUE) {
-            redirect('Admin');
-        }
+        is_admin();
         $this->load->helper('form');
+        $this->load->helper('investissement_helper');
         $this->load->library('form_validation');
     }
     
@@ -19,9 +18,24 @@ class Investissement_phases extends MY_Controller {
         $this->load->view('Investissement_phases_View', $data);
     }
 
-    function PhaseDetail($phaseDetail){
-        $id = explode('_', $phaseDetail);
-        $data['detail'] = $this->Model->readOne('investissement_phases', ['id_phase' => $id[0]]);
+    function PhaseDetail($phaseDetail = null)
+    {
+        $id = (int) current(explode('_', (string) $phaseDetail));
+
+        if (empty($id)) {
+            $this->session->set_flashdata('error', 'Phase introuvable.');
+            redirect(base_url('Investissement_phases'));
+            return;
+        }
+
+        $data['detail'] = $this->Model->readOne('investissement_phases', ['id_phase' => $id]);
+
+        if (empty($data['detail'])) {
+            $this->session->set_flashdata('error', 'Phase introuvable.');
+            redirect(base_url('Investissement_phases'));
+            return;
+        }
+
         $this->load->view('PhaseDetail_View', $data);
     }
 
@@ -144,52 +158,5 @@ class Investissement_phases extends MY_Controller {
             $this->session->set_flashdata('error', 'Une erreur est survenue lors de la suppression.');
         }
         redirect(base_url('Investissement_phases'));
-    }
-
-    public function format_montant($montant, $devise = 'USD')
-    {
-        $symbol = $devise == 'USD' ? '$' : ($devise == 'EUR' ? '€' : $devise);
-        return $symbol . ' ' . number_format($montant, 2, ',', ' ');
-    }
-
-    public function get_allocation_array($json_data)
-    {
-        if (empty($json_data)) return [];
-        $data = json_decode($json_data, true);
-        return is_array($data) ? $data : [];
-    }
-
-    public function get_allocation_color($key)
-    {
-        $colors = [
-            'construction' => 'primary',
-            'lab_equipment' => 'info',
-            'processing_lines' => 'success',
-            'cleanrooms' => 'warning',
-            'regulatory' => 'danger',
-            'working_capital' => 'secondary',
-            'r_and_d' => 'dark',
-            'marketing' => 'primary',
-            'infrastructure' => 'info'
-        ];
-        
-        return $colors[$key] ?? 'secondary';
-    }
-
-    public function get_allocation_label($key)
-    {
-        $labels = [
-            'construction' => 'Construction',
-            'lab_equipment' => 'Équipement labo',
-            'processing_lines' => 'Lignes production',
-            'cleanrooms' => 'Salles propres',
-            'regulatory' => 'Réglementaire',
-            'working_capital' => 'Fonds de roulement',
-            'r_and_d' => 'R&D',
-            'marketing' => 'Marketing',
-            'infrastructure' => 'Infrastructure'
-        ];
-        
-        return $labels[$key] ?? ucfirst(str_replace('_', ' ', $key));
     }
 }

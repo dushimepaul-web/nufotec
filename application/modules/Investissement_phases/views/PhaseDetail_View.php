@@ -70,7 +70,7 @@ $pages_list = $pages; ?>
                         <i class="bx bx-trending-up me-2"></i><?= htmlspecialchars($detail['nom_phase']) ?>
                     </h5>
                     <span class="badge bg-success fs-6">
-                        <?= $this->Investissement_phases->format_montant($detail['montant_total'], $detail['devise']) ?>
+                        <?= format_montant($detail['montant_total'], $detail['devise']) ?>
                     </span>
                 </div>
                 <div class="card-body">
@@ -88,7 +88,7 @@ $pages_list = $pages; ?>
                                 <div class="card-body text-center">
                                     <h6 class="text-muted mb-2"><i class="bx bx-money me-2"></i>Montant total</h6>
                                     <h4 class="mb-0 text-success">
-                                        <?= $this->Investissement_phases->format_montant($detail['montant_total'], $detail['devise']) ?>
+                                        <?= format_montant($detail['montant_total'], $detail['devise']) ?>
                                     </h4>
                                 </div>
                             </div>
@@ -96,7 +96,7 @@ $pages_list = $pages; ?>
                     </div>
 
                     <?php 
-                    $allocations = $this->Investissement_phases->get_allocation_array($detail['allocation_details']);
+                    $allocations = get_allocation_array($detail['allocation_details']);
                     if (!empty($allocations)): 
                         $total_pct = array_sum($allocations);
                     ?>
@@ -113,8 +113,8 @@ $pages_list = $pages; ?>
                                 <tbody>
                                     <?php foreach ($allocations as $key => $pourcentage): 
                                         $montant_cat = ($detail['montant_total'] * $pourcentage) / 100;
-                                        $color = $this->Investissement_phases->get_allocation_color($key);
-                                        $label = $this->Investissement_phases->get_allocation_label($key);
+                                        $color = get_allocation_color($key);
+                                        $label = get_allocation_label($key);
                                     ?>
                                         <tr>
                                             <td>
@@ -129,7 +129,7 @@ $pages_list = $pages; ?>
                                                 </div>
                                             </td>
                                             <td class="text-end fw-bold">
-                                                <?= $this->Investissement_phases->format_montant($montant_cat, $detail['devise']) ?>
+                                                <?= format_montant($montant_cat, $detail['devise']) ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -138,7 +138,7 @@ $pages_list = $pages; ?>
                                     <tr>
                                         <th>Total</th>
                                         <th><?= $total_pct ?>%</th>
-                                        <th class="text-end"><?= $this->Investissement_phases->format_montant($detail['montant_total'], $detail['devise']) ?></th>
+                                        <th class="text-end"><?= format_montant($detail['montant_total'], $detail['devise']) ?></th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -273,7 +273,7 @@ $pages_list = $pages; ?>
                             <h6 class="card-title text-primary mb-3"><i class="bx bx-pie-chart-alt me-2"></i>Allocation des fonds</h6>
                             <div id="allocation-container-edit">
                                 <?php 
-                                $allocations = $this->Investissement_phases->get_allocation_array($detail['allocation_details']);
+                                $allocations = get_allocation_array($detail['allocation_details']);
                                 if (!empty($allocations)): 
                                     foreach ($allocations as $key => $pourcentage): 
                                 ?>

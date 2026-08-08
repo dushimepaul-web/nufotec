@@ -616,8 +616,6 @@ public function Create()
         'categorie'         => $this->input->post('categorie'),
         'tags'              => $tags_json,
         'est_en_avant'      => $this->input->post('est_en_avant') ? 1 : 0,
-        'for_subscriber'    => $this->input->post('for_subscriber') ? 1 : 0,
-        'in_socialmedia'    => $this->input->post('in_socialmedia') ? 1 : 0,
         'id_page_associee'  => $this->input->post('id_page_associee') ?: null,
         'created_at'        => date('Y-m-d H:i:s'),
         'updated_at'        => date('Y-m-d H:i:s')
@@ -702,8 +700,6 @@ public function Create()
             'categorie'         => $this->input->post('categorie'),
             'tags'              => $tags_json,
             'est_en_avant'      => $this->input->post('est_en_avant') ? 1 : 0,
-            'for_subscriber'    => $this->input->post('for_subscriber') ? 1 : 0,
-            'in_socialmedia'    => $this->input->post('in_socialmedia') ? 1 : 0,
             'id_page_associee'  => $this->input->post('id_page_associee') ?: null,
             'updated_at'        => date('Y-m-d H:i:s')
         ];
@@ -744,7 +740,7 @@ public function Create()
             if ($permanent) {
                 // Suppression définitive
                 $this->deleteFiles($item);
-                $rsp = $this->Model->delete('actualites_blog', ['id_actualite' => $id]);
+                $rsp = $this->Model->delete('actualites_blog', ['id_actualite' => $id], false);
                 $message = 'Article supprimé définitivement';
             } else {
                 // Soft delete
@@ -783,7 +779,7 @@ public function Create()
         $field = $this->input->post('field');
         $value = $this->input->post('value');
         
-        $allowed = ['est_en_avant', 'for_subscriber', 'in_socialmedia'];
+        $allowed = ['est_en_avant', 'vues'];
         if (!in_array($field, $allowed)) {
             echo json_encode(['success' => false, 'message' => 'Champ non autorisé']);
             return;
@@ -833,8 +829,7 @@ public function Create()
             'publiees'       => 0,
             'archivees'      => 0,
             'en_avant'       => 0,
-            'for_subscriber' => 0,
-            'in_socialmedia' => 0
+            'vues'           => 0
         ];
 
         $items = $this->Model->read('actualites_blog', []);
@@ -844,8 +839,7 @@ public function Create()
             if (empty($item['deleted_at'])) {
                 $stats['publiees']++;
                 if (!empty($item['est_en_avant'])) $stats['en_avant']++;
-                if (!empty($item['for_subscriber'])) $stats['for_subscriber']++;
-                if (!empty($item['in_socialmedia'])) $stats['in_socialmedia']++;
+                $stats['vues'] += (int)($item['vues'] ?? 0);
             } else {
                 $stats['archivees']++;
             }
@@ -923,7 +917,7 @@ public function view($slug)
         'recent_articles' => $recent_articles,
         'meta_title' => $article['titre'],
         'meta_description' => $article['resume'] ?: substr(strip_tags($article['contenu']), 0, 160),
-        'meta_image' => !empty($article['image_principale']) ? base_url($article['image_principale']) : base_url('assets/images/default-article.jpg')
+        'meta_image' => !empty($article['image_principale']) ? base_url($article['image_principale']) : base_url('assets/backend/images/defaut-logo.jpeg')
     ];
     
     // Charger la vue publique
@@ -989,7 +983,7 @@ private function getArticleThumbnail($article)
     if (!empty($article['image_principale'])) {
         return base_url($article['image_principale']);
     }
-    return base_url('assets/images/default-article.jpg');
+    return base_url('assets/backend/images/defaut-logo.jpeg');
 }
 
 /**
@@ -1183,13 +1177,13 @@ private function sendArticleNotification($article)
         }
         
         // Récupérer les informations du site
-        $site_logo = $this->db->select('setting_value')->where('setting_name', 'site_logo')->get('settings')->row();
-        $site_name = $this->db->select('setting_value')->where('setting_name', 'site_name')->get('settings')->row();
-        $linkgroupewhatsapp = $this->db->select('setting_value')->where('setting_name', 'linkgroupewhatsapp')->get('settings')->row();
+        $site_logo = $this->db->select('valeur')->where('cle', 'site_logo')->get('configurations')->row();
+        $site_name = $this->db->select('valeur')->where('cle', 'site_name')->get('configurations')->row();
+        $linkgroupewhatsapp = $this->db->select('valeur')->where('cle', 'linkgroupewhatsapp')->get('configurations')->row();
         
-        $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo->setting_value) : '';
-        $site_name_value = $site_name->setting_value ?? 'NUFOTEC BURUNDI';
-        $whatsapp_link = !empty($linkgroupewhatsapp) ? $linkgroupewhatsapp->setting_value : '#';
+        $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo->valeur) : '';
+        $site_name_value = $site_name->valeur ?? 'NUFOTEC BURUNDI';
+        $whatsapp_link = !empty($linkgroupewhatsapp) ? $linkgroupewhatsapp->valeur : '#';
         
         // Construire l'URL de l'article
         $article_url = base_url('actualite/' . $article['slug']);

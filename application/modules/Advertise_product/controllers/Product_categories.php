@@ -23,7 +23,7 @@ class Product_categories extends MY_Controller {
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
-            redirect(base_url('product_categories'));
+            redirect(base_url('product-categories'));
             return;
         }
 
@@ -40,7 +40,7 @@ class Product_categories extends MY_Controller {
         } else {
             $this->session->set_flashdata('error', 'Une erreur est survenue lors de la création de la catégorie.');
         }
-        redirect(base_url('product_categories'));
+        redirect(base_url('product-categories'));
     }
 
     function update()
@@ -54,13 +54,13 @@ class Product_categories extends MY_Controller {
         $existing = $this->Model->readOne('product_categories', ['name' => $this->input->post('name'), 'id !=' => $id]);
         if ($existing) {
             $this->session->set_flashdata('error', 'Ce nom de catégorie existe déjà.');
-            redirect(base_url('product_categories'));
+            redirect(base_url('product-categories'));
             return;
         }
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
-            redirect(base_url('product_categories'));
+            redirect(base_url('product-categories'));
             return;
         }
 
@@ -77,7 +77,7 @@ class Product_categories extends MY_Controller {
         } else {
             $this->session->set_flashdata('error', 'Une erreur est survenue lors de la mise à jour.');
         }
-        redirect(base_url('product_categories'));
+        redirect(base_url('product-categories'));
     }
 
     function delete()
@@ -88,7 +88,7 @@ class Product_categories extends MY_Controller {
         $products = $this->Model->read('advertise_product', ['category_id' => $id]);
         if (!empty($products)) {
             $this->session->set_flashdata('error', 'Impossible de supprimer cette catégorie car elle contient des produits.');
-            redirect(base_url('product_categories'));
+            redirect(base_url('product-categories'));
             return;
         }
         
@@ -99,7 +99,7 @@ class Product_categories extends MY_Controller {
         } else {
             $this->session->set_flashdata('error', 'Une erreur est survenue lors de la suppression.');
         }
-        redirect(base_url('product_categories'));
+        redirect(base_url('product-categories'));
     }
 
     function view($id)

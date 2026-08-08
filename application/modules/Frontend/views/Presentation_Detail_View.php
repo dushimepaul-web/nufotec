@@ -132,7 +132,7 @@ foreach (['Seed Capital', 'Farmland', 'Export Share', 'Direct Jobs'] as $cle) {
     align-items: center;
     background:
         linear-gradient(120deg, rgba(8,61,42,.94) 0%, rgba(11,93,59,.85) 55%, rgba(11,93,59,.65) 100%),
-        url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+        var(--pre-hero-bg, url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80')) center/cover no-repeat;
     padding: 120px 0;
 }
 .pre-hero-breadcrumb {
@@ -347,7 +347,13 @@ foreach (['Seed Capital', 'Farmland', 'Export Share', 'Direct Jobs'] as $cle) {
 <!-- ═════════════════════════════════════════════════════════════════ -->
 <!-- HERO — PRÉSENTATION -->
 <!-- ═════════════════════════════════════════════════════════════════ -->
-<section class="pre-hero" aria-label="Présentation de NUFOTEC-PHYTOMED INDUSTRIES">
+<?php
+                    $img_hero_pre = $this->Model->get_setting('image_hero_presentation', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80');
+                    if (!empty($img_hero_pre) && !preg_match('/^https?:\/\//i', $img_hero_pre)) {
+                        $img_hero_pre = base_url((strpos($img_hero_pre, '/') === false && strpos($img_hero_pre, '\\') === false) ? 'attachments/Configurations/' . $img_hero_pre : $img_hero_pre);
+                    }
+                    ?>
+                    <section class="pre-hero" aria-label="Présentation de NUFOTEC-PHYTOMED INDUSTRIES" style="--pre-hero-bg: url('<?= htmlspecialchars($img_hero_pre) ?>');">
     <div class="container pre-container text-center">
         <!-- Fil d'ariane -->
         <nav aria-label="Fil d'ariane" class="pre-hero-breadcrumb justify-content-center" data-aos="fade-down">
@@ -391,7 +397,13 @@ foreach (['Seed Capital', 'Farmland', 'Export Share', 'Direct Jobs'] as $cle) {
         <div class="row align-items-start g-5">
             <div class="col-lg-6" data-aos="fade-right">
                 <div class="pre-who-img pre-who-sticky">
-                    <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80"
+                    <?php
+                    $pre_img_who = $this->Model->get_setting('image_vision_2026', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80');
+                    if (!empty($pre_img_who) && !preg_match('/^https?:\/\//i', $pre_img_who)) {
+                        $pre_img_who = base_url((strpos($pre_img_who, '/') === false && strpos($pre_img_who, '\\') === false) ? 'attachments/Configurations/' . $pre_img_who : $pre_img_who);
+                    }
+                    ?>
+                    <img src="<?= htmlspecialchars($pre_img_who) ?>"
                          alt="Laboratoire moderne NUFOTEC-PHYTOMED Industries"
                          onerror="this.src='https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'">
                 </div>
@@ -718,6 +730,108 @@ foreach (['Seed Capital', 'Farmland', 'Export Share', 'Direct Jobs'] as $cle) {
 </section>
 
 <!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- SECTION PARTENAIRES STRATÉGIQUES & ACADÉMIQUES (SCROLL HORIZONTAL) -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<section class="pre-section py-5" id="pre-partenaires-scroll" style="background: #f8fafc; overflow: hidden;">
+    <div class="container-fluid px-4">
+        <div class="text-center mx-auto mb-4" style="max-width: 760px;" data-aos="fade-up">
+            <span class="pre-badge"><i class="bi bi-handshake"></i> Réseau & Collaboration</span>
+            <h2 class="pre-h2">Nos Partenaires Stratégiques & Académiques</h2>
+            <p class="pre-lead">Nos alliances mondiales avec des universités, institutions et organismes de premier plan.</p>
+        </div>
+
+        <?php
+        $CI =& get_instance();
+        if (!isset($CI->Model)) { $CI->load->model('Model'); }
+        $partenaires_list = $CI->Model->read('partenaires', ['est_actif' => 1, 'deleted_at' => NULL], 'id_partenaire', 'DESC');
+        if (!empty($partenaires_list)):
+        ?>
+        <style>
+            .partners-marquee-container {
+                position: relative;
+                width: 100%;
+                overflow: hidden;
+                white-space: nowrap;
+                padding: 20px 0;
+            }
+            .partners-marquee-track {
+                display: inline-flex;
+                gap: 25px;
+                animation: scrollPartners 35s linear infinite;
+            }
+            .partners-marquee-container:hover .partners-marquee-track {
+                animation-play-state: paused;
+            }
+            @keyframes scrollPartners {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+            }
+            .partner-card-item {
+                flex: 0 0 320px;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 16px;
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+                white-space: normal;
+                display: inline-flex;
+                flex-direction: column;
+                justify-content: space-between;
+                height: 280px;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .partner-card-item:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(11,93,59,0.1);
+                border-color: #0B5D3B;
+            }
+        </style>
+
+        <div class="partners-marquee-container">
+            <div class="partners-marquee-track">
+                <?php 
+                // Dupliquer pour assurer une boucle fluide infinie
+                $loop_items = array_merge($partenaires_list, $partenaires_list);
+                foreach ($loop_items as $part): 
+                ?>
+                <div class="partner-card-item">
+                    <div>
+                        <div class="mb-2 d-flex align-items-center justify-content-center" style="height: 60px;">
+                            <?php if (!empty($part['logo_url'])): ?>
+                                <img src="<?= base_url($part['logo_url']) ?>" alt="<?= htmlspecialchars($part['nom']) ?>" style="max-height: 50px; max-width: 120px; object-fit: contain;" onerror="this.src='<?= base_url('attachments/partenaires/default-logo.png') ?>'">
+                            <?php else: ?>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 45px; height: 45px; background: #0B5D3B; font-size: 1rem;">
+                                    <?= mb_substr($part['nom'], 0, 2) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <span class="badge rounded-pill mb-2 px-2 py-1 text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px; background: rgba(11,93,59,0.1); color: #0B5D3B;">
+                            <?= htmlspecialchars($part['type_partenaire']) ?>
+                        </span>
+                        <h3 class="h6 fw-bold text-dark mb-1" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;"><?= htmlspecialchars($part['nom']) ?></h3>
+                        <?php if (!empty($part['pays'])): ?>
+                            <p class="text-muted small mb-2" style="font-size: 0.78rem;"><i class="bi bi-geo-alt-fill text-danger"></i> <?= htmlspecialchars($part['pays']) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (!empty($part['site_web'])): ?>
+                        <div class="mt-2 pt-2 border-top w-100">
+                            <a href="<?= htmlspecialchars($part['site_web']) ?>" target="_blank" rel="noopener" class="btn btn-outline-success btn-sm w-100 rounded-pill fw-semibold py-1" style="font-size: 0.78rem; border-color: #0B5D3B; color: #0B5D3B;">
+                                <i class="bi bi-globe"></i> Visiter le site
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php else: ?>
+            <div class="text-center text-muted py-4">Aucun partenaire répertorié pour le moment.</div>
+        <?php endif; ?>
+    </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
 <!-- SECTION 7 : POURQUOI CHOISIR NUFOTEC ? -->
 <!-- ═════════════════════════════════════════════════════════════════ -->
 <section class="pre-section bg-white" id="pre-pourquoi">
@@ -725,7 +839,13 @@ foreach (['Seed Capital', 'Farmland', 'Export Share', 'Direct Jobs'] as $cle) {
         <div class="row align-items-center g-5">
             <div class="col-lg-6" data-aos="fade-right">
                 <div class="pre-why-img">
-                    <img src="https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80"
+                    <?php
+                    $pre_img_diff = $this->Model->get_setting('image_sante_connectee', 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80');
+                    if (!empty($pre_img_diff) && !preg_match('/^https?:\/\//i', $pre_img_diff)) {
+                        $pre_img_diff = base_url((strpos($pre_img_diff, '/') === false && strpos($pre_img_diff, '\\') === false) ? 'attachments/Configurations/' . $pre_img_diff : $pre_img_diff);
+                    }
+                    ?>
+                    <img src="<?= htmlspecialchars($pre_img_diff) ?>"
                          alt="Équipe médicale et scientifique NUFOTEC"
                          onerror="this.src='https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'">
                 </div>

@@ -1,5 +1,6 @@
 <?php 
 include VIEWPATH.'includes/frontend/Header.php'; 
+include VIEWPATH.'includes/alerts.php';
 ?>
 
 <!-- ================= STYLES ================= -->
@@ -8,6 +9,9 @@ include VIEWPATH.'includes/frontend/Header.php';
     --primary-teal: #1a8c78;
     --dark-teal: #146c5c;
     --light-bg: #f8faf9;
+    --primary: #0f4c3a;
+    --primary-dark: #0a3328;
+    --accent: #d4af37;
 }
 
 .text-teal { color: var(--primary-teal) !important; }
@@ -129,6 +133,12 @@ include VIEWPATH.'includes/frontend/Header.php';
 .article-card:hover .article-img {
     transform: scale(1.05);
 }
+.article-title-link {
+    transition: color 0.3s ease;
+}
+.article-card:hover .article-title-link {
+    color: var(--primary-teal) !important;
+}
 .article-category {
     background: var(--primary-teal);
     color: white;
@@ -154,6 +164,29 @@ include VIEWPATH.'includes/frontend/Header.php';
     padding: 3px 10px;
     border-radius: 15px;
     font-size: 0.8rem;
+}
+
+/* Lien "Lire plus" dans la carte */
+.article-readmore {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-teal);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    margin-top: 12px;
+}
+.article-readmore i {
+    transition: transform 0.3s ease;
+}
+.article-readmore:hover {
+    color: var(--dark-teal);
+    gap: 12px;
+}
+.article-readmore:hover i {
+    transform: translateX(4px);
 }
 
 /* ================= SIDEBAR ================= */
@@ -313,6 +346,163 @@ include VIEWPATH.'includes/frontend/Header.php';
     margin-bottom: 20px;
 }
 
+/* ================= NEWSLETTER ================= */
+.newsletter-widget {
+    background: linear-gradient(160deg, #0f4c3a 0%, #146c5c 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+.newsletter-widget .widget-title {
+    color: white;
+    border-bottom-color: rgba(255,255,255,.2);
+}
+.newsletter-widget::before {
+    content: '';
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.06);
+    top: -60px;
+    right: -60px;
+}
+.newsletter-widget::after {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(212,175,55,.12);
+    bottom: -40px;
+    left: -40px;
+}
+.newsletter-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+}
+.newsletter-widget .text-muted { color: rgba(255,255,255,.85) !important; }
+.newsletter-input {
+    position: relative;
+}
+.newsletter-input i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    z-index: 2;
+}
+.newsletter-input .form-control {
+    padding-left: 40px;
+    border-radius: 25px;
+    border: none;
+}
+.newsletter-input .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(212,175,55,.35);
+}
+.newsletter-msg {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    margin-bottom: 12px;
+}
+.newsletter-msg.success { background: rgba(39,174,96,.15); color: #eafff1; border: 1px solid rgba(39,174,96,.4); }
+.newsletter-msg.error { background: rgba(231,76,60,.15); color: #ffe9e7; border: 1px solid rgba(231,76,60,.4); }
+.newsletter-msg.warning { background: rgba(241,196,15,.15); color: #fff8e1; border: 1px solid rgba(241,196,15,.4); }
+.btn-teal {
+    background: var(--accent);
+    color: var(--primary-dark) !important;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+.btn-teal:hover {
+    background: #e8c84e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.25);
+}
+
+/* ================= SOCIAL FOLLOW ================= */
+.social-follow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.social-follow-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--light-bg);
+    text-decoration: none;
+    color: #333;
+    border: 1px solid #eef1f0;
+    transition: all 0.3s ease;
+}
+.social-follow-item:hover {
+    background: white;
+    transform: translateX(4px);
+    box-shadow: 0 5px 15px rgba(0,0,0,.1);
+    border-color: var(--primary-teal);
+}
+.social-follow-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.social-follow-item.facebook .social-follow-icon { background: #3b5998; }
+.social-follow-item.twitter .social-follow-icon { background: #1da1f2; }
+.social-follow-item.linkedin .social-follow-icon { background: #0077b5; }
+.social-follow-item.instagram .social-follow-icon { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.social-follow-item.youtube .social-follow-icon { background: #ff0000; }
+.social-follow-item.whatsapp .social-follow-icon { background: #25d366; }
+.social-follow-item.tiktok .social-follow-icon { background: #010101; }
+.social-follow-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+.social-follow-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+}
+.social-follow-count {
+    color: var(--primary-teal);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.social-follow-arrow {
+    color: #bbb;
+    font-size: 0.9rem;
+    transition: transform 0.3s ease;
+}
+.social-follow-item:hover .social-follow-arrow {
+    color: var(--primary-teal);
+    transform: translate(2px, -2px);
+}
+
 /* ================= RESPONSIVE ================= */
 @media (max-width: 768px) {
     .article-img { height: 180px; }
@@ -403,7 +593,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                                          class="article-img" 
                                          alt="<?= htmlspecialchars($article['title']) ?>"
                                          loading="lazy"
-                                         onerror="this.src='<?= base_url('assets/images/news-placeholder.jpg') ?>'">
+                                         onerror="this.src='<?= base_url('assets/backend/images/defaut-logo.jpeg') ?>'">
                                     
                                     <span class="article-category"><?= htmlspecialchars($article['category']) ?></span>
                                     
@@ -422,8 +612,8 @@ include VIEWPATH.'includes/frontend/Header.php';
                                         </span>
                                     </div>
                                     
-                                    <h4 class="fw-bold mb-3 name">
-                                        <a href="<?= $article['url'] ?>" class="text-dark text-decoration-none stretched-link">
+                                    <h4 class="fw-bold mb-3 name" style="font-size: 1.15rem; line-height: 1.4;">
+                                        <a href="<?= $article['url'] ?>" class="text-dark text-decoration-none article-title-link">
                                             <?= htmlspecialchars($article['title']) ?>
                                         </a>
                                     </h4>
@@ -432,7 +622,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                                         <?= !empty($article['resume']) ? htmlspecialchars($article['resume']) : substr(strip_tags($article['content']), 0, 120) ?>...
                                     </p>
                                     
-                                    <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
                                         <div class="article-meta">
                                             <i class="far fa-user"></i> <?= htmlspecialchars($article['author']) ?>
                                         </div>
@@ -442,12 +632,16 @@ include VIEWPATH.'includes/frontend/Header.php';
                                     </div>
                                     
                                     <?php if (!empty($article['tags'])): ?>
-                                        <div class="mt-3">
+                                        <div class="mb-3">
                                             <?php foreach (array_slice($article['tags'], 0, 3) as $tag): ?>
                                                 <span class="badge bg-light text-dark me-1">#<?= htmlspecialchars($tag) ?></span>
                                             <?php endforeach; ?>
                                         </div>
                                     <?php endif; ?>
+                                    
+                                    <a href="<?= $article['url'] ?>" class="article-readmore">
+                                        Lire la suite <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -520,7 +714,7 @@ include VIEWPATH.'includes/frontend/Header.php';
                     <?php foreach($popular_articles as $pop): ?>
                     <div class="popular-item">
                         <img src="<?= $pop['image'] ?>" alt="" class="popular-thumb" loading="lazy"
-                             onerror="this.src='<?= base_url('assets/images/news-placeholder.jpg') ?>'">
+                             onerror="this.src='<?= base_url('assets/backend/images/defaut-logo.jpeg') ?>'">
                         <div class="popular-content">
                             <h6>
                                 <a href="<?= $pop['url'] ?>">
@@ -536,19 +730,56 @@ include VIEWPATH.'includes/frontend/Header.php';
                 </div>
                 <?php endif; ?>
                 
-                <!-- Widget: Newsletter (optionnel) -->
-                <div class="sidebar-widget bg-teal text-white">
-                    <h5 class="widget-title text-white border-white"><i class="fas fa-envelope me-2"></i>Newsletter</h5>
-                    <p class="mb-3">Restez informé de nos dernières actualités.</p>
-                    <form action="<?= base_url('newsletter/subscribe') ?>" method="POST">
+                <!-- Widget: Newsletter (AJAX) -->
+                <div class="sidebar-widget newsletter-widget">
+                    <div class="newsletter-icon"><i class="fas fa-envelope-open-text"></i></div>
+                    <h5 class="widget-title"><i class="fas fa-paper-plane me-2"></i>Newsletter</h5>
+                    <p class="text-muted mb-3">Restez informé de nos dernières actualités et innovations. Inscrivez-vous gratuitement !</p>
+                    <form id="newsletterForm" action="<?= base_url('newsletter/subscribe') ?>" method="POST" novalidate>
+                        <input type="hidden" name="sub_type" value="email">
                         <div class="mb-2">
-                            <input type="email" name="email" class="form-control" placeholder="Votre email" required>
+                            <div class="newsletter-input">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="Votre adresse email" required>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-light w-100 text-teal fw-bold">
+                        <div id="newsletterMsg" class="newsletter-msg d-none"></div>
+                        <button type="submit" id="newsletterBtn" class="btn btn-teal w-100 fw-bold text-white">
                             <i class="fas fa-paper-plane me-2"></i>S'abonner
                         </button>
                     </form>
                 </div>
+
+                <!-- Widget: Suivez-nous -->
+                <?php if (!empty($social_links)): ?>
+                <div class="sidebar-widget">
+                    <h5 class="widget-title"><i class="fas fa-users me-2"></i>Suivez-nous</h5>
+                    <div class="social-follow-list">
+                        <?php foreach ($social_links as $social): 
+                            $icon = !empty($social['icon_class']) && $social['icon_class'] !== 'bi'
+                                ? $social['icon_class'] . ' ' . $social['icon_name']
+                                : 'bi bi-' . $social['icon_name'];
+                            $brand = strtolower($social['platform']);
+                        ?>
+                        <a href="<?= htmlspecialchars($social['url']) ?>" 
+                           class="social-follow-item <?= htmlspecialchars($brand) ?>"
+                           target="_blank" rel="noopener noreferrer"
+                           title="<?= htmlspecialchars($social['label']) ?>">
+                            <span class="social-follow-icon"><i class="<?= $icon ?>"></i></span>
+                            <span class="social-follow-info">
+                                <span class="social-follow-name"><?= htmlspecialchars($social['label']) ?></span>
+                                <?php if (!empty($social['followers'])): ?>
+                                <span class="social-follow-count">
+                                    <i class="bi bi-people-fill"></i> <?= htmlspecialchars($social['followers']) ?> abonnés
+                                </span>
+                                <?php endif; ?>
+                            </span>
+                            <i class="bi bi-arrow-up-right social-follow-arrow"></i>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
                 
             </div>
         </div>
@@ -556,3 +787,78 @@ include VIEWPATH.'includes/frontend/Header.php';
 </section>
 
 <?php include VIEWPATH.'includes/frontend/Footer.php'; ?>
+
+
+<script>
+(function() {
+    'use strict';
+    var form = document.getElementById('newsletterForm');
+    if (!form) return;
+
+    var CSRF_NAME = '<?= $this->security->get_csrf_token_name() ?>';
+    var CSRF_HASH = '<?= $this->security->get_csrf_hash() ?>';
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var email = document.getElementById('newsletterEmail').value.trim();
+        var msg = document.getElementById('newsletterMsg');
+        var btn = document.getElementById('newsletterBtn');
+
+        if (!email) {
+            showMsg(msg, 'Veuillez saisir votre adresse email.', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Inscription...';
+
+        var body = new URLSearchParams();
+        body.append('email', email);
+        body.append('sub_type', 'email');
+        body.append(CSRF_NAME, CSRF_HASH);
+
+        fetch('<?= base_url('newsletter/subscribe') ?>', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': CSRF_HASH,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body
+        })
+        .then(function(resp) {
+            if (!resp.ok) {
+                // Le bootstrap CSRF peut renvoyer 403 (token expiré) : recharger la page
+                window.location.reload();
+                return null;
+            }
+            return resp.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>S\'abonner';
+
+            if (data.success) {
+                showMsg(msg, data.message, 'success');
+                document.getElementById('newsletterEmail').value = '';
+            } else {
+                showMsg(msg, data.message, data.status === 'warning' ? 'warning' : 'error');
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>S\'abonner';
+            showMsg(msg, 'Une erreur est survenue. Veuillez réessayer.', 'error');
+        });
+    });
+
+    function showMsg(el, text, type) {
+        el.className = 'newsletter-msg ' + type;
+        el.innerHTML = text;
+        el.classList.remove('d-none');
+        setTimeout(function() { el.classList.add('d-none'); }, 6000);
+    }
+})();
+</script>

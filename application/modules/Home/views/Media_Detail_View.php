@@ -537,6 +537,88 @@
         .alert-secondary a { color: var(--accent-blue); text-decoration: none; }
         .btn-outline-secondary { border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); border-radius: 30px; padding: 0.5rem 1rem; font-size: 0.875rem; transition: var(--transition-fast); }
         .btn-outline-secondary:hover { background: var(--bg-hover); border-color: var(--accent-blue); color: var(--text-primary); }
+        /* ============================================
+           DOCUMENT / BOOK READER PREMIUM
+        ============================================ */
+        .document-viewer {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            padding: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        .doc-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+        .doc-toolbar-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            min-width: 0;
+            font-weight: 600;
+        }
+        .doc-toolbar-title i { color: var(--accent-green); font-size: 1.1rem; }
+        .doc-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.9rem;
+        }
+        .doc-type-badge {
+            background: linear-gradient(135deg, var(--accent-green), #00a86b);
+            color: #0a0a0a;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .doc-size {
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+            font-weight: 400;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1px 8px;
+            white-space: nowrap;
+        }
+        .doc-toolbar-actions { display: flex; gap: 0.5rem; }
+        .doc-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition-fast);
+        }
+        .doc-btn:hover {
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+        .document-viewer.fullscreen-mode {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .document-viewer.fullscreen-mode iframe { flex: 1; height: 100%; min-height: 0; }
     </style>
 
     <script type="text/javascript">
@@ -666,6 +748,21 @@ function googleTranslateElementInit() {
             $youtube_id = $matches[1] ?? '';
         }
         
+        // Detection automatique du type si celui-ci n'est pas renseigne (ex: PDF/book)
+        if (empty($type) || $type === 'autre') {
+            $mime = strtolower((string)($media['mime_type'] ?? ''));
+            $ext = strtolower(pathinfo(parse_url($fichier, PHP_URL_PATH) ?: '', PATHINFO_EXTENSION));
+            if (($media['sous_type'] ?? '') === 'book' || strpos($mime, 'pdf') !== false || in_array($ext, array('pdf', 'doc', 'docx', 'rtf', 'ppt', 'pptx', 'xls', 'xlsx', 'epub'))) {
+                $type = 'document';
+            } elseif (strpos($mime, 'image') !== false || in_array($ext, array('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'))) {
+                $type = 'image';
+            } elseif (strpos($mime, 'audio') !== false || in_array($ext, array('mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'))) {
+                $type = 'audio';
+            } elseif (strpos($mime, 'video') !== false || in_array($ext, array('mp4', 'webm', 'avi', 'mov', 'm4v'))) {
+                $type = 'video';
+            }
+        }
+
         $is_youtube_link = !empty($youtube_id);
         $is_downloadable = in_array($type, ['video', 'audio', 'image', 'document']) && !empty($media['fichier']);
     ?>
@@ -718,33 +815,38 @@ function googleTranslateElementInit() {
                         </button>
                     </div>
 
-                <?php elseif ($type === 'document' && !empty($fichier)): ?>
-                    <div class="document-viewer" style="background: var(--bg-card); border-radius: var(--border-radius-lg); padding: 0; overflow: hidden;">
-                        <iframe src="<?= htmlspecialchars($fichier) ?>" style="width: 100%; height: 75vh; min-height: 480px; border: none; background: #fff;" loading="eager"></iframe>
+                                <?php elseif ($type === 'document' && !empty($fichier)): ?>
+                    <div class="document-viewer" id="documentViewer">
+                        <div class="doc-toolbar">
+                            <div class="doc-toolbar-title">
+                                <i class="bi bi-book"></i>
+                                <span class="doc-title"><?= htmlspecialchars($media['titre']) ?></span>
+                                <?php if (($media['sous_type'] ?? '') === 'book'): ?><span class="doc-type-badge">Book</span><?php endif; ?>
+                                <?php if (!empty($media['taille'])): ?><span class="doc-size"><?= formatFileSize((int)$media['taille']) ?></span><?php endif; ?>
+                            </div>
+                            <div class="doc-toolbar-actions">
+                                <button class="doc-btn" title="Plein &eacute;cran" onclick="toggleDocFullscreen()"><i class="bi bi-arrows-fullscreen"></i></button>
+                                <button class="doc-btn" title="T&eacute;l&eacute;charger" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')"><i class="bi bi-download"></i></button>
+                                <a class="doc-btn" href="<?= htmlspecialchars($fichier) ?>" target="_blank" rel="noopener" title="Ouvrir dans un nouvel onglet"><i class="bi bi-box-arrow-up-right"></i></a>
+                            </div>
+                        </div>
+                        <iframe id="docFrame" src="<?= htmlspecialchars($fichier) ?>#toolbar=1&navpanes=1&view=FitH" style="width: 100%; height: 78vh; min-height: 480px; border: none; background: #fff;" loading="eager"></iframe>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
-                        <a href="<?= htmlspecialchars($fichier) ?>" target="_blank" rel="noopener" class="btn-outline-secondary" style="text-decoration: none;">
-                            <i class="bi bi-box-arrow-up-right"></i> Ouvrir dans le navigateur
-                        </a>
-                        <?php if ($is_downloadable): ?>
-                            <button class="btn-outline-secondary" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
-                                <i class="bi bi-download"></i> Télécharger
-                            </button>
-                        <?php endif; ?>
-                    </div>
+                    <script>
+                    function toggleDocFullscreen() {
+                        var el = document.getElementById('documentViewer');
+                        if (!el) return;
+                        if (!document.fullscreenElement) {
+                            if (el.requestFullscreen) el.requestFullscreen();
+                            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                        } else {
+                            if (document.exitFullscreen) document.exitFullscreen();
+                            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                        }
+                    }
+                    </script>
 
-                <?php else: ?>
-                    <div class="text-center p-5" style="background: var(--bg-card); border-radius: var(--border-radius-lg);">
-                        <i class="bi bi-file-earmark" style="font-size: 4rem; opacity: 0.5;"></i>
-                        <h4 class="mt-2"><?= htmlspecialchars($media['titre']) ?></h4>
-                        <?php if (!empty($lien) || !empty($fichier)): ?>
-                            <a href="<?= htmlspecialchars($lien ?: $fichier) ?>" target="_blank" class="btn-outline-secondary" style="display: inline-block; margin-top: 1rem; text-decoration: none;">
-                                <i class="bi bi-box-arrow-up-right"></i> Ouvrir
-                            </a>
-                        <?php endif; ?>
-                    </div>
                 <?php endif; ?>
-                
                 <!-- Informations Vidéo -->
                 <h1 class="video-title"><?= htmlspecialchars($media['titre']) ?></h1>
                 

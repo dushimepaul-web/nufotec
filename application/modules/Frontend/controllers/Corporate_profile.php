@@ -12,20 +12,12 @@ class Corporate_profile extends Public_Controller {
         $this->load->helper('text');
     }
 
-    /**
-     * Affiche une page dynamique avec ses sections (multilingue)
-     * @param string|null $lang Code langue (fr, en, sw)
-     */
     public function index($lang = null) {
-        // Langue
         if ($lang === null) {
-            $lang = $this->current_lang;
+            $lang = $this->current_lang ?? 'fr';
         }
 
-        // Slug par défaut
         $slug = 'about';
-
-        // Récupération de la page
         $page = static_pages_one([
             'slug' => $slug,
             'est_publiee' => 1
@@ -35,19 +27,16 @@ class Corporate_profile extends Public_Controller {
             show_404();
         }
 
-        // Champs de la page
         $page['titre_page']       = $page['titre_page'] ?? '';
         $page['contenu_page']     = $page['contenu_page'] ?? '';
         $page['meta_description'] = $page['meta_description'] ?? '';
 
-        // Récupération des sections actives
         $sections = static_sections_where([
             'id_page'    => $page['id_page'],
             'est_active' => 1,
             'deleted_at' => null
         ], 'ordre', 'ASC');
 
-        // Décodage JSON
         foreach ($sections as &$sec) {
             $sec['titre_section'] = $sec['titre_section'] ?? '';
             $sec['sous_titre']    = $sec['sous_titre']    ?? '';
@@ -58,7 +47,6 @@ class Corporate_profile extends Public_Controller {
             if (!is_array($sec['options'])) $sec['options'] = [];
         }
 
-        // Pages enfants pour sous-menu
         $children = static_pages_where([
             'menu_parent_id' => $page['id_page'],
             'est_publiee' => 1
@@ -67,13 +55,9 @@ class Corporate_profile extends Public_Controller {
             $child['titre_page'] = $child['titre_page'] ?? '';
         }
 
-        // Données SEO
         $seo = $this->_prepare_seo_data($page, $lang);
-
-        // Chargement des données additionnelles pour les sections (équipe, partenaires, etc.)
         $extra_data = $this->load_sections_data($sections, $lang);
 
-        // Assemblage final
         $data = array_merge([
             'page'     => $page,
             'sections' => $sections,
@@ -84,9 +68,6 @@ class Corporate_profile extends Public_Controller {
         $this->load->view('Corporate_profile', $data);
     }
 
-    /**
-     * Prépare les métadonnées SEO
-     */
     private function _prepare_seo_data($page, $lang) {
         $site_name = $this->Model->get_setting('site_name', 'AGF Phytomed');
         $site_description = $this->Model->get_setting('site_description', 'Pionniers de la phytothérapie africaine');
@@ -105,14 +86,6 @@ class Corporate_profile extends Public_Controller {
         ];
     }
 
-    /**
-     * Charge les données nécessaires pour tous les types de sections présents
-     * Évite les requêtes multiples pour un même type.
-     *
-     * @param array $sections Liste des sections de la page
-     * @param string $lang Langue courante
-     * @return array Données additionnelles
-     */
     private function load_sections_data($sections, $lang) {
         $loaders = [
             'equipe'        => '_load_team',
@@ -125,7 +98,6 @@ class Corporate_profile extends Public_Controller {
             'actualites_blog'=> '_load_posts',
             'faq'           => '_load_faq',
             'galerie_medias'=> '_load_gallery',
-            'evenements'    => '_load_events',
             'ressources_telechargeables' => '_load_resources',
             'risques_mitigations' => '_load_risks',
             'statistiques_reseaux' => '_load_social_stats',
@@ -151,149 +123,78 @@ class Corporate_profile extends Public_Controller {
         return $data;
     }
 
-    // ========================================================================
-    // Méthodes de chargement spécifiques (avec prise en compte de la langue)
-    // ========================================================================
-
     private function _load_team($options = [], $lang) {
-        $members = $this->Model->read('equipe', ['est_actif' => 1], 'ordre_affichage', 'ASC');
-        foreach ($members as &$member) {
-            $member['nom_complet'] = $member['nom_complet'] ?? '';
-            $member['poste'] = $member['poste'] ?? '';
-            $member['bio']   = $member['bio']   ?? '';
+        $members = [];
+        if ($this->db->table_exists('equipe')) {
+            $members = $this->Model->read('equipe', ['est_actif' => 1], 'id', 'ASC');
         }
         return ['members' => $members];
     }
 
     private function _load_partners($options = [], $lang) {
-        $partners = $this->Model->read('partenaires', ['est_actif' => 1], 'ordre_affichage', 'ASC');
+        $partners = $this->Model->read('partenaires', ['est_actif' => 1, 'deleted_at' => NULL], 'id_partenaire', 'DESC');
         foreach ($partners as &$partner) {
             $partner['nom'] = $partner['nom'] ?? '';
             $partner['description'] = $partner['description'] ?? '';
+            $partner['logo_url'] = !empty($partner['logo_url']) ? base_url($partner['logo_url']) : base_url('attachments/partenaires/default-logo.png');
         }
         return ['partners' => $partners];
     }
 
     private function _load_testimonials($options = [], $lang) {
         $testimonials = $this->Model->read('temoignages', ['est_approuve' => 1], 'date_reception', 'DESC');
-        foreach ($testimonials as &$test) {
-            $test['contenu'] = $test['contenu'] ?? '';
-            $test['auteur']  = $test['auteur']  ?? '';
-        }
         return ['testimonials' => $testimonials];
     }
 
     private function _load_stats($options = [], $lang) {
-        $stats = $this->Model->read('chiffres_cles', ['est_actif' => 1], 'ordre_affichage', 'ASC');
-        foreach ($stats as &$stat) {
-            $stat['titre'] = $stat['titre'] ?? '';
-            $stat['description'] = $stat['description'] ?? '';
-        }
+        $stats = $this->Model->read('chiffres_cles', [], 'ordre', 'ASC');
         return ['statistics' => $stats];
     }
 
     private function _load_certifications($options = [], $lang) {
-        $certs = $this->Model->read('licences_certifications', ['est_actif' => 1], 'date_obtention', 'DESC');
-        foreach ($certs as &$cert) {
-            $cert['nom'] = $cert['nom'] ?? '';
-            $cert['description'] = $cert['description'] ?? '';
+        $certs = [];
+        if ($this->db->table_exists('licences_certifications')) {
+            $certs = $this->Model->read('licences_certifications', ['est_actif' => 1], 'id', 'DESC');
         }
         return ['certifications' => $certs];
     }
 
     private function _load_phases($options = [], $lang) {
         $phases = $this->Model->read('investissement_phases', [], 'annee_debut', 'ASC');
-        foreach ($phases as &$phase) {
-            $phase['titre'] = $phase['titre'] ?? '';
-            $phase['description'] = $phase['description'] ?? '';
-        }
         return ['phases' => $phases];
     }
 
     private function _load_products($options = [], $lang) {
-        $limit = $options['limit'] ?? 6;
-        $this->db->select('p.*, c.nom_categorie as categorie_nom');
-        $this->db->from('produits p');
-        $this->db->join('categories c', 'p.id_categorie = c.id_categorie', 'left');
-        $this->db->where('p.est_actif', 1);
-        $this->db->order_by('p.ordre_affichage', 'ASC');
-        $this->db->limit($limit);
-        $products = $this->db->get()->result_array();
-        foreach ($products as &$prod) {
-            $prod['nom_produit'] = $prod['nom_produit'] ?? '';
-            $prod['description_courte'] = $prod['description_courte'] ?? '';
-            $prod['description_longue'] = $prod['description_longue'] ?? '';
+        $products = [];
+        if ($this->db->table_exists('produits')) {
+            $products = $this->Model->read('produits', ['est_actif' => 1], 'id', 'DESC');
         }
         return ['products' => $products];
     }
 
     private function _load_posts($options = [], $lang) {
-        $limit = $options['limit'] ?? 3;
-        $posts = $this->Model->read('actualites_blog', ['est_publiee' => 1], 'date_publication', 'DESC', $limit);
-        foreach ($posts as &$post) {
-            $post['titre'] = $post['titre'] ?? '';
-            $post['contenu'] = $post['contenu'] ?? '';
-            $post['extrait'] = $post['extrait'] ?? '';
-        }
+        $posts = $this->Model->read('actualites_blog', ['est_publiee' => 1], 'date_publication', 'DESC', 3);
         return ['posts' => $posts];
     }
 
     private function _load_faq($options = [], $lang) {
         $faqs = $this->Model->read('faq', ['est_publiee' => 1], 'ordre', 'ASC');
-        foreach ($faqs as &$faq) {
-            $faq['question'] = $faq['question'] ?? '';
-            $faq['reponse']  = $faq['reponse']  ?? '';
-        }
         return ['faqs' => $faqs];
     }
 
     private function _load_gallery($options = [], $lang) {
         $medias = $this->Model->read('galerie_medias', [], 'date_prise', 'DESC');
-        foreach ($medias as &$media) {
-            $media['titre'] = $media['titre'] ?? '';
-            $media['description'] = $media['description'] ?? '';
-        }
         return ['medias' => $medias];
     }
 
-    private function _load_events($options = [], $lang) {
-        $events = $this->Model->read('evenements', ['est_public' => 1, 'date_debut >= ' => date('Y-m-d')], 'date_debut', 'ASC');
-        foreach ($events as &$event) {
-            $event['titre'] = $event['titre'] ?? '';
-            $event['description'] = $event['description'] ?? '';
-            $event['lieu'] = $event['lieu'] ?? '';
-        }
-        return ['events' => $events];
-    }
-
     private function _load_resources($options = [], $lang) {
-        $resources = $this->Model->read('ressources_telechargeables', ['est_public' => 1], 'date_publication', 'DESC');
-        foreach ($resources as &$res) {
-            $res['titre'] = $res['titre'] ?? '';
-            $res['description'] = $res['description'] ?? '';
+        $resources = [];
+        if ($this->db->table_exists('ressources_telechargeables')) {
+            $resources = $this->Model->read('ressources_telechargeables', ['est_public' => 1], 'id', 'DESC');
         }
         return ['resources' => $resources];
     }
 
-    private function _load_risks($options = [], $lang) {
-        $risks = $this->Model->read('risques_mitigations', [], 'ordre', 'ASC');
-        foreach ($risks as &$risk) {
-            $risk['risque'] = $risk['risque'] ?? '';
-            $risk['mitigation'] = $risk['mitigation'] ?? '';
-        }
-        return ['risks' => $risks];
-    }
-
-    private function _load_social_stats($options = [], $lang) {
-        $social = $this->Model->read('statistiques_reseaux', [], 'date_mesure', 'DESC');
-        // Généralement pas de traduction pour les stats chiffrées, mais on peut garder tel quel
-        return ['social_stats' => $social];
-    }
-
-    /**
-     * Méthode alternative pour charger une page spécifique
-     */
-    public function page($slug = 'about') {
-        $this->index($slug);
-    }
+    private function _load_risks($options = [], $lang) { return []; }
+    private function _load_social_stats($options = [], $lang) { return []; }
 }

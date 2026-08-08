@@ -1,15 +1,20 @@
 <?php include VIEWPATH.'includes/frontend/Header.php'; ?>
 
+<?php
+    $site_logo = $this->Model->get_setting('site_logo');
+    $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
+    $hero_bg = $this->Model->get_setting('image_hero_home', $site_logo);
+    if (!empty($hero_bg) && !preg_match('/^https?:\/\//i', $hero_bg)) {
+        $hero_bg = base_url((strpos($hero_bg, '/') === false && strpos($hero_bg, '\\') === false) ? 'attachments/Configurations/' . $hero_bg : $hero_bg);
+    }
+?>
+
 <!-- ═════════════════════════════════════════════════════════════════ -->
 <!-- HERO SECTION PREMIUM (2026-2027) -->
 <!-- ═════════════════════════════════════════════════════════════════ -->
-<section class="hero-section-premium mb-4">
+<section class="hero-section-premium mb-4" style="--hero-home-bg: url('<?= htmlspecialchars($hero_bg) ?>')">
     <div class="hero-bg-overlay"></div>
     <div class="container hero-container">
-        <?php 
-            $site_logo = $this->Model->get_setting('site_logo');
-            $site_name = $this->Model->get_setting('site_name', 'NUFOTEC BURUNDI');
-        ?>
         <div class="row align-items-center justify-content-center text-center">
             <div class="col-lg-10 col-xl-9">
                 <?php if (!empty($site_logo)): ?>
@@ -53,8 +58,14 @@
             <!-- Colonne image à gauche (40%) -->
             <div class="col-lg-5 presentation-col" data-aos="fade-right">
                 <div class="presentation-image-card">
+                    <?php
+                    $img_vision = $this->Model->get_setting('image_vision_2026', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1000&q=80');
+                    if (!empty($img_vision) && !preg_match('/^https?:\/\//i', $img_vision)) {
+                        $img_vision = base_url((strpos($img_vision, '/') === false && strpos($img_vision, '\\') === false) ? 'attachments/Configurations/' . $img_vision : $img_vision);
+                    }
+                    ?>
                     <div class="presentation-image-inner">
-                        <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1000&q=80" 
+                        <img src="<?= htmlspecialchars($img_vision) ?>" 
                              alt="NUFOTEC-PHYTOMED Industries - Laboratoire & Usine Moderne" 
                              onerror="this.src='https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80'">
                     </div>
@@ -232,7 +243,13 @@
             <!-- Grande image à droite -->
             <div class="col-lg-6" data-aos="fade-left">
                 <div class="teleconsultation-image-wrapper position-relative">
-                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80" 
+                    <?php
+                    $img_sante = $this->Model->get_setting('image_sante_connectee', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80');
+                    if (!empty($img_sante) && !preg_match('/^https?:\/\//i', $img_sante)) {
+                        $img_sante = base_url((strpos($img_sante, '/') === false && strpos($img_sante, '\\') === false) ? 'attachments/Configurations/' . $img_sante : $img_sante);
+                    }
+                    ?>
+                    <img src="<?= htmlspecialchars($img_sante) ?>" 
                          alt="Téléconsultation NUFOTEC" 
                          class="img-fluid rounded-24 shadow-xl w-100 object-fit-cover"
                          style="min-height: 480px; max-height: 550px;"
@@ -278,49 +295,25 @@
         </div>
 
         <div class="row g-4">
-            <!-- Carte 1 -->
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
-                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
-                        <i class="bi bi-graph-up fs-1"></i>
+            <?php if (!empty($chiffres_cles)): ?>
+                <?php foreach ($chiffres_cles as $i => $chiffre): ?>
+                    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="<?= (($i % 4) + 1) * 100 ?>">
+                        <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass" <?= !empty($chiffre['description']) ? 'title="' . htmlspecialchars($chiffre['description']) . '"' : '' ?>>
+                            <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
+                                <i class="bi bi-<?= htmlspecialchars($chiffre['icone'] ?? 'star') ?> fs-1"></i>
+                            </div>
+                            <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">
+                                <?= htmlspecialchars($chiffre['valeur'] ?? '') ?>
+                            </div>
+                            <?php if (!empty($chiffre['unite'])): ?>
+                                <p class="stat-unit text-light opacity-8 small mb-1"><?= htmlspecialchars($chiffre['unite']) ?></p>
+                            <?php endif; ?>
+                            <p class="stat-unit text-light opacity-8 small mb-1">&nbsp;</p>
+                            <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0"><?= htmlspecialchars($chiffre['etiquette']) ?></p>
+                        </div>
                     </div>
-                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">40M+</div>
-                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Investissement USD</p>
-                </div>
-            </div>
-
-            <!-- Carte 2 -->
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
-                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
-                        <i class="bi bi-tree fs-1"></i>
-                    </div>
-                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">2,000+</div>
-                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Hectares de Plantations</p>
-                </div>
-            </div>
-
-            <!-- Carte 3 -->
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
-                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
-                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
-                        <i class="bi bi-people fs-1"></i>
-                    </div>
-                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">500+</div>
-                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Emplois Directs Créés</p>
-                </div>
-            </div>
-
-            <!-- Carte 4 -->
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
-                <div class="stat-card-premium bg-white-glass p-4 rounded-25 text-center h-100 d-flex flex-column justify-content-center border-glass">
-                    <div class="stat-icon-wrapper mb-3 text-gold" style="color: #D4A017;">
-                        <i class="bi bi-award fs-1"></i>
-                    </div>
-                    <div class="stat-number display-4 fw-bold text-white mb-2" style="font-family: 'Poppins', sans-serif;">100%</div>
-                    <p class="stat-label text-light opacity-9 small text-uppercase tracking-wider fw-semibold mb-0">Standards de Qualité</p>
-                </div>
-            </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
     </div>
 </section>
@@ -357,7 +350,7 @@
                         <p class="text-secondary small mb-4" style="line-height: 1.7;">
                             Participez à un projet biotechnologique d'envergure internationale à fort rendement et impact durable.
                         </p>
-                        <a href="<?= base_url('Frontend/investor-commitment') ?>" class="btn btn-custom-green w-100 py-3 rounded-pill fw-semibold shadow-sm text-white" style="background-color: #0B5D3B;">
+                        <a href="<?= base_url('investor') ?>" class="btn btn-custom-green w-100 py-3 rounded-pill fw-semibold shadow-sm text-white" style="background-color: #0B5D3B;">
                             Investir <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     </div>
@@ -375,7 +368,7 @@
                         <p class="text-secondary small mb-4" style="line-height: 1.7;">
                             Rejoignez notre réseau de partenaires et facilitez la mise en relation avec des investisseurs qualifiés.
                         </p>
-                        <a href="<?= base_url('Frontend/broker-commission') ?>" class="btn btn-custom-yellow w-100 py-3 rounded-pill fw-semibold shadow-sm text-dark" style="background-color: #D4A017;">
+                        <a href="<?= base_url('broker') ?>" class="btn btn-custom-yellow w-100 py-3 rounded-pill fw-semibold shadow-sm text-dark" style="background-color: #D4A017;">
                             Devenir courtier <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     </div>
@@ -531,6 +524,7 @@
 
                     <form action="<?= base_url('Home/Abonner') ?>" method="post" class="newsletter-form">
                         <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+                        <input type="hidden" name="sub_type" value="email">
                         
                         <div class="mb-3">
                             <input type="email" name="email" class="form-control py-3 px-4 rounded-18 border-custom fw-medium text-dark" 
@@ -657,8 +651,8 @@
 .hero-section-premium {
     position: relative;
     min-height: 85vh;
-    background: linear-gradient(135deg, rgba(8, 61, 42, 0.92) 0%, rgba(11, 93, 59, 0.88) 100%),
-                url('<?= base_url('attachments/Configurations/' . $site_logo) ?>') center/cover no-repeat;
+    background: linear-gradient(135deg, rgba(8, 61, 42, 0.72) 0%, rgba(11, 93, 59, 0.58) 100%),
+                var(--hero-home-bg, url('<?= base_url('attachments/Configurations/' . $site_logo) ?>')) center/cover no-repeat;
     display: flex;
     align-items: center;
     padding: 100px 0;

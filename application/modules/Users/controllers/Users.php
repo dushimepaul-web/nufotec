@@ -32,13 +32,6 @@ class Users extends MY_Controller {
         redirect(base_url('users'));    
     }
 
-    function UserDetail($userDetail){
-        $id = explode('_', $userDetail);
-        $data['detail'] = $this->Model->readOne('users', ['id' => $id[0]]);
-        $data['roles'] = $this->Model->read('roles', null, 'id');
-        $this->load->view('UserDetail_View', $data);
-    }
-
     function Create(){
         // Validation des champs requis
         $this->form_validation->set_rules('email', 'Email', 'required|valid_email|is_unique[users.email]');

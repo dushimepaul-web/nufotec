@@ -91,6 +91,7 @@ $pages_list = $pages; ?>
                         </tr>
                     </thead>
                     <tbody>
+                    <?php $modals_html = ''; ?>
                     <?php if (!empty($phases)): $i = 1; foreach ($phases as $value): 
                         // Récupérer le nom de la page associée
                         $page_name = 'Aucune';
@@ -104,7 +105,7 @@ $pages_list = $pages; ?>
                         }
                         
                         // Parser l'allocation JSON
-                        $allocations = $this->Investissement_phases->get_allocation_array($value['allocation_details']);
+                        $allocations = get_allocation_array($value['allocation_details']);
                     ?>
                         <tr>
                             <td><?= $i++ ?></td>
@@ -129,7 +130,7 @@ $pages_list = $pages; ?>
 
                             <td>
                                 <span class="badge bg-success fs-6">
-                                    <?= $this->Investissement_phases->format_montant($value['montant_total'], $value['devise']) ?>
+                                    <?= format_montant($value['montant_total'], $value['devise']) ?>
                                 </span>
                                 <small class="text-muted d-block"><?= $value['devise'] ?></small>
                             </td>
@@ -138,8 +139,8 @@ $pages_list = $pages; ?>
                                 <?php if (!empty($allocations)): ?>
                                     <div class="d-flex flex-wrap gap-1">
                                         <?php foreach ($allocations as $key => $pourcentage): 
-                                            $color = $this->Investissement_phases->get_allocation_color($key);
-                                            $label = $this->Investissement_phases->get_allocation_label($key);
+                                            $color = get_allocation_color($key);
+                                            $label = get_allocation_label($key);
                                         ?>
                                             <span class="badge bg-<?= $color ?>" title="<?= $label ?>: <?= $pourcentage ?>%">
                                                 <?= $label ?> (<?= $pourcentage ?>%)
@@ -181,6 +182,8 @@ $pages_list = $pages; ?>
                                 </div>
                             </td>
                         </tr>
+
+                        <?php ob_start(); ?>
 
                         <!-- MODAL UPDATE -->
                         <div class="modal fade" id="update_<?= $value['id_phase'] ?>" data-bs-backdrop="static" tabindex="-1">
@@ -241,7 +244,7 @@ $pages_list = $pages; ?>
                                                     <h6 class="card-title text-primary mb-3"><i class="bx bx-pie-chart-alt me-2"></i>Allocation des fonds</h6>
                                                     <div id="allocation-container-<?= $value['id_phase'] ?>">
                                                         <?php 
-                                                        $allocations = $this->Investissement_phases->get_allocation_array($value['allocation_details']);
+                                                        $allocations = get_allocation_array($value['allocation_details']);
                                                         if (!empty($allocations)): 
                                                             $idx = 0;
                                                             foreach ($allocations as $key => $pourcentage): 
@@ -361,6 +364,8 @@ $pages_list = $pages; ?>
                             </div>
                         </div>
 
+                        <?php $modals_html .= ob_get_clean(); ?>
+
                     <?php endforeach; else: ?>
                         <tr>
                             <td colspan="7" class="text-center py-5">
@@ -374,6 +379,7 @@ $pages_list = $pages; ?>
                     <?php endif; ?>
                     </tbody>
                 </table>
+                <?= $modals_html ?>
             </div>
         </div>
     </div>

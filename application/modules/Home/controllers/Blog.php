@@ -61,16 +61,19 @@ class Blog extends MX_Controller {
         );
          $data['hero_section'] = $this->get_hero_section();
         
-        // Formater les données pour la vue
-        $data['articles'] = $this->formatArticles($articles);
-        $data['pagination'] = $this->pagination->create_links();
-        $data['total_articles'] = $config['total_rows'];
-        
-        // Articles populaires (sidebar)
-        $data['popular_articles'] = $this->getPopularArticles();
-        
-        // Catégories pour filtre
-        $data['categories'] = $this->getCategories();
+// Formater les données pour la vue
+    $data['articles'] = $this->formatArticles($articles);
+    $data['pagination'] = $this->pagination->create_links();
+    $data['total_articles'] = $config['total_rows'];
+    
+    // Articles populaires (sidebar)
+    $data['popular_articles'] = $this->getPopularArticles();
+    
+    // Catégories pour filtre
+    $data['categories'] = $this->getCategories();
+    
+    // Réseaux sociaux (sidebar)
+    $data['social_links'] = $this->getActiveSocialLinks();
         
         $this->load->view('Blog_View', $data);
     }
@@ -107,6 +110,11 @@ public function article($slug = null)
     $data['related_articles'] = $this->getRelatedArticles($article['id_actualite'], $article['categorie']);
     $data['popular_articles'] = $this->getPopularArticles(5, $article['id_actualite']);
     $data['navigation'] = $this->getArticleNavigation($article['date_publication']);
+    $data['social_links'] = $this->db
+        ->where('is_active', 1)
+        ->order_by('display_order', 'ASC')
+        ->get('social_links')
+        ->result_array();
     
     $this->load->view('Blog_Detail_View', $data);
 }
@@ -170,6 +178,7 @@ public function article($slug = null)
         $data['total_articles'] = $config['total_rows'];
         $data['popular_articles'] = $this->getPopularArticles();
         $data['categories'] = $this->getCategories();
+        $data['social_links'] = $this->getActiveSocialLinks();
         
         $this->load->view('Blog_View', $data);
     }
@@ -200,6 +209,7 @@ public function article($slug = null)
         $data['total_results'] = count($articles);
         $data['popular_articles'] = $this->getPopularArticles();
         $data['categories'] = $this->getCategories();
+        $data['social_links'] = $this->getActiveSocialLinks();
         
         $this->load->view('Blog_View', $data);
     }
@@ -226,7 +236,7 @@ public function article($slug = null)
     private function formatArticle($article)
     {
         // Gestion de l'image
-        $image_url = base_url('assets/images/news-placeholder.jpg');
+        $image_url = base_url('assets/backend/images/defaut-logo.jpeg');
         if (!empty($article['image_principale'])) {
             $image_url = (strpos($article['image_principale'], 'http') === 0) 
                 ? $article['image_principale'] 
@@ -395,6 +405,18 @@ public function article($slug = null)
         }
 
         return $hero;
+    }
+
+    /**
+     * Récupérer les réseaux sociaux actifs pour la sidebar
+     */
+    private function getActiveSocialLinks()
+    {
+        return $this->db
+            ->where('is_active', 1)
+            ->order_by('display_order', 'ASC')
+            ->get('social_links')
+            ->result_array();
     }
     
     

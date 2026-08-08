@@ -9,8 +9,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Favicon -->
+    <?php $favicon = $this->Model->get_setting('favicon_ico', ''); ?>
+    <?php if (!empty($favicon) && strpos($favicon, 'assets/') !== 0 && strpos($favicon, 'http') !== 0): ?>
+        <?php $favicon = 'attachments/Configurations/' . $favicon; ?>
+    <?php endif; ?>
     <link rel="icon"
-          href="<?= base_url($this->Model->get_setting('favicon_ico', 'assets/backend/images/defaut-logo.jpeg')) ?>"
+          href="<?= base_url($favicon ?: 'assets/backend/images/defaut-logo.jpeg') ?>"
           type="image/png"
           sizes="16x16 32x32 64x64">
     

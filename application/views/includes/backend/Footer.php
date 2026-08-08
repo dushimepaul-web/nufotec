@@ -18,10 +18,39 @@
 <!--end app-wrapper-->
 
 <script>
-// Injection automatique du jeton CSRF dans toutes les requêtes AJAX POST
+// Injection automatique du jeton CSRF dans toutes les requêtes fetch POST
 (function() {
+    'use strict';
     var CSRF_NAME = '<?= $this->security->get_csrf_token_name() ?>';
     var CSRF_HASH = '<?= $this->security->get_csrf_hash() ?>';
+    if (!CSRF_HASH || typeof window.fetch !== 'function' || window.__csrfFetchPatched) return;
+    window.__csrfFetchPatched = true;
+
+    var origFetch = window.fetch;
+    window.fetch = function(url, options) {
+        options = options || {};
+        var method = (options.method || 'GET').toUpperCase();
+        if (method === 'POST') {
+            if (!options.headers) options.headers = {};
+            if (typeof options.headers.set === 'function' && !options.headers.has('X-CSRF-TOKEN')) {
+                options.headers.set('X-CSRF-TOKEN', CSRF_HASH);
+            } else if (typeof options.headers === 'object') {
+                options.headers['X-CSRF-TOKEN'] = CSRF_HASH;
+            }
+            if (typeof options.body === 'string') {
+                try {
+                    var parsed = JSON.parse(options.body);
+                    if (parsed && typeof parsed === 'object' && Array.isArray(parsed) === false && parsed[CSRF_NAME] === undefined) {
+                        parsed[CSRF_NAME] = CSRF_HASH;
+                        options.body = JSON.stringify(parsed);
+                    }
+                } catch (e) { /* body non-JSON : laissé tel quel */ }
+            }
+        }
+        return origFetch.call(this, url, options);
+    };
+
+    // Injection automatique du jeton CSRF dans toutes les requêtes AJAX POST
     if (window.jQuery && jQuery.ajaxSetup) {
         jQuery.ajaxSetup({
             beforeSend: function(xhr, settings) {
@@ -38,6 +67,17 @@
                 } else {
                     settings.data = encodeURIComponent(CSRF_NAME) + '=' + encodeURIComponent(CSRF_HASH);
                 }
+            }
+        });
+    }
+
+    // Injection du jeton CSRF dans les formulaires POST soumis en navigation native
+    if (window.jQuery) {
+        jQuery(document).on('submit', 'form[method="POST"], form[method="post"]', function() {
+            var $form = jQuery(this);
+            if (!$form.find('input[name="' + CSRF_NAME + '"]').length) {
+                var $input = jQuery('<input type="hidden">').attr('name', CSRF_NAME).val(CSRF_HASH);
+                $form.append($input);
             }
         });
     }

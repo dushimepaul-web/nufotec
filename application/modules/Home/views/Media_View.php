@@ -1137,6 +1137,138 @@ function googleTranslateElementInit() {
         opacity: 0.5;
     }
 
+    /* ============================================ */
+    /* SECTION ACTUALITÉS / NEWS */
+    /* ============================================ */
+    .news-section h4 {
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .news-section h4 i {
+        color: var(--accent-green);
+        font-size: 1.5rem;
+    }
+    .news-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: var(--transition);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+    .news-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(0, 208, 132, 0.4);
+        box-shadow: var(--shadow-hover);
+    }
+    .news-thumb {
+        position: relative;
+        overflow: hidden;
+    }
+    .news-thumb img {
+        width: 100%;
+        height: 190px;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.5s ease;
+    }
+    .news-thumb .news-fallback {
+        width: 100%;
+        height: 190px;
+        background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-hover));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .news-thumb .news-fallback i {
+        font-size: 3rem;
+        color: var(--accent-green);
+        opacity: 0.7;
+    }
+    .news-card:hover .news-thumb img {
+        transform: scale(1.06);
+    }
+    .news-category {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 2;
+        background: var(--accent-green);
+        color: #0a0a0a;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+    .news-body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    .news-date {
+        color: var(--text-tertiary);
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .news-date i {
+        color: var(--accent-green);
+    }
+    .news-title {
+        color: var(--text-primary);
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 10px 0 8px;
+    }
+    .news-card:hover .news-title {
+        color: var(--accent-green);
+    }
+    .news-excerpt {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 16px;
+        flex: 1;
+    }
+    .news-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        align-self: flex-start;
+        background: rgba(0, 208, 132, 0.12);
+        color: var(--accent-green);
+        border: 1px solid rgba(0, 208, 132, 0.35);
+        border-radius: 24px;
+        padding: 8px 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition-fast);
+    }
+    .news-btn i {
+        font-size: 0.8rem;
+        transition: transform 0.2s ease;
+    }
+    .news-btn:hover {
+        background: var(--accent-green);
+        color: #0a0a0a;
+        border-color: var(--accent-green);
+        transform: translateX(3px);
+    }
+    .news-btn:hover i {
+        transform: translateX(3px);
+    }
+
         /* Toast Container */
         .toast-container { 
             position: fixed; 
@@ -1477,19 +1609,31 @@ function googleTranslateElementInit() {
                 <div class="row">
                     <?php foreach ($articles as $article): ?>
                         <div class="col-md-4 mb-4">
-                            <div class="card h-100 shadow-sm">
-                                <?php if (!empty($article['image_principale'])): ?>
-                                    <img src="<?= base_url($article['image_principale']) ?>" class="card-img-top" alt="<?= htmlspecialchars($article['titre']) ?>" style="height:180px;object-fit:cover;">
-                                <?php else: ?>
-                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:180px;">
-                                        <i class="bi bi-newspaper" style="font-size:3rem;color:#ccc;"></i>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="card-body">
-                                    <small class="text-muted"><?= date('d/m/Y', strtotime($article['date_publication'] ?? '')) ?></small>
-                                    <h6 class="card-title mt-1"><?= htmlspecialchars($article['titre']) ?></h6>
-                                    <p class="card-text small text-muted"><?= character_limiter(strip_tags($article['resume'] ?? $article['contenu'] ?? ''), 100) ?></p>
-                                    <a href="<?= base_url('actualite/' . ($article['slug'] ?? $article['id_actualite'])) ?>" class="btn btn-sm btn-outline-primary">Lire plus</a>
+                            <div class="news-card">
+                                <div class="news-thumb">
+                                    <?php if (!empty($article['image_principale']) && file_exists(FCPATH . $article['image_principale'])): ?>
+                                        <img src="<?= base_url($article['image_principale']) ?>" alt="<?= htmlspecialchars($article['titre']) ?>" loading="lazy">
+                                    <?php else: ?>
+                                        <div class="news-fallback">
+                                            <i class="bi bi-newspaper"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($article['categorie'])): ?>
+                                        <span class="news-category"><?= htmlspecialchars($article['categorie']) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="news-body">
+                                    <span class="news-date">
+                                        <i class="bi bi-calendar3"></i>
+                                        <?= date('d/m/Y', strtotime($article['date_publication'] ?? '')) ?>
+                                    </span>
+                                    <a href="<?= base_url('actualite/' . ($article['slug'] ?? $article['id_actualite'])) ?>" class="text-decoration-none">
+                                        <h3 class="news-title mb-2"><?= htmlspecialchars($article['titre']) ?></h3>
+                                    </a>
+                                    <p class="news-excerpt"><?= character_limiter(strip_tags($article['resume'] ?? $article['contenu'] ?? ''), 110) ?></p>
+                                    <a href="<?= base_url('actualite/' . ($article['slug'] ?? $article['id_actualite'])) ?>" class="news-btn">
+                                        Lire plus <i class="bi bi-arrow-right"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>

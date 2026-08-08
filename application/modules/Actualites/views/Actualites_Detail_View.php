@@ -32,12 +32,6 @@
                     <div class="col-lg-8 mx-auto text-center">
                         <h1 class="display-4 fw-bold mb-4"><?= htmlspecialchars($article['titre']) ?></h1>
                         
-                        <?php if (!empty($article['for_subscriber']) && $article['for_subscriber'] == 1): ?>
-                            <div class="badge text-bg-danger rounded-pill shadow mb-3">
-                                <i class='bx bx-crown me-1'></i>Réservé aux abonnés
-                            </div>
-                        <?php endif; ?>
-                        
                         <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
                             <span><i class='bx bx-user me-1'></i><?= htmlspecialchars($article['auteur'] ?? 'Admin') ?></span>
                             <span class="mx-2">|</span>
@@ -94,8 +88,7 @@
                     <?php endif; ?>
                     
                     <!-- Boutons de partage -->
-                    <?php if (!empty($article['in_socialmedia']) && $article['in_socialmedia'] == 1): ?>
-                        <div class="share-buttons border-top pt-4 mt-5">
+                    <div class="share-buttons border-top pt-4 mt-5">
                             <h5 class="mb-3">Partager cet article :</h5>
                             <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode(current_url()) ?>" 
                                target="_blank" class="btn btn-primary">
@@ -114,7 +107,6 @@
                                 <i class='bx bxl-whatsapp me-1'></i>WhatsApp
                             </a>
                         </div>
-                    <?php endif; ?>
                 </div>
                 
                 <!-- Sidebar -->
@@ -128,7 +120,7 @@
                             <div class="card-body">
                                 <?php foreach ($recent_articles as $recent): ?>
                                     <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
-                                        <img src="<?= !empty($recent['image_principale']) ? base_url($recent['image_principale']) : base_url('assets/images/news-placeholder.jpg') ?>" 
+                                        <img src="<?= !empty($recent['image_principale']) ? base_url($recent['image_principale']) : base_url('assets/backend/images/defaut-logo.jpeg') ?>" 
                                              alt="<?= htmlspecialchars($recent['titre']) ?>"
                                              class="rounded-3 shadow-sm flex-shrink-0" style="width: 80px; height: 60px; object-fit: cover;">
                                         <div>

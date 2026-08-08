@@ -6,7 +6,11 @@ class Advertise_product extends MY_Controller {
     function __construct()
     {
         parent::__construct();
-        is_admin();
+        
+        // CRON: la clé secrète sert d'authentification, pas besoin de session admin
+        if ($this->router->method !== 'cron_daily_promo') {
+            is_admin();
+        }
         
         // Charger la librairie email cPanel
         $this->load->library('cpanel_email_lib');

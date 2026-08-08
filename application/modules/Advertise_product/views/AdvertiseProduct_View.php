@@ -77,6 +77,7 @@
                     </thead>
                     <tbody>
                     <?php 
+                    $modals_html = '';
                     if (!empty($products)): 
                         $i = 1; 
                         foreach ($products as $value): 
@@ -102,7 +103,7 @@
                                 <img src="<?= base_url($image_path) ?>" 
                                      class="rounded border"
                                      style="width:60px; height:60px; object-fit:cover; cursor: pointer;"
-                                     onclick="previewImage('<?= base_url($image_path) ?>')"
+                                     onclick="previewImageModal('<?= base_url($image_path) ?>')"
                                      onerror="this.src='<?= base_url('attachments/Products/default-product.png') ?>'"
                                      alt="Product">
                             </td>
@@ -163,6 +164,8 @@
                             </td>
                         </tr>
 
+                        <?php ob_start(); ?>
+
                         <!-- MODAL VIEW DETAILS (MULTILINGUE) -->
                         <div class="modal fade" id="view_<?= $value['id'] ?>" tabindex="-1">
                             <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -209,7 +212,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
 
-                                    <form action="<?= base_url('advertise-product-update') ?>" method="POST" enctype="multipart/form-data">
+                                    <form action="<?= base_url('advertise-product/update') ?>" method="POST" enctype="multipart/form-data">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         
                                         <div class="modal-body p-4">
@@ -315,7 +318,7 @@
                                         <p class="text-muted">Produit : <strong><?= htmlspecialchars($value['title'] ?? '') ?></strong></p>
                                         <p class="text-danger small">Cette action est irréversible.</p>
                                     </div>
-                                    <form action="<?= base_url('advertise-product-delete') ?>" method="POST">
+                                    <form action="<?= base_url('advertise-product/delete') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         <div class="modal-footer bg-light justify-content-center">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -332,7 +335,7 @@
                         <div class="modal fade" id="status_<?= $value['id'] ?>" tabindex="-1">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content border-0 shadow">
-                                    <form action="<?= base_url('advertise-product-change-status') ?>" method="POST">
+                                    <form action="<?= base_url('advertise-product/change-status') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         <input type="hidden" name="is_active" value="<?= (!empty($value['is_active']) && $value['is_active'] == 1) ? 1 : 0 ?>">
                                         <div class="modal-header <?= (!empty($value['is_active']) && $value['is_active'] == 1) ? 'bg-warning' : 'bg-success' ?> text-white">
@@ -359,7 +362,7 @@
                         <div class="modal fade" id="featured_<?= $value['id'] ?>" tabindex="-1">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content border-0 shadow">
-                                    <form action="<?= base_url('advertise-product-change-featured') ?>" method="POST">
+                                    <form action="<?= base_url('advertise-product/change-featured') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         <input type="hidden" name="in_vedette" value="<?= (!empty($value['in_vedette']) && $value['in_vedette'] == 1) ? 1 : 0 ?>">
                                         <div class="modal-header <?= (!empty($value['in_vedette']) && $value['in_vedette'] == 1) ? 'bg-secondary' : 'bg-warning' ?> text-white">
@@ -382,6 +385,8 @@
                             </div>
                         </div>
 
+                            <?php $modals_html .= ob_get_clean(); ?>
+
                     <?php endforeach; else: ?>
                         <tr>
                             <td colspan="8" class="text-center py-5">
@@ -395,6 +400,7 @@
                     <?php endif; ?>
                     </tbody>
                 </table>
+                <?= $modals_html ?>
             </div>
         </div>
     </div>
@@ -410,7 +416,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <form action="<?= base_url('advertise-product-create') ?>" method="POST" enctype="multipart/form-data">
+            <form action="<?= base_url('advertise-product/create') ?>" method="POST" enctype="multipart/form-data">
                 <div class="modal-body p-4">
                     <!-- Image -->
                     <div class="card card-outline card-secondary mb-3">

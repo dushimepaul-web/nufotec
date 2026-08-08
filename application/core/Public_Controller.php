@@ -1,6 +1,64 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
+if ( ! function_exists('t'))
+{
+    function t($key)
+    {
+        static $trad = array(
+            'service_available_24h' => 'Service médical disponible 24h/24',
+            'our_doctors' => 'Nos médecins',
+            'doctors_subtitle' => 'Consultez nos médecins expérimentés en toute sécurité',
+            'all_specialties' => 'Toutes les spécialités',
+            'general_practitioner' => 'Médecin généraliste',
+            'doctors_count' => 'médecins disponibles',
+            'available' => 'Disponible',
+            'unavailable' => 'Indisponible',
+            'years' => 'années',
+            'french' => 'Français',
+            'reviews' => 'avis',
+            'experience' => 'Expérience',
+            'languages' => 'Langues',
+            'schedule' => 'Horaires',
+            'consultation_fee' => 'Frais de consultation',
+            'burundi_price' => 'au Burundi',
+            'details' => 'Détails',
+            'appointment' => 'Rendez-vous',
+            'take_appointment' => 'Prendre rendez-vous',
+            'doctor_profile' => 'Profil du médecin',
+            'verified' => 'Vérifié',
+            'information' => 'Informations',
+            'license' => 'Licence',
+            'prices' => 'Tarifs',
+            'day' => 'Jour',
+            'start' => 'Début',
+            'end' => 'Fin',
+            'no_schedule' => 'Aucun horaire disponible',
+            'by_appointment' => 'Sur rendez-vous',
+            'today_at' => 'aujourd\'hui à',
+            'doctor_unavailable' => 'Médecin indisponible',
+            'no_doctors' => 'Aucun médecin disponible pour le moment',
+            'why_24h' => 'Support 24h/24',
+            'why_certified' => 'Médecins certifiés',
+            'why_certified_text' => 'Des professionnels de santé qualifiés et certifiés.',
+            'why_affordable' => 'Prix abordables',
+            'why_affordable_text' => 'Des consultations à des prix accessibles.',
+            'why_confidential' => 'Confidentialité',
+            'why_confidential_text' => 'Vos données de santé sont protégées.',
+            'monday' => 'Lundi',
+            'tuesday' => 'Mardi',
+            'wednesday' => 'Mercredi',
+            'thursday' => 'Jeudi',
+            'friday' => 'Vendredi',
+            'saturday' => 'Samedi',
+            'sunday' => 'Dimanche',
+            'media_detail_title' => 'Détail du média',
+        );
+
+        return array_key_exists($key, $trad) ? $trad[$key] : $key;
+    }
+}
+
 class Public_Controller extends MX_Controller
 {
     public $data = [];

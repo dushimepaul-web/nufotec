@@ -190,6 +190,7 @@ class Dashboard extends MY_Controller {
 
                 /* ── Graphiques ── */
                
+                'chart_revenue_30d' => $this->_chart_series('consultations','prix_ttc',30),
                 'chart_users_30d'   => $this->_chart_count('users', 30),
                 'chart_consult_30d' => $this->_chart_count('consultations', 30),
                 'chart_visits_30d'  => $this->_chart_visits_30d(),
@@ -203,6 +204,7 @@ class Dashboard extends MY_Controller {
                 'dist_consult_stat' => $this->_dist('consultations', 'statut'),
                 'dist_media_type'   => $this->_dist('galerie_medias','type'),
                 'dist_order_req_status' => $this->_dist('order_requests', 'order_status'),
+                'dist_order_status' => $this->_dist('order_requests', 'order_status'),
                 'dist_invest_commit'=> $this->_dist_investors_commitment(),
                 'dist_devices'      => $this->_dist('visitors_logs', 'device'),
                 'dist_brokers_country' => $this->_brokers_country_dist(),
@@ -305,20 +307,9 @@ class Dashboard extends MY_Controller {
         return compact('total','active','today_n','week_n','verif','online','sessions_today');
     }
 
-    /** Statistiques commandes e-commerce (table commandes) */
+    /** Statistiques commandes e-commerce */
     private function _kpi_orders(): array {
-        $row = $this->db->query("
-            SELECT
-                COUNT(*) as total,
-                SUM(CASE WHEN DATE(created_at)=CURDATE() THEN 1 ELSE 0 END) as today,
-                SUM(CASE WHEN statut='en_attente' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN statut='preparation' THEN 1 ELSE 0 END) as processing,
-                SUM(CASE WHEN statut='expediee' THEN 1 ELSE 0 END) as shipped,
-                SUM(CASE WHEN statut='livree' THEN 1 ELSE 0 END) as delivered,
-                SUM(CASE WHEN statut='annulee' THEN 1 ELSE 0 END) as cancelled
-            FROM commandes
-        ")->row_array();
-
+        $row = null;
         // Demandes de commande (advertise products)
         $req = $this->db->query("
             SELECT
@@ -335,15 +326,7 @@ class Dashboard extends MY_Controller {
 
     /** Métriques financières */
     private function _kpi_finance(): array {
-        $orders = $this->db->query("
-            SELECT
-                COALESCE(SUM(total_ttc),0) as total,
-                COALESCE(SUM(CASE WHEN statut='livree' THEN total_ttc ELSE 0 END),0) as confirmed,
-                COALESCE(SUM(CASE WHEN DATE(created_at)=CURDATE() THEN total_ttc ELSE 0 END),0) as today,
-                COALESCE(SUM(CASE WHEN MONTH(created_at)=MONTH(CURDATE()) AND YEAR(created_at)=YEAR(CURDATE()) THEN total_ttc ELSE 0 END),0) as this_month,
-                COALESCE(AVG(total_ttc),0) as avg_order
-            FROM commandes WHERE statut != 'annulee'
-        ")->row_array();
+        $orders = ['total' => 0, 'confirmed' => 0, 'today' => 0, 'this_month' => 0, 'avg_order' => 0];
 
         $consults = $this->db->query("
             SELECT
@@ -562,8 +545,8 @@ class Dashboard extends MY_Controller {
         ")->result_array();
 
         $products = $this->db->query("
-            SELECT product_title, COUNT(*) as cnt
-            FROM order_requests GROUP BY product_id ORDER BY cnt DESC LIMIT 6
+            SELECT product_id, product_title, COUNT(*) as cnt
+            FROM order_requests GROUP BY product_id, product_title ORDER BY cnt DESC LIMIT 6
         ")->result_array();
 
         $daily = $this->db->query("
@@ -632,7 +615,18 @@ class Dashboard extends MY_Controller {
 
     /** Réseaux sociaux */
     private function _social_network_stats(): array {
-        return $this->db->order_by('nombre_participants','DESC')->get('statistiques_reseaux')->result_array();
+        $links = $this->db->where('is_active',1)->order_by('display_order','ASC')->get('social_links')->result_array();
+        $out = [];
+        foreach ($links as $l) {
+            $out[] = [
+                'plateforme'        => $l['platform'],
+                'label'             => $l['label'] ?? $l['platform'],
+                'url'               => $l['url'] ?? '#',
+                'nombre_participants' => $l['followers'] ?? '—',
+                'nombre_groupes'    => 1,
+            ];
+        }
+        return $out;
     }
 
     /** Messages contact */
@@ -659,12 +653,7 @@ class Dashboard extends MY_Controller {
     }
 
     private function _latest_orders(int $n): array {
-        return $this->db->query("
-            SELECT c.*, u.prenom, u.nom, u.email,
-                   (SELECT COUNT(*) FROM commande_lignes cl WHERE cl.commande_id = c.id) as items
-            FROM commandes c JOIN users u ON c.user_id = u.id
-            ORDER BY c.created_at DESC LIMIT {$n}
-        ")->result_array();
+        return [];
     }
 
     private function _latest_consultations(int $n): array {
@@ -812,7 +801,9 @@ class Dashboard extends MY_Controller {
     private function _dist(string $table, string $col): array {
         return $this->db->query("
             SELECT {$col} as label, COUNT(*) as value
-            FROM {$table} GROUP BY {$col}
+            FROM {$table}
+            WHERE {$col} IS NOT NULL AND {$col} != ''
+            GROUP BY {$col} ORDER BY value DESC
         ")->result_array();
     }
 
@@ -838,21 +829,17 @@ class Dashboard extends MY_Controller {
     private function _alerts(): array {
         $a = [];
 
-        $pending_orders = $this->db->where('statut','en_attente')->count_all_results('commandes');
-        if ($pending_orders > 0)
-            $a[] = ['type'=>'warning','icon'=>'bx bx-cart','title'=>'Commandes en attente','msg'=>"{$pending_orders} commande(s) à traiter",'link'=>base_url('Commandes?statut=en_attente')];
-
         $pending_consults = $this->db->where('statut','en_attente')->count_all_results('consultations');
         if ($pending_consults > 0)
             $a[] = ['type'=>'info','icon'=>'bx bx-calendar','title'=>'Consultations en attente','msg'=>"{$pending_consults} consultation(s) à confirmer",'link'=>base_url('Consultations?statut=en_attente')];
 
         $unread_msgs = $this->db->where('is_readed',0)->count_all_results('contact_us');
         if ($unread_msgs > 0)
-            $a[] = ['type'=>'danger','icon'=>'bx bx-envelope','title'=>'Messages non lus','msg'=>"{$unread_msgs} message(s) en attente",'link'=>base_url('Contact')];
+            $a[] = ['type'=>'danger','icon'=>'bx bx-envelope','title'=>'Messages non lus','msg'=>"{$unread_msgs} message(s) en attente",'link'=>base_url('contact_us/Contact_Us')];
 
         $pending_req = $this->db->where('order_status','pending')->count_all_results('order_requests');
         if ($pending_req > 0)
-            $a[] = ['type'=>'success','icon'=>'bx bx-shopping-bag','title'=>'Demandes de commande','msg'=>"{$pending_req} demande(s) de produits",'link'=>base_url('OrderRequests')];
+            $a[] = ['type'=>'success','icon'=>'bx bx-shopping-bag','title'=>'Demandes de commande','msg'=>"{$pending_req} demande(s) de produits",'link'=>base_url('Products/admin_orders')];
 
         return $a;
     }
@@ -860,9 +847,9 @@ class Dashboard extends MY_Controller {
     private function _quick_actions(): array {
         return [
             ['title'=>'Nouvel utilisateur',    'icon'=>'bx bx-user-plus',   'color'=>'primary', 'link'=>base_url('Users/create')],
-            ['title'=>'Ajouter produit',       'icon'=>'bx bx-package',      'color'=>'success', 'link'=>base_url('Products/create')],
-            ['title'=>'Planifier consultation','icon'=>'bx bx-calendar-plus','color'=>'info',    'link'=>base_url('Consultations/create')],
-            ['title'=>'Ajouter média',         'icon'=>'bx bx-image-add',    'color'=>'warning', 'link'=>base_url('Galerie/create')],
+            ['title'=>'Ajouter produit',       'icon'=>'bx bx-package',      'color'=>'success', 'link'=>base_url('advertise-product/create')],
+            ['title'=>'Planifier consultation','icon'=>'bx bx-calendar-plus','color'=>'info',    'link'=>base_url('Consultations/Entente')],
+            ['title'=>'Ajouter média',         'icon'=>'bx bx-image-add',    'color'=>'warning', 'link'=>base_url('admin/media/Create')],
             ['title'=>'Envoyer newsletter',    'icon'=>'bx bx-mail-send',    'color'=>'danger',  'link'=>base_url('Newsletter')],
             ['title'=>'Paramètres',            'icon'=>'bx bx-cog',          'color'=>'dark',    'link'=>base_url('Configurations')],
         ];
@@ -873,7 +860,6 @@ class Dashboard extends MY_Controller {
             'users_inactive'     => $this->db->where('is_active',0)->where('deleted_at IS NULL',null,false)->count_all_results('users'),
             'unverified_email'   => $this->db->where('email_verified_at IS NULL',null,false)->count_all_results('users'),
             'consults_pending'   => $this->db->where('statut','en_attente')->count_all_results('consultations'),
-            'orders_pending'     => $this->db->where('statut','en_attente')->count_all_results('commandes'),
             'req_pending'        => $this->db->where('order_status','pending')->count_all_results('order_requests'),
             'contact_unread'     => $this->db->where('is_readed',0)->count_all_results('contact_us'),
         ];
@@ -904,7 +890,6 @@ class Dashboard extends MY_Controller {
                 $resp['data'] = [
                     'online'        => count($this->db->where('is_active',1)->where('last_activity >=', date('Y-m-d H:i:s', strtotime('-15 minutes')))->get('user_sessions')->result_array()),
                     'today_visits'  => $this->db->where('visit_date',date('Y-m-d'))->count_all_results('visitors_logs'),
-                    'pending_orders'=> $this->db->where('statut','en_attente')->count_all_results('commandes'),
                     'pending_req'   => $this->db->where('order_status','pending')->count_all_results('order_requests'),
                     'server_time'   => date('H:i:s'),
                 ];

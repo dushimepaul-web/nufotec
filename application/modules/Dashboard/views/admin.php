@@ -160,6 +160,14 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
   </div>
 </div>
 
+<!-- ═══════════════════ ERREUR ═══════════════════ -->
+<?php if (!empty($error)): ?>
+<div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+  <i class="bx bx-error-circle fs-4"></i>
+  <div><div class="fw-semibold">Erreur de chargement</div><div class="small"><?= htmlspecialchars($error) ?></div></div>
+</div>
+<?php endif; ?>
+
 <!-- ═══════════════════ ALERTES ═══════════════════ -->
 <?php if (!empty($alerts)): ?>
 <div class="mb-4">
@@ -181,7 +189,7 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
 <div class="row g-3 mb-4">
 
   <!-- Utilisateurs -->
-  <div class="col-sm-6 col-xl-3">
+  <div class="col-sm-6 col-xl-4">
     <div class="card card-outline card-primary mb-0">
       <div class="card-body">
         <div class="d-flex align-items-center gap-3 mb-2">
@@ -200,27 +208,8 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
     </div>
   </div>
 
-  <!-- Revenus -->
-  <div class="col-sm-6 col-xl-3">
-    <div class="card card-outline card-warning mb-0">
-      <div class="card-body">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="d-flex align-items-center justify-content-center rounded-3 text-warning bg-warning-subtle" style="width:44px;height:44px;font-size:22px;"><i class="bx bx-wallet"></i></div>
-          <div class="flex-grow-1">
-            <div class="fs-3 fw-bold mono"><?= fbu((float)($kpi_finance['total_revenue'] ?? 0)) ?></div>
-            <div class="small text-secondary text-uppercase">Revenus totaux</div>
-          </div>
-        </div>
-        <div class="small text-secondary d-flex flex-wrap gap-2 border-top pt-2">
-          <span>Ce mois: <b><?= fbu((float)($kpi_finance['month_revenue'] ?? 0)) ?></b></span>
-          <span>Auj: <b><?= fbu((float)($kpi_finance['today_revenue'] ?? 0)) ?></b></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Commandes -->
-  <div class="col-sm-6 col-xl-3">
+  <div class="col-sm-6 col-xl-4">
     <div class="card card-outline card-danger mb-0">
       <div class="card-body">
         <div class="d-flex align-items-center gap-3 mb-2">
@@ -240,7 +229,7 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
   </div>
 
   <!-- Consultations -->
-  <div class="col-sm-6 col-xl-3">
+  <div class="col-sm-6 col-xl-4">
     <div class="card card-outline card-info mb-0">
       <div class="card-body">
         <div class="d-flex align-items-center gap-3 mb-2">
@@ -328,8 +317,8 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
 <div class="row g-3 mb-4">
 
   <!-- Revenus + commandes -->
-  <div class="col-lg-8">
-    <div class="card card-outline card-primary">
+  <div class="col-lg-6">
+    <div class="card card-outline card-primary h-100">
       <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
         <h5 class="card-title mb-0"><i class="bx bx-line-chart me-1"></i> Revenus & Commandes</h5>
         <div class="btn-group btn-group-sm" role="group" id="tabsRevenue">
@@ -349,7 +338,7 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
 
   <!-- Répartitions -->
   <div class="col-lg-4">
-    <div class="card card-outline card-info">
+    <div class="card card-outline card-info h-100">
       <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
         <h5 class="card-title mb-0"><i class="bx bx-pie-chart-alt-2 me-1"></i> Répartitions</h5>
         <div class="btn-group btn-group-sm" role="group" id="tabsDist">
@@ -378,11 +367,11 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
     <div class="card card-outline card-warning">
       <div class="card-header"><h5 class="card-title mb-0"><i class="bx bx-money me-1"></i> Résumé financier</h5></div>
       <div class="card-body py-2">
-        <div class="stat-row"><span class="text-secondary small">Total e-commerce</span><b class="mono"><?= fbu((float)($kpi_finance['orders']['total'] ?? 0)) ?></b></div>
         <div class="stat-row"><span class="text-secondary small">Total télémédecine</span><b class="mono"><?= fbu((float)($kpi_finance['consultations']['total'] ?? 0)) ?></b></div>
-        <div class="stat-row"><span class="text-secondary small">Revenu confirmé</span><b class="mono text-success"><?= fbu((float)($kpi_finance['orders']['confirmed'] ?? 0)) ?></b></div>
-        <div class="stat-row"><span class="text-secondary small">Panier moyen</span><b class="mono"><?= fbu((float)($kpi_finance['orders']['avg_order'] ?? 0)) ?></b></div>
-        <div class="stat-row"><span class="text-secondary small">Paniers abandonnés</span><b class="mono text-danger"><?= $ecommerce['abandoned'] ?? 0 ?></b></div>
+        <div class="stat-row"><span class="text-secondary small">Revenus aujourd'hui</span><b class="mono text-success"><?= fbu((float)($kpi_finance['today_revenue'] ?? 0)) ?></b></div>
+        <div class="stat-row"><span class="text-secondary small">Revenus ce mois</span><b class="mono"><?= fbu((float)($kpi_finance['month_revenue'] ?? 0)) ?></b></div>
+        <div class="stat-row"><span class="text-secondary small">Consultations terminées</span><b class="mono"><?= number_format($kpi_telemedecine['completed'] ?? 0) ?></b></div>
+        <div class="stat-row"><span class="text-secondary small">Médecins actifs</span><b class="mono"><?= $kpi_telemedecine['available'] ?? 0 ?>/<?= $kpi_telemedecine['medecins'] ?? 0 ?></b></div>
         <div class="stat-row"><span class="text-secondary small">Investissement planifié</span><b class="mono text-warning"><?= usd((float)($kpi_finance['investment_planned'] ?? 0)) ?></b></div>
       </div>
     </div>
@@ -459,7 +448,7 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
     <div class="card card-outline card-danger">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="card-title mb-0"><i class="bx bx-cart me-1"></i> Demandes de commande récentes</h5>
-        <a href="<?= base_url('OrderRequests') ?>" class="btn btn-outline-secondary btn-sm">Tout voir</a>
+        <a href="<?= base_url('Products/admin_orders') ?>" class="btn btn-outline-secondary btn-sm">Tout voir</a>
       </div>
       <div class="table-responsive scroll-y">
         <table class="table table-hover align-middle mb-0">
@@ -512,44 +501,6 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
     </div>
   </div>
 
-</div>
-
-<!-- Dernières commandes shop -->
-<div class="card card-outline card-warning mb-4">
-  <div class="card-header d-flex align-items-center justify-content-between">
-    <h5 class="card-title mb-0"><i class="bx bx-cart-alt me-1"></i> Dernières commandes e-shop</h5>
-    <a href="<?= base_url('Commandes') ?>" class="btn btn-outline-secondary btn-sm">Toutes les commandes</a>
-  </div>
-  <div class="table-responsive scroll-y">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light">
-        <tr><th class="text-uppercase small text-secondary">N°</th><th class="text-uppercase small text-secondary">Client</th><th class="text-uppercase small text-secondary">Articles</th><th class="text-uppercase small text-secondary">Montant TTC</th><th class="text-uppercase small text-secondary">Statut</th><th class="text-uppercase small text-secondary">Paiement</th><th class="text-uppercase small text-secondary">Date</th></tr>
-      </thead>
-      <tbody>
-        <?php if (!empty($latest_orders)):
-          foreach ($latest_orders as $o): ?>
-        <tr>
-          <td class="mono small text-primary fw-bold">#<?= str_pad($o['id'],5,'0',STR_PAD_LEFT) ?></td>
-          <td>
-            <div class="fw-semibold small"><?= htmlspecialchars($o['prenom'].' '.$o['nom']) ?></div>
-            <div class="small text-secondary"><?= htmlspecialchars($o['email']) ?></div>
-          </td>
-          <td class="mono small"><?= $o['items'] ?? 0 ?></td>
-          <td class="mono small fw-bold"><?= fbu((float)$o['total_ttc']) ?></td>
-          <td><?= badge_order($o['statut']) ?></td>
-          <td><?php
-            $pc=['paye'=>'text-bg-success','en_attente'=>'text-bg-warning','echoue'=>'text-bg-danger','rembourse'=>'text-bg-secondary'];
-            $cl=$pc[$o['statut_paiement']]??'text-bg-secondary';
-            echo "<span class='badge {$cl}'>".htmlspecialchars(ucfirst($o['statut_paiement'] ?? '')).'</span>';
-          ?></td>
-          <td class="text-secondary small"><?= ago($o['created_at']) ?></td>
-        </tr>
-        <?php endforeach; else: ?>
-        <tr><td colspan="7" class="text-center text-secondary small py-4">Aucune commande</td></tr>
-        <?php endif; ?>
-      </tbody>
-    </table>
-  </div>
 </div>
 
 <!-- ═══════════════════ TÉLÉMÉDECINE ═══════════════════ -->
@@ -727,14 +678,14 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
         $clr = $net_colors[$net['plateforme']] ?? 'secondary';
       ?>
       <div class="col-md-4 col-xl-3">
-        <div class="d-flex align-items-center gap-3 border rounded-3 p-3 h-100">
+        <a href="<?= htmlspecialchars($net['url'] ?? '#') ?>" target="_blank" rel="noopener" class="d-flex align-items-center gap-3 border rounded-3 p-3 h-100 text-decoration-none" style="color:inherit;">
           <div class="d-flex align-items-center justify-content-center rounded-3 bg-<?= $clr ?>-subtle text-<?= $clr ?> fw-bold" style="width:38px;height:38px;font-size:.8rem;"><?= strtoupper(substr($net['plateforme'],0,2)) ?></div>
           <div class="min-w-0">
             <div class="fw-bold small"><?= htmlspecialchars($net['plateforme']) ?></div>
-            <div class="mono small text-<?= $clr ?>"><?= number_format((int)$net['nombre_participants']) ?> membres</div>
-            <div class="small text-secondary"><?= $net['nombre_groupes'] ?> groupes</div>
+            <div class="mono small text-<?= $clr ?>"><?= htmlspecialchars($net['nombre_participants']) ?> membres</div>
+            <div class="small text-secondary text-truncate" style="max-width:160px;"><?= htmlspecialchars($net['label']) ?></div>
           </div>
-        </div>
+        </a>
       </div>
       <?php endforeach; ?>
     </div>
@@ -888,7 +839,7 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
         <p class="text-secondary small text-center py-2 mb-0">Aucun message</p>
         <?php endif; ?>
         <div class="mt-2">
-          <a href="<?= base_url('Contact') ?>" class="btn btn-outline-secondary btn-sm w-100">Voir tous les messages</a>
+          <a href="<?= base_url('contact_us/Contact_Us') ?>" class="btn btn-outline-secondary btn-sm w-100">Voir tous les messages</a>
         </div>
       </div>
     </div>
@@ -967,10 +918,9 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
       <div class="card-body py-2">
         <?php
         $pv_items = [
-          ['label'=>'Commandes en attente',    'val'=>$pending_verif['orders_pending']??0,    'link'=>base_url('Commandes?statut=en_attente')],
-          ['label'=>'Demandes produits',       'val'=>$pending_verif['req_pending']??0,       'link'=>base_url('OrderRequests')],
+          ['label'=>'Demandes produits',       'val'=>$pending_verif['req_pending']??0,       'link'=>base_url('Products/admin_orders')],
           ['label'=>'Consultations en attente','val'=>$pending_verif['consults_pending']??0,  'link'=>base_url('Consultations?statut=en_attente')],
-          ['label'=>'Messages non lus',        'val'=>$pending_verif['contact_unread']??0,    'link'=>base_url('Contact')],
+          ['label'=>'Messages non lus',        'val'=>$pending_verif['contact_unread']??0,    'link'=>base_url('contact_us/Contact_Us')],
           ['label'=>'Utilisateurs inactifs',   'val'=>$pending_verif['users_inactive']??0,    'link'=>base_url('Users?active=0')],
           ['label'=>'Emails non vérifiés',     'val'=>$pending_verif['unverified_email']??0,  'link'=>base_url('Users?verified=0')],
         ];

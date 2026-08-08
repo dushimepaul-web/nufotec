@@ -64,6 +64,7 @@
                         </tr>
                     </thead>
                     <tbody>
+                    <?php $modals_html = ''; ?>
                     <?php if (!empty($users)): $i = 1; foreach ($users as $value): 
                         // Récupérer le nom du rôle
                         $role_name = 'Inconnu';
@@ -177,6 +178,8 @@
                                 </div>
                             </td>
                         </tr>
+
+                        <?php ob_start(); ?>
 
                         <!-- MODAL VIEW DETAILS -->
                         <div class="modal fade" id="view_<?= $value['id'] ?>" tabindex="-1">
@@ -501,7 +504,7 @@
                                     <div class="modal-body p-4">
                                         <p>Voulez-vous vraiment <strong><?= (!empty($value['is_active']) && $value['is_active'] == 1) ? 'désactiver' : 'activer' ?></strong> le compte de <strong><?= htmlspecialchars(($value['nom'] ?? '').' '.($value['prenom'] ?? '')) ?></strong> ?</p>
                                     </div>
-                                    <form action="<?= base_url('Users/ChangeStatus') ?>" method="POST">
+                                    <form action="<?= base_url('users-change-status') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id'] ?>">
                                         <input type="hidden" name="is_active" value="<?= (!empty($value['is_active']) && $value['is_active'] == 1) ? 1 : 0 ?>">
                                         <div class="modal-footer bg-light">
@@ -515,6 +518,8 @@
                             </div>
                         </div>
 
+                        <?php $modals_html .= ob_get_clean(); ?>
+
                     <?php endforeach; else: ?>
                         <tr>
                             <td colspan="10" class="text-center py-5">
@@ -526,6 +531,9 @@
                     </tbody>
                 </table>
             </div>
+
+            <?= $modals_html ?>
+
         </div>
     </div>
 

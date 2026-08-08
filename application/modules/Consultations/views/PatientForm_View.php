@@ -102,7 +102,11 @@
 <section class="consultation-hero text-center text-white" style="background: linear-gradient(135deg, #0f4c3a 0%, #1a6b52 100%);">
     <div class="container py-5">
         <h1 id="hero-title" class="display-5 fw-bold mb-2"><i class="bi bi-heart-pulse me-2"></i> Consultation en ligne</h1>
-        <p id="hero-subtitle" class="opacity-75 mb-0"><i class="bi bi-shield-check me-2"></i> Sécurisé et confidentiel</p>
+        <p id="hero-subtitle" class="opacity-75 mb-0"><i class="bi bi-shield-check me-2"></i> Demande de consultation - NUFOTEC Burundi</p>
+        <p class="opacity-75 mb-0 mt-2">Remplissez ce formulaire pour demander votre consultation &agrave; distance. Tout ce que vous saisissez est transmis en toute confidentialit&eacute; directement au m&eacute;decin <strong>sur WhatsApp</strong>.</p>
+        <div class="mx-auto mt-3 d-inline-flex align-items-center gap-2 rounded-pill px-3 py-2" style="background: rgba(255,255,255,0.15); font-size: 0.9rem;">
+            <i class="bi bi-info-circle me-1"></i> &Agrave; la fin du formulaire : montant &agrave; payer, puis preuve de paiement (capture d'&eacute;cran ou PDF)
+        </div>
     </div>
 </section>
 
@@ -148,11 +152,9 @@
                         <input type="hidden" name="consultation_devise" value="<?= htmlspecialchars($medecin['currency'] ?? 'USD') ?>">
 
                         <!-- CSRF Token -->
-                        <?php if(function_exists('get_csrf_token_name') && function_exists('get_csrf_hash')): ?>
                         <input type="hidden"
-                               name="<?= get_csrf_token_name() ?>"
-                               value="<?= get_csrf_hash() ?>">
-                        <?php endif; ?>
+                               name="<?= $this->security->get_csrf_token_name() ?>"
+                               value="<?= $this->security->get_csrf_hash() ?>">
 
                         <!-- ÉTAPE 1: Informations Personnelles -->
                         <div class="step-content" id="step1">
@@ -463,11 +465,25 @@
                                 </div>
                             </div>
 
+                            <!-- INFO PAIEMENT -->
+                            <div class="alert alert-info d-flex align-items-start gap-2 small mb-4" role="alert" aria-live="polite">
+                                <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                                <span>
+                                    <strong>Comment payer votre consultation :</strong>
+                                    <ol class="mb-0 ps-3 mt-1">
+                                        <li>Choisissez votre moyen de paiement ci-dessous.</li>
+                                        <li>Payez le montant affiché : <strong><?= number_format($prix_usd, 2) ?> USD (Prix Burundi : 40 000 FBu)</strong>.</li>
+                                        <li>Téléchargez votre preuve de paiement : capture d'écran de l'opération ou <strong>PDF</strong> du reçu.</li>
+                                    </ol>
+                                    <span class="d-block mt-2">Votre demande complète est envoyée directement au médecin <strong>sur WhatsApp</strong>.</span>
+                                </span>
+                            </div>
+
                             <!-- MODE DE PAIEMENT + PREUVE -->
                             <div class="payment-pick-section border rounded-4 p-4 bg-body-tertiary mb-4">
                                 <div class="fw-bold mb-1"><i class="bi bi-wallet2 me-1"></i> Mode de paiement</div>
                                 <p class="payment-help text-muted small mb-3">
-                                    Effectuez le paiement sur votre téléphone via le moyen choisi, puis joignez la capture d'écran comme preuve de paiement.
+                                    Effectuez le paiement sur votre téléphone via le moyen que vous choisissez, puis joignez la preuve : capture d'écran de l'opération ou reçu en <strong>PDF</strong>.
                                 </p>
                                 <div class="row g-3" id="paymentOptions">
                                     <?php foreach ($mode_payements as $mode): ?>
@@ -491,14 +507,14 @@
                                     <div class="payment-note alert alert-warning d-flex align-items-start gap-2" role="alert" aria-live="polite">
                                         <i class="bi bi-lightning-charge-fill mt-1"></i>
                                         <span>
-                                            <strong>Important :</strong> après l'envoi de votre demande, précipitez-vous pour effectuer le paiement, puis envoyez votre preuve de paiement via WhatsApp au <strong><?= htmlspecialchars($this->Model->get_setting('contact_whatsapp', '+257 79 666 439')) ?></strong> afin de confirmer votre consultation.
+                                            <strong>Important :</strong> après l'envoi de votre demande, effectuez le paiement si ce n'est pas encore fait, puis joignez la preuve ci-dessous : capture d'écran de l'opération ou <strong>PDF</strong> du reçu. Votre dossier complet est transmis au médecin <strong>sur WhatsApp</strong> pour confirmer votre consultation.
                                         </span>
                                     </div>
                                     <label class="form-label fw-semibold" for="paymentProof">
-                                        <i class="bi bi-camera me-1"></i> Preuve de paiement (capture d'écran) <span class="optional text-muted">(optionnel)</span>
+                                        <i class="bi bi-camera me-1"></i> Preuve de paiement (capture d'écran ou <strong>PDF</strong>) <span class="optional text-muted">(optionnel)</span>
                                     </label>
                                     <input type="file" class="form-control" id="paymentProof" name="payment_proof" accept=".jpg,.jpeg,.png,.pdf">
-                                    <small class="payment-hint text-muted d-block mt-2">Si vous payez maintenant, joignez la capture d'écran ici. Sinon, envoyez-la sur WhatsApp après votre paiement.</small>
+                                    <small class="payment-hint text-muted d-block mt-2">Si vous payez maintenant, joignez ici la capture ou le <strong>PDF</strong> du reçu. Sinon, envoyez-la au médecin sur WhatsApp après le paiement.</small>
                                 </div>
                             </div>
 
@@ -550,9 +566,11 @@
                                 <i class="bi bi-geo-alt-fill me-1" style="color: var(--accent);"></i>
                                 <strong>Prix Burundi : 40 000 FBu</strong>
                             </div>
+                            <?php if (!empty($doctor_count) && $doctor_count > 1): ?>
                             <a style="text-decoration: none;" href="javascript:void(0)" onclick="confirmChangeDoctor()" class="change-doctor-btn btn btn-sm btn-outline-light mt-3 rounded-pill">
                                 <i class="bi bi-arrow-left me-1"></i> Changer de médecin
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -663,7 +681,7 @@ function confirmChangeDoctor() {
     if (confirm('Voulez-vous vraiment changer de médecin ? Toutes vos données non enregistrées seront perdues.')) {
         var form = document.createElement('form');
         form.method = 'POST';
-        form.action = '<?= base_url('Swap-medecin') ?>';
+        form.action = '<?= base_url('swap-medecin') ?>';
         
         var csrfName = '<?= $this->security->get_csrf_token_name(); ?>';
         var csrfHash = '<?= $this->security->get_csrf_hash(); ?>';
