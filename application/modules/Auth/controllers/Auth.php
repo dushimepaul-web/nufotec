@@ -148,7 +148,7 @@ class Auth extends Public_Controller {
         'password' => $hashed_password,
         'type_utilisateur' => $type_utilisateur,
         'role_id' => $this->get_role_id_by_type($type_utilisateur),
-        'is_active' => 0, // Compte inactif jusqu'à vérification email
+        'is_active' => 1, // Compte actif directement (pas de vérification par code OTP)
         'email_verification_token' => $email_verification_token,
         'nom_entreprise' => ($type_utilisateur === 'entreprise') ? $nom_entreprise : null,
         'created_at' => date('Y-m-d H:i:s')
@@ -157,38 +157,8 @@ class Auth extends Public_Controller {
     $result = $this->Login->create_user($user_data);
 
     if ($result['success']) {
-        // Envoyer le code de vérification par email
-        $otp_code = sprintf("%06d", mt_rand(1, 999999));
-        $expiration = date('Y-m-d H:i:s', strtotime('+15 minutes'));
-        
-        // Sauvegarder le code OTP
-        $this->db->where('user_id', $result['user_id'])->where('type_otp', 'verification_email')->delete('codes_otp');
-        $this->db->insert('codes_otp', [
-            'user_id' => $result['user_id'],
-            'code' => $otp_code,
-            'type_otp' => 'verification_email',
-            'email' => $email,
-            'tentatives' => 0,
-            'date_expiration' => $expiration,
-            'utilise' => 0,
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
-        
-        // Envoyer l'email de vérification
-        $user_name = trim($prenom . ' ' . $nom);
-        $email_sent = $this->cpanel_email_lib->send_verification_code($email, $user_name, $otp_code);
-        
-        if ($email_sent['success']) {
-            // Stocker l'email en session pour la vérification
-            $this->session->set_tempdata('verification_email', $email, 900);
-            $this->session->set_tempdata('verification_user_id', $result['user_id'], 900);
-            
-            // Rediriger vers la page de vérification
-            redirect('auth/verify_email_page');
-        } else {
-            $this->session->set_flashdata('register_error', 'Compte créé mais erreur lors de l\'envoi de l\'email de vérification. Veuillez contacter l\'administrateur sur nufotecburundi2026@gmail.com.');
-            redirect('Auth?register=1');
-        }
+        $this->session->set_flashdata('register_success', 'Inscription réussie ! Vous pouvez maintenant vous connecter.');
+        redirect('Auth');
     } else {
         $this->session->set_flashdata('register_error', $result['message']);
         redirect('Auth?register=1');
@@ -363,110 +333,4 @@ public function clear_flash_data() {
 
 
 
-// Page de vérification d'email
-public function verify_email_page() {
-    $email = $this->session->tempdata('verification_email');
-    
-    if (!$email) {
-        redirect('Auth');
-    }
-    
-    $data['email'] = $email;
-    $this->load->view('verify_email_view', $data);
-}
-
-
-
-public function verify_email_code() {
-    $this->output->set_content_type('application/json');
-    
-    $email = $this->session->tempdata('verification_email');
-    $user_id = $this->session->tempdata('verification_user_id');
-    $code = trim($this->input->post('code'));
-    
-    if (!$email || !$user_id) {
-        echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez recommencer l\'inscription.']);
-        return;
-    }
-    
-    if (empty($code)) {
-        echo json_encode(['success' => false, 'message' => 'Veuillez entrer le code de vérification.']);
-        return;
-    }
-    
-    // Utiliser la méthode du modèle
-    $otp = $this->Login->verify_email_otp($user_id, $code);
-    
-    if (!$otp) {
-        echo json_encode(['success' => false, 'message' => 'Code invalide ou expiré.']);
-        return;
-    }
-    
-    // Marquer le code comme utilisé
-    $this->Login->mark_otp_as_used($otp->id);
-    
-    // Activer le compte utilisateur
-    $this->db->where('id', $user_id)->update('users', [
-        'is_active' => 1,
-        'email_verified_at' => date('Y-m-d H:i:s'),
-        'email_verification_token' => null
-    ]);
-    
-    // Nettoyer la session
-    $this->session->unset_tempdata('verification_email');
-    $this->session->unset_tempdata('verification_user_id');
-    
-    echo json_encode(['success' => true, 'message' => 'Email vérifié avec succès ! Vous pouvez maintenant vous connecter.']);
-}
-
-
-
-// Renvoyer le code de vérification
-public function resend_verification_code() {
-    $this->output->set_content_type('application/json');
-    
-    $email = $this->session->tempdata('verification_email');
-    $user_id = $this->session->tempdata('verification_user_id');
-    
-    if (!$email || !$user_id) {
-        echo json_encode(['success' => false, 'message' => 'Session expirée. Veuillez recommencer l\'inscription.']);
-        return;
-    }
-    
-    $user = $this->Login->get_user_by_id($user_id);
-    
-    if (!$user) {
-        echo json_encode(['success' => false, 'message' => 'Utilisateur non trouvé.']);
-        return;
-    }
-    
-    // Générer nouveau code
-    $otp_code = sprintf("%06d", mt_rand(1, 999999));
-    $expiration = date('Y-m-d H:i:s', strtotime('+15 minutes'));
-    
-    // Supprimer ancien code
-    $this->db->where('user_id', $user_id)->where('type_otp', 'verification_email')->delete('codes_otp');
-    
-    // Sauvegarder nouveau code
-    $this->db->insert('codes_otp', [
-        'user_id' => $user_id,
-        'code' => $otp_code,
-        'type_otp' => 'verification_email',
-        'email' => $email,
-        'tentatives' => 0,
-        'date_expiration' => $expiration,
-        'utilise' => 0,
-        'created_at' => date('Y-m-d H:i:s')
-    ]);
-    
-    // Envoyer l'email
-    $user_name = trim($user['prenom'] . ' ' . $user['nom']);
-    $result = $this->cpanel_email_lib->send_verification_code($email, $user_name, $otp_code);
-    
-    if ($result['success']) {
-        echo json_encode(['success' => true, 'message' => 'Un nouveau code a été envoyé à votre adresse email.']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'envoi du code.']);
-    }
-}
 }

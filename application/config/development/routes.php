@@ -126,11 +126,6 @@ $route['auth/clear_flash_data'] = 'Auth/clear_flash_data';
 // Routes pour les tests
 $route['auth/test_email'] = 'Auth/test_email';
 
-// Routes pour vérification email
-$route['auth/verify_email_page'] = 'Auth/verify_email_page';
-$route['auth/verify_email_code'] = 'Auth/verify_email_code';
-$route['auth/resend_verification_code'] = 'Auth/resend_verification_code';
-
 // ============================================
 // ALIAS AVEC MAJUSCULE (Compatibilité)
 // ============================================
@@ -142,9 +137,6 @@ $route['Auth/logout'] = 'Auth/logout';
 $route['Auth/verify_identity'] = 'Auth/verify_identity';
 $route['Auth/reset_password'] = 'Auth/reset_password';
 $route['Auth/clear_flash'] = 'Auth/clear_flash';
-$route['Auth/verify_email_page'] = 'Auth/verify_email_page';
-$route['Auth/verify_email_code'] = 'Auth/verify_email_code';
-$route['Auth/resend_verification_code'] = 'Auth/resend_verification_code';
 
 // ============================================
 // ALIAS SIMPLES (Sans préfixe auth)
@@ -168,18 +160,20 @@ $route['product/(:any)'] = 'Products/detail/$1';
 $route['products/(:any)'] = 'Products/detail/$1';
 $route['buyers/catalogue'] = 'Products/index';
 
-// ROUTES BOUTIQUE & PANIER
-$route['boutique'] = 'Home/boutique/index';
-$route['boutique/categorie/(:num)'] = 'Home/boutique/categorie/$1';
-$route['boutique/categorie/(:num)/(:num)'] = 'Home/boutique/categorie/$1/$2';
-$route['boutique/detail/(:any)'] = 'Home/boutique/detail/$1';
-$route['boutique/recherche'] = 'Home/boutique/recherche';
-$route['boutique/ajax_get_products'] = 'Home/Boutique/ajax_get_products';
+// ROUTES BOUTIQUE & PANIER (redirigées vers le contrôleur Products fonctionnel)
+$route['boutique'] = 'Products/index';
+$route['boutique/categorie/(:num)'] = 'Products/index';
+$route['boutique/categorie/(:num)/(:num)'] = 'Products/index';
+$route['boutique/detail/(:any)'] = 'Products/detail/$1';
+$route['boutique/recherche'] = 'Products/index';
+$route['boutique/ajax_get_products'] = 'Products/get_products_ajax';
 
 // ============================================
 // ROUTES MÉDECINS & CONSULTATIONS
 // ============================================
 $route['Medicins'] = 'Consultations/PatientForm/medicin';
+$route['medicins'] = 'Consultations/PatientForm/medicin';
+$route['medicins/(:any)'] = 'Consultations/PatientForm/medicin';
 $route['patient-form'] = 'Consultations/PatientForm';
 $route['patient-form/index'] = 'Consultations/PatientForm/index';
 $route['patient-form/create'] = 'Consultations/PatientForm/create';
@@ -231,6 +225,7 @@ $route['media/player/(:any)'] = 'Home/Media/player/$1';
 $route['media/downloader'] = 'Home/Media/downloader';
 $route['media/downloader/(:any)'] = 'Home/Media/downloader/$1';
 $route['media/trending'] = 'Home/Media/trending';
+$route['Media/trending'] = 'Home/Media/trending';
 $route['media/news'] = 'Home/Media/news';
 
 // ROUTES API MÉDIAS
@@ -500,7 +495,6 @@ $route['search/ajax_search'] = 'Home/search/ajax_search';
 $route['Equipe'] = 'Equipe/index';
 $route['Partenaires'] = 'Partenaires/index';
 $route['Temoignages'] = 'Temoignages/index';
-$route['Services'] = 'Services/index';
 $route['Appels_action'] = 'Appels_action/index';
 $route['Chiffres_cles'] = 'Chiffres_cles/index';
 $route['Statistiques_reseaux'] = 'Statistiques_reseaux/index';
@@ -512,8 +506,6 @@ $route['Visionmission'] = 'Visionmission/index';
 $route['Consultations'] = 'Consultations/index';
 $route['Categories'] = 'Categories/index';
 $route['Commandes'] = 'Commandes/index';
-$route['Adresses'] = 'Adresses/index';
-$route['Investissement'] = 'Investissement/index';
 $route['Investissement_phases'] = 'Investissement_phases/index';
 $route['Investissement_phases/index'] = 'Investissement_phases/index';
 $route['Investissement_phases/Create'] = 'Investissement_phases/Create';

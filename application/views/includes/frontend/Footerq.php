@@ -320,7 +320,7 @@
                             <ul class="footer-links">
                                 <li><a href="<?= base_url() ?>">Home</a></li>
                                 <li><a href="<?= base_url('a-propos') ?>">About Us</a></li>
-                                <li><a href="<?= base_url('boutique') ?>">Shop</a></li>
+                                <li><a href="<?= base_url('products') ?>">Shop</a></li>
                                 <li><a href="<?= base_url('Medicins') ?>">Teleconsultation</a></li>
                                 <li><a href="<?= base_url('investissement') ?>">Investment</a></li>
                                 <li><a href="<?= base_url('Home/Media') ?>">News</a></li>
@@ -346,7 +346,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="<?= base_url('boutique') ?>">
+                                    <a href="<?= base_url('products') ?>">
                                         <i class="bi bi-file-earmark-pdf"></i>
                                         Product Sales
                                     </a>

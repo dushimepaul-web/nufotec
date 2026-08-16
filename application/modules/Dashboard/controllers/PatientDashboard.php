@@ -145,17 +145,7 @@ class PatientDashboard extends MY_Controller {
             ->where_in('statut', array('en_attente', 'confirmee'))
             ->count_all_results('consultations');
 
-        // Ordonnances actives
-        $active_from_table = 0;
-        if ($this->db->table_exists('prescriptions')) {
-            $active_from_table = $this->db
-                ->from('prescriptions')
-                ->join('consultations', 'consultations.id = prescriptions.consultation_id')
-                ->where('prescriptions.is_active', 1)
-                ->where('consultations.patient_id', $user_id)
-                ->count_all_results();
-        }
-
+        // Ordonnances actives (stockées en JSON dans la table consultations)
         $active_from_json = $this->db
             ->where('patient_id', $user_id)
             ->where('created_at >=', date('Y-m-d H:i:s', strtotime('-30 days')))
@@ -164,7 +154,7 @@ class PatientDashboard extends MY_Controller {
             ->where('ordonnances !=', '[]')
             ->count_all_results('consultations');
 
-        $stats['active_prescriptions'] = $active_from_table + $active_from_json;
+        $stats['active_prescriptions'] = $active_from_json;
         $stats['health_score'] = $this->calculate_health_score($user_id);
 
         return $stats;
@@ -532,43 +522,12 @@ class PatientDashboard extends MY_Controller {
             }
         }
 
-        // 2. Documents depuis la table documents
-        if ($this->db->table_exists('documents')) {
-            $db_docs = $this->db
-                ->select('*')
-                ->from('documents')
-                ->where('user_id', $user_id)
-                ->order_by('created_at', 'DESC')
-                ->limit(50)
-                ->get()
-                ->result();
-
-            foreach ($db_docs as $d) {
-                $documents[] = $this->_build_document_from_db($d);
-            }
-        }
-
         // Tri
         usort($documents, function ($a, $b) {
             return strtotime($b->created_at) - strtotime($a->created_at);
         });
 
         return $documents;
-    }
-
-    private function _build_document_from_db($row) {
-        $doc = new stdClass();
-        $doc->id = 'db_' . ($row->id ?? '');
-        $doc->filename = $row->filename ?? '';
-        $doc->original_name = ($row->original_name ?? '') ?: ($row->filename ?? 'Document');
-        $doc->type = ($row->type ?? 'document');
-        $doc->consultation_id = $row->consultation_id ?? null;
-        $doc->consultation_numero = null;
-        $doc->created_at = $row->created_at ?? date('Y-m-d H:i:s');
-        $doc->file_url = base_url('attachments/Documents/' . ($row->filename ?? ''));
-        $doc->download_url = base_url('Dashboard/PatientDashboard/download_document_by_id/' . ($row->id ?? ''));
-        $doc->view_url = base_url('Dashboard/PatientDashboard/view_document/' . ($row->id ?? ''));
-        return $doc;
     }
 
     private function build_document_object($filename, $type, $consultation) {
@@ -686,12 +645,6 @@ class PatientDashboard extends MY_Controller {
         $user_id = $this->session->userdata('user_id');
 
         $unread_count = 0;
-        if ($this->db->table_exists('consultation_chats')) {
-            $unread_count = $this->db
-                ->where('receiver_id', $user_id)
-                ->where('is_read', 0)
-                ->count_all_results('consultation_chats');
-        }
 
         $data = array(
             'stats' => $this->get_patient_stats($user_id),
@@ -768,45 +721,11 @@ class PatientDashboard extends MY_Controller {
     }
 
     public function view_document($doc_id) {
-        $user_id = (int)$this->session->userdata('user_id');
-        
-        if (!$this->db->table_exists('documents')) {
-            show_404();
-        }
-        
-        $doc = $this->db->where('id', $doc_id)->where('user_id', $user_id)->get('documents')->row();
-        if (!$doc) show_404();
-
-        $file_path = FCPATH . 'attachments/Documents/' . $doc->filename;
-        if (!file_exists($file_path)) show_404();
-
-        $mime = $doc->mime_type ?: $this->get_mime_type($doc->filename);
-        header('Content-Type: ' . $mime);
-        header('Content-Disposition: inline; filename="' . ($doc->original_name ?: $doc->filename) . '"');
-        readfile($file_path);
-        exit;
+        show_404();
     }
 
     public function download_document_by_id($document_id) {
-        $user_id = $this->session->userdata('user_id');
-        
-        if (!$this->db->table_exists('documents')) {
-            show_404();
-        }
-        
-        $doc = $this->db->where('id', $document_id)->where('user_id', $user_id)->get('documents')->row();
-        
-        if (!$doc) {
-            show_404();
-        }
-
-        $file_path = FCPATH . 'attachments/Documents/' . $doc->filename;
-        if (!file_exists($file_path)) {
-            show_404();
-        }
-
-        $filename = $doc->original_name ?: $doc->filename;
-        force_download($filename, file_get_contents($file_path));
+        show_404();
     }
 
     // --------------------------------------------------------------------
@@ -918,24 +837,6 @@ class PatientDashboard extends MY_Controller {
     // --------------------------------------------------------------------
     // MESSAGES
     // --------------------------------------------------------------------
-
-    public function mark_message_read($message_id = null) {
-        $this->output->set_content_type('application/json');
-        
-        if (!$message_id) {
-            echo json_encode(array('success' => false, 'message' => 'ID manquant'));
-            return;
-        }
-
-        $user_id = $this->session->userdata('user_id');
-        
-        $this->db
-            ->where('id', $message_id)
-            ->where('receiver_id', $user_id)
-            ->update('consultation_chats', array('is_read' => 1));
-            
-        echo json_encode(array('success' => true));
-    }
 
     public function mark_all_notifications_read() {
         $this->output->set_content_type('application/json');

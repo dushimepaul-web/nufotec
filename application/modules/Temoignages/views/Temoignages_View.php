@@ -1,54 +1,24 @@
-<?php
-// =====================================================================
-// PAGES STATIQUES — la table `pages` a été supprimée de la base.
-// Ces données sont définies en dur directement dans les vues.
-// =====================================================================
-$pages = array(
-    array('id_page' => 1,  'titre_page' => 'Home',                                    'slug' => 'home'),
-    array('id_page' => 2,  'titre_page' => 'About',                                   'slug' => 'about'),
-    array('id_page' => 3,  'titre_page' => 'Background & Strategic Rationale',        'slug' => 'background-strategic-rationale'),
-    array('id_page' => 4,  'titre_page' => 'ESG & Sustainability',                    'slug' => 'esg-sustainability'),
-    array('id_page' => 5,  'titre_page' => 'Research & Innovation',                   'slug' => 'research-innovation'),
-    array('id_page' => 6,  'titre_page' => 'Corporate Structure & Governance',        'slug' => 'corporate-structure-governance'),
-    array('id_page' => 7,  'titre_page' => 'nufotec-phytomed-industries-facility',    'slug' => 'nufotec-phytomed-industries-facility'),
-    array('id_page' => 8,  'titre_page' => 'Our Product Categories',                  'slug' => 'product-categories'),
-    array('id_page' => 9,  'titre_page' => 'Raw Material Acquisition',                'slug' => 'raw-material-acquisition'),
-    array('id_page' => 10, 'titre_page' => 'Industrial Technology & Processing Systems', 'slug' => 'industrial-technology'),
-    array('id_page' => 11, 'titre_page' => 'Market & Industry Outlook',               'slug' => 'market-outlook'),
-    array('id_page' => 12, 'titre_page' => 'Digital Growth & Market Expansion Platform', 'slug' => 'digital-growth'),
-    array('id_page' => 13, 'titre_page' => 'Digital Health Consultation',             'slug' => 'digital-health'),
-    array('id_page' => 14, 'titre_page' => 'Phased Investment Projection',            'slug' => 'investment-projection'),
-    array('id_page' => 15, 'titre_page' => 'Our Investor & Partner Commitment',       'slug' => 'investor-commitment'),
-    array('id_page' => 16, 'titre_page' => 'Commission Fee Payment to Brokers',       'slug' => 'broker-commission'),
-    array('id_page' => 17, 'titre_page' => 'Risk Analysis & Mitigation Strategies',   'slug' => 'risk-analysis'),
-    array('id_page' => 18, 'titre_page' => 'Strategic Partnerships',                  'slug' => 'strategic-partnerships'),
-    array('id_page' => 19, 'titre_page' => 'Our Services',                            'slug' => 'our-services'),
-    array('id_page' => 22, 'titre_page' => 'Vision & Mission',                        'slug' => 'vision-mission'),
-    array('id_page' => 23, 'titre_page' => 'Brokers Form',                            'slug' => 'brokers-form'),
-    array('id_page' => 24, 'titre_page' => 'Investors form',                          'slug' => 'investors-form'),
-);
-$pages_list = $pages; ?>
 <?php include VIEWPATH.'includes/backend/Header.php'; ?>
 <?php include VIEWPATH.'includes/backend/Sidebar.php'; ?>
 <?php include VIEWPATH.'includes/backend/Topheader.php'; ?>
 
 <?php
-// Helper pour les types de témoignages
-$type_badges = [
-    'client' => '<span class="badge bg-primary"><i class="bx bx-user"></i> Client</span>',
-    'partenaire' => '<span class="badge bg-success"><i class="bx bx-handshake"></i> Partenaire</span>',
-    'patient' => '<span class="badge bg-info"><i class="bx bx-plus-medical"></i> Patient</span>',
-    'investisseur' => '<span class="badge bg-warning text-dark"><i class="bx bx-money"></i> Investisseur</span>',
-    'outgrower' => '<span class="badge bg-secondary"><i class="bx bx-sprout"></i> Outgrower</span>'
-];
-
-$type_labels = [
-    'client' => 'Client',
-    'partenaire' => 'Partenaire',
-    'patient' => 'Patient',
-    'investisseur' => 'Investisseur',
-    'outgrower' => 'Outgrower'
-];
+function get_youtube_embed_url($url) {
+    if (empty($url)) return '';
+    $shortUrlRegex = '/youtu.be\/([a-zA-Z0-9_-]+)\??/i';
+    $longUrlRegex = '/youtube.com\/((?:embed)|(?:watch))((?:\?v\=)|(?:\/))([a-zA-Z0-9_-]+)/i';
+    if (preg_match($longUrlRegex, $url, $matches)) {
+        if (!empty($matches[3])) {
+            return 'https://www.youtube.com/embed/' . $matches[3];
+        }
+    }
+    if (preg_match($shortUrlRegex, $url, $matches)) {
+        if (!empty($matches[1])) {
+            return 'https://www.youtube.com/embed/' . $matches[1];
+        }
+    }
+    return $url;
+}
 ?>
 
 <div class="page-wrapper">
@@ -61,13 +31,13 @@ $type_labels = [
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0 p-0">
                     <li class="breadcrumb-item"><a href="<?= base_url('Dashboard') ?>"><i class="bx bx-home-alt"></i></a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Témoignages</li>
+                    <li class="breadcrumb-item active" aria-current="page">Témoignages Vidéo YouTube</li>
                 </ol>
             </nav>
         </div>
         <div class="ms-auto">
             <a class="btn btn-primary" href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_temoignage">
-                <i class="bx bx-plus"></i> Nouveau Témoignage
+                <i class="bx bx-plus"></i> Nouveau Témoignage Vidéo
             </a>
         </div>
     </div>
@@ -103,10 +73,10 @@ $type_labels = [
             <div class="card border-0 shadow-sm bg-primary text-white">
                 <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <h6 class="mb-1">Total Témoignages</h6>
+                        <h6 class="mb-1">Total Vidéos</h6>
                         <h3 class="mb-0"><?= count($temoignages) ?></h3>
                     </div>
-                    <i class="bx bx-message-square-detail fs-1 opacity-75"></i>
+                    <i class="bx bx-video fs-1 opacity-75"></i>
                 </div>
             </div>
         </div>
@@ -137,7 +107,7 @@ $type_labels = [
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
             <div class="d-flex align-items-center">
-                <h5 class="mb-0 text-primary"><i class="bx bx-message-square-detail me-2"></i>Liste des Témoignages</h5>
+                <h5 class="mb-0 text-primary"><i class="bx bx-video me-2"></i>Liste des Témoignages Vidéo</h5>
             </div>
         </div>
         <div class="card-body">
@@ -146,78 +116,29 @@ $type_labels = [
                     <thead class="table-light">
                         <tr>
                             <th width="5%">#</th>
-                            <th width="10%">Photo</th>
-                            <th width="20%">Personne</th>
-                            <th width="12%">Type</th>
-                            <th width="25%">Message</th>
-                            <th width="8%">Note</th>
-                            <th width="10%">Date</th>
-                            <th width="10%">Statut</th>
+                            <th width="15%">Miniature</th>
+                            <th width="40%">Titre YouTube</th>
+                            <th width="15%">Statut</th>
                             <th width="10%">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                     <?php if (!empty($temoignages)): $i = 1; foreach ($temoignages as $value): 
-                        $photo_path = !empty($value['photo_url']) ? 'attachments/Temoignages/'.$value['photo_url'] : 'assets/frontend/img/default-avatar.jpg';
-                        $type_badge = $type_badges[$value['type'] ?? 'client'] ?? '<span class="badge bg-light text-dark">Inconnu</span>';
-                        
-                        // Tronquer le message
-                        $message_short = strlen($value['message'] ?? '') > 100 ? substr($value['message'], 0, 100).'...' : ($value['message'] ?? '');
+                        $miniature_path = !empty($value['miniature']) ? $value['miniature'] : 'assets/frontend/img/default-avatar.jpg';
                     ?>
                         <tr>
                             <td><?= $i++ ?></td>
                             
                             <td>
-                                <img src="<?= base_url($photo_path) ?>" 
-                                     class="rounded-circle border"
-                                     style="width:50px; height:50px; object-fit:cover;"
+                                <img src="<?= $miniature_path ?>" 
+                                     class="rounded border"
+                                     style="width:70px; height:50px; object-fit:cover;"
                                      onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
-                                     alt="Photo">
+                                     alt="Miniature">
                             </td>
 
                             <td>
-                                <div class="d-flex flex-column">
-                                    <strong class="text-dark"><?= htmlspecialchars($value['nom_personne'] ?? '') ?></strong>
-                                    <?php if (!empty($value['fonction'])): ?>
-                                        <small class="text-muted"><?= htmlspecialchars($value['fonction']) ?></small>
-                                    <?php endif; ?>
-                                    <?php if (!empty($value['organisation'])): ?>
-                                        <small class="text-primary"><i class="bx bx-buildings me-1"></i><?= htmlspecialchars($value['organisation']) ?></small>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-
-                            <td><?= $type_badge ?></td>
-
-                            <td>
-                                <p class="mb-0 text-muted" style="font-size: 0.9rem;"><?= htmlspecialchars($message_short) ?></p>
-                                <?php if (strlen($value['message'] ?? '') > 100): ?>
-                                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#view_<?= $value['id_temoignage'] ?>" class="small text-primary">Lire plus</a>
-                                <?php endif; ?>
-                            </td>
-
-                            <td>
-                                <?php if (!empty($value['note'])): ?>
-                                    <div class="text-warning">
-                                        <?php for($j=1; $j<=5; $j++): ?>
-                                            <i class="bx <?= $j <= $value['note'] ? 'bxs-star' : 'bx-star' ?>"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                    <small class="text-muted"><?= $value['note'] ?>/5</small>
-                                <?php else: ?>
-                                    <span class="text-muted">-</span>
-                                <?php endif; ?>
-                            </td>
-
-                            <td>
-                                <small class="text-muted">
-                                    <i class="bx bx-calendar me-1"></i>
-                                    <?= !empty($value['date_reception']) ? date('d/m/Y', strtotime($value['date_reception'])) : '-' ?>
-                                </small>
-                                <?php if (!empty($value['id_page_associee'])): ?>
-                                    <br>
-                                    <span class="badge bg-light text-dark border mt-1">Page #<?= $value['id_page_associee'] ?></span>
-                                <?php endif; ?>
+                                <strong class="text-dark"><?= htmlspecialchars($value['titre'] ?? '') ?></strong>
                             </td>
 
                             <td class="text-center">
@@ -262,80 +183,21 @@ $type_labels = [
                             <div class="modal-dialog modal-lg modal-dialog-centered">
                                 <div class="modal-content border-0 shadow">
                                     <div class="modal-header bg-primary text-white">
-                                        <h5 class="modal-title"><i class="bx bx-message-square-detail me-2"></i>Détails du Témoignage</h5>
+                                        <h5 class="modal-title"><i class="bx bx-video me-2"></i>Détails du Témoignage Vidéo</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <div class="modal-body p-4">
-                                        <div class="row">
-                                            <div class="col-md-4 text-center border-end">
-                                                <img src="<?= base_url($photo_path) ?>" 
-                                                     class="rounded-circle border border-3 border-primary mb-3"
-                                                     style="width:120px; height:120px; object-fit:cover;"
-                                                     onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'"
-                                                     alt="Photo">
-                                                <h5 class="mb-1"><?= htmlspecialchars($value['nom_personne'] ?? '') ?></h5>
-                                                <?php if (!empty($value['fonction'])): ?>
-                                                    <p class="text-muted mb-1"><?= htmlspecialchars($value['fonction']) ?></p>
-                                                <?php endif; ?>
-                                                <?= $type_badge ?>
-                                                
-                                                <?php if (!empty($value['organisation'])): ?>
-                                                    <div class="mt-3 p-2 bg-light rounded">
-                                                        <small class="text-muted d-block">Organisation</small>
-                                                        <strong><?= htmlspecialchars($value['organisation']) ?></strong>
-                                                    </div>
-                                                <?php endif; ?>
+                                    <div class="modal-body p-4 text-center">
+                                        <h4 class="mb-3 text-dark fw-bold"><?= htmlspecialchars($value['titre'] ?? '') ?></h4>
+
+                                        <?php if (!empty($value['video_url'])): ?>
+                                            <div class="ratio ratio-16x9 mb-3">
+                                                <iframe src="<?= get_youtube_embed_url($value['video_url']) ?>" title="YouTube video" allowfullscreen></iframe>
                                             </div>
-                                            <div class="col-md-8">
-                                                <div class="mb-3">
-                                                    <label class="text-muted small">Message</label>
-                                                    <div class="p-3 bg-light rounded">
-                                                        <p class="mb-0 fst-italic">"<?= nl2br(htmlspecialchars($value['message'] ?? '')) ?>"</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="row g-3">
-                                                    <div class="col-6">
-                                                        <label class="text-muted small">Note</label>
-                                                        <p class="mb-0 text-warning fs-5">
-                                                            <?php if (!empty($value['note'])): ?>
-                                                                <?php for($j=1; $j<=5; $j++): ?>
-                                                                    <i class="bx <?= $j <= $value['note'] ? 'bxs-star' : 'bx-star' ?>"></i>
-                                                                <?php endfor; ?>
-                                                                <span class="text-dark fs-6">(<?= $value['note'] ?>/5)</span>
-                                                            <?php else: ?>
-                                                                <span class="text-muted fs-6">Non noté</span>
-                                                            <?php endif; ?>
-                                                        </p>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label class="text-muted small">Date de réception</label>
-                                                        <p class="mb-0 fw-bold"><?= !empty($value['date_reception']) ? date('d/m/Y', strtotime($value['date_reception'])) : '-' ?></p>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label class="text-muted small">Statut</label>
-                                                        <p class="mb-0">
-                                                            <?php if (!empty($value['est_approuve']) && $value['est_approuve'] == 1): ?>
-                                                                <span class="badge bg-success">Approuvé</span>
-                                                            <?php else: ?>
-                                                                <span class="badge bg-warning text-dark">En attente</span>
-                                                            <?php endif; ?>
-                                                        </p>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label class="text-muted small">Page associée</label>
-                                                        <p class="mb-0">
-                                                            <?php if (!empty($value['id_page_associee'])): ?>
-                                                                <span class="badge bg-secondary">
-                                                                    Page #<?= $value['id_page_associee'] ?>
-                                                                </span>
-                                                            <?php else: ?>
-                                                                <span class="text-muted">Aucune</span>
-                                                            <?php endif; ?>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        <?php endif; ?>
+
+                                        <div class="text-center border-top pt-3">
+                                            <small class="text-muted d-block">Statut</small>
+                                            <span><?= !empty($value['est_approuve']) ? '<span class="badge bg-success">Approuvé</span>' : '<span class="badge bg-warning text-dark">En attente</span>' ?></span>
                                         </div>
                                     </div>
                                     <div class="modal-footer bg-light">
@@ -347,10 +209,10 @@ $type_labels = [
 
                         <!-- MODAL UPDATE -->
                         <div class="modal fade" id="update_<?= $value['id_temoignage'] ?>" data-bs-backdrop="static" tabindex="-1">
-                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-dialog modal-md modal-dialog-centered">
                                 <div class="modal-content border-0 shadow">
                                     <div class="modal-header bg-warning text-dark">
-                                        <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier le Témoignage</h5>
+                                        <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Modifier le Témoignage Vidéo</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
 
@@ -359,58 +221,17 @@ $type_labels = [
                                         
                                         <div class="modal-body p-4">
                                             <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Nom de la personne <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" name="nom_personne" value="<?= htmlspecialchars($value['nom_personne'] ?? '') ?>" required>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Fonction</label>
-                                                    <input type="text" class="form-control" name="fonction" value="<?= htmlspecialchars($value['fonction'] ?? '') ?>" placeholder="Ex: Director of Research">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Organisation</label>
-                                                    <input type="text" class="form-control" name="organisation" value="<?= htmlspecialchars($value['organisation'] ?? '') ?>">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Type <span class="text-danger">*</span></label>
-                                                    <select class="form-select" name="type" required>
-                                                        <?php foreach ($type_labels as $key => $label): ?>
-                                                            <option value="<?= $key ?>" <?= ($value['type'] ?? '') == $key ? 'selected' : '' ?>><?= $label ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Note (1-5)</label>
-                                                    <select class="form-select" name="note">
-                                                        <option value="">Non noté</option>
-                                                        <?php for($n=1; $n<=5; $n++): ?>
-                                                            <option value="<?= $n ?>" <?= ($value['note'] ?? '') == $n ? 'selected' : '' ?>><?= $n ?> étoile<?= $n > 1 ? 's' : '' ?></option>
-                                                        <?php endfor; ?>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Date de réception</label>
-                                                    <input type="date" class="form-control" name="date_reception" value="<?= $value['date_reception'] ?? '' ?>">
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold">Lien de la Vidéo (YouTube) <span class="text-danger">*</span></label>
+                                                    <input type="url" class="form-control" name="video_url" value="<?= htmlspecialchars($value['video_url'] ?? '') ?>" placeholder="https://www.youtube.com/watch?v=..." required>
+                                                    <small class="text-muted">Le titre et la miniature officiels seront actualisés automatiquement depuis YouTube.</small>
                                                 </div>
                                                 <div class="col-12">
-                                                    <label class="form-label fw-bold">Message <span class="text-danger">*</span></label>
-                                                    <textarea class="form-control" name="message" rows="4" required><?= htmlspecialchars($value['message'] ?? '') ?></textarea>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Photo</label>
-                                                    <input type="file" class="form-control" name="photo_url" accept="image/*">
-                                                    <?php if (!empty($value['photo_url'])): ?>
-                                                        <small class="text-muted">Actuelle: <?= $value['photo_url'] ?></small>
+                                                    <label class="form-label fw-bold">Miniature personnalisée (Optionnel)</label>
+                                                    <input type="file" class="form-control" name="miniature" accept="image/*">
+                                                    <?php if (!empty($value['miniature'])): ?>
+                                                        <small class="text-muted">Actuelle: <?= $value['miniature'] ?></small>
                                                     <?php endif; ?>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Page associée</label>
-                                                    <select class="form-select" name="id_page_associee">
-                                                        <option value="">Aucune</option>
-                                                        <?php foreach ($pages as $page): ?>
-                                                            <option value="<?= $page['id_page'] ?>" <?= ($value['id_page_associee'] ?? '') == $page['id_page'] ? 'selected' : '' ?>><?= htmlspecialchars($page['titre_page']) ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
                                                 </div>
                                                 <div class="col-12">
                                                     <div class="form-check form-switch">
@@ -424,7 +245,7 @@ $type_labels = [
                                         <div class="modal-footer bg-light">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                                             <button type="submit" class="btn btn-warning">
-                                                <i class="bx bx-save me-2"></i>Enregistrer les modifications
+                                                <i class="bx bx-save me-2"></i>Enregistrer
                                             </button>
                                         </div>
                                     </form>
@@ -443,7 +264,7 @@ $type_labels = [
                                     <div class="modal-body p-4 text-center">
                                         <i class="bx bx-error-circle text-danger" style="font-size: 4rem;"></i>
                                         <h5 class="mt-3">Êtes-vous sûr ?</h5>
-                                        <p class="text-muted">Vous êtes sur le point de supprimer le témoignage de <strong><?= htmlspecialchars($value['nom_personne'] ?? '') ?></strong>.</p>
+                                        <p class="text-muted">Vous êtes sur le point de supprimer le témoignage vidéo.</p>
                                         <p class="text-danger small">Cette action est irréversible.</p>
                                     </div>
                                     <form action="<?= base_url('Temoignages/Delete') ?>" method="POST">
@@ -470,7 +291,7 @@ $type_labels = [
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body p-4">
-                                        <p>Voulez-vous vraiment <strong><?= (!empty($value['est_approuve']) && $value['est_approuve'] == 1) ? 'mettre en attente' : 'approuver' ?></strong> le témoignage de <strong><?= htmlspecialchars($value['nom_personne'] ?? '') ?></strong> ?</p>
+                                        <p>Voulez-vous vraiment <strong><?= (!empty($value['est_approuve']) && $value['est_approuve'] == 1) ? 'mettre en attente' : 'approuver' ?></strong> ce témoignage vidéo ?</p>
                                     </div>
                                     <form action="<?= base_url('Temoignages/ChangeStatus') ?>" method="POST">
                                         <input type="hidden" name="id" value="<?= $value['id_temoignage'] ?>">
@@ -488,9 +309,9 @@ $type_labels = [
 
                     <?php endforeach; else: ?>
                         <tr>
-                            <td colspan="9" class="text-center py-5">
-                                <i class="bx bx-message-square-x text-muted" style="font-size: 4rem;"></i>
-                                <p class="mt-3 text-muted">Aucun témoignage trouvé</p>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="bx bx-video-off text-muted" style="font-size: 4rem;"></i>
+                                <p class="mt-3 text-muted">Aucun témoignage vidéo trouvé</p>
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -504,66 +325,25 @@ $type_labels = [
 
 <!-- MODAL CREATE -->
 <div class="modal fade" id="create_temoignage" data-bs-backdrop="static" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouveau Témoignage</h5>
+                <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>Nouveau Témoignage Vidéo</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
             <form action="<?= base_url('Temoignages/Create') ?>" method="POST" enctype="multipart/form-data">
                 <div class="modal-body p-4">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Nom de la personne <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="nom_personne" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Fonction</label>
-                            <input type="text" class="form-control" name="fonction" placeholder="Ex: Director of Research">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Organisation</label>
-                            <input type="text" class="form-control" name="organisation">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Type <span class="text-danger">*</span></label>
-                            <select class="form-select" name="type" required>
-                                <?php foreach ($type_labels as $key => $label): ?>
-                                    <option value="<?= $key ?>" <?= $key == 'client' ? 'selected' : '' ?>><?= $label ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Note (1-5)</label>
-                            <select class="form-select" name="note">
-                                <option value="">Non noté</option>
-                                <?php for($n=1; $n<=5; $n++): ?>
-                                    <option value="<?= $n ?>"><?= $n ?> étoile<?= $n > 1 ? 's' : '' ?></option>
-                                <?php endfor; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Date de réception</label>
-                            <input type="date" class="form-control" name="date_reception" value="<?= date('Y-m-d') ?>">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Lien de la Vidéo (YouTube) <span class="text-danger">*</span></label>
+                            <input type="url" class="form-control" name="video_url" placeholder="https://www.youtube.com/watch?v=..." required>
+                            <small class="text-muted">Le titre et la miniature officiels seront récupérés automatiquement depuis YouTube.</small>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-bold">Message <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="message" rows="4" required placeholder="Le témoignage..."></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Photo</label>
-                            <input type="file" class="form-control" name="photo_url" accept="image/*">
-                            <small class="text-muted">Formats: JPG, PNG, GIF, WEBP (max 2MB)</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Page associée</label>
-                            <select class="form-select" name="id_page_associee">
-                                <option value="">Aucune</option>
-                                <?php foreach ($pages as $page): ?>
-                                    <option value="<?= $page['id_page'] ?>"><?= htmlspecialchars($page['titre_page']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label class="form-label fw-bold">Miniature personnalisée (Optionnel)</label>
+                            <input type="file" class="form-control" name="miniature" accept="image/*">
+                            <small class="text-muted">Si vide, la miniature officielle YouTube sera utilisée.</small>
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
@@ -577,7 +357,7 @@ $type_labels = [
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                     <button type="submit" class="btn btn-success">
-                        <i class="bx bx-save me-2"></i>Créer le témoignage
+                        <i class="bx bx-save me-2"></i>Créer
                     </button>
                 </div>
             </form>
@@ -595,7 +375,7 @@ $(document).ready(function() {
         pageLength: 25,
         responsive: true,
         columnDefs: [
-            { orderable: false, targets: [1, 8] }
+            { orderable: false, targets: [1, 3, 4] }
         ]
     });
     

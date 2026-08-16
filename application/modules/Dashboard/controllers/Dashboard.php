@@ -367,10 +367,7 @@ class Dashboard extends MY_Controller {
 
     /** KPI Produits */
     private function _kpi_products(): array {
-        $has_catalogue = $this->db->table_exists('produits');
         return [
-            'catalogue_total'  => $has_catalogue ? $this->db->where('est_actif',1)->count_all_results('produits') : 0,
-            'catalogue_vedette'=> $has_catalogue ? $this->db->where('est_vedette',1)->where('est_actif',1)->count_all_results('produits') : 0,
             'advertise_total'  => $this->db->where('is_active',1)->count_all_results('advertise_product'),
             'advertise_vedette'=> $this->db->where('in_vedette',1)->count_all_results('advertise_product'),
             'total_price_requests'=> (int)($this->db->select_sum('price_request_count')->get('advertise_product')->row()->price_request_count ?? 0),

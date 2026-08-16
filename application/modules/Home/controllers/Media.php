@@ -49,6 +49,11 @@ class Media extends Public_Controller{
         return null;
     }
 
+    public function trending()
+    {
+        $this->type('video');
+    }
+
     /**
      * Page d'accueil - Découverte des médias (multilingue)
      */
@@ -82,6 +87,7 @@ class Media extends Public_Controller{
         $data = [
             'medias' => $medias,
             'categories' => $categories,
+            'temoignages' => $this->db->where('est_approuve', 1)->order_by('id_temoignage', 'DESC')->get('temoignages')->result_array(),
             'current_type' => null,
             'search_query' => null,
             'results_count' => count($medias),
@@ -110,6 +116,7 @@ class Media extends Public_Controller{
             'articles'      => $articles,
             'medias'        => [],
             'categories'    => $this->getCategoriesWithCount(),
+            'temoignages'   => $this->db->where('est_approuve', 1)->order_by('id_temoignage', 'DESC')->get('temoignages')->result_array(),
             'current_type'  => 'news',
             'search_query'  => null,
             'results_count' => count($articles),

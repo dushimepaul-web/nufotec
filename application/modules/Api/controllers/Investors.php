@@ -105,7 +105,7 @@ class Investisseurs extends Public_Controller
         log_message('debug', 'Données préparées : ' . print_r($donnees_insertion, true));
 
         // ========== INSERTION ==========
-        $insere = $this->db->insert('investisseurs', $donnees_insertion);
+        $insere = $this->db->insert('investors', $donnees_insertion);
         
         if (!$insere) {
             $erreur_bd = $this->db->error();
@@ -192,8 +192,8 @@ class Investisseurs extends Public_Controller
             $erreurs['courriel'] = 'Le courriel ne doit pas dépasser 150 caractères';
         } else {
             // Vérifier si le courriel existe déjà
-            $this->db->where('courriel', $donnees_entree['courriel']);
-            if ($this->db->count_all_results('investisseurs') > 0) {
+            $this->db->where('email', $donnees_entree['courriel']);
+            if ($this->db->count_all_results('investors') > 0) {
                 $erreurs['courriel'] = 'Ce courriel est déjà enregistré';
             }
         }
@@ -246,38 +246,38 @@ class Investisseurs extends Public_Controller
      */
     private function _preparer_donnees_insertion($donnees_entree) {
         return [
-            'nom_complet' => $donnees_entree['nom_complet'],
-            'organisation' => $donnees_entree['organisation'] ?? null,
-            'titre_poste' => $donnees_entree['titre_poste'] ?? null,
+            'full_name' => $donnees_entree['nom_complet'],
+            'organization' => $donnees_entree['organisation'] ?? null,
+            'position_title' => $donnees_entree['titre_poste'] ?? null,
             'id_pays' => $donnees_entree['id_pays'],
-            'courriel' => $donnees_entree['courriel'],
-            'telephone' => $donnees_entree['telephone'] ?? null,
+            'email' => $donnees_entree['courriel'],
+            'phone' => $donnees_entree['telephone'] ?? null,
 
-            'interet_capitaux_propres' => !empty($donnees_entree['interet_capitaux_propres']) ? 1 : 0,
-            'interet_dette' => !empty($donnees_entree['interet_dette']) ? 1 : 0,
-            'interet_financement_mixte' => !empty($donnees_entree['interet_financement_mixte']) ? 1 : 0,
-            'interet_subvention' => !empty($donnees_entree['interet_subvention']) ? 1 : 0,
-            'interet_partenariat_strategique' => !empty($donnees_entree['interet_partenariat_strategique']) ? 1 : 0,
-            'interet_collaboration_technique' => !empty($donnees_entree['interet_collaboration_technique']) ? 1 : 0,
-            'interet_achat_distribution' => !empty($donnees_entree['interet_achat_distribution']) ? 1 : 0,
-            'interet_autre' => $donnees_entree['interet_autre'] ?? null,
+            'interest_equity' => !empty($donnees_entree['interet_capitaux_propres']) ? 1 : 0,
+            'interest_debt' => !empty($donnees_entree['interet_dette']) ? 1 : 0,
+            'interest_blended_finance' => !empty($donnees_entree['interet_financement_mixte']) ? 1 : 0,
+            'interest_grant' => !empty($donnees_entree['interet_subvention']) ? 1 : 0,
+            'interest_strategic_partnership' => !empty($donnees_entree['interet_partenariat_strategique']) ? 1 : 0,
+            'interest_technical_collaboration' => !empty($donnees_entree['interet_collaboration_technique']) ? 1 : 0,
+            'interest_offtake_distribution' => !empty($donnees_entree['interet_achat_distribution']) ? 1 : 0,
+            'interest_other' => $donnees_entree['interet_autre'] ?? null,
 
-            'fourchette_engagement' => $donnees_entree['fourchette_engagement'] ?? null,
+            'commitment_range' => $donnees_entree['fourchette_engagement'] ?? null,
 
-            'focus_laboratoire_recherche' => !empty($donnees_entree['focus_laboratoire_recherche']) ? 1 : 0,
-            'focus_installation_gmp' => !empty($donnees_entree['focus_installation_gmp']) ? 1 : 0,
-            'focus_plante_medicinale' => !empty($donnees_entree['focus_plante_medicinale']) ? 1 : 0,
-            'focus_commercialisation' => !empty($donnees_entree['focus_commercialisation']) ? 1 : 0,
-            'focus_plateforme_complete' => !empty($donnees_entree['focus_plateforme_complete']) ? 1 : 0,
+            'focus_research_lab' => !empty($donnees_entree['focus_laboratoire_recherche']) ? 1 : 0,
+            'focus_gmp_facility' => !empty($donnees_entree['focus_installation_gmp']) ? 1 : 0,
+            'focus_medicinal_plant' => !empty($donnees_entree['focus_plante_medicinale']) ? 1 : 0,
+            'focus_commercialization' => !empty($donnees_entree['focus_commercialisation']) ? 1 : 0,
+            'focus_full_platform' => !empty($donnees_entree['focus_plateforme_complete']) ? 1 : 0,
 
-            'calendrier' => $donnees_entree['calendrier'] ?? 'Exploratoire',
-            'message_strategique' => $donnees_entree['message_strategique'] ?? null,
+            'timeline' => $donnees_entree['calendrier'] ?? 'Exploratoire',
+            'strategic_message' => $donnees_entree['message_strategique'] ?? null,
 
-            'accepte_etre_contacte' => !empty($donnees_entree['accepte_etre_contacte']) ? 1 : 0,
-            'confirmation_non_contraignante' => !empty($donnees_entree['confirmation_non_contraignante']) ? 1 : 0,
+            'agree_contact' => !empty($donnees_entree['accepte_etre_contacte']) ? 1 : 0,
+            'non_binding_confirmation' => !empty($donnees_entree['confirmation_non_contraignante']) ? 1 : 0,
             
-            'cree_le' => date('Y-m-d H:i:s'),
-            'modifie_le' => date('Y-m-d H:i:s'),
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
         ];
     }
 

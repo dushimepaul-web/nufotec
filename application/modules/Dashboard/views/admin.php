@@ -259,12 +259,11 @@ $generated_at      = $generated_at      ?? date('d/m/Y H:i:s');
         <div class="d-flex align-items-center gap-3 mb-2">
           <div class="d-flex align-items-center justify-content-center rounded-3 text-secondary bg-secondary-subtle" style="width:44px;height:44px;font-size:22px;"><i class="bx bx-package"></i></div>
           <div class="flex-grow-1">
-            <div class="fs-3 fw-bold"><?= number_format(($kpi_products['catalogue_total'] ?? 0) + ($kpi_products['advertise_total'] ?? 0)) ?></div>
+            <div class="fs-3 fw-bold"><?= number_format($kpi_products['advertise_total'] ?? 0) ?></div>
             <div class="small text-secondary text-uppercase">Produits (total)</div>
           </div>
         </div>
         <div class="small text-secondary d-flex flex-wrap gap-2 border-top pt-2">
-          <span>Catalogue: <b><?= $kpi_products['catalogue_total'] ?? 0 ?></b></span>
           <span>Publicisés: <b><?= $kpi_products['advertise_total'] ?? 0 ?></b></span>
           <span>Devis reçus: <b><?= $kpi_products['total_price_requests'] ?? 0 ?></b></span>
         </div>

@@ -1537,6 +1537,31 @@ function googleTranslateElementInit() {
         <?php endforeach; ?>
     </div>
 
+    <div class="sidebar-section">
+        <div class="sidebar-title"><i class="bi bi-chat-quote-fill"></i> Témoignages</div>
+        <?php if (!empty($temoignages)): ?>
+            <div class="px-3 py-2">
+                <?php foreach ($temoignages as $t): 
+                    $thumb = !empty($t['miniature']) ? $t['miniature'] : 'assets/frontend/img/default-avatar.jpg';
+                ?>
+                    <div class="card mb-2 border-0 shadow-sm bg-dark text-white overflow-hidden temoignage-sidebar-card" style="cursor: pointer;" onclick="openTemoignageModal('<?= htmlspecialchars($t['titre'] ?? '') ?>', '<?= get_youtube_embed_url($t['video_url']) ?>')">
+                        <div class="position-relative">
+                            <img src="<?= $thumb ?>" class="w-150" style="height: 90px; object-fit: cover; width: 100%;" onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'">
+                            <div class="position-absolute top-50 start-50 translate-middle bg-dark bg-opacity-75 rounded-circle p-2 text-danger">
+                                <i class="bi bi-play-fill fs-5"></i>
+                            </div>
+                        </div>
+                        <div class="p-2">
+                            <h6 class="fs-7 mb-0 text-truncate" style="font-size: 0.85rem;" title="<?= htmlspecialchars($t['titre'] ?? '') ?>"><?= htmlspecialchars($t['titre'] ?? '') ?></h6>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <div class="px-3 py-1 text-muted small">Aucun témoignage</div>
+        <?php endif; ?>
+    </div>
+
     <!-- Language Selector MOBILE (dans le sidebar) -->
     <div class="sidebar-section">
         <div class="sidebar-title">
@@ -1986,6 +2011,56 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
+});
+</script>
+
+<?php
+function get_youtube_embed_url($url) {
+    if (empty($url)) return '';
+    $shortUrlRegex = '/youtu.be\/([a-zA-Z0-9_-]+)\??/i';
+    $longUrlRegex = '/youtube.com\/((?:embed)|(?:watch))((?:\?v\=)|(?:\/))([a-zA-Z0-9_-]+)/i';
+    if (preg_match($longUrlRegex, $url, $matches)) {
+        if (!empty($matches[3])) {
+            return 'https://www.youtube.com/embed/' . $matches[3];
+        }
+    }
+    if (preg_match($shortUrlRegex, $url, $matches)) {
+        if (!empty($matches[1])) {
+            return 'https://www.youtube.com/embed/' . $matches[1];
+        }
+    }
+    return $url;
+}
+?>
+
+<!-- Modal Lecture Témoignage -->
+<div class="modal fade" id="temoignageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-white border-0 shadow">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="temoignageModalTitle">Témoignage</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="temoignageIframe" src="" title="YouTube video" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openTemoignageModal(title, embedUrl) {
+    document.getElementById('temoignageModalTitle').innerText = title;
+    document.getElementById('temoignageIframe').src = embedUrl;
+    var myModal = new bootstrap.Modal(document.getElementById('temoignageModal'));
+    myModal.show();
+}
+
+// Nettoyer l'iframe à la fermeture du modal pour stopper la vidéo
+document.getElementById('temoignageModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('temoignageIframe').src = '';
 });
 </script>
 

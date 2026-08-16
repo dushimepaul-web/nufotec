@@ -17,6 +17,37 @@ class Temoignages extends MY_Controller {
         $this->load->view('Temoignages_View', $data);
     }
 
+    private function get_youtube_id($url) {
+        $shortUrlRegex = '/youtu.be\/([a-zA-Z0-9_-]+)\??/i';
+        $longUrlRegex = '/youtube.com\/((?:embed)|(?:watch))((?:\?v\=)|(?:\/))([a-zA-Z0-9_-]+)/i';
+        if (preg_match($longUrlRegex, $url, $matches)) {
+            if (!empty($matches[3])) return $matches[3];
+        }
+        if (preg_match($shortUrlRegex, $url, $matches)) {
+            if (!empty($matches[1])) return $matches[1];
+        }
+        return '';
+    }
+
+    private function fetch_youtube_info($url) {
+        $video_id = $this->get_youtube_id($url);
+        if (empty($video_id)) return null;
+
+        $oembed_url = "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=" . $video_id . "&format=json";
+        $json = @file_get_contents($oembed_url);
+        if ($json) {
+            $data = json_decode($json, true);
+            return [
+                'titre' => $data['title'] ?? '',
+                'miniature' => "https://img.youtube.com/vi/" . $video_id . "/hqdefault.jpg"
+            ];
+        }
+        return [
+            'titre' => '',
+            'miniature' => "https://img.youtube.com/vi/" . $video_id . "/hqdefault.jpg"
+        ];
+    }
+
     function ChangeStatus(){
         $id = $this->input->post('id');
         $est_approuve = $this->input->post('est_approuve');
@@ -33,9 +64,7 @@ class Temoignages extends MY_Controller {
     }
 
     function Create(){
-        $this->form_validation->set_rules('nom_personne', 'Nom', 'required');
-        $this->form_validation->set_rules('message', 'Message', 'required');
-        $this->form_validation->set_rules('type', 'Type', 'required');
+        $this->form_validation->set_rules('video_url', 'Lien YouTube', 'required|valid_url');
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
@@ -43,35 +72,29 @@ class Temoignages extends MY_Controller {
             return;
         }
 
+        $video_url = $this->input->post('video_url');
+        $yt_info = $this->fetch_youtube_info($video_url);
+
         $data = array(
-            'nom_personne' => $this->input->post('nom_personne'),
-            'fonction' => $this->input->post('fonction') ?: NULL,
-            'organisation' => $this->input->post('organisation') ?: NULL,
-            'message' => $this->input->post('message'),
-            'note' => $this->input->post('note') ?: NULL,
-            'type' => $this->input->post('type'),
-            'date_reception' => $this->input->post('date_reception') ?: date('Y-m-d'),
-            'est_approuve' => $this->input->post('est_approuve') ? 1 : 0,
-            'id_page_associee' => $this->input->post('id_page_associee') ?: NULL
+            'titre' => $yt_info && !empty($yt_info['titre']) ? $yt_info['titre'] : 'Témoignage Vidéo',
+            'video_url' => $video_url,
+            'miniature' => $yt_info ? $yt_info['miniature'] : '',
+            'est_approuve' => $this->input->post('est_approuve') ? 1 : 0
         );
 
-        // Upload photo si fournie
-        if (!empty($_FILES['photo_url']['name'])) {
-            $photo = $this->upload_image($_FILES['photo_url']['tmp_name'], $_FILES['photo_url']['name']);
-            if ($photo === NULL) {
-                $this->session->set_flashdata('error', 'Format de fichier non valide. Formats acceptés: gif, jpg, png, jpeg, webp, svg');
-                redirect(base_url('Temoignages'));
-                return;
+        if (!empty($_FILES['miniature']['name'])) {
+            $photo = $this->upload_image($_FILES['miniature']['tmp_name'], $_FILES['miniature']['name']);
+            if ($photo !== NULL) {
+                $data['miniature'] = $photo;
             }
-            $data['photo_url'] = $photo;
         }
 
         $rsp = $this->Model->create('temoignages', $data);
 
         if ($rsp) {
-            $this->session->set_flashdata('success', 'Témoignage créé avec succès.');
+            $this->session->set_flashdata('success', 'Témoignage vidéo créé avec succès.');
         } else {
-            $this->session->set_flashdata('error', 'Une erreur est survenue lors de la création du témoignage.');
+            $this->session->set_flashdata('error', 'Une erreur est survenue lors de la création.');
         }
         redirect(base_url('Temoignages'));
     }
@@ -79,9 +102,7 @@ class Temoignages extends MY_Controller {
     function Update(){
         $id = $this->input->post('id_temoignage');
         
-        $this->form_validation->set_rules('nom_personne', 'Nom', 'required');
-        $this->form_validation->set_rules('message', 'Message', 'required');
-        $this->form_validation->set_rules('type', 'Type', 'required');
+        $this->form_validation->set_rules('video_url', 'Lien YouTube', 'required|valid_url');
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
@@ -89,40 +110,36 @@ class Temoignages extends MY_Controller {
             return;
         }
 
+        $video_url = $this->input->post('video_url');
+        $old = $this->Model->read_one('temoignages', ['id_temoignage' => $id]);
+
         $data = array(
-            'nom_personne' => $this->input->post('nom_personne'),
-            'fonction' => $this->input->post('fonction') ?: NULL,
-            'organisation' => $this->input->post('organisation') ?: NULL,
-            'message' => $this->input->post('message'),
-            'note' => $this->input->post('note') ?: NULL,
-            'type' => $this->input->post('type'),
-            'date_reception' => $this->input->post('date_reception') ?: NULL,
-            'est_approuve' => $this->input->post('est_approuve') ? 1 : 0,
-            'id_page_associee' => $this->input->post('id_page_associee') ?: NULL
+            'video_url' => $video_url,
+            'est_approuve' => $this->input->post('est_approuve') ? 1 : 0
         );
 
-        // Upload nouvelle photo si fournie
-        if (!empty($_FILES['photo_url']['name'])) {
-            $new_photo = $this->upload_image($_FILES['photo_url']['tmp_name'], $_FILES['photo_url']['name']);
-            if ($new_photo === NULL) {
-                $this->session->set_flashdata('error', 'Format de fichier non valide. Formats acceptés: gif, jpg, png, jpeg, webp, svg');
-                redirect(base_url('Temoignages'));
-                return;
+        if ($video_url !== ($old['video_url'] ?? '')) {
+            $yt_info = $this->fetch_youtube_info($video_url);
+            if ($yt_info) {
+                $data['titre'] = $yt_info['titre'];
+                $data['miniature'] = $yt_info['miniature'];
             }
-            
-            // Supprimer l'ancienne photo
-            $temoignage = $this->Model->readOne('temoignages', ['id_temoignage' => $id]);
-            if ($temoignage && !empty($temoignage['photo_url']) && file_exists(FCPATH . 'attachments/Temoignages/' . $temoignage['photo_url'])) {
-                unlink(FCPATH . 'attachments/Temoignages/' . $temoignage['photo_url']);
+        }
+
+        if (!empty($_FILES['miniature']['name'])) {
+            $photo = $this->upload_image($_FILES['miniature']['tmp_name'], $_FILES['miniature']['name']);
+            if ($photo !== NULL) {
+                if (!empty($old['miniature']) && strpos($old['miniature'], 'uploads/') !== false && file_exists(FCPATH . $old['miniature'])) {
+                    @unlink(FCPATH . $old['miniature']);
+                }
+                $data['miniature'] = $photo;
             }
-            
-            $data['photo_url'] = $new_photo;
         }
 
         $rsp = $this->Model->update('temoignages', ['id_temoignage' => $id], $data);
 
         if ($rsp) {
-            $this->session->set_flashdata('success', 'Témoignage mis à jour avec succès.');
+            $this->session->set_flashdata('success', 'Témoignage vidéo mis à jour avec succès.');
         } else {
             $this->session->set_flashdata('error', 'Une erreur est survenue lors de la mise à jour.');
         }
@@ -131,41 +148,19 @@ class Temoignages extends MY_Controller {
 
     function Delete(){
         $id = $this->input->post('id');
+        $old = $this->Model->read_one('temoignages', ['id_temoignage' => $id]);
         
-        $temoignage = $this->Model->readOne('temoignages', ['id_temoignage' => $id]);
-        
+        if (!empty($old['miniature']) && strpos($old['miniature'], 'uploads/') !== false && file_exists(FCPATH . $old['miniature'])) {
+            @unlink(FCPATH . $old['miniature']);
+        }
+
         $rsp = $this->Model->delete('temoignages', ['id_temoignage' => $id]);
 
         if ($rsp) {
-            // Supprimer la photo physique
-            if ($temoignage && !empty($temoignage['photo_url']) && file_exists(FCPATH . 'attachments/Temoignages/' . $temoignage['photo_url'])) {
-                unlink(FCPATH . 'attachments/Temoignages/' . $temoignage['photo_url']);
-            }
             $this->session->set_flashdata('success', 'Témoignage supprimé avec succès.');
         } else {
             $this->session->set_flashdata('error', 'Une erreur est survenue lors de la suppression.');
         }
         redirect(base_url('Temoignages'));
-    }
-
-    public function upload_image($nom_file, $nom_champ)
-    {
-        $ref_folder = FCPATH . 'attachments/Temoignages/';
-        $code = date("YmdHis") . uniqid();
-        $fichier = basename($code);
-        $file_extension = pathinfo($nom_champ, PATHINFO_EXTENSION);
-        $file_extension = strtolower($file_extension);
-        $valid_ext = array('gif', 'jpg', 'png', 'jpeg', 'webp', 'svg');
-
-        if (!in_array($file_extension, $valid_ext)) {
-            return NULL;
-        }
-
-        if (!is_dir($ref_folder)) {
-            mkdir($ref_folder, 0777, TRUE);
-        }
-
-        move_uploaded_file($nom_file, $ref_folder . $fichier . "." . $file_extension);
-        return $fichier . "." . $file_extension;
     }
 }

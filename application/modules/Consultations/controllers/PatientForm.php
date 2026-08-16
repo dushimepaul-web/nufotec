@@ -418,14 +418,7 @@ class PatientForm extends Public_Controller {
             $patient_email = 'Non renseigné';
         }
 
-        // Montant + équivalent BIF
-        $taux = $this->config->item('taux_devise');
-        if (!$taux || !is_array($taux)) {
-            $taux = ['USD_TO_BIF' => 2900];
-        }
-        $prix = (float)$consultation_prix;
-        $montant = number_format($prix, (floor($prix) == $prix ? 0 : 2), ',', ' ');
-        $prix_bif = number_format($prix * ($taux['USD_TO_BIF'] ?? 2900), 0, ',', ' ');
+    
 
         $message = "*DEMANDE DE CONSULTATION - NUFOTEC*\n\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
@@ -433,7 +426,7 @@ class PatientForm extends Public_Controller {
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "• Nom : " . $this->input->post('full_name', TRUE) . "\n";
         $message .= "• Email : " . $patient_email . "\n";
-        $message .= "• Date : " . date('d/m/Y H:i') . "\n\n";
+        $message .= "• Date de demande: " . date('d/m/Y H:i') . "\n\n";
 
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "*DÉTAILS DE LA CONSULTATION*\n";
@@ -446,8 +439,12 @@ class PatientForm extends Public_Controller {
         if (!empty($this->input->post('symptoms_duration', TRUE))) {
             $message .= "• Durée des symptômes : " . $this->input->post('symptoms_duration', TRUE) . "\n";
         }
-        $message .= "• Montant : " . $montant . " USD\n";
-        $message .= "• Équivalent : ≈ " . $prix_bif . " BIF\n\n";
+
+        $message .= "*Frais de consultation*\n";
+
+        $message .= "• Résidant du Burundi : " . $montant . " USD\n";
+        $message .= "• Résidant à l'étranger : " . $montant . " USD\n";
+        $message .= "(Equivant en Francs Burundiais) : ≈ " . $prix_bif . " BIF\n\n";
 
         // Documents téléchargés : WhatsApp ne transfère pas les fichiers via wa.me,
         // on fournit un lien vers l'emplacement sur le site pour consultation en ligne
@@ -469,7 +466,9 @@ class PatientForm extends Public_Controller {
             $message .= "*Epreuve de paiement*\n";
             $message .= base_url($payment_proof) . "\n";
         } else {
-            $message .= "\n*NB — Paiement en attente :* je me précipite pour effectuer le paiement et je vous envoie ma preuve de paiement via WhatsApp sur ce numéro dès que possible.\n";
+            $message .= "\n*NB — Paiement en attente, paye et nous envoyer votre Epreuve de payement: * Lumicash: (Fiacre)
+                                                       * Ecocash: 79 666 439 (Alexis)
+                                                       * Western Union (Consultez-nous par WhatsApp +257 79 667 439 pour plus d'information).\n";
         }
 
         redirect('https://wa.me/' . $numero . '?text=' . rawurlencode($message));

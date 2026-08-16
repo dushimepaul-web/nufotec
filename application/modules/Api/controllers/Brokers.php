@@ -88,7 +88,7 @@ class Courtiers extends Public_Controller
         // Préparation et insertion
         $donnees_insertion = $this->_preparer_donnees_courtier($donnees_entree);
         
-        $insere = $this->db->insert('courtiers', $donnees_insertion);
+        $insere = $this->db->insert('brokers', $donnees_insertion);
         
         if (!$insere) {
             $erreur_bd = $this->db->error();
@@ -180,8 +180,8 @@ class Courtiers extends Public_Controller
         } elseif (strlen($donnees_entree['courriel']) > 150) {
             $erreurs['courriel'] = 'Le courriel ne doit pas dépasser 150 caractères';
         } else {
-            $this->db->where('courriel', $donnees_entree['courriel']);
-            if ($this->db->count_all_results('courtiers') > 0) {
+            $this->db->where('email', $donnees_entree['courriel']);
+            if ($this->db->count_all_results('brokers') > 0) {
                 $erreurs['courriel'] = 'Ce courriel est déjà enregistré';
             }
         }
@@ -240,47 +240,47 @@ class Courtiers extends Public_Controller
      */
     private function _preparer_donnees_courtier($donnees_entree) {
         return [
-            'nom_complet' => $donnees_entree['nom_complet'],
-            'nom_societe' => $donnees_entree['nom_societe'],
-            'juridiction_incorporation' => $donnees_entree['juridiction_incorporation'] ?? null,
-            'numero_immatriculation' => $donnees_entree['numero_immatriculation'] ?? null,
-            'statut_reglementaire' => $donnees_entree['statut_reglementaire'] ?? null,
-            'autorite_reglementation' => $donnees_entree['autorite_reglementation'] ?? null,
+            'full_name' => $donnees_entree['nom_complet'],
+            'firm_name' => $donnees_entree['nom_societe'],
+            'jurisdiction_of_incorporation' => $donnees_entree['juridiction_incorporation'] ?? null,
+            'registration_number' => $donnees_entree['numero_immatriculation'] ?? null,
+            'regulatory_status' => $donnees_entree['statut_reglementaire'] ?? null,
+            'regulatory_authority' => $donnees_entree['autorite_reglementation'] ?? null,
             'id_pays' => $donnees_entree['id_pays'],
-            'courriel' => $donnees_entree['courriel'],
-            'telephone_mobile' => $donnees_entree['telephone_mobile'] ?? null,
+            'email' => $donnees_entree['courriel'],
+            'mobile_phone' => $donnees_entree['telephone_mobile'] ?? null,
             'whatsapp' => $donnees_entree['whatsapp'] ?? null,
-            'site_web_societe' => $donnees_entree['site_web_societe'] ?? null,
-            'capacite_courtier_investissement' => !empty($donnees_entree['capacite_courtier_investissement']) ? 1 : 0,
-            'capacite_agent_placement' => !empty($donnees_entree['capacite_agent_placement']) ? 1 : 0,
-            'capacite_conseiller_finances_entreprise' => !empty($donnees_entree['capacite_conseiller_finances_entreprise']) ? 1 : 0,
-            'capacite_gestionnaire_fonds' => !empty($donnees_entree['capacite_gestionnaire_fonds']) ? 1 : 0,
-            'capacite_representant_family_office' => !empty($donnees_entree['capacite_representant_family_office']) ? 1 : 0,
-            'capacite_conseiller_esg' => !empty($donnees_entree['capacite_conseiller_esg']) ? 1 : 0,
-            'capacite_introducteur_independant' => !empty($donnees_entree['capacite_introducteur_independant']) ? 1 : 0,
-            'capacite_autre' => $donnees_entree['capacite_autre'] ?? null,
-            'investisseur_capital_investissement' => !empty($donnees_entree['investisseur_capital_investissement']) ? 1 : 0,
-            'investisseur_capital_risque' => !empty($donnees_entree['investisseur_capital_risque']) ? 1 : 0,
-            'investisseur_esg_impact' => !empty($donnees_entree['investisseur_esg_impact']) ? 1 : 0,
-            'investisseur_financement_developpement' => !empty($donnees_entree['investisseur_financement_developpement']) ? 1 : 0,
-            'investisseur_institutionnel' => !empty($donnees_entree['investisseur_institutionnel']) ? 1 : 0,
-            'investisseur_grande_fortune' => !empty($donnees_entree['investisseur_grande_fortune']) ? 1 : 0,
-            'investisseur_souverain' => !empty($donnees_entree['investisseur_souverain']) ? 1 : 0,
-            'taille_billet_typique' => $donnees_entree['taille_billet_typique'] ?? null,
-            'couverture_geographique' => $donnees_entree['couverture_geographique'] ?? null,
-            'mandat_capitaux_propres' => !empty($donnees_entree['mandat_capitaux_propres']) ? 1 : 0,
-            'mandat_dette_structuree' => !empty($donnees_entree['mandat_dette_structuree']) ? 1 : 0,
-            'mandat_financement_mixte' => !empty($donnees_entree['mandat_financement_mixte']) ? 1 : 0,
-            'mandat_subvention' => !empty($donnees_entree['mandat_subvention']) ? 1 : 0,
-            'mandat_partenariat_strategique' => !empty($donnees_entree['mandat_partenariat_strategique']) ? 1 : 0,
-            'mandat_programme_complet' => !empty($donnees_entree['mandat_programme_complet']) ? 1 : 0,
-            'modele_engagement' => $donnees_entree['modele_engagement'] ?? null,
-            'confirme_autorise' => !empty($donnees_entree['confirme_autorise']) ? 1 : 0,
-            'confirme_aml_kyc' => !empty($donnees_entree['confirme_aml_kyc']) ? 1 : 0,
-            'reconnait_non_exclusivite' => !empty($donnees_entree['reconnait_non_exclusivite']) ? 1 : 0,
-            'comprend_mandat_formel_requis' => !empty($donnees_entree['comprend_mandat_formel_requis']) ? 1 : 0,
-            'cree_le' => date('Y-m-d H:i:s'),
-            'modifie_le' => date('Y-m-d H:i:s'),
+            'corporate_website' => $donnees_entree['site_web_societe'] ?? null,
+            'capacity_investment_broker' => !empty($donnees_entree['capacite_courtier_investissement']) ? 1 : 0,
+            'capacity_placement_agent' => !empty($donnees_entree['capacite_agent_placement']) ? 1 : 0,
+            'capacity_corporate_finance_advisor' => !empty($donnees_entree['capacite_conseiller_finances_entreprise']) ? 1 : 0,
+            'capacity_fund_manager' => !empty($donnees_entree['capacite_gestionnaire_fonds']) ? 1 : 0,
+            'capacity_family_office_rep' => !empty($donnees_entree['capacite_representant_family_office']) ? 1 : 0,
+            'capacity_esg_advisor' => !empty($donnees_entree['capacite_conseiller_esg']) ? 1 : 0,
+            'capacity_independent_introducer' => !empty($donnees_entree['capacite_introducteur_independant']) ? 1 : 0,
+            'capacity_other' => $donnees_entree['capacite_autre'] ?? null,
+            'investor_private_equity' => !empty($donnees_entree['investisseur_capital_investissement']) ? 1 : 0,
+            'investor_venture_capital' => !empty($donnees_entree['investisseur_capital_risque']) ? 1 : 0,
+            'investor_esg_impact' => !empty($donnees_entree['investisseur_esg_impact']) ? 1 : 0,
+            'investor_dfi' => !empty($donnees_entree['investisseur_financement_developpement']) ? 1 : 0,
+            'investor_institutional' => !empty($donnees_entree['investisseur_institutionnel']) ? 1 : 0,
+            'investor_hnwi' => !empty($donnees_entree['investisseur_grande_fortune']) ? 1 : 0,
+            'investor_sovereign' => !empty($donnees_entree['investisseur_souverain']) ? 1 : 0,
+            'typical_ticket_size' => $donnees_entree['taille_billet_typique'] ?? null,
+            'geographic_coverage' => $donnees_entree['couverture_geographique'] ?? null,
+            'mandate_equity' => !empty($donnees_entree['mandat_capitaux_propres']) ? 1 : 0,
+            'mandate_structured_debt' => !empty($donnees_entree['mandat_dette_structuree']) ? 1 : 0,
+            'mandate_blended_finance' => !empty($donnees_entree['mandat_financement_mixte']) ? 1 : 0,
+            'mandate_grant' => !empty($donnees_entree['mandat_subvention']) ? 1 : 0,
+            'mandate_strategic_partnership' => !empty($donnees_entree['mandat_partenariat_strategique']) ? 1 : 0,
+            'mandate_full_program' => !empty($donnees_entree['mandat_programme_complet']) ? 1 : 0,
+            'engagement_model' => $donnees_entree['modele_engagement'] ?? null,
+            'confirm_authorized' => !empty($donnees_entree['confirme_autorise']) ? 1 : 0,
+            'confirm_aml_kyc' => !empty($donnees_entree['confirme_aml_kyc']) ? 1 : 0,
+            'acknowledge_no_exclusivity' => !empty($donnees_entree['reconnait_non_exclusivite']) ? 1 : 0,
+            'understand_formal_mandate_required' => !empty($donnees_entree['comprend_mandat_formel_requis']) ? 1 : 0,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
         ];
     }
 

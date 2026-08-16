@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : sam. 08 août 2026 à 23:11
+-- Généré le : dim. 16 août 2026 à 17:23
 -- Version du serveur : 9.1.0
 -- Version de PHP : 8.0.30
 
@@ -735,6 +735,8 @@ CREATE TABLE IF NOT EXISTS `medecins` (
   `langues_parlees` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `honoraires_consultation` decimal(10,2) DEFAULT NULL,
   `currency` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '$',
+  `USD_EUR_Equivalent_en_BIF` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `prix_pour_residant_burundi` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `est_disponible` tinyint(1) DEFAULT '1',
   `note_moyenne` decimal(3,2) DEFAULT '0.00',
   `nombre_avis` int DEFAULT '0',
@@ -750,9 +752,8 @@ CREATE TABLE IF NOT EXISTS `medecins` (
 -- Déchargement des données de la table `medecins`
 --
 
-INSERT INTO `medecins` (`id`, `uuid`, `user_id`, `specialite`, `numero_licence`, `annees_experience`, `diplomes`, `langues_parlees`, `honoraires_consultation`, `currency`, `est_disponible`, `note_moyenne`, `nombre_avis`, `created_at`, `updated_at`) VALUES
-(8, '00009520-0bc2-f36c-4c37-00000000921c', 2, 'Professionnel de Santé', '.', 27, 'DOCTOR', 'KIRUNDI, FRANCAIS, ANGLAIS', 30.00, 'USD/EUR', 1, 9.99, 5000, '2026-03-06 12:02:24', '2026-08-08 22:02:08'),
-(12, '0000e472-67dc-f76c-4133-00000000a800', 53, 'kewejwe', '29893823', 0, '', '', 23.00, '$', 1, 0.00, 0, '2026-08-08 22:11:39', '2026-08-08 22:11:39');
+INSERT INTO `medecins` (`id`, `uuid`, `user_id`, `specialite`, `numero_licence`, `annees_experience`, `diplomes`, `langues_parlees`, `honoraires_consultation`, `currency`, `USD_EUR_Equivalent_en_BIF`, `prix_pour_residant_burundi`, `est_disponible`, `note_moyenne`, `nombre_avis`, `created_at`, `updated_at`) VALUES
+(8, '00009520-0bc2-f36c-4c37-00000000921c', 2, 'Professionnel de Santé', '.', 27, 'DOCTOR', 'KIRUNDI, FRANCAIS, ANGLAIS', 50.00, 'USD/EUR', '325.000-375.000 BIF', '40.000BIF', 1, 9.99, 5000, '2026-03-06 12:02:24', '2026-08-16 13:23:21');
 
 -- --------------------------------------------------------
 
@@ -3062,28 +3063,20 @@ INSERT INTO `statistiques_visites` (`id`, `page`, `user_id`, `session_id`, `ip_a
 DROP TABLE IF EXISTS `temoignages`;
 CREATE TABLE IF NOT EXISTS `temoignages` (
   `id_temoignage` int NOT NULL AUTO_INCREMENT,
-  `nom_personne` varchar(150) NOT NULL,
-  `fonction` varchar(150) DEFAULT NULL,
-  `organisation` varchar(200) DEFAULT NULL,
-  `photo_url` varchar(500) DEFAULT NULL,
-  `message` text NOT NULL,
-  `note` int DEFAULT NULL,
-  `type` enum('client','partenaire','patient','investisseur','outgrower') DEFAULT 'client',
-  `date_reception` date DEFAULT NULL,
+  `titre` varchar(255) DEFAULT NULL,
+  `video_url` varchar(500) NOT NULL,
+  `miniature` varchar(500) DEFAULT NULL,
+  `audio_duration` int DEFAULT NULL,
   `est_approuve` tinyint(1) DEFAULT '0',
-  `id_page_associee` int DEFAULT NULL,
-  PRIMARY KEY (`id_temoignage`),
-  KEY `id_page_associee` (`id_page_associee`)
-) ;
+  PRIMARY KEY (`id_temoignage`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 
 --
 -- Déchargement des données de la table `temoignages`
 --
 
-INSERT INTO `temoignages` (`id_temoignage`, `nom_personne`, `fonction`, `organisation`, `photo_url`, `message`, `note`, `type`, `date_reception`, `est_approuve`, `id_page_associee`) VALUES
-(1, 'Dr. John Mukuka', 'Director of Research', 'University of Zambia', NULL, 'AGF is pioneering a new approach to phytomedicine development in Zambia. Their commitment to scientific validation is commendable.', 5, 'partenaire', NULL, 1, NULL),
-(2, 'Sarah Namwila', 'Out-grower', 'Lusaka Rural Cooperative', NULL, 'Working with AGF has transformed my farm. I now have a reliable market and technical support.', 5, 'outgrower', NULL, 1, NULL),
-(3, 'Michael Banda', 'Investor', NULL, NULL, 'The level of detail in AGF\'s business plan and governance structure gives me confidence in their vision.', 4, 'investisseur', NULL, 1, NULL);
+INSERT INTO `temoignages` (`id_temoignage`, `titre`, `video_url`, `miniature`, `audio_duration`, `est_approuve`) VALUES
+(1, 'YAKIZE HASIMA NA BRONCHITE', 'https://youtu.be/AHdshnNgF14?si=20gOljGoY50wjb2S', 'https://img.youtube.com/vi/AHdshnNgF14/hqdefault.jpg', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -3135,7 +3128,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id`, `uuid`, `email`, `password`, `nom`, `prenom`, `telephone`, `pays_id`, `date_naissance`, `genre`, `photo`, `role_id`, `type_utilisateur`, `nom_entreprise`, `is_active`, `email_verified_at`, `email_verification_token`, `two_factor_secret`, `two_factor_enabled`, `last_login_at`, `last_login_ip`, `created_at`, `updated_at`, `deleted_at`, `secteur_activite`, `numero_registre_commerce`, `interet_investissement`, `est_verifie`) VALUES
-(1, 'f8859b55-0c60-11f1-8576-ace2d34c48b4', 'info@nufotec.com', '$2y$10$WrndA7QBhSh9FmwWzbTkK.JS1vqy.i3sexhVZniJtz2kmPGdLyCfq', 'du systeme', 'Administateur', '+257 79 123 456', NULL, '2003-06-06', 'M', '2026033115012869cbc5a844957.jpeg', 1, 'admin', 'NUFOTEC BURUNDI', 1, '2026-03-31 15:04:49', NULL, NULL, 0, '2026-08-08 20:19:20', '154.119.31.82', '2026-02-18 00:29:01', '2026-08-08 18:19:20', NULL, NULL, NULL, NULL, 1),
+(1, 'f8859b55-0c60-11f1-8576-ace2d34c48b4', 'info@nufotec.com', '$2y$10$WrndA7QBhSh9FmwWzbTkK.JS1vqy.i3sexhVZniJtz2kmPGdLyCfq', 'du systeme', 'Administateur', '+257 79 123 456', NULL, '2003-06-06', 'M', '2026033115012869cbc5a844957.jpeg', 1, 'admin', 'NUFOTEC BURUNDI', 1, '2026-03-31 15:04:49', NULL, NULL, 0, '2026-08-16 14:15:21', '154.119.31.82', '2026-02-18 00:29:01', '2026-08-16 12:15:21', NULL, NULL, NULL, NULL, 1),
 (2, 'f885b242-0c60-11f1-8576-ace2d34c48b4', 'nufotecburundi2026@gmail.com', '$2y$10$1gC8ZaJYA77Zq.ItrJF4jewwBHJU1jGmbSxUSgjzdx.BbhjZUWl96', '...', '.', '+257 79 789 012', NULL, '1995-05-15', 'F', '2026033112440969cba579ce43f.jpeg', 2, 'medecin', NULL, 1, '2026-03-31 15:02:49', NULL, NULL, 0, '2026-03-31 15:03:24', '197.231.248.241', '2026-02-18 00:29:01', '2026-03-31 13:03:24', NULL, NULL, NULL, NULL, 0),
 (3, 'f97ec440-0cd1-11f1-8576-ace2d34c48b4', 'investisseur@test.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dubois', 'Jean-Pierre', '+33 6 12 34 56 78', NULL, '1975-03-15', 'M', '', 8, 'investisseur', 'Dubois Investissements SARL', 0, '2026-02-18 15:57:48', NULL, NULL, 0, NULL, NULL, '2026-02-18 13:57:48', '2026-08-05 10:00:00', '2026-03-06 09:16:02', 'Finance / Private Equity', 'RCCM-CI-123456', 250000.00, 1),
 (4, 'f9804011-0cd1-11f1-8576-ace2d34c48b4', 'client@pharmacie-afrique.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Kouassi', 'Marie', '+225 07 89 01 23 45', NULL, '1980-07-22', 'F', '', 8, 'entreprise', 'Pharmacie Afrique Distribution', 0, '2026-02-18 15:57:48', NULL, NULL, 0, NULL, NULL, '2026-02-18 13:57:48', '2026-08-05 10:00:00', '2026-03-06 09:15:53', 'Distribution pharmaceutique', 'RCCM-CI-789012', NULL, 1),
@@ -3313,7 +3306,7 @@ CREATE TABLE IF NOT EXISTS `user_activities` (
   KEY `user_activities_action_index` (`action`),
   KEY `user_activities_created_at_index` (`created_at`),
   KEY `user_activities_item_id_index` (`item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=291 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=293 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `user_activities`
@@ -3580,7 +3573,9 @@ INSERT INTO `user_activities` (`id`, `user_id`, `action`, `module`, `item_id`, `
 (287, NULL, 'login_failed', 'auth', NULL, 'admin@surveillance.bi', 'Tentative échouée : Email incorrect', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', NULL, NULL, '2026-08-06 21:39:44'),
 (288, NULL, 'login_failed', 'auth', NULL, 'info@nufotec.com', 'Tentative échouée : Mot de passe incorrect ou compte inactif', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', NULL, NULL, '2026-08-06 21:39:59'),
 (289, 1, 'login', 'auth', 1, 'Administateur du systeme', 'Connexion réussie', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', NULL, NULL, '2026-08-06 21:52:01'),
-(290, 1, 'login', 'auth', 1, 'Administateur du systeme', 'Connexion réussie', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', NULL, NULL, '2026-08-08 18:19:19');
+(290, 1, 'login', 'auth', 1, 'Administateur du systeme', 'Connexion réussie', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', NULL, NULL, '2026-08-08 18:19:19'),
+(291, NULL, 'login_failed', 'auth', NULL, 'info@nufotec.com', 'Tentative échouée : Mot de passe incorrect ou compte inactif', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36', NULL, NULL, '2026-08-16 12:14:27'),
+(292, 1, 'login', 'auth', 1, 'Administateur du systeme', 'Connexion réussie', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', NULL, NULL, '2026-08-16 12:15:21');
 
 -- --------------------------------------------------------
 
@@ -3609,7 +3604,7 @@ CREATE TABLE IF NOT EXISTS `user_sessions` (
   KEY `user_sessions_user_id_foreign` (`user_id`),
   KEY `user_sessions_session_id_index` (`session_id`),
   KEY `user_sessions_last_activity_index` (`last_activity`)
-) ENGINE=InnoDB AUTO_INCREMENT=230 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=231 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `user_sessions`
@@ -3817,7 +3812,8 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `ip_address`, `user_
 (226, 1, 'fvu76usgbodd8ufgvh13dkdp7g3grbcg', '::1', 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8875', 'desktop', 'Windows 10', 'Mozilla', '2026-08-06 00:15:34', '2026-08-06 00:15:34', '2026-08-07 00:15:34', 0, '2026-08-06 11:17:52', 'force', '2026-08-05 22:15:34'),
 (227, 1, 'a6p79lld6tekbncjlm6i088ht74s5s1l', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', 'desktop', 'Windows 10', 'Firefox', '2026-08-06 11:17:52', '2026-08-06 11:17:52', '2026-08-07 11:17:52', 0, '2026-08-06 23:52:01', 'force', '2026-08-06 09:17:52'),
 (228, 1, 'lk0hq6mpdhtj8332v288cilvh0gpvb2q', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', 'desktop', 'Windows 10', 'Firefox', '2026-08-06 23:52:01', '2026-08-06 23:52:01', '2026-08-07 23:52:01', 0, '2026-08-08 20:19:18', 'force', '2026-08-06 21:52:01'),
-(229, 1, 'hq91f4r2tdsgbfd7l4bcl4e7o18760o4', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', 'desktop', 'Windows 10', 'Firefox', '2026-08-08 20:19:18', '2026-08-08 20:19:18', '2026-08-09 20:19:18', 1, NULL, NULL, '2026-08-08 18:19:19');
+(229, 1, 'hq91f4r2tdsgbfd7l4bcl4e7o18760o4', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', 'desktop', 'Windows 10', 'Firefox', '2026-08-08 20:19:18', '2026-08-08 20:19:18', '2026-08-09 20:19:18', 0, '2026-08-16 14:15:21', 'force', '2026-08-08 18:19:19'),
+(230, 1, 'lljcfmu268u22jsaf5bihgore2s7ovrf', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', 'desktop', 'Windows 10', 'Firefox', '2026-08-16 14:15:21', '2026-08-16 14:15:21', '2026-08-17 14:15:21', 1, NULL, NULL, '2026-08-16 12:15:21');
 
 -- --------------------------------------------------------
 
@@ -6423,7 +6419,10 @@ INSERT INTO `visitors_logs` (`id`, `ip_address`, `user_agent`, `device`, `page`,
 (0, '197.255.128.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0', 'Desktop', 'http://localhost/nufotec/', '', '2026-08-06', '08:14:08', NULL, NULL, NULL, NULL, '2026-08-06 06:14:08'),
 (0, '197.255.128.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'Desktop', 'http://localhost/nufotec/', '', '2026-08-07', '00:47:55', NULL, NULL, NULL, NULL, '2026-08-06 22:47:55'),
 (0, '197.255.128.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'Desktop', 'http://localhost/nufotec/', '', '2026-08-08', '20:56:24', NULL, NULL, NULL, NULL, '2026-08-08 18:56:24'),
-(0, '197.255.128.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'Desktop', 'http://localhost/nufotec/', 'http://localhost/nufotec/patient-form?doctor_uuid=00009520-0bc2-f36c-4c37-00000000921c', '2026-08-09', '00:10:34', NULL, NULL, NULL, NULL, '2026-08-08 22:10:34');
+(0, '197.255.128.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'Desktop', 'http://localhost/nufotec/', 'http://localhost/nufotec/patient-form?doctor_uuid=00009520-0bc2-f36c-4c37-00000000921c', '2026-08-09', '00:10:34', NULL, NULL, NULL, NULL, '2026-08-08 22:10:34'),
+(0, '197.255.128.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36', 'Desktop', 'http://localhost/nufotec/', '', '2026-08-14', '10:02:30', NULL, NULL, NULL, NULL, '2026-08-14 08:02:30'),
+(0, '197.255.128.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36', 'Desktop', 'http://localhost/nufotec/', '', '2026-08-16', '12:39:00', NULL, NULL, NULL, NULL, '2026-08-16 10:39:00'),
+(0, '0.0.0.0', NULL, 'Desktop', 'https://nufotec.com/', '', '2026-08-16', '19:17:03', NULL, NULL, NULL, NULL, '2026-08-16 17:17:03');
 
 --
 -- Contraintes pour les tables déchargées
