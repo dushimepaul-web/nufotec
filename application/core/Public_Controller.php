@@ -156,7 +156,7 @@ class Public_Controller extends MX_Controller
 
     /**
      * SWITCH LANG - Change la langue sans perdre la page courante
-     * Utilisable depuis n'importe quelle page (Home, Medicins, Boutique, etc.)
+     * Utilisable depuis n'importe quelle page (Home, doctor, Boutique, etc.)
      */
     public function switch_lang($new_lang)
     {

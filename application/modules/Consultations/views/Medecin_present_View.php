@@ -1291,12 +1291,9 @@ body {
                 $langues = !empty($medecin['langues_parlees']) ? $medecin['langues_parlees'] : t('french');
                 
                 $prix_usd = $medecin['honoraires_consultation'] ?? 50;
-                $taux = $this->config->item('taux_devise');
-                if (!$taux) {
-                    $taux = ['USD_TO_EUR' => 0.92, 'USD_TO_BIF' => 2900];
-                }
-                $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
-                $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
+                $devise_medecin = $medecin['currency'] ?? 'USD';
+                $equiv_bif = $medecin['USD_EUR_Equivalent_en_BIF'] ?? null;
+                $prix_burundi = $medecin['prix_pour_residant_burundi'] ?? null;
 
                 $horaires_list = [];
                 if (!empty($medecin['horaires'])) {
@@ -1377,13 +1374,17 @@ body {
                         <div class="price-block">
                             <div class="price-label"><?= t('consultation_fee') ?></div>
                             <div class="price-value">
-                                <?= number_format($prix_usd, 2) ?> <span>USD/EUR</span>
+                                <?= number_format($prix_usd, 2) ?> <span><?= htmlspecialchars($devise_medecin) ?></span>
                             </div>
                             
                             <!-- Prix Burundi -->
                             <div class="burundi-price" style="margin-top: 10px; padding: 10px 12px; background: #e8f5f0; border-radius: 8px; border-left: 4px solid #0f4c3a; color: #0f4c3a; font-size: 0.95rem;">
                                 <i class="bi bi-geo-alt-fill" style="color: #d4af37; margin-right: 6px;"></i>
-                                <strong><?= t('burundi_price') ?><br> 40 000 Fbu </strong>
+                                <strong><?= t('burundi_price') ?><br> <?= htmlspecialchars($prix_burundi ?: '—') ?></strong>
+                            </div>
+                            <div class="equiv-price" style="margin-top: 8px; padding: 10px 12px; background: #fff7e6; border-radius: 8px; border-left: 4px solid #d4af37; color: #7a5c00; font-size: 0.95rem;">
+                                <i class="bi bi-currency-exchange" style="color: #d4af37; margin-right: 6px;"></i>
+                                <strong>Équivalence étranger :</strong> <?= htmlspecialchars($equiv_bif ?: '—') ?>
                             </div>
                             
                             <?php if($is_online): ?>
@@ -1476,10 +1477,14 @@ body {
                             <div class="detail-section">
                                 <h4><i class="bi bi-currency-exchange"></i> <?= t('prices') ?></h4>
                                 <div class="tarif-card">
-                                    <div class="price-main"><?= number_format($prix_usd, 2) ?> <small>USD/EUR</small></div>
+                                    <div class="price-main"><?= number_format($prix_usd, 2) ?> <small><?= htmlspecialchars($devise_medecin) ?></small></div>
                                     <div class="burundi-price" style="margin-top: 10px; padding: 12px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; color: #155724;">
                                         <i class="bi bi-geo-alt-fill" style="color: #28a745;"></i>
-                                        <strong><?= t('burundi_price') ?><br> 40 000 Fbu</strong>
+                                        <strong><?= t('burundi_price') ?><br> <?= htmlspecialchars($prix_burundi ?: '—') ?></strong>
+                                    </div>
+                                    <div class="equiv-price" style="margin-top: 10px; padding: 12px; background: #fff7e6; border-radius: 8px; border-left: 4px solid #d4af37; color: #7a5c00;">
+                                        <i class="bi bi-currency-exchange" style="color: #d4af37;"></i>
+                                        <strong>Équivalence étranger :</strong> <?= htmlspecialchars($equiv_bif ?: '—') ?>
                                     </div>
                                 </div>
                             </div>
@@ -1489,12 +1494,12 @@ body {
     <?php if($this->session->userdata('user_id')): ?>
         <!-- Utilisateur connecté : lien direct -->
         <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
-            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
+            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> <?= htmlspecialchars($devise_medecin) ?>)
         </a>
     <?php else: ?>
         <!-- Utilisateur NON connecté : lien direct aussi (PatientForm redirigera vers Auth) -->
         <a href="<?= base_url('patient-form?doctor_uuid='.$medecin['uuid']) ?>" class="btn-consult btn-consult-primary" style="padding: 14px 28px;">
-            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> USD)
+            <i class="bi bi-calendar-plus"></i> <?= t('take_appointment') ?> (<?= number_format($prix_usd, 2) ?> <?= htmlspecialchars($devise_medecin) ?>)
         </a>
     <?php endif; ?>
 <?php else: ?>

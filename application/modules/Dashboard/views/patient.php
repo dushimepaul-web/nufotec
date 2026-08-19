@@ -341,7 +341,7 @@
                         <?php endif; ?>
                     </button>
 
-                    <a href="<?= base_url('Medicins') ?>" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                    <a href="<?= base_url('doctor') ?>" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
                         <i class="fas fa-plus"></i>
                         <span>Nouvelle Consultation</span>
                     </a>
@@ -409,7 +409,7 @@
                                         <div class="text-center py-8 text-slate-400">
                                             <i class="fas fa-calendar-plus text-3xl lg:text-4xl mb-3"></i>
                                             <p class="text-sm">Aucun rendez-vous à venir</p>
-                                            <a href="<?= base_url('Medicins') ?>" class="text-primary-600 font-medium mt-2 inline-block text-sm">Prendre rendez-vous</a>
+                                            <a href="<?= base_url('doctor') ?>" class="text-primary-600 font-medium mt-2 inline-block text-sm">Prendre rendez-vous</a>
                                         </div>
                                     <?php else: ?>
                                         <div class="space-y-3 lg:space-y-4">

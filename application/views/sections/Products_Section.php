@@ -14,72 +14,70 @@
             </p>
         </div>
 
-        <!-- Grille des produits -->
-        <div class="products-grid">
-            <div class="row g-4">
-                <?php if (!empty($products)): 
-                    foreach ($products as $product): 
-                        $image_path = !empty($product['main_image']) 
-                            ? base_url('attachments/Products/'.$product['main_image']) 
-                            : base_url('attachments/Products/default-product.png');
-                        $product_url = base_url('/product/' . ($product['slug'] ?? $product['id']));
-                        $is_new = (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days'));
-                ?>
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-                    <div class="product-card card h-100 border-0 shadow-sm">
-                        <?php if ($is_new): ?>
-                        <div class="product-badge">
-                            <span class="badge">✨ NOUVEAU</span>
+        <!-- Grille des produits (scroll horizontal) -->
+        <div class="products-grid products-hscroll">
+            <?php if (!empty($products)): 
+                foreach ($products as $product): 
+                    $image_path = !empty($product['main_image']) 
+                        ? base_url('attachments/Products/'.$product['main_image']) 
+                        : base_url('attachments/Products/default-product.png');
+                    $product_url = base_url('/product/' . ($product['slug'] ?? $product['id']));
+                    $is_new = (strtotime($product['created_at'] ?? 'now') > strtotime('-30 days'));
+            ?>
+            <div class="product-hscroll-item">
+                <div class="product-card card border-0 shadow-sm">
+                    <?php if ($is_new): ?>
+                    <div class="product-badge">
+                        <span class="badge">✨ NOUVEAU</span>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="product-image-wrapper">
+                        <img src="<?= $image_path ?>" 
+                             class="product-image card-img-top" 
+                             alt="<?= htmlspecialchars($product['title']) ?>"
+                             loading="lazy"
+                             onerror="this.src='<?= base_url('attachments/Products/default-product.png') ?>'">
+                        <div class="product-overlay">
+                            <button class="btn zoom-btn" data-img="<?= $image_path ?>">
+                                <i class="bx bx-search-alt"></i> Zoom
+                            </button>
+                            <button class="btn quick-view" data-id="<?= $product['id'] ?>">
+                                <i class="bx bx-show"></i> Aperçu
+                            </button>
                         </div>
-                        <?php endif; ?>
-                        
-                        <div class="product-image-wrapper">
-                            <img src="<?= $image_path ?>" 
-                                 class="product-image card-img-top" 
-                                 alt="<?= htmlspecialchars($product['title']) ?>"
-                                 loading="lazy"
-                                 onerror="this.src='<?= base_url('attachments/Products/default-product.png') ?>'">
-                            <div class="product-overlay">
-                                <button class="btn zoom-btn" data-img="<?= $image_path ?>">
-                                    <i class="bx bx-search-alt"></i> Zoom
-                                </button>
-                                <button class="btn quick-view" data-id="<?= $product['id'] ?>">
-                                    <i class="bx bx-show"></i> Aperçu
-                                </button>
-                            </div>
-                        </div>
+                    </div>
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="product-title card-title mb-2">
-                                <?= htmlspecialchars($product['title']) ?>
-                            </h5>
-                            
-                            <p class="product-description text-muted small mb-3">
-                                <?= htmlspecialchars(substr($product['description'] ?? '', 0, 80)) ?>
-                                <?= strlen($product['description'] ?? '') > 80 ? '...' : '' ?>
-                            </p>
-                            
-                            <div class="product-price mt-auto">
-                                <span class="price-current mb-0">
-                                    <?= htmlspecialchars($product['price']) ?>
-                                </span>
-                            </div>
-                            
-                            <div class="product-actions mt-3">
-                                <a href="<?= $product_url ?>" class="btn btn-detail w-100">
-                                    <i class="bx bx-show-alt me-2"></i>Voir détails
-                                </a>
-                            </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="product-title card-title mb-2">
+                            <?= htmlspecialchars($product['title']) ?>
+                        </h5>
+                        
+                        <p class="product-description text-muted small mb-3">
+                            <?= htmlspecialchars(substr($product['description'] ?? '', 0, 80)) ?>
+                            <?= strlen($product['description'] ?? '') > 80 ? '...' : '' ?>
+                        </p>
+                        
+                        <div class="product-price mt-auto">
+                            <span class="price-current mb-0">
+                                <?= htmlspecialchars($product['price']) ?>
+                            </span>
+                        </div>
+                        
+                        <div class="product-actions mt-3">
+                            <a href="<?= $product_url ?>" class="btn btn-detail w-100">
+                                <i class="bx bx-show-alt me-2"></i>Voir détails
+                            </a>
                         </div>
                     </div>
                 </div>
-                <?php endforeach; else: ?>
-                <div class="col-12 text-center py-5">
-                    <i class="bx bx-package text-muted" style="font-size: 4rem; opacity: 0.5;"></i>
-                    <p class="mt-3 text-muted">Aucun produit disponible pour le moment</p>
-                </div>
-                <?php endif; ?>
             </div>
+            <?php endforeach; else: ?>
+            <div class="col-12 text-center py-5">
+                <i class="bx bx-package text-muted" style="font-size: 4rem; opacity: 0.5;"></i>
+                <p class="mt-3 text-muted">Aucun produit disponible pour le moment</p>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </section>
@@ -193,6 +191,29 @@
     background: white;
     position: relative;
     border: 1px solid var(--gray-light) !important;
+}
+
+/* Scroll horizontal */
+.products-hscroll {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+.products-hscroll::-webkit-scrollbar { height: 8px; }
+.products-hscroll::-webkit-scrollbar-track { background: var(--gray-light); border-radius: 10px; }
+.products-hscroll::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+.products-hscroll .product-hscroll-item {
+    flex: 0 0 auto;
+    width: 290px;
+    scroll-snap-align: start;
+}
+@media (max-width: 576px) {
+    .products-hscroll .product-hscroll-item { width: 240px; }
 }
 
 .product-card:hover {

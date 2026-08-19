@@ -92,7 +92,9 @@
                         $paiement_badge = $paiement_badges[$value['paiement_statut']] ?? '<span class="badge bg-light text-dark">-</span>';
                         
                         // Patient info
-                        $patient_nom = htmlspecialchars(($value['patient_prenom'] ?? '') . ' ' . ($value['patient_nom'] ?? 'Inconnu'));
+                        $patient_nom = !empty($value['patient_fullname'])
+    ? htmlspecialchars($value['patient_fullname'])
+    : htmlspecialchars(($value['patient_prenom'] ?? '') . ' ' . ($value['patient_nom'] ?? 'Inconnu'));
                         $patient_contact = !empty($value['patient_telephone']) ? $value['patient_telephone'] : ($value['patient_email'] ?? '-');
                         
                         // Médecin info

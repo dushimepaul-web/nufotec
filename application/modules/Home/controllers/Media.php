@@ -128,6 +128,28 @@ class Media extends Public_Controller{
     }
 
     /**
+     * Page Témoignages - Affiche les témoignages dans le contenu principal
+     */
+    public function temoignages()
+    {
+        $user = $this->getCurrentUser();
+
+        $data = [
+            'medias'            => [],
+            'categories'        => $this->getCategoriesWithCount(),
+            'temoignages'       => $this->db->where('est_approuve', 1)->order_by('id_temoignage', 'DESC')->get('temoignages')->result_array(),
+            'current_type'      => null,
+            'search_query'      => null,
+            'results_count'     => 0,
+            'show_temoignages'  => true,
+            'page_title'        => 'Témoignages',
+            'user'              => $user
+        ];
+
+        $this->load->view('Media_View', $data);
+    }
+
+    /**
      * Vue filtrée par type de média (multilingue)
      */
     public function type($type)

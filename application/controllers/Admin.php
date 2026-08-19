@@ -33,7 +33,7 @@ class Admin extends MY_Controller{
     }
 
     public function Login() {
-        $this->load->view('Dashboard/Dashboard_View');
+        redirect(base_url('Admin'));
     }
 
     /**

@@ -60,6 +60,7 @@
                             <th width="8%">Prix</th>
                             <th width="10%">Statut</th>
                             <th width="8%">Paiement</th>
+                            <th width="10%">WhatsApp</th>
                             <th width="12%">Actions</th>
                         </tr>
                     </thead>
@@ -94,7 +95,9 @@
                         $paiement_badge = $paiement_badges[$value['paiement_statut']] ?? '<span class="badge bg-light text-dark">-</span>';
                         
                         // Patient info
-                        $patient_nom = htmlspecialchars(($value['patient_prenom'] ?? '') . ' ' . ($value['patient_nom'] ?? 'Inconnu'));
+                        $patient_nom = !empty($value['patient_fullname'])
+    ? htmlspecialchars($value['patient_fullname'])
+    : htmlspecialchars(($value['patient_prenom'] ?? '') . ' ' . ($value['patient_nom'] ?? 'Inconnu'));
                         $patient_contact = !empty($value['patient_telephone']) ? $value['patient_telephone'] : ($value['patient_email'] ?? '-');
                         
                         // Médecin info
@@ -120,6 +123,18 @@
                                     <small class="text-muted"><i class="bx bx-phone me-1"></i><?= htmlspecialchars($patient_contact) ?></small>
                                 </div>
                             </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <?php if (!empty($value['whatsapp_number'])): ?>
+                                        <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $value['whatsapp_number']) ?>" target="_blank" class="text-primary small">
+                                            <i class="bx bx-logo-whatsapp me-1"></i><?= htmlspecialchars($value['whatsapp_number']) ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <small class="text-muted"><i class="bx bx-phone me-1"></i>Non renseigné</small>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+
 
                             <td>
                                 <div class="d-flex flex-column">
@@ -262,7 +277,9 @@
                         $paiement_badge = $paiement_badges[$value['paiement_statut']] ?? '<span class="badge bg-light text-dark">-</span>';
                         
                         // Patient info
-                        $patient_nom = htmlspecialchars(($value['patient_prenom'] ?? '') . ' ' . ($value['patient_nom'] ?? 'Inconnu'));
+                        $patient_nom = !empty($value['patient_fullname'])
+    ? htmlspecialchars($value['patient_fullname'])
+    : htmlspecialchars(($value['patient_prenom'] ?? '') . ' ' . ($value['patient_nom'] ?? 'Inconnu'));
                         $patient_contact = !empty($value['patient_telephone']) ? $value['patient_telephone'] : ($value['patient_email'] ?? '-');
                         
                         // Médecin info

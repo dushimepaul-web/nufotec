@@ -8,7 +8,7 @@ if (is_file($__env_file)) {
 // Composer autoload
 require_once __DIR__.'/vendor/autoload.php';
 
-// Activer l'affichage des erreurs (temporairement)
+// Activer l'affichage des erreurs
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -69,19 +69,7 @@ error_reporting(E_ALL);
  */
 
 if (! defined('ENVIRONMENT')) {
-    $domain = strtolower($_SERVER['HTTP_HOST']);
-
-    switch ($domain) {
-    case 'www.yoursite.tld':
-      define('ENVIRONMENT', 'production');
-    break;
-    case 'test.yoursite.tld':
-      define('ENVIRONMENT', 'testing');
-    break;
-    default:
-      define('ENVIRONMENT', 'development');
-    break;
-  }
+    define('ENVIRONMENT', 'development');
 }
 
 /*
@@ -98,9 +86,9 @@ switch (ENVIRONMENT) {
         error_reporting(-1);
         ini_set('display_errors', 1);
         if (version_compare(PHP_VERSION, '5.3', '>=')) {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+            error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
         } else {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
+            error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
         }
 
         $whoops = new \Whoops\Run;
@@ -111,9 +99,9 @@ switch (ENVIRONMENT) {
     case 'testing':
         ini_set('display_errors', 1);
         if (version_compare(PHP_VERSION, '5.3', '>=')) {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+            error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
         } else {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
+            error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
         }
     break;
 

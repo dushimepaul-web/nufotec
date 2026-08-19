@@ -1,0 +1,1239 @@
+<?php include VIEWPATH.'includes/frontend/Header.php'; ?>
+
+<!-- Boots
+            CONFIG.formData.whatsapp_number = document.getElementById('whatsapp_number')?.value || ''trap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<style>
+/* ============================================================
+   CSS REFACTORY - DESIGN MODERNISÉ
+   ============================================================ */
+:root {
+    --primary: #0A5C36;
+    --primary-light: #1A8A5F;
+    --primary-dark: #0f452e;
+    --accent: #FBBF24;
+    --accent-bg: #FFF8E1;
+    --error: #C53030;
+    --success: #2F855A;
+    --border: #E2E8F0;
+    --text-primary: #1F2937;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.05);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08);
+    --radius-xl: 1rem;
+    --radius-lg: 0.75rem;
+    --radius-md: 0.5rem;
+    --radius-sm: 0.375rem;
+}
+
+/* FONTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital@0;1&display=swap');
+
+:root {
+    --font-base: 'Inter', sans-serif;
+    --font-display: 'Playfair Display', serif;
+}
+
+/* HERO SECTION */
+.hero-section {
+    position: relative;
+    padding: 4rem 1rem 2.5rem;
+    background: linear-gradient(135deg, #0A5C36 0%, #1A8A5F 100%);
+    color: #fff;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero-badge {
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.hero-section h1 {
+    font-family: var(--font-display), serif;
+    font-size: clamp(1.5rem, 4vw, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.hero-section p {
+    font-family: var(--font-base), sans-serif;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.9);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+}
+
+/* PROGRESS BAR / STEPPER */
+.progress-container {
+    background: #fff;
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    position: relative;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.step-step {
+    background: #EDF2F7;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6B7280;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.step-step.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.step-step.completed {
+    background: var(--success);
+    color: #fff;
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    margin-top: 1rem;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 25%;
+    transition: width 0.3s ease;
+}
+
+/* FORM CARD */
+.form-card {
+    background: #fff;
+    border-radius: var(--radius-xl);
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+.form-card .icon-box {
+    width: 60px;
+    height: 60px;
+    background: var(--accent-bg);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.form-card h3 {
+    font-family: var(--font-display), serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.form-card p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* ICON BOX LEFT */
+.icon-left {
+    position: absolute;
+    left: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent-bg);
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* FLOATING ELEMENTS */
+.floating-btns {
+    position: fixed;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+}
+
+.floating-btn {
+    background: var(--primary);
+    color: #fff;
+    min-width: 48px;
+    min-height: 120px;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 0.5rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    box-shadow: var(--shadow-md);
+}
+
+.floating-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-5px);
+}
+
+.floating-btn:last-child {
+    margin-bottom: 0;
+}
+
+.floating-btn .icon {
+    font-size: 1.25rem;
+}
+
+.floating-btn-bottom {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: var(--accent);
+    color: #000;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.floating-btn-bottom:hover {
+    background: #F8BC1C;
+}
+
+/* GLOBAL STYLES */
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.text-accent {
+    color: var(--accent);
+}
+
+.text-primary {
+    color: var(--primary);
+}
+
+/* STEP NAVIGATION */
+.step-content.hidden {
+    display: none !important;
+}
+
+/* INPUT ENHANCEMENTS */
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10, 92, 54, 0.15);
+}
+
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10, 92, 54, 0.15);
+}
+
+/* AUTOCOMPLETE PAYS */
+.autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 4px;
+}
+
+.autocomplete-item {
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    transition: background 0.15s ease;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+    background: var(--accent-bg);
+    color: var(--primary);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 4rem 1rem 2rem;
+    }
+    
+    .step-indicator {
+        gap: 1rem;
+    }
+    
+    .step-step {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .form-card {
+        padding: 1.5rem;
+    }
+    
+    .floating-btns {
+        display: none; /* Mobile: vertical stack or hidden */
+    }
+}
+</style>
+
+<a href="#main-content" class="visually-hidden-focusable p-3 text-white text-decoration-none" style="background: var(--primary);"><i class="bi bi-skip-forward me-2"></i> Aller au contenu principal</a>
+
+<!-- SECTION HERO -->
+<section class="hero-section">
+    <a href="#main-content" class="visually-hidden-focusable p-3 text-white text-decoration-none" style="background: var(--primary);">
+        <i class="bi bi-skip-forward me-2"></i> Aller au contenu principal</a>
+    <div class="container py-2">
+        <div class="hero-badge"><i class="bi bi-stethoscope me-2"></i>CONSULTATION EN LIGNE</div>
+        <h1 id="hero-title" class="display-5 fw-bold mb-3 text-uppercase"><i class="bi bi-heart-pulse me-2"></i> Demande de consultation en ligne</h1>
+        <p id="hero-subtitle" class="mb-0 mx-auto"><i class="bi bi-shield-check me-2"></i> Remplissez ce formulaire sécurisé et recevez l'avis d'un médecin NUFOTEC directement sur WhatsApp.</p>
+    </div>
+</section>
+
+<!-- FORMULAIRE PRINCIPAL -->
+<div class="container py-5" id="main-content">
+    <div class="row g-4">
+        <!-- Colonne principale -->
+        <div class="col-lg-8">
+            <!-- Barre de progression / Stepper -->
+            <div class="consultation-progress card border-0 rounded-4 shadow-sm mb-4"
+                 role="progressbar"
+                 aria-valuenow="25"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                <div class="card-body py-4">
+                    <div class="progress-steps d-flex justify-content-between align-items-center mb-3 px-2">
+                        <div class="step-item text-center">
+                            <div class="step-step active" id="step1-indicator"><i class="bi bi-person"></i></div>
+                            <small class="d-block mt-1 fw-semibold">Personne</small>
+                        </div>
+                        <div class="step-item text-center">
+                            <div class="step-step" id="step2-indicator"><i class="bi bi-hospital"></i></div>
+                            <small class="d-block mt-1 text-muted">Hôpital</small>
+                        </div>
+                        <div class="step-item text-center">
+                            <div class="step-step" id="step3-indicator"><i class="bi bi-file-earmark-medical"></i></div>
+                            <small class="d-block mt-1 text-muted">Document</small>
+                        </div>
+                        <div class="step-item text-center">
+                            <div class="step-step" id="step4-indicator"><i class="bi bi-check-lg"></i></div>
+                            <small class="d-block mt-1 text-muted">Check</small>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-fill" id="progressBar" style="width: 25%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carte formulaire -->
+            <div class="consultation-card card border-0 rounded-4 shadow-sm mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <form id="consultationForm"
+                          action="<?= base_url('patient-form/create') ?>"
+                          method="POST"
+                          enctype="multipart/form-data"
+                          novalidate>
+
+                        <!-- CSRF Token -->
+                        <input type="hidden"
+                               name="<?= $this->security->get_csrf_token_name() ?>"
+                               value="<?= $this->security->get_csrf_hash() ?>">
+
+                        <!-- ÉTAPE 1: Informations Personnelles -->
+                        <div class="step-content" id="step1">
+                            <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                                <div class="d-flex align-items-center justify-content-center rounded-3 text-success flex-shrink-0" style="width: 56px; height: 56px; background: var(--accent-bg);">
+                                    <i class="bi bi-person-badge fs-3"></i>
+                                </div>
+                                <div class="header-text">
+                                    <h5 class="fw-bold mb-1"><i class="bi bi-person me-1"></i> Vos informations personnelles</h5>
+                                    <p class="text-muted small mb-0"><i class="bi bi-lock me-1"></i> Vos données sont confidentielles</p>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- Nom complet -->
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold" for="full_name">
+                                        <i class="bi bi-person me-1"></i> Nom complet <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group has-validation primary-border">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text"
+                                               class="form-control primary-input"
+                                               id="full_name"
+                                               name="full_name"
+                                               placeholder="Jean Dupont"
+                                               required
+                                               minlength="3"
+                                               maxlength="100"
+                                               value="<?= htmlspecialchars($this->session->userdata('fullname') ?: $this->session->userdata('fu') ?: '', ENT_QUOTES, 'UTF-8') ?>"
+                                               <?= ($this->session->userdata('fullname') || $this->session->userdata('fu')) ? 'readonly' : '' ?>>
+                                        <div class="invalid-feedback"><i class="bi bi-exclamation-circle me-1"></i> Veuillez entrer votre nom complet (minimum 3 caractères)</div>
+                                    </div>
+                                </div>
+
+                                <!-- Ligne desktop: Pays de résidence et WhatsApp côte à côte -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="country_search">
+                                        <i class="bi bi-globe me-1"></i> Pays de résidence <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <div class="input-group has-validation country-border">
+                                            <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                                            <input type="text"
+                                                   class="form-control country-input"
+                                                   id="country_search"
+                                                   placeholder="Rechercher votre pays"
+                                                   autocomplete="off"
+                                                   required>
+                                            <input type="hidden" name="country" id="selected_country" value="<?= set_value('country'); ?>">
+                                            <div class="invalid-feedback"><i class="bi bi-exclamation-circle me-1"></i> Veuillez sélectionner votre pays</div>
+                                        </div>
+                                        <div id="autocomplete_list" class="autocomplete-results" style="display: none;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="whatsapp_number">
+                                        <i class="bi bi-whatsapp me-1"></i> Numéro WhatsApp <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group has-validation whatsapp-border">
+                                        <span class="input-group-text"><i class="bi bi-whatsapp"></i></span>
+                                        <input type="text"
+                                               class="form-control whatsapp-input"
+                                               id="whatsapp_number"
+                                               name="whatsapp_number"
+                                               placeholder="+257 79 123 456"
+                                               required
+                                               minlength="10"
+                                               maxlength="20"
+                                               pattern="^\+[0-9s]{8,18}$"
+                                               title="Format: +257 79 123 456">
+                                        <div class="invalid-feedback"><i class="bi bi-exclamation-circle me-1"></i> Veuillez entrer un numéro WhatsApp valide</div>
+                                    </div>
+                                </div>
+                                <!-- Âge et Taille (cm) côte à côte -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="age">
+                                        <i class="bi bi-calendar me-1"></i> Âge <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group has-validation age-border">
+                                        <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                                        <input type="number"
+                                               class="form-control age-input"
+                                               id="age"
+                                               name="age"
+                                               placeholder="Ex: 30"
+                                               required
+                                               min="1"
+                                               max="120"
+                                               value="<?= set_value('age'); ?>">
+                                        <div class="invalid-feedback"><i class="bi bi-exclamation-circle me-1"></i> Âge invalide (1-120 ans)</div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="height">
+                                        <i class="bi bi-rulers me-1"></i> Taille (cm) <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group has-validation height-border">
+                                        <span class="input-group-text"><i class="bi bi-rulers"></i></span>
+                                        <input type="number"
+                                               class="form-control height-input"
+                                               id="height"
+                                               name="height"
+                                               placeholder="Ex: 170"
+                                               required
+                                               min="50"
+                                               max="250"
+                                               value="<?= set_value('height'); ?>">
+                                        <div class="invalid-feedback"><i class="bi bi-exclamation-circle me-1"></i> Taille invalide (50-250 cm)</div>
+                                    </div>
+                                </div>
+
+                                <!-- Poids -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="weight">
+                                        <i class="bi bi-speedometer me-1"></i> Poids (kg) <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group has-validation weight-border">
+                                        <span class="input-group-text"><i class="bi bi-speedometer"></i></span>
+                                        <input type="number"
+                                               class="form-control weight-input"
+                                               id="weight"
+                                               name="weight"
+                                               placeholder="Ex: 70"
+                                               required
+                                               min="1"
+                                               max="300"
+                                               step="0.1"
+                                               value="<?= set_value('weight'); ?>">
+                                        <div class="invalid-feedback"><i class="bi bi-exclamation-circle me-1"></i> Poids invalide (1-300 kg)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-between mt-4 pt-3 border-top">
+                                <button type="button" class="btn btn-outline-secondary" disabled><i class="bi bi-arrow-left me-1"></i> Précédent</button>
+                                <button type="button" class="btn btn-primary px-4" onclick="nextStep(1)">Suivant <i class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- ÉTAPE 2: Symptômes -->
+                        <div class="step-content hidden" id="step2">
+                            <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                                <div class="d-flex align-items-center justify-content-center rounded-3 text-success flex-shrink-0" style="width: 56px; height: 56px; background: var(--accent-bg);">
+                                    <i class="bi bi-hospital fs-3"></i>
+                                </div>
+                                <div class="header-text">
+                                    <h5 class="fw-bold mb-1"><i class="bi bi-activity me-1"></i> Vos symptômes</h5>
+                                    <p class="text-muted small mb-0"><i class="bi bi-pencil-square me-1"></i> Décrivez précisément vos symptômes</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold" for="symptoms">
+                                    <i class="bi bi-chat-text me-1"></i> Description détaillée <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control"
+                                          name="symptoms"
+                                          id="symptoms"
+                                          rows="6"
+                                          required
+                                          minlength="20"
+                                          placeholder="Décrivez vos symptômes : depuis quand, leur intensité, les facteurs qui les aggravent ou les soulagent..."><?= set_value('symptoms'); ?></textarea>
+                                <div class="invalid-feedback"><i class="bi bi-exclamation-circle me-1"></i> Veuillez décrire vos symptômes (minimum 20 caractères)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="symptoms_duration">
+                                    <i class="bi bi-clock-history me-1"></i> Depuis combien de temps ?
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-clock"></i></span>
+                                    <select class="form-select" name="symptoms_duration" id="symptoms_duration">
+                                        <option value="">Sélectionnez une durée</option>
+                                        <option value="24h" <?= set_select('symptoms_duration', '24h'); ?>>Moins de 24 heures</option>
+                                        <option value="2-3j" <?= set_select('symptoms_duration', '2-3j'); ?>>2-3 jours</option>
+                                        <option value="1sem" <?= set_select('symptoms_duration', '1sem'); ?>>1 semaine</option>
+                                        <option value="2sem" <?= set_select('symptoms_duration', '2sem'); ?>>2 semaines</option>
+                                        <option value="1mois" <?= set_select('symptoms_duration', '1mois'); ?>>Plus d'un mois</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold d-block">
+                                    <i class="bi bi-question-circle me-1"></i> Avez-vous déjà consulté un médecin pour ces symptômes ?
+                                </label>
+                                <div class="d-flex flex-wrap gap-4 mt-2">
+                                    <label class="radio-option form-check me-4">
+                                        <input class="form-check-input me-2" type="radio" name="previous_consultation" value="yes" <?= set_radio('previous_consultation', 'yes'); ?>>
+                                        <span class="form-check-label"><i class="bi bi-check-lg me-1"></i> Oui</span>
+                                    </label>
+                                    <label class="radio-option form-check">
+                                        <input class="form-check-input me-2" type="radio" name="previous_consultation" value="no" <?= set_radio('previous_consultation', 'no', true); ?>>
+                                        <span class="form-check-label"><i class="bi bi-x-lg me-1"></i> Non</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-between mt-4 pt-3 border-top">
+                                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(2)"><i class="bi bi-arrow-left me-1"></i> Précédent</button>
+                                <button type="button" class="btn btn-primary px-4" onclick="nextStep(2)">Suivant <i class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- ÉTAPE 3: Documents -->
+                        <div class="step-content hidden" id="step3">
+                            <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                                <div class="d-flex align-items-center justify-content-center rounded-3 text-success flex-shrink-0" style="width: 56px; height: 56px; background: var(--accent-bg);">
+                                    <i class="bi bi-file-earmark-medical fs-3"></i>
+                                </div>
+                                <div class="header-text">
+                                    <h5 class="fw-bold mb-1"><i class="bi bi-upload me-1"></i> Vos documents</h5>
+                                    <p class="text-muted small mb-0"><i class="bi bi-lock me-1"></i> Pièces jointes optionnelles (analyses, ordonnances, radios...)</p>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="document_medical">Document médical (analyses, ordonnance, radio)</label>
+                                <div class="upload-box border rounded-4 p-4 text-center" style="border-style: dashed !important; cursor: pointer; border-color: var(--border);">
+                                    <input type="file" class="d-none" id="document_medical" name="document_medical" accept=".pdf,.jpg,.jpeg,.png" onchange="previewFiles(this, 'preview-medical')">
+                                    <i class="bi bi-cloud-upload" style="font-size: 2rem; color: var(--primary);"></i>
+                                    <p class="mb-1 mt-2 fw-semibold">Cliquez pour télécharger un document</p>
+                                    <small class="text-muted">PDF, JPG ou PNG - 10 Mo max</small>
+                                    <div id="preview-medical" class="mt-3 text-start" style="display: none;"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold" for="document_ordonnance">Ordonnance / autre justificatif</label>
+                                <div class="upload-box border rounded-4 p-4 text-center" style="border-style: dashed !important; cursor: pointer; border-color: var(--border);">
+                                    <input type="file" class="d-none" id="document_ordonnance" name="document_ordonnance" accept=".pdf,.jpg,.jpeg,.png" onchange="previewFiles(this, 'preview-ordo')">
+                                    <i class="bi bi-file-earmark-plus" style="font-size: 2rem; color: var(--primary);"></i>
+                                    <p class="mb-1 mt-2 fw-semibold">Ajouter un autre document</p>
+                                    <small class="text-muted">Facultatif</small>
+                                    <div id="preview-ordo" class="mt-3 text-start" style="display: none;"></div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-between mt-4 pt-3 border-top">
+                                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(3)"><i class="bi bi-arrow-left me-1"></i> Précédent</button>
+                                <button type="button" class="btn btn-primary px-4" onclick="nextStep(3)">Suivant <i class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- ÉTAPE 4: Confirmation -->
+                        <div class="step-content hidden" id="step4">
+                            <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                                <div class="d-flex align-items-center justify-content-center rounded-3 text-success flex-shrink-0" style="width: 56px; height: 56px; background: var(--accent-bg);">
+                                    <i class="bi bi-check-lg fs-3"></i>
+                                </div>
+                                <div class="header-text">
+                                    <h5 class="fw-bold mb-1"><i class="bi bi-clipboard-check me-1"></i> Confirmation</h5>
+                                    <p class="text-muted small mb-0"><i class="bi bi-shield-check me-1"></i> Vérifiez vos informations avant l'envoi</p>
+                                </div>
+                            </div>
+
+                            <div class="tracking-summary rounded-4 p-4 mb-4" style="background: var(--accent-bg);">
+                                <h6 class="fw-bold mb-3"><i class="bi bi-person-badge me-1"></i> Récapitulatif</h6>
+                                <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Nom complet</span><strong id="summary-name">-</strong></div>
+                                <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Âge</span><strong id="summary-age">-</strong></div>
+                                <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Taille</span><strong id="summary-size">-</strong></div>
+                                <div class="d-flex justify-content-between py-2"><span class="text-muted">Montant</span><strong id="summary-price">-</strong></div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold d-block"><i class="bi bi-credit-card me-1"></i> Mode de paiement <span class="text-danger">*</span></label>
+                                <div class="d-flex flex-column gap-2">
+                                    <label class="payment-option border rounded-3 p-3 d-flex align-items-center gap-3" style="cursor: pointer;">
+                                        <input class="form-check-input" type="radio" name="payment_method" value="mobile_money" checked>
+                                        <i class="bi bi-phone fs-4" style="color: var(--primary);"></i>
+                                        <span class="fw-semibold">Mobile Money</span>
+                                    </label>
+                                    <label class="payment-option border rounded-3 p-3 d-flex align-items-center gap-3" style="cursor: pointer;">
+                                        <input class="form-check-input" type="radio" name="payment_method" value="carte">
+                                        <i class="bi bi-credit-card fs-4" style="color: var(--primary);"></i>
+                                        <span class="fw-semibold">Carte bancaire</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="terms" name="terms" value="1" required>
+                                <label class="form-check-label" for="terms">
+                                    J'accepte les <a href="#" class="text-decoration-none fw-semibold" style="color: var(--primary);">conditions générales</a> et la politique de confidentialité <span class="text-danger">*</span>
+                                </label>
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-between mt-4 pt-3 border-top">
+                                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(4)"><i class="bi bi-arrow-left me-1"></i> Précédent</button>
+                                <button type="submit" id="submitBtn" class="btn btn-primary px-4"><i class="bi bi-send me-1"></i> Envoyer la demande</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Floating elements -->
+            <!-- Retour en haut -->
+            <a href="#" class="floating-btn-bottom" onclick="scrollToTop(); return false;" title="Retour en haut">
+                <i class="bi bi-arrow-up"></i>
+            </a>
+        </div>
+
+        <!-- Sidebar info -->
+        <div class="col-lg-4">
+            <div class="info-panel card border-0 rounded-4 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div id="doctor-card-container">
+                        <div class="doctor-info-card text-white text-center rounded-4 p-4 mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);">
+                            <div class="doctor-avatar-container d-inline-block position-relative">
+                                <img src="<?= base_url('attachments/Users/' . htmlspecialchars($medecin['photo'] ?? '')) ?>"
+                                     alt="<?= htmlspecialchars($medecin['nom'] ?? 'Médecin') ?>"
+                                     class="doctor-avatar rounded-circle border border-4 border-white shadow"
+                                     style="width: 90px; height: 90px; object-fit: cover;"
+                                     onerror="this.src='<?= base_url('assets/frontend/img/default-doctor.jpg') ?>'">
+                                <span class="doctor-status position-absolute rounded-circle border border-3 border-white" style="width: 20px; height: 20px; background: var(--success); bottom: 5px; right: 5px;"></span>
+                            </div>
+                            <h5 class="doctor-name fw-bold mt-3 mb-1">
+                                <i class="bi bi-person-badge me-1"></i><?= htmlspecialchars($medecin['prenom'] ?? '') . ' ' . htmlspecialchars($medecin['nom'] ?? 'Médecin') ?>
+                            </h5>
+                            <p class="doctor-specialty opacity-75 small mb-3">
+                                <i class="bi bi-star-fill me-1" style="color: var(--accent);"></i> <?= htmlspecialchars($medecin['specialite'] ?? 'Médecin généraliste') ?>
+                            </p>
+                            <div class="doctor-price d-inline-flex align-items-center gap-2 rounded-3 p-3" style="background: rgba(255,255,255,0.2);">
+                                <div class="price-value fs-3 fw-bold">
+                                    <?= number_format($prix_usd ?? 50, 2) ?> USD
+                                </div>
+                            </div>
+                            <div class="burundi-price mt-3 p-2 rounded-3 text-start" style="background: rgba(255,255,255,0.2); border-left: 4px solid var(--accent); font-size: 0.9rem;">
+                                <i class="bi bi-geo-alt-fill me-1" style="color: var(--accent);"></i>
+                                <strong>Prix Burundi : 40 000 FBu</strong>
+                            </div>
+                            <?php if (!empty($doctor_count) && $doctor_count > 1): ?>
+                            <a style="text-decoration: none;" href="javascript:void(0)" onclick="confirmChangeDoctor()" class="change-doctor-btn btn btn-sm btn-outline-light mt-3 rounded-pill">
+                                <i class="bi bi-arrow-left me-1"></i> Changer de médecin
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3"><i class="bi bi-question-circle me-1"></i> Comment ça marche ?</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="d-flex align-items-center gap-3 py-2 border-bottom"><span class="d-inline-flex align-items-center justify-content-center rounded-circle text-warning" style="width: 24px; height: 24px; background: var(--accent-bg); font-weight: 600; flex-shrink: 0;">1</span> <i class="bi bi-pencil-square me-1"></i> Remplissez le formulaire</li>
+                        <li class="d-flex align-items-center gap-3 py-2 border-bottom"><span class="d-inline-flex align-items-center justify-content-center rounded-circle text-warning" style="width: 24px; height: 24px; background: var(--accent-bg); font-weight: 600; flex-shrink: 0;">2</span> <i class="bi bi-chat-text me-1"></i> Décrivez vos symptômes</li>
+                        <li class="d-flex align-items-center gap-3 py-2 border-bottom"><span class="d-inline-flex align-items-center justify-content-center rounded-circle text-warning" style="width: 24px; height: 24px; background: var(--accent-bg); font-weight: 600; flex-shrink: 0;">3</span> <i class="bi bi-upload me-1"></i> Téléchargez vos documents</li>
+                        <li class="d-flex align-items-center gap-3 py-2 border-bottom"><span class="d-inline-flex align-items-center justify-content-center rounded-circle text-warning" style="width: 24px; height: 24px; background: var(--accent-bg); font-weight: 600; flex-shrink: 0;">4</span> <i class="bi bi-credit-card me-1"></i> Effectuez le paiement</li>
+                        <li class="d-flex align-items-center gap-3 py-2"><span class="d-inline-flex align-items-center justify-content-center rounded-circle text-warning" style="width: 24px; height: 24px; background: var(--accent-bg); font-weight: 600; flex-shrink: 0;">5</span> <i class="bi bi-person-check me-1"></i> Recevez la réponse du médecin</li>
+                    </ul>
+
+                    <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+
+                    <div class="mb-3">
+                        <strong class="d-block mb-1">
+                            <i class="bi bi-wallet2 me-1"></i> Moyens de paiement acceptés :
+                        </strong>
+                        <?php if(isset($mode_payements) && !empty($mode_payements)): ?>
+                            <?php foreach($mode_payements as $mode): ?>
+                            <div class="d-flex align-items-center gap-3 mt-2">
+                                <i style="font-size: 24px;" class="bi <?php
+                                    switch($mode['description']) {
+                                        case 'Carte bancaire': echo 'bi-credit-card'; break;
+                                        case 'PayPal': echo 'bi-paypal'; break;
+                                        case 'Mobile Money': echo 'bi-phone'; break;
+                                        case 'Virement': echo 'bi-bank'; break;
+                                        default: echo 'bi-cash';
+                                    }
+                                ?>"></i>
+                                <span class="fw-medium"><?= htmlspecialchars($mode['description']) ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="d-flex align-items-center gap-3 mt-2">
+                                <i class="bi bi-credit-card" style="font-size: 24px;"></i>
+                                <span>Carte bancaire</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 mt-2">
+                                <i class="bi bi-phone" style="font-size: 24px;"></i>
+                                <span>Mobile Money</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+                        <i class="bi bi-shield-check"></i>
+                        <small>Paiement sécurisé - Vos données sont protégées</small>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <small class="text-muted"><i class="bi bi-headset me-1"></i> Besoin d'aide ?</small><br>
+                        <a href="tel:+25779666439" class="d-inline-flex align-items-center gap-2 fw-semibold mt-1 text-decoration-none" style="color: var(--primary);">
+                            <i class="bi bi-telephone"></i> <?= $this->Model->get_setting('contact_whatsapp', '+257 79 666 439') ?>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal succès -->
+<div class="modal fade" id="successModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg p-4 text-center">
+            <div class="fs-1 text-success mb-2"><i class="bi bi-check-circle-fill"></i></div>
+            <h5 class="modal-title fw-bold mb-2" id="modalTitle"><i class="bi bi-emoji-smile me-1"></i> Merci !</h5>
+            <p class="text-muted mb-3"><i class="bi bi-envelope-check me-1"></i> Votre demande a été enregistrée avec succès</p>
+
+            <div class="tracking-box rounded-3 p-3 my-3 text-start" style="background: var(--accent-bg); border: 1px solid var(--border);">
+                <label class="text-muted small text-uppercase d-block mb-1"><i class="bi bi-upc-scan me-1"></i> Votre numéro de suivi</label>
+                <div class="number fs-5 fw-bold" id="trackingNumber" style="color: var(--primary); font-family: monospace;"><i class="bi bi-hash"></i> -</div>
+            </div>
+
+            <button type="button" class="btn btn-success w-100" onclick="window.location.href='<?= base_url() ?>'">
+                <i class="bi bi-house me-1"></i> Retour à l'accueil
+            </button>
+        </div>
+    </div>
+</div>
+
+<?php 
+if (!isset($products)) {
+    $products = array();
+}
+?>
+<?php include VIEWPATH.'sections/Products_Section.php'; ?>
+
+<script>
+const CONFIG = {
+    totalSteps: 4,
+    currentStep: 1,
+    formData: {}
+};
+
+function getStepIcon(step) {
+    const icons = [
+        '<i class="bi bi-person"></i>', 
+        '<i class="bi bi-hospital"></i>', 
+        '<i class="bi bi-file-earmark-medical"></i>', 
+        '<i class="bi bi-check-lg"></i>'
+    ];
+    return icons[step - 1] || step;
+}
+
+function confirmChangeDoctor() {
+    if (confirm('Voulez-vous vraiment changer de médecin ? Toutes vos données non enregistrées seront perdues.')) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= base_url('swap-medecin') ?>';
+        
+        var csrfName = '<?= $this->security->get_csrf_token_name(); ?>';
+        var csrfHash = '<?= $this->security->get_csrf_hash(); ?>';
+        
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = csrfName;
+        input.value = csrfHash;
+        form.appendChild(input);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+const countries = <?= json_encode($pays ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAutocomplete();
+    initializeFormValidation();
+    
+    const heroTitle = document.querySelector('.consultation-hero h1');
+    if (heroTitle) {
+        heroTitle.innerHTML = `<i class="bi bi-heart-pulse"></i> Consultation <?= htmlspecialchars(($medecin['prenom'] ?? '') . ' ' . ($medecin['nom'] ?? ''), ENT_QUOTES) ?>`;
+    }
+});
+
+function initializeAutocomplete() {
+    const searchInput = document.getElementById('country_search');
+    const resultsList = document.getElementById('autocomplete_list');
+    const hiddenCountryInput = document.getElementById('selected_country');
+
+    if (!searchInput || !resultsList) return;
+
+    if (hiddenCountryInput.value) {
+        const selected = countries.find(c => c.pays === hiddenCountryInput.value);
+        if (selected) {
+            searchInput.value = selected.pays;
+        }
+    }
+
+    function renderResults(list, query) {
+        resultsList.innerHTML = '';
+        const q = (query || '').toLowerCase().trim();
+        const filtered = list.filter(c => c.pays && (q === '' || c.pays.toLowerCase().includes(q))).slice(0, 8);
+
+        if (filtered.length === 0) {
+            resultsList.style.display = 'none';
+            return;
+        }
+
+        filtered.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.innerHTML = `<i class="bi bi-geo-alt" style="color: var(--primary);"></i> <strong>${escapeHtml(c.pays)}</strong>`;
+            div.onclick = function() {
+                selectCountry(c, searchInput, hiddenCountryInput, resultsList);
+            };
+            resultsList.appendChild(div);
+        });
+        resultsList.style.display = 'block';
+    }
+
+    searchInput.addEventListener('click', function() {
+        renderResults(countries, this.value);
+    });
+
+    searchInput.addEventListener('focus', function() {
+        renderResults(countries, this.value);
+    });
+
+    searchInput.addEventListener('input', function() {
+        renderResults(countries, this.value);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
+}
+
+function selectCountry(country, searchInput, hiddenInput, resultsList) {
+    searchInput.value = country.pays;
+    hiddenInput.value = country.pays;
+    resultsList.style.display = 'none';
+    searchInput.classList.remove('is-invalid');
+    searchInput.classList.add('is-valid');
+}
+
+function initializeFormValidation() {
+    updateProgress();
+    loadSavedData();
+    
+    document.querySelectorAll('.form-control, .form-select').forEach(input => {
+        input.addEventListener('blur', validateField);
+        input.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+    
+    document.querySelectorAll('.upload-box').forEach(box => {
+        box.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.querySelector('input[type="file"]').click();
+            }
+        });
+    });
+}
+
+function validateField() {
+    if (this.checkValidity && this.checkValidity() && this.value.trim()) {
+        this.classList.add('is-valid');
+        this.classList.remove('is-invalid');
+    } else if (this.value.trim()) {
+        this.classList.remove('is-valid');
+    }
+}
+
+function updateProgress() {
+    for (let i = 1; i <= CONFIG.totalSteps; i++) {
+        const indicator = document.getElementById(`step${i}-indicator`);
+        const panel = document.getElementById(`step${i}`);
+        
+        if (!indicator || !panel) continue;
+        
+        if (i < CONFIG.currentStep) {
+            indicator.className = 'step-step completed';
+            indicator.innerHTML = '<i class="bi bi-check-lg"></i>';
+        } else if (i === CONFIG.currentStep) {
+            indicator.className = 'step-step active';
+            indicator.innerHTML = getStepIcon(i);
+        } else {
+            indicator.className = 'step-step';
+            indicator.innerHTML = getStepIcon(i);
+        }
+        
+        panel.classList.toggle('hidden', i !== CONFIG.currentStep);
+    }
+    
+    const progress = (CONFIG.currentStep / CONFIG.totalSteps) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+}
+
+function nextStep(step) {
+    if (!validateStep(step)) {
+        showNotification('Veuillez remplir correctement tous les champs obligatoires', 'error');
+        return;
+    }
+    
+    saveStepData(step);
+    
+    if (CONFIG.currentStep < CONFIG.totalSteps) {
+        CONFIG.currentStep++;
+        updateProgress();
+        
+        if (CONFIG.currentStep === CONFIG.totalSteps) {
+            updateSummary();
+        }
+        
+        document.querySelector('.consultation-card').scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function prevStep(step) {
+    if (CONFIG.currentStep > 1) {
+        CONFIG.currentStep--;
+        updateProgress();
+        document.querySelector('.consultation-card').scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function validateStep(step) {
+    let isValid = true;
+    const currentPanel = document.getElementById(`step${step}`);
+    
+    if (!currentPanel) return false;
+    
+    const requiredFields = currentPanel.querySelectorAll('[required]');
+    
+    requiredFields.forEach(field => {
+        if (field.type === 'checkbox') {
+            if (!field.checked) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+                field.classList.add('is-valid');
+            }
+        } else if (field.type === 'file') {
+            // Champs optionnels, pas de validation stricte
+        } else {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+                field.classList.add('is-valid');
+            }
+        }
+    });
+    
+    switch(step) {
+        case 1:
+            const age = document.getElementById('age');
+            if (age && age.value && (age.value < 1 || age.value > 120)) {
+                age.classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            const weight = document.getElementById('weight');
+            if (weight && weight.value && (weight.value < 1 || weight.value > 300)) {
+                weight.classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            const height = document.getElementById('height');
+            if (height && height.value && (height.value < 50 || height.value > 250)) {
+                height.classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            const country = document.getElementById('selected_country');
+            if (!country || !country.value) {
+                document.getElementById('country_search').classList.add('is-invalid');
+                isValid = false;
+            }
+            break;
+            
+        case 2:
+            const symptoms = document.getElementById('symptoms');
+            if (symptoms && symptoms.value.length < 20) {
+                symptoms.classList.add('is-invalid');
+                isValid = false;
+            }
+            break;
+            
+        case 3:
+            // Documents optionnels
+            break;
+    }
+    
+    return isValid;
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: ${type === 'error' ? 'var(--error-bg)' : 'var(--accent-bg)'};
+        color: ${type === 'error' ? 'var(--error)' : 'var(--primary)'};
+        border: 1px solid ${type === 'error' ? 'var(--error)' : 'var(--primary)'};
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: var(--shadow-lg);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    notification.innerHTML = `
+        <i class="bi ${type === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill'}"></i>
+        <span>${escapeHtml(message)}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+
+function saveStepData(step) {
+    switch(step) {
+        case 1:
+            CONFIG.formData.full_name = document.getElementById('full_name')?.value || ''
+
+            CONFIG.formData.age = document.getElementById('age')?.value || ''
+
+            CONFIG.formData.height = document.getElementById('height')?.value || ''
+
+            CONFIG.formData.whatsapp_number = document.getElementById('whatsapp_number')?.value || ''
+
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+    }
+    
+    sessionStorage.setItem('consultation_form', JSON.stringify(CONFIG.formData));
+}
+
+function loadSavedData() {
+    const saved = sessionStorage.getItem('consultation_form');
+    if (saved) {
+        try {
+            CONFIG.formData = JSON.parse(saved);
+            
+            if (CONFIG.formData.full_name) document.getElementById('full_name').value = CONFIG.formData.full_name;
+            if (CONFIG.formData.age) document.getElementById('age').value = CONFIG.formData.age;
+            if (CONFIG.formData.height) document.getElementById('height').value = CONFIG.formData.height;
+        } catch(e) {
+            console.error('Erreur chargement données sauvegardées:', e);
+        }
+    }
+}
+
+function updateSummary() {
+    document.getElementById('summary-name').textContent = CONFIG.formData.full_name || '-';
+    document.getElementById('summary-age').textContent = CONFIG.formData.age ? CONFIG.formData.age + ' ans' : '-';
+    document.getElementById('summary-size').textContent = CONFIG.formData.height ? CONFIG.formData.height + ' cm' : '-';
+    const price = document.getElementById('summary-price');
+    if (price) price.textContent = '<?= number_format($prix_usd ?? 50, 2) ?> USD';
+}
+
+function previewFiles(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const files = Array.from(input.files);
+    
+    if (!preview) return;
+    
+    if (files.length === 0) {
+        preview.style.display = 'none';
+        return;
+    }
+    
+    preview.style.display = 'block';
+    preview.innerHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">' +
+        '<small style="font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 5px;"><i class="bi bi-check-circle"></i> ' + files.length + ' fichier(s) sélectionné(s) :</small>' +
+        files.map(f => '<div style="font-size: 0.875rem; padding: 4px 0; display: flex; align-items: center; gap: 8px;"><i class="bi bi-file-earmark"></i> ' + escapeHtml(f.name) + ' (' + (f.size/1024).toFixed(1) + ' Ko)</div>').join('') +
+        '</div>';
+    
+    input.parentElement.style.borderColor = '';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+document.getElementById('consultationForm').addEventListener('submit', function(e) {
+    const terms = document.getElementById('terms');
+    
+    if (!terms.checked) {
+        e.preventDefault();
+        showNotification('Veuillez accepter les conditions générales', 'error');
+        terms.focus();
+        return false;
+    }
+    
+    const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+    if (!paymentMethod) {
+        e.preventDefault();
+        showNotification('Veuillez sélectionner votre mode de paiement', 'error');
+        return false;
+    }
+    
+    const btn = document.getElementById('submitBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Envoi en cours...';
+    }
+    
+    sessionStorage.removeItem('consultation_form');
+});
+
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('successModal');
+    if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+        window.location.href = '<?= base_url(); ?>';
+    }
+});
+</script>
+
+<?php include VIEWPATH.'includes/frontend/Footer.php'; ?>

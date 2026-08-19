@@ -1601,7 +1601,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 </a>
             </li>
             <li class="nav-item">
-                <a href="<?= base_url('Medicins') ?>" class="nav-link">
+                <a href="<?= base_url('doctor') ?>" class="nav-link">
                     <span>Teleconsultation</span>
                 </a>
             </li>
@@ -1711,7 +1711,7 @@ echo json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 </li>
 
                 <li class="mobile-nav-item">
-                    <a href="<?= base_url('Medicins') ?>" class="mobile-nav-link">
+                    <a href="<?= base_url('doctor') ?>" class="mobile-nav-link">
                         <i class="bi bi-camera-video"></i>
                         <span>Teleconsultation</span>
                     </a>

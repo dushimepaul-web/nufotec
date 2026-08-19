@@ -56,9 +56,9 @@ $autoload['packages'] = array();
 | You can also supply an alternative library name to be assigned
 | in the controller:
 |
-|	$autoload['libraries'] = array('user_agent' => 'ua');
+|	$autoload['libraries'] = array('user_agent' => 'ua'); $this->load->library('upload');
 */
-$autoload['libraries'] = array();
+$autoload['libraries'] = array('database', 'email', 'session','upload','user_agent','form_validation','cpanel_email_lib');
 
 /*
 | -------------------------------------------------------------------
@@ -82,14 +82,14 @@ $autoload['libraries'] = array();
 $autoload['drivers'] = array();
 
 /*
-| -------------------------------------------------------------------
+| -------------------------------------------------------------------t
 |  Auto-load Helper Files
 | -------------------------------------------------------------------
 | Prototype:
 |
 |	$autoload['helper'] = array('url', 'file');
 */
-$autoload['helper'] = array('url', 'static_pages', 'static_sections');
+$autoload['helper'] = array('url', 'form', 'cookie', 'file','security','role','static_pages','static_sections','language');
 
 /*
 | -------------------------------------------------------------------
@@ -132,4 +132,6 @@ $autoload['language'] = array();
 |
 |	$autoload['model'] = array('first_model' => 'first');
 */
-$autoload['model'] = array();
+$autoload['model'] = array('Model');
+
+$config['composer_autoload'] = FCPATH . 'vendor/autoload.php';

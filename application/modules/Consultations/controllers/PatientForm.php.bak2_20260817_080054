@@ -26,11 +26,6 @@ class PatientForm extends Public_Controller {
         
         $this->load->model('Model');
         
-        // ============================================
-        // CHARGER LA LIBRAIRIE EMAIL cPanel
-        // ============================================
-        $this->load->library('cpanel_email_lib');
-        
         $this->upload_path = FCPATH . 'attachments/FichierPatient/';
         
         if (!is_dir($this->upload_path)) {
@@ -106,10 +101,11 @@ class PatientForm extends Public_Controller {
             }
         }
 
+        $taux = $this->config->item('taux_devise');
         $prix_usd = isset($medecin['honoraires_consultation']) ? (float)$medecin['honoraires_consultation'] : 50;
-        $devise = $medecin['currency'] ?? 'USD';
-        $equiv_bif = $medecin['USD_EUR_Equivalent_en_BIF'] ?? null;
-        $prix_burundi = $medecin['prix_pour_residant_burundi'] ?? null;
+        $prix_eur = $prix_usd * ($taux['USD_TO_EUR'] ?? 0.92);
+        $prix_bif = $prix_usd * ($taux['USD_TO_BIF'] ?? 2900);
+        $devise = $medecin['currency'] ?? 'USD/EUR';
 
         $data = [
             'title'          => 'Nouvelle consultation - NUFOTEC',
@@ -120,12 +116,12 @@ class PatientForm extends Public_Controller {
             'user_id'        => $user_id,
             'user'           => $user,
             'medecin'        => $medecin,
-            'doctor'         => $medecin,
             'doctor_count'   => $this->_count_active_doctors(),
             'prix_usd'       => $prix_usd,
+            'prix_eur'       => $prix_eur,
+            'prix_bif'       => $prix_bif,
             'devise'         => $devise,
-            'equiv_bif'      => $equiv_bif,
-            'prix_burundi'   => $prix_burundi
+            'taux'           => $taux
         ];
 
         $this->load->view('PatientForm_View', $data);
@@ -210,7 +206,6 @@ class PatientForm extends Public_Controller {
         $this->form_validation->set_rules('country', 'Pays de résidence', 'required|trim|max_length[100]');
         $this->form_validation->set_rules('weight', 'Poids', 'required|numeric|greater_than[0]|less_than[300]');
         $this->form_validation->set_rules('height', 'Taille', 'required|integer|greater_than[50]|less_than[251]');
-        $this->form_validation->set_rules('whatsapppatient', 'Numéro WhatsApp', 'required|trim|max_length[20]');
         $this->form_validation->set_rules('symptoms', 'Symptômes', 'required|trim|min_length[20]|max_length[5000]');
         $this->form_validation->set_rules('symptoms_duration', 'Durée des symptômes', 'trim');
         $this->form_validation->set_rules('previous_consultation', 'Consultation précédente', 'trim|in_list[yes,no]');
@@ -225,7 +220,7 @@ class PatientForm extends Public_Controller {
         $doctor_id = $this->input->post('doctor_id', TRUE);
         $doctor_uuid = $this->input->post('doctor_uuid', TRUE);
         $consultation_prix = $this->input->post('consultation_prix', TRUE) ?: 50;
-        $consultation_devise = $this->input->post('consultation_devise', TRUE) ?: 'USD';
+        $consultation_devise = $this->input->post('consultation_devise', TRUE) ?: 'USD/EUR';
 
         $medecin = null;
         if ($doctor_uuid) {
@@ -233,17 +228,6 @@ class PatientForm extends Public_Controller {
             if (!$medecin) {
                 $this->session->set_flashdata('error', 'Le médecin sélectionné n\'est plus disponible.');
                 redirect('doctor');
-            }
-            $doctor_id = $medecin['id'];
-        }
-
-        // Sécurité : medecin_id est NOT NULL en base. Si aucun médecin n'est fourni,
-        // on attribue automatiquement le premier médecin disponible.
-        if (empty($doctor_id)) {
-            $medecins_disponibles = $this->Model->get_medecins_disponibles(1);
-            if (!empty($medecins_disponibles)) {
-                $first = (array)$medecins_disponibles[0];
-                $doctor_id = $first['id'];
             }
         }
 
@@ -262,10 +246,18 @@ class PatientForm extends Public_Controller {
         $medical_docs = [];
         if (!empty($_FILES['medical_docs']['name'][0])) {
             $medical_docs = $this->_upload_multiple_files_custom('medical_docs');
+            if ($this->session->flashdata('upload_error')) {
+                $this->session->set_flashdata('error', $this->session->flashdata('upload_error'));
+                redirect('patient-form');
+            }
         }
         $prescriptions = [];
         if (!empty($_FILES['prescriptions']['name'][0])) {
             $prescriptions = $this->_upload_multiple_files_custom('prescriptions');
+            if ($this->session->flashdata('upload_error')) {
+                $this->session->set_flashdata('error', $this->session->flashdata('upload_error'));
+                redirect('patient-form');
+            }
         }
 
         // Mode de paiement choisi
@@ -277,7 +269,7 @@ class PatientForm extends Public_Controller {
             $payment_proof = $this->_upload_payment_proof_custom();
             if ($payment_proof === false) {
                 $this->_cleanup_files(array_merge($medical_docs, $prescriptions));
-                $this->session->set_flashdata('error', 'Preuve de paiement invalide. Formats acceptés : JPG, PNG, PDF (max 5 Mo).');
+                $this->session->set_flashdata('error', 'Preuve de paiement invalide. Formats acceptés : JPG, PNG, PDF (max 10 Mo).');
                 redirect('patient-form');
             }
         }
@@ -291,7 +283,6 @@ class PatientForm extends Public_Controller {
             'taille'              => $this->input->post('height', TRUE),
             'country_id'          => $country_id,
             'age'                 => $age,
-            'whatsapppatient'     => $this->input->post('whatsapppatient', TRUE),
             'symptomes'           => $this->input->post('symptoms', TRUE),
             'duree_symptomes'     => $this->input->post('symptoms_duration', TRUE),
             'consultation_precedente' => $this->input->post('previous_consultation', TRUE),
@@ -332,34 +323,13 @@ class PatientForm extends Public_Controller {
 
         $this->session->unset_userdata('pending_doctor');
 
-        $email_data = [
-            'consultation_id'     => $insert_id,
-            'numero_consultation' => $numero_consultation,
-            'patient_id'          => $patient_id,
-            'doctor_id'           => $doctor_id,
-            'full_name'           => $this->input->post('full_name', TRUE),
-            'age'                 => $age,
-            'whatsapppatient'     => $this->input->post('whatsapppatient', TRUE),
-            'country'             => $country_name,
-            'weight'              => $this->input->post('weight', TRUE),
-            'height'              => $this->input->post('height', TRUE),
-            'symptoms'            => $this->input->post('symptoms', TRUE),
-            'symptoms_duration'   => $this->input->post('symptoms_duration', TRUE),
-            'previous_consultation' => $this->input->post('previous_consultation', TRUE),
-            'consultation_prix'   => $consultation_prix,
-            'consultation_devise' => $consultation_devise,
-            'payment_method'      => $payment_method,
-            'payment_proof'       => $payment_proof,
-            'medecin'             => $medecin,
-            'medical_docs'        => $medical_docs,
-            'prescriptions'       => $prescriptions
-        ];
-        
         $this->session->set_flashdata('success', 'Votre demande de consultation a été créée avec succès.');
         $this->session->set_flashdata('tracking_number', $numero_consultation);
         
-        // Sauvegarde OK → ouverture WhatsApp avec message préconfiguré
-        $this->_redirect_to_whatsapp($numero_consultation, $medecin, $medical_docs, $prescriptions, $payment_method, $payment_proof, $consultation_prix, $consultation_devise);
+        // Sauvegarde OK → ouvrir WhatsApp. On stocke le lien en session et on redirige
+        // vers une page GET (Post/Redirect/Get) pour éviter le rechargement du formulaire.
+        $this->_build_whatsapp_url($numero_consultation, $medecin, $medical_docs, $prescriptions, $payment_method, $payment_proof, $consultation_prix, $consultation_devise);
+        redirect('patient-form/whatsapp');
     }
 
     /**
@@ -373,7 +343,7 @@ class PatientForm extends Public_Controller {
         }
 
         $file = $_FILES['payment_proof'];
-        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 5 * 1024 * 1024) {
+        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 10 * 1024 * 1024) {
             return false;
         }
 
@@ -403,9 +373,9 @@ class PatientForm extends Public_Controller {
     }
 
     /**
-     * Rediriger vers WhatsApp avec un message de demande de consultation préconfiguré
+     * Construire le lien WhatsApp avec le message préconfiguré et le stocker en session
      */
-    private function _redirect_to_whatsapp($numero_consultation, $medecin, $medical_docs = [], $prescriptions = [], $payment_method = null, $payment_proof = null, $consultation_prix = null, $consultation_devise = null)
+    private function _build_whatsapp_url($numero_consultation, $medecin, $medical_docs = [], $prescriptions = [], $payment_method = null, $payment_proof = null, $consultation_prix = null, $consultation_devise = null)
     {
         $numero = preg_replace('/[^0-9]/', '', $this->Model->get_setting('contact_whatsapp', '+257 79 666 439'));
         if (empty($numero)) {
@@ -429,21 +399,15 @@ class PatientForm extends Public_Controller {
             $patient_email = 'Non renseigné';
         }
 
-        // Montant + équivalent BIF
-        $prix = (float)($medecin['honoraires_consultation'] ?? $consultation_prix);
-        $devise_medecin = $medecin['currency'] ?? $consultation_devise;
-        $montant = number_format($prix, (floor($prix) == $prix ? 0 : 2), ',', ' ');
-        $equiv_bif = $medecin['USD_EUR_Equivalent_en_BIF'] ?? null;
-        $prix_burundi = $medecin['prix_pour_residant_burundi'] ?? null;
+    
 
-        $message = "*DEMANDE DE CONSULTATION - NUFOTEC*\n\n";
+        $message = "*DEMANDE DE CONSULTATION EN LIGNE - NUFOTEC*\n\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "*INFORMATIONS PATIENT*\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "• Nom : " . $this->input->post('full_name', TRUE) . "\n";
-        $message .= "• WhatsApp : " . $this->input->post('whatsapppatient', TRUE) . "\n";
         $message .= "• Email : " . $patient_email . "\n";
-        $message .= "• Date : " . date('d/m/Y H:i') . "\n\n";
+        $message .= "• Date de demande: " . date('d/m/Y H:i') . "\n\n";
 
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "*DÉTAILS DE LA CONSULTATION*\n";
@@ -456,10 +420,24 @@ class PatientForm extends Public_Controller {
         if (!empty($this->input->post('symptoms_duration', TRUE))) {
             $message .= "• Durée des symptômes : " . $this->input->post('symptoms_duration', TRUE) . "\n";
         }
-        $message .= "*Frais de consultation*\n";
-        $message .= "• Résidant du Burundi : " . ($prix_burundi ?: '—') . "\n";
-        $message .= "• Résidant à l'étranger : " . $montant . " " . $devise_medecin . ($equiv_bif ? " (Équivalent en BIF : " . $equiv_bif . ")" : "") . "\n";
-        $message .= "\n";
+
+        $message .= "\n*Frais de consultation*\n";
+
+        $montant_aff = ($consultation_prix !== null && $consultation_prix !== '' ? $consultation_prix : 50);
+        $devise_aff = !empty($consultation_devise) ? $consultation_devise : 'USD/EUR';
+        $prix_residant_burundi = !empty($medecin['prix_pour_residant_burundi'])
+            ? $medecin['prix_pour_residant_burundi']
+            : number_format((float)$montant_aff, 0) . ' ' . $devise_aff;
+        $equiv_bif = !empty($medecin['USD_EUR_Equivalent_en_BIF'])
+            ? $medecin['USD_EUR_Equivalent_en_BIF']
+            : '';
+
+        $message .= "• Résidant du Burundi : " . $prix_residant_burundi . "\n";
+        $message .= "• Résidant à l'étranger : " . $montant_aff . " " . $devise_aff;
+        if ($equiv_bif !== '') {
+            $message .= " (Equivalent en BIF : " . $equiv_bif . ")";
+        }
+        $message .= "\n\n";
 
         // Documents téléchargés : WhatsApp ne transfère pas les fichiers via wa.me,
         // on fournit un lien vers l'emplacement sur le site pour consultation en ligne
@@ -481,10 +459,87 @@ class PatientForm extends Public_Controller {
             $message .= "*Epreuve de paiement*\n";
             $message .= base_url($payment_proof) . "\n";
         } else {
-            $message .= "\n*NB — Paiement en attente :* je me précipite pour effectuer le paiement et je vous envoie ma preuve de paiement via WhatsApp sur ce numéro dès que possible.\n";
+            $message .= "\n*NB — Paiement en attente :* veuillez payer et nous envoyer votre preuve de paiement via l'un des moyens suivants.\n";
+            foreach ($this->Model->getActivePaymentMethods() as $mode) {
+                $nom = !empty($mode['description']) ? $mode['description'] : 'Paiement';
+                $details = trim(trim($mode['numero_compte'] ?? '') . ' ' . trim($mode['nom_compte'] ?? ''));
+                $message .= "• " . $nom . ($details !== '' ? " : " . $details : "") . "\n";
+            }
+            $message .= "\n";
         }
 
-        redirect('https://wa.me/' . $numero . '?text=' . rawurlencode($message));
+        $whatsapp_url = 'whatsapp://send?phone=' . $numero . '&text=' . rawurlencode($message);
+        $fallback_url = 'https://wa.me/' . $numero . '?text=' . rawurlencode($message);
+
+        $this->session->set_userdata('whatsapp_url', $whatsapp_url);
+        $this->session->set_userdata('whatsapp_fallback', $fallback_url);
+    }
+
+    /**
+     * Page GET qui ouvre WhatsApp via JavaScript.
+     * Évite le Post/Redirect/Get manquant et donc l'erreur ERR_CACHE_MISS.
+     */
+    public function whatsapp()
+    {
+        $whatsapp_url = $this->session->userdata('whatsapp_url');
+        $fallback_url = $this->session->userdata('whatsapp_fallback');
+
+        if (empty($whatsapp_url) || empty($fallback_url)) {
+            redirect('patient-form');
+            return;
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        echo '<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ouverture de WhatsApp...</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#075E54; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; text-align:center; padding:20px; }
+        .logo { width:80px; height:80px; border-radius:20px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:20px; }
+        h2 { font-size:20px; font-weight:600; margin:0 0 8px; }
+        p { font-size:14px; opacity:.85; margin:0 0 24px; }
+        a.btn { background:#25D366; color:#fff; text-decoration:none; padding:14px 28px; border-radius:50px; font-weight:600; }
+        a.link { color:#fff; font-size:13px; margin-top:16px; opacity:.8; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { width:28px; height:28px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; margin-bottom:20px; }
+    </style>
+</head>
+<body>
+    <div class="logo">&#128172;</div>
+    <div class="spinner"></div>
+    <h2>Ouverture de WhatsApp...</h2>
+    <p>Votre demande est prête à être envoyée.</p>
+    <a class="btn" href="' . $whatsapp_url . '">Ouvrir WhatsApp</a>
+    <a class="link" href="' . $fallback_url . '">WhatsApp n\'est pas installé ? Cliquez ici</a>
+    <script>
+    (function() {
+        var url = ' . json_encode($whatsapp_url) . ';
+        var fallback = ' . json_encode($fallback_url) . ';
+        function openWa() {
+            try { window.location.href = url; }
+            catch (e) { window.location.href = fallback; }
+        }
+        if (document.readyState === "complete" || document.readyState === "interactive") {
+            openWa();
+        } else {
+            document.addEventListener("DOMContentLoaded", openWa);
+        }
+        setTimeout(function() {
+            try { window.location.href = url; }
+            catch (e) { window.location.href = fallback; }
+        }, 300);
+    })();
+    </script>
+</body>
+</html>';
+        $this->session->unset_userdata('whatsapp_url');
+        $this->session->unset_userdata('whatsapp_fallback');
+        exit;
     }
 
     private function _upload_multiple_files_custom($field_name)
@@ -497,12 +552,17 @@ class PatientForm extends Public_Controller {
         $file_count = count($_FILES[$field_name]['name']);
         for ($i = 0; $i < $file_count; $i++) {
             if ($_FILES[$field_name]['error'][$i] !== UPLOAD_ERR_OK) {
-                log_message('error', 'File upload error ' . $i . ': ' . $_FILES[$field_name]['error'][$i]);
-                continue;
+                $code = $_FILES[$field_name]['error'][$i];
+                $label = $this->_upload_error_label($code);
+                log_message('error', 'File upload error ' . $i . ': ' . $label);
+                $this->session->set_flashdata('upload_error', $label);
+                return [];
             }
-            if ($_FILES[$field_name]['size'][$i] > 5 * 1024 * 1024) {
-                log_message('error', 'File too large: ' . $_FILES[$field_name]['name'][$i]);
-                continue;
+            if ($_FILES[$field_name]['size'][$i] > 10 * 1024 * 1024) {
+                $name = $_FILES[$field_name]['name'][$i];
+                log_message('error', 'File too large: ' . $name);
+                $this->session->set_flashdata('upload_error', 'Le fichier « ' . $name . ' » dépasse 10 Mo.');
+                return [];
             }
             $result = $this->upload_image(
                 $_FILES[$field_name]['tmp_name'][$i],
@@ -510,9 +570,34 @@ class PatientForm extends Public_Controller {
             );
             if ($result !== NULL) {
                 $uploaded_files[] = $result;
+            } else {
+                $name = $_FILES[$field_name]['name'][$i];
+                $this->session->set_flashdata('upload_error', 'Le fichier « ' . $name . ' » a un format non accepté (PDF, JPG, PNG, GIF, WEBP, DOC, DOCX).');
+                return [];
             }
         }
         return $uploaded_files;
+    }
+
+    private function _upload_error_label($code)
+    {
+        switch ($code) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'Le fichier dépasse la taille maximale autorisée.';
+            case UPLOAD_ERR_PARTIAL:
+                return 'Le fichier n\'a été que partiellement téléversé. Veuillez réessayer.';
+            case UPLOAD_ERR_NO_FILE:
+                return 'Aucun fichier sélectionné.';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'Le dossier temporaire du serveur est manquant.';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'Impossible d\'écrire le fichier sur le serveur.';
+            case UPLOAD_ERR_EXTENSION:
+                return 'Le téléversement a été interrompu par une extension PHP.';
+            default:
+                return 'Erreur lors du téléversement du fichier.';
+        }
     }
 
     public function upload_image($nom_file, $nom_champ)
@@ -616,8 +701,6 @@ class PatientForm extends Public_Controller {
             medecins.annees_experience,
             medecins.honoraires_consultation,
             medecins.currency,
-            medecins.USD_EUR_Equivalent_en_BIF,
-            medecins.prix_pour_residant_burundi,
             medecins.est_disponible,
             medecins.note_moyenne,
             medecins.nombre_avis,
@@ -677,280 +760,5 @@ class PatientForm extends Public_Controller {
         $this->db->where('est_actif', 1);
         
         return $this->db->get('medecin_horaires')->num_rows() > 0;
-    }
-
-    /**
-     * Envoyer les emails de confirmation de consultation avec cPanel_email_lib
-     */
-    private function _send_consultation_emails($data)
-    {    
-        try {
-            // Vérifier que la librairie est chargée
-            if (!isset($this->cpanel_email_lib) || !is_object($this->cpanel_email_lib)) {
-                log_message('error', 'cpanel_email_lib non disponible pour l\'envoi des emails de consultation');
-                return false;
-            }
-            
-            // Récupérer les informations du patient
-            $this->db->select('email, nom, prenom');
-            $this->db->where('id', $data['patient_id']);
-            $patient = $this->db->get('users')->row_array();
-
-            // Récupérer les informations du médecin
-            $doctor = null;
-            if (!empty($data['doctor_id'])) {
-                $this->db->select('medecins.*, users.email, users.nom, users.prenom');
-                $this->db->where('medecins.id', $data['doctor_id']);
-                $this->db->from('medecins');
-                $this->db->join('users', 'users.id = medecins.user_id');
-                $doctor = $this->db->get()->row_array();
-            }
-
-            // Récupérer les informations du site
-            $site_name = $this->Model->get_setting('site_name', 'NUFOTEC');
-            $site_logo = $this->Model->get_setting('site_logo');
-            $logo_url = !empty($site_logo) ? base_url('attachments/Configurations/' . $site_logo) : '';
-            
-            $message_data = [
-                'data' => $data,
-                'patient' => $patient,
-                'doctor' => $doctor,
-                'site_name' => $site_name,
-                'logo_url' => $logo_url
-            ];
-
-            // Email au patient
-            if ($patient && !empty($patient['email'])) {
-                $subject = 'Confirmation de votre demande de consultation - N°' . $data['numero_consultation'];
-                $message = $this->_build_patient_email_cpanel($message_data);
-                $result = $this->cpanel_email_lib->send_email($patient['email'], $subject, $message);
-                if (!$result['success']) {
-                    log_message('error', 'cPanel Email - Échec envoi au patient: ' . json_encode($result));
-                }
-            }
-
-            // Email au médecin
-            if ($doctor && !empty($doctor['email'])) {
-                $subject = 'Nouvelle demande de consultation - N°' . $data['numero_consultation'];
-                $message = $this->_build_doctor_email_cpanel($message_data);
-                $result = $this->cpanel_email_lib->send_email($doctor['email'], $subject, $message);
-                if (!$result['success']) {
-                    log_message('error', 'cPanel Email - Échec envoi au médecin: ' . json_encode($result));
-                }
-            }
-
-            // Email à l'admin
-            $admin_email = $this->Model->get_setting('admin_email', 'admin@nufotec.com');
-            if (!empty($admin_email)) {
-                $subject = 'Nouvelle consultation créée - N°' . $data['numero_consultation'];
-                $message = $this->_build_admin_email_cpanel($message_data);
-                $result = $this->cpanel_email_lib->send_email($admin_email, $subject, $message);
-                if (!$result['success']) {
-                    log_message('error', 'cPanel Email - Échec envoi à l\'admin: ' . json_encode($result));
-                }
-            }
-            
-            return true;
-        } catch (Exception $e) {
-            log_message('error', 'Exception in consultation email sending: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Email patient version cPanel
-     */
-    private function _build_patient_email_cpanel($data)
-    {
-        $data = $data['data'];
-        $patient = $data['patient'];
-        $doctor = $data['doctor'];
-        $site_name = $data['site_name'];
-        $logo_url = $data['logo_url'];
-        
-        $doctor_name = $doctor ? htmlspecialchars($doctor['prenom']) . ' ' . htmlspecialchars($doctor['nom']) : 'À attribuer';
-        $appointment_date = date('Y-m-d H:i', strtotime('+1 day'));
-        $whatsapp_num = preg_replace('/[^0-9]/', '', $this->Model->get_setting('contact_whatsapp', '+257 79 666 439'));
-        $whatsapp_url = 'https://wa.me/' . $whatsapp_num;
-        
-        return '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Confirmation consultation - NUFOTEC</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                    background-color: #f4f6f9;
-                    margin: 0;
-                    padding: 20px;
-                    line-height: 1.5;
-                }
-                .container {
-                    max-width: 560px;
-                    margin: 0 auto;
-                    background: #ffffff;
-                    border-radius: 16px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-                }
-                .header {
-                    background: linear-gradient(135deg, #0a2540, #0f4c3a);
-                    padding: 30px 24px;
-                    text-align: center;
-                }
-                .header-logo { max-width: 100px; margin-bottom: 15px; }
-                .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
-                .header p { color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0; }
-                .content { padding: 28px; }
-                .success-icon { text-align: center; margin-bottom: 20px; }
-                .success-icon span { font-size: 50px; }
-                .title { font-size: 22px; font-weight: 700; color: #1a2a3a; margin-bottom: 15px; text-align: center; }
-                .info-box { background: #f7f9fc; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e8ecf0; }
-                .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eef2f6; }
-                .info-row:last-child { border-bottom: none; }
-                .info-label { font-weight: 600; color: #1a2a3a; }
-                .info-value { color: #5a6a7a; }
-                .btn { display: inline-block; background: #0a66c2; color: white; padding: 12px 28px; text-decoration: none; border-radius: 40px; font-weight: 600; }
-                .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #eef2f6; }
-                .footer-text { font-size: 12px; color: #9aaab9; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
-                    <h1>✅ Demande reçue</h1>
-                    <p>' . htmlspecialchars($site_name) . '</p>
-                </div>
-                <div class="content">
-                    <div class="success-icon"><span>📋</span></div>
-                    <div class="title">Votre demande de consultation a été enregistrée</div>
-                    <div class="info-box">
-                        <div class="info-row"><span class="info-label">Numéro de suivi</span><span class="info-value">' . htmlspecialchars($data['numero_consultation']) . '</span></div>
-                        <div class="info-row"><span class="info-label">Médecin</span><span class="info-value">Dr. ' . $doctor_name . '</span></div>
-                        <div class="info-row"><span class="info-label">Date demandée</span><span class="info-value">' . $appointment_date . '</span></div>
-                        <div class="info-row"><span class="info-label">Montant</span><span class="info-value">' . $data['consultation_prix'] . ' ' . $data['consultation_devise'] . '</span></div>
-                        <div class="info-row"><span class="info-label">Statut</span><span class="info-value">En attente de confirmation</span></div>
-                    </div>
-                    <div style="text-align: center;"><a href="' . $whatsapp_url . '" class="btn">Suivre ma consultation sur WhatsApp</a></div>
-                </div>
-                <div class="footer">
-                    <div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . ' - Tous droits réservés</div>
-                </div>
-            </div>
-        </body>
-        </html>';
-    }
-
-    /**
-     * Email médecin version cPanel
-     */
-    private function _build_doctor_email_cpanel($data)
-    {
-        $data = $data['data'];
-        $patient = $data['patient'];
-        $doctor = $data['doctor'];
-        $site_name = $data['site_name'];
-        $logo_url = $data['logo_url'];
-        
-        $attachments_list = '';
-        if (!empty($data['medical_docs'])) {
-            $attachments_list .= '<li>Documents médicaux: ' . count($data['medical_docs']) . ' fichier(s)</li>';
-        }
-        if (!empty($data['prescriptions'])) {
-            $attachments_list .= '<li>Ordonnances: ' . count($data['prescriptions']) . ' fichier(s)</li>';
-        }
-        
-        return '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Nouvelle consultation - NUFOTEC</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
-                .container { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); }
-                .header { background: linear-gradient(135deg, #0a2540, #0f4c3a); padding: 30px 24px; text-align: center; }
-                .header-logo { max-width: 100px; margin-bottom: 15px; }
-                .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; }
-                .content { padding: 28px; }
-                .title { font-size: 22px; font-weight: 700; color: #1a2a3a; margin-bottom: 15px; }
-                .info-box { background: #f7f9fc; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e8ecf0; }
-                .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eef2f6; }
-                .btn { display: inline-block; background: #0a66c2; color: white; padding: 12px 28px; text-decoration: none; border-radius: 40px; font-weight: 600; }
-                .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #eef2f6; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    ' . (!empty($logo_url) ? '<img src="' . $logo_url . '" alt="' . htmlspecialchars($site_name) . '" class="header-logo">' : '') . '
-                    <h1>🩺 Nouvelle consultation</h1>
-                </div>
-                <div class="content">
-                    <div class="title">Vous avez reçu une nouvelle demande</div>
-                    <div class="info-box">
-                        <div class="info-row"><strong>Patient:</strong> <span>' . htmlspecialchars($data['full_name']) . '</span></div>
-                        <div class="info-row"><strong>Âge:</strong> <span>' . $data['age'] . ' ans</span></div>
-                        <div class="info-row"><strong>Pays:</strong> <span>' . htmlspecialchars($data['country']) . '</span></div>
-                        <div class="info-row"><strong>WhatsApp:</strong> <span>' . htmlspecialchars($data['whatsapppatient']) . '</span></div>
-                        <div class="info-row"><strong>Numéro de suivi:</strong> <span>' . $data['numero_consultation'] . '</span></div>
-                        <div class="info-row"><strong>Honoraires:</strong> <span>' . $data['consultation_prix'] . ' ' . $data['consultation_devise'] . '</span></div>
-                    </div>
-                    <div style="margin: 20px 0;"><strong>Symptômes:</strong><p style="margin-top: 5px;">' . nl2br(htmlspecialchars($data['symptoms'])) . '</p></div>
-                    <div style="text-align: center;"><a href="' . base_url('Dashboard/doctor_dashboard') . '" class="btn">Voir dans le tableau de bord</a></div>
-                </div>
-                <div class="footer"><div class="footer-text">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . '</div></div>
-            </div>
-        </body>
-        </html>';
-    }
-
-    /**
-     * Email admin version cPanel
-     */
-    private function _build_admin_email_cpanel($data)
-    {
-        $data = $data['data'];
-        $site_name = $data['site_name'];
-        $logo_url = $data['logo_url'];
-        
-        return '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Nouvelle consultation - Admin</title>
-            <style>
-                body { font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px; }
-                .container { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; }
-                .header { background: #0a2540; padding: 20px; text-align: center; color: white; }
-                .content { padding: 28px; }
-                .info-box { background: #f7f9fc; border-radius: 12px; padding: 20px; margin: 20px 0; }
-                .btn { background: #0a66c2; color: white; padding: 12px 28px; text-decoration: none; border-radius: 40px; display: inline-block; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header"><h2>📋 Nouvelle consultation créée</h2></div>
-                <div class="content">
-                    <div class="info-box">
-                        <p><strong>Numéro:</strong> ' . $data['numero_consultation'] . '</p>
-                        <p><strong>Patient:</strong> ' . htmlspecialchars($data['full_name']) . '</p>
-                        <p><strong>Montant:</strong> ' . $data['consultation_prix'] . ' ' . $data['consultation_devise'] . '</p>
-                    </div>
-                    <div style="text-align: center;"><a href="' . base_url('admin/consultations') . '" class="btn">Voir dans l\'admin</a></div>
-                </div>
-                <div class="footer" style="background:#f8fafc; padding:20px; text-align:center;">© ' . date('Y') . ' ' . htmlspecialchars($site_name) . '</div>
-            </div>
-        </body>
-        </html>';
     }
 }

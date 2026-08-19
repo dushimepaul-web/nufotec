@@ -1167,5 +1167,82 @@ $settings = [
         $current = $value;
     }
 
+    /**
+     * GET /api/mobile/temoignages
+     * Liste des témoignages approuvés
+     */
+    public function temoignages()
+    {
+        $limit = (int)($this->input->get('limit') ?? 20);
+        
+        $temoignages = [];
+        if ($this->db->table_exists('temoignages')) {
+            $query = $this->db->query("
+                SELECT id_temoignage as id, titre, video_url, miniature, audio_duration, est_approuve
+                FROM temoignages
+                WHERE est_approuve = 1
+                ORDER BY id_temoignage DESC
+                LIMIT ?
+            ", [$limit]);
+            
+            if ($query) {
+                $temoignages = $query->result_array();
+                foreach ($temoignages as &$t) {
+                    $youtube_id = null;
+                    if (!empty($t['video_url'])) {
+                        preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $t['video_url'], $matches);
+                        $youtube_id = $matches[1] ?? null;
+                    }
+
+                    if (!empty($youtube_id)) {
+                        $t['miniature'] = "https://img.youtube.com/vi/{$youtube_id}/hqdefault.jpg";
+                        $t['youtube_id'] = $youtube_id;
+                        $t['is_external'] = true;
+                    } else {
+                        $t['is_external'] = false;
+                        $t['youtube_id'] = null;
+                        if (!empty($t['miniature']) && strpos($t['miniature'], 'http') !== 0) {
+                            $t['miniature'] = base_url($t['miniature']);
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => true,
+                'data' => $temoignages
+            ]));
+    }
+
+    /**
+     * GET /api/mobile/notifications
+     * Liste des notifications
+     */
+    public function notifications()
+    {
+        $user_id = $this->input->get('user_id');
+        
+        $notifications = [];
+        if (!empty($user_id) && $this->db->table_exists('notifications')) {
+            $notifications = $this->db->query("
+                SELECT id, title, message, type, is_read, created_at
+                FROM notifications
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 50
+            ", [$user_id])->result_array();
+        }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => true,
+                'data' => $notifications
+            ]));
+    }
+
 }
 ?>

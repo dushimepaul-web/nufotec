@@ -182,7 +182,7 @@
                         <div class="footer-accordion-content" id="footerNav2">
                             <ul class="footer-links">
                                 <li>
-                                    <a href="<?= base_url('Medicins') ?>">
+                                    <a href="<?= base_url('doctor') ?>">
                                         <i class="bi bi-heart-pulse"></i>
                                         Consultation médicale
                                     </a>

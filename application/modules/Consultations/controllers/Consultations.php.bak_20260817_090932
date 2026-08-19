@@ -27,13 +27,11 @@ class Consultations extends MY_Controller {
         p.prenom as patient_prenom, 
         p.email as patient_email, 
         p.telephone as patient_telephone,
-        c.whatsapp_number,
-        CASE WHEN c.patient_id IS NOT NULL THEN TRIM(CONCAT(COALESCE(p.prenom, ""), " ", COALESCE(p.nom, ""))) ELSE COALESCE(c.patient_name, "") END AS patient_fullname,
         u.nom as medecin_nom, 
         u.prenom as medecin_prenom,
         m.specialite as medecin_specialite,
         m.id as medecin_id
-    ', FALSE);
+    ');
     $this->db->from('consultations c');
     $this->db->join('users p', 'p.id = c.patient_id', 'left');
     $this->db->join('medecins m', 'm.id = c.medecin_id', 'left');
@@ -150,7 +148,6 @@ class Consultations extends MY_Controller {
             'date_confirmee' => $this->input->post('date_confirmee') ?: NULL,
             'duree_minutes' => $this->input->post('duree_minutes'),
             'room_id' => $room_id,
-            'whatsapp_number' => $this->input->post('whatsapp_number') ?: NULL,
             'statut' => 'en_attente',
             'prix_ht' => $this->input->post('prix_ht'),
             'tva' => $this->input->post('tva') ?: 20.00,
@@ -215,8 +212,7 @@ class Consultations extends MY_Controller {
             'prix_ht' => $this->input->post('prix_ht'),
             'tva' => $this->input->post('tva') ?: 20.00,
             'paiement_statut' => $this->input->post('paiement_statut'),
-            'updated_at' => date('Y-m-d H:i:s'),
-            'whatsapp_number' => $this->input->post('whatsapp_number') ?: NULL,
+            'updated_at' => date('Y-m-d H:i:s')
         );
 
         // Gestion du room_id selon le type
@@ -397,8 +393,8 @@ public function download_file($type, $consultation_id, $index = null)
     switch ($type) {
         case 'preuve':
             if (!empty($consultation['preuve_paiement'])) {
-                $file_path = FCPATH . $consultation['preuve_paiement'];
-                $filename = basename($consultation['preuve_paiement']);
+                $file_path = FCPATH . 'attachments/Consultations/' . $consultation['preuve_paiement'];
+                $filename = $consultation['preuve_paiement'];
             }
             break;
 
@@ -435,12 +431,6 @@ public function download_file($type, $consultation_id, $index = null)
     // Forcer l'affichage dans le navigateur pour les PDF/images
     $inline_types = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'];
     $disposition = in_array($mime, $inline_types) ? 'inline' : 'attachment';
-
-    // Vider tous les buffers de sortie (PHP + CodeIgniter) avant d'envoyer le fichier,
-    // pour éviter que du HTML / BOM ne corrompe le fichier binaire.
-    while (ob_get_level() > 0) {
-        ob_end_clean();
-    }
 
     header('Content-Type: ' . $mime);
     header('Content-Disposition: ' . $disposition . '; filename="' . basename($filename) . '"');

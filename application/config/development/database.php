@@ -34,7 +34,7 @@ if ($_SERVER['SERVER_NAME'] == 'localhost') {
         'dsn'       => '',
 'hostname'  => 'localhost',
 'username'  => getenv('DB_USERNAME') ?: 'nufotec_nufotec',
-'password'  => getenv('DB_PASSWORD') ?: '',
+'password'  => getenv('DB_PASSWORD') ?: 'Nufotec#2026Admin',
 'database'  => getenv('DB_DATABASE') ?: 'nufotec_db',
 'dbdriver'  => 'mysqli',
 'dbprefix'  => '',

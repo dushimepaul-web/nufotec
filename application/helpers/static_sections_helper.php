@@ -27,7 +27,7 @@ if (!function_exists('static_sections_all')) {
     'image_url' => '/attachments/Sections/2026022713194869a17dd42b5fc.jpg',
     'image_droite' => 0,
     'bouton_texte' => 'Prendre Rendez-Vous',
-    'bouton_lien' => 'Medicins',
+    'bouton_lien' => 'doctor',
     'ordre' => 3,
     'created_at' => '2026-03-01 15:44:36',
     'custom_class' => 'primary',

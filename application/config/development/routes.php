@@ -87,8 +87,8 @@ $route['commande_whatsapp/export_csv'] = 'Commande_whatsapp/export_csv';
 // ============================================
 // ROUTES PRODUITS
 // ============================================
-$route['Produits'] = 'Favoris/Produits/index';
-$route['produits'] = 'Favoris/Produits/index';
+$route['Produits'] = 'Products/index';
+$route['produits'] = 'Products/index';
 
 // ============================================
 // ROUTES DASHBOARD
@@ -171,12 +171,12 @@ $route['boutique/ajax_get_products'] = 'Products/get_products_ajax';
 // ============================================
 // ROUTES MÉDECINS & CONSULTATIONS
 // ============================================
-$route['Medicins'] = 'Consultations/PatientForm/medicin';
-$route['medicins'] = 'Consultations/PatientForm/medicin';
-$route['medicins/(:any)'] = 'Consultations/PatientForm/medicin';
+$route['doctor'] = 'Consultations/PatientForm/medicin';
+$route['doctor/(:any)'] = 'Consultations/PatientForm/medicin';
 $route['patient-form'] = 'Consultations/PatientForm';
 $route['patient-form/index'] = 'Consultations/PatientForm/index';
 $route['patient-form/create'] = 'Consultations/PatientForm/create';
+$route['patient-form/whatsapp'] = 'Consultations/PatientForm/whatsapp';
 $route['swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
 $route['Swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
 $route['consultations/get_countries'] = 'Consultations/PatientForm/get_countries';
@@ -214,6 +214,7 @@ $route['configurations/test_upload_path'] = 'Configurations/test_upload_path';
 // ROUTES MÉDIAS (VIDEO, AUDIO, AUTRE)
 // ============================================
 $route['media'] = 'Home/Media/index';
+$route['media/temoignages'] = 'Home/Media/temoignages';
 $route['media/search'] = 'Home/Media/search';
 $route['media/search/(:any)'] = 'Home/Media/search/$1';
 $route['media/view/(:any)'] = 'Home/Media/view/$1';
@@ -370,6 +371,7 @@ $route['change-password'] = 'Configurations/Settings_medecin/change_password';
 $route['calendrier'] = 'Users/Medecin_Calendrier/index';
 $route['calendriersave'] = 'Users/Medecin_Calendrier/save';
 $route['users'] = 'Users/Users/index';
+$route['users/Medecins'] = 'Users/Medecins/index';
 $route['users-create'] = 'Users/Users/Create';
 $route['users-update'] = 'Users/Users/Update';
 $route['users-delete'] = 'Users/Users/Delete';
@@ -501,6 +503,7 @@ $route['Statistiques_reseaux'] = 'Statistiques_reseaux/index';
 $route['Galerie_medias'] = 'admin_galerie/Media/index';
 $route['Ressources_telechargeables'] = 'Ressources_telechargeables/index';
 $route['Faq'] = 'faq/Faq/index';
+$route['faq'] = 'faq/Faq/index';
 $route['Licences_certifications'] = 'Licences_certifications/index';
 $route['Visionmission'] = 'Visionmission/index';
 $route['Consultations'] = 'Consultations/index';

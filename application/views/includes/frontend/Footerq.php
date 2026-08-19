@@ -321,7 +321,7 @@
                                 <li><a href="<?= base_url() ?>">Home</a></li>
                                 <li><a href="<?= base_url('a-propos') ?>">About Us</a></li>
                                 <li><a href="<?= base_url('products') ?>">Shop</a></li>
-                                <li><a href="<?= base_url('Medicins') ?>">Teleconsultation</a></li>
+                                <li><a href="<?= base_url('doctor') ?>">Teleconsultation</a></li>
                                 <li><a href="<?= base_url('investissement') ?>">Investment</a></li>
                                 <li><a href="<?= base_url('Home/Media') ?>">News</a></li>
                                 <li><a href="<?= base_url('Home/Contact') ?>">Contact</a></li>
@@ -340,7 +340,7 @@
                         <div class="footer-accordion-content" id="footerNav2">
                             <ul class="footer-links">
                                 <li>
-                                    <a href="<?= base_url('Medicins') ?>">
+                                    <a href="<?= base_url('doctor') ?>">
                                         <i class="bi bi-file-earmark-pdf"></i>
                                         Medical Consultation
                                     </a>

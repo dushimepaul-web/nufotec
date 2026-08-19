@@ -8,6 +8,7 @@
     <link rel="apple-touch-icon" href="<?= base_url('attachments/Configurations/' . $this->Model->get_setting('favicon_ico', 'assets/fro.png')) ?>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="<?= base_url('assets/backend/css/bootstrap.min.css') ?>">
     
    <script type="text/javascript">
 function googleTranslateElementInit() {
@@ -1518,6 +1519,9 @@ function googleTranslateElementInit() {
         <a href="<?= base_url('media/news') ?>" class="sidebar-item <?= (!empty($current_type) && $current_type === 'news') ? 'active' : '' ?>">
             <i class="bi bi-newspaper"></i><span>Actualités</span>
         </a>
+        <a href="<?= base_url('media/temoignages') ?>" class="sidebar-item <?= !empty($show_temoignages) ? 'active' : '' ?>">
+            <i class="bi bi-chat-quote-fill"></i><span>Témoignages</span>
+        </a>
     </div>
 
     <div class="sidebar-section">
@@ -1535,31 +1539,6 @@ function googleTranslateElementInit() {
                 <i class="bi bi-<?= $info['icon'] ?>"></i><span><?= $info['label'] ?></span>
             </a>
         <?php endforeach; ?>
-    </div>
-
-    <div class="sidebar-section">
-        <div class="sidebar-title"><i class="bi bi-chat-quote-fill"></i> Témoignages</div>
-        <?php if (!empty($temoignages)): ?>
-            <div class="px-3 py-2">
-                <?php foreach ($temoignages as $t): 
-                    $thumb = !empty($t['miniature']) ? $t['miniature'] : 'assets/frontend/img/default-avatar.jpg';
-                ?>
-                    <div class="card mb-2 border-0 shadow-sm bg-dark text-white overflow-hidden temoignage-sidebar-card" style="cursor: pointer;" onclick="openTemoignageModal('<?= htmlspecialchars($t['titre'] ?? '') ?>', '<?= get_youtube_embed_url($t['video_url']) ?>')">
-                        <div class="position-relative">
-                            <img src="<?= $thumb ?>" class="w-150" style="height: 90px; object-fit: cover; width: 100%;" onerror="this.src='<?= base_url('assets/frontend/img/default-avatar.jpg') ?>'">
-                            <div class="position-absolute top-50 start-50 translate-middle bg-dark bg-opacity-75 rounded-circle p-2 text-danger">
-                                <i class="bi bi-play-fill fs-5"></i>
-                            </div>
-                        </div>
-                        <div class="p-2">
-                            <h6 class="fs-7 mb-0 text-truncate" style="font-size: 0.85rem;" title="<?= htmlspecialchars($t['titre'] ?? '') ?>"><?= htmlspecialchars($t['titre'] ?? '') ?></h6>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="px-3 py-1 text-muted small">Aucun témoignage</div>
-        <?php endif; ?>
     </div>
 
     <!-- Language Selector MOBILE (dans le sidebar) -->
@@ -1627,6 +1606,40 @@ function googleTranslateElementInit() {
         </div>
     <?php endif; ?>
 
+    <?php if (!empty($show_temoignages)): ?>
+        <div class="temoignages-section w-100">
+            <h4 class="mb-3"><i class="bi bi-chat-quote-fill"></i> Témoignages</h4>
+            <div class="row">
+                <?php if (!empty($temoignages)): ?>
+                    <?php foreach ($temoignages as $t): ?>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                            <div class="media-card" onclick="openTemoignageModal('<?= htmlspecialchars($t['titre'] ?? '') ?>', '<?= get_youtube_embed_url($t['video_url']) ?>')">
+                                <div class="thumbnail-container" style="background-image: url('<?= !empty($t['miniature']) ? $t['miniature'] : base_url('assets/frontend/img/default-avatar.jpg') ?>')">
+                                    <div class="play-overlay">
+                                        <i class="bi bi-play-circle-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="card-info">
+                                    <div class="channel-avatar">
+                                        <i class="bi bi-chat-quote-fill"></i>
+                                    </div>
+                                    <div class="card-details">
+                                        <div class="card-title"><?= htmlspecialchars($t['titre'] ?? '') ?></div>
+                                        <div class="card-meta">
+                                            <i class="bi bi-person"></i> NUFOTEC BURUNDI
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12 text-center text-muted py-4">Aucun témoignage disponible</div>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="media-grid" id="mediaGrid">
         <?php if (!empty($current_type) && $current_type === 'news' && !empty($articles)): ?>
             <div class="news-section w-100 mb-4">
@@ -1673,7 +1686,7 @@ function googleTranslateElementInit() {
         <?php endif; ?>
     </div>
 
-    <div class="empty-state" id="emptyState" style="display: <?= empty($medias) ? 'flex' : 'none' ?>; flex-direction: column; align-items: center;">
+    <div class="empty-state" id="emptyState" style="display: <?= (empty($medias) && empty($show_temoignages)) ? 'flex' : 'none' ?>; flex-direction: column; align-items: center;">
         <i class="bi bi-play-circle"></i>
         <h5>Aucun média disponible</h5>
         <small class="text-secondary">Revenez plus tard pour découvrir du nouveau contenu.</small>
