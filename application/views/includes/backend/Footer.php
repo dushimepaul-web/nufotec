@@ -21,8 +21,8 @@
 // Injection automatique du jeton CSRF dans toutes les requêtes fetch POST
 (function() {
     'use strict';
-    var CSRF_NAME = '<?= $this->security->get_csrf_token_name() ?>';
-    var CSRF_HASH = '<?= $this->security->get_csrf_hash() ?>';
+    var CSRF_NAME = <?= json_encode($this->security->get_csrf_token_name()) ?>;
+    var CSRF_HASH = <?= json_encode($this->security->get_csrf_hash()) ?>;
     if (!CSRF_HASH || typeof window.fetch !== 'function' || window.__csrfFetchPatched) return;
     window.__csrfFetchPatched = true;
 
@@ -30,7 +30,8 @@
     window.fetch = function(url, options) {
         options = options || {};
         var method = (options.method || 'GET').toUpperCase();
-        if (method === 'POST') {
+        var isLocal = typeof url === 'string' && (url.charAt(0) === '/' || url.charAt(0) === '?' || url.indexOf(location.origin) === 0);
+        if (method === 'POST' && isLocal) {
             if (!options.headers) options.headers = {};
             if (typeof options.headers.set === 'function' && !options.headers.has('X-CSRF-TOKEN')) {
                 options.headers.set('X-CSRF-TOKEN', CSRF_HASH);
@@ -50,12 +51,15 @@
         return origFetch.call(this, url, options);
     };
 
-    // Injection automatique du jeton CSRF dans toutes les requêtes AJAX POST
+    // Injection automatique du jeton CSRF dans toutes les requêtes AJAX POST (local uniquement)
     if (window.jQuery && jQuery.ajaxSetup) {
         jQuery.ajaxSetup({
             beforeSend: function(xhr, settings) {
                 if ((settings.type || 'GET').toUpperCase() !== 'POST') return;
                 if (!CSRF_HASH) return;
+                var url = settings.url || '';
+                var isLocal = url.charAt(0) === '/' || url.charAt(0) === '?' || url.indexOf(location.origin) === 0;
+                if (!isLocal) return;
                 if (xhr && xhr.setRequestHeader) xhr.setRequestHeader('X-CSRF-TOKEN', CSRF_HASH);
                 var d = settings.data;
                 if (d instanceof FormData) {

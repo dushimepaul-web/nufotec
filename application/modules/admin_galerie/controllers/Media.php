@@ -13,7 +13,6 @@ class Media extends MX_Controller {
         parent::__construct();
         if (!$this->input->is_cli_request()) {
             is_admin();
-            $this->config->set_item('csrf_protection', FALSE);
         }
         $this->initializePaths();
         $this->ensureDirectories();
@@ -200,7 +199,7 @@ class Media extends MX_Controller {
     {
         foreach ($this->paths as $path) {
             if (!is_dir($path)) {
-                if (!mkdir($path, 0777, true) && !is_dir($path)) {
+                if (!mkdir($path, 0755, true) && !is_dir($path)) {
                     log_message('error', "Media: impossible de créer le répertoire $path");
                 }
             }
@@ -362,27 +361,6 @@ class Media extends MX_Controller {
         ], true);
 
         $this->jsonResponse(['success' => true, 'html' => $html]);
-    }
-
-    private function processJobsInline($max_time_seconds = 5)
-    {
-        $start = microtime(true);
-        $processed = 0;
-        while (($job = $this->MediaModel->getNextJob()) !== null) {
-            if ((microtime(true) - $start) > $max_time_seconds) break;
-            $claimed = $this->MediaModel->claimJob($job['id']);
-            if (!$claimed) continue;
-            try {
-                $result = $this->runProcessingJob($claimed);
-                $this->MediaModel->finishJob($claimed['id'], 'done', $result);
-            } catch (\Exception $e) {
-                $this->MediaModel->finishJob($claimed['id'], 'failed', null, $e->getMessage());
-                log_message('error', 'Media job inline ' . $claimed['id'] . ' failed: ' . $e->getMessage());
-            }
-            $processed++;
-            if ($processed >= 10) break;
-        }
-        return $processed;
     }
 
     // ==================== CRUD ====================
@@ -667,7 +645,7 @@ class Media extends MX_Controller {
         $upload_id = $type . '_' . uniqid() . '_' . bin2hex(random_bytes(4));
         $temp_dir  = $this->getTempDir($type) . $upload_id . '/';
 
-        if (!mkdir($temp_dir, 0777, true) && !is_dir($temp_dir)) {
+        if (!mkdir($temp_dir, 0755, true) && !is_dir($temp_dir)) {
             $this->jsonResponse(['success' => false, 'message' => 'Impossible de créer le dossier temporaire']);
         }
 
@@ -754,6 +732,65 @@ class Media extends MX_Controller {
         }
         fclose($fp);
         return hash_final($ctx);
+    }
+
+    private function verifyMimeType($file_path, $expected_ext, $expected_type)
+    {
+        if (!file_exists($file_path)) return ['valid' => false, 'error' => 'Fichier introuvable'];
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo === false) return ['valid' => true, 'warning' => 'finfo non disponible'];
+
+        $detected_mime = finfo_file($finfo, $file_path);
+        finfo_close($finfo);
+
+        $allowed_mimes = [
+            'audio'    => ['audio/mpeg','audio/wav','audio/x-wav','audio/flac','audio/aac','audio/ogg','audio/x-m4a','audio/x-ms-wma','audio/aiff','audio/opus','audio/webm'],
+            'video'    => ['video/mp4','video/quicktime','video/x-msvideo','video/x-matroska','video/webm','video/x-3gpp','video/x-flv','video/x-ms-wmv'],
+            'image'    => ['image/jpeg','image/png','image/gif','image/webp','image/svg+xml'],
+            'document' => ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','text/plain','text/csv','application/zip','application/x-zip-compressed','application/x-compressed','application/msword','application/vnd.ms-office','application/octet-stream'],
+        ];
+
+        $ext_to_mime = [
+            'mp3'=>'audio/mpeg','wav'=>'audio/wav','flac'=>'audio/flac','aac'=>'audio/aac',
+            'ogg'=>'audio/ogg','m4a'=>'audio/x-m4a','wma'=>'audio/x-ms-wma','aiff'=>'audio/aiff',
+            'opus'=>'audio/opus','weba'=>'audio/webm',
+            'mp4'=>'video/mp4','mov'=>'video/quicktime','avi'=>'video/x-msvideo','mkv'=>'video/x-matroska',
+            'webm'=>'video/webm','m4v'=>'video/x-matroska','3gp'=>'video/x-3gpp','flv'=>'video/x-flv','wmv'=>'video/x-ms-wmv',
+            'jpg'=>'image/jpeg','jpeg'=>'image/jpeg','png'=>'image/png','gif'=>'image/gif',
+            'webp'=>'image/webp','svg'=>'image/svg+xml',
+            'pdf'=>'application/pdf','doc'=>'application/msword','docx'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls'=>'application/vnd.ms-excel','xlsx'=>'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt'=>'application/vnd.ms-powerpoint','pptx'=>'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'txt'=>'text/plain','csv'=>'text/csv',
+        ];
+
+        $expected_mime = $ext_to_mime[$expected_ext] ?? null;
+
+        if ($expected_type && isset($allowed_mimes[$expected_type])) {
+            if (!in_array($detected_mime, $allowed_mimes[$expected_type])) {
+                return [
+                    'valid' => false,
+                    'error' => "Type de fichier incohérent: l'extension .$expected_ext correspond à {$detected_mime} (attendu: {$expected_type})",
+                    'detected_mime' => $detected_mime,
+                ];
+            }
+        }
+
+        if ($expected_mime && $detected_mime !== $expected_mime) {
+            return [
+                'valid' => false,
+                'error' => "Contenu du fichier ne correspond pas à l'extension .$expected_ext (détecté: {$detected_mime})",
+                'detected_mime' => $detected_mime,
+            ];
+        }
+
+        return ['valid' => true, 'detected_mime' => $detected_mime];
+    }
+
+    private function generateServerFilename($ext)
+    {
+        return date('YmdHis') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
     }
 
     public function uploadChunk()
@@ -936,12 +973,11 @@ class Media extends MX_Controller {
 
         $safe_name     = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($metadata['file_name'], PATHINFO_FILENAME));
         $ext           = strtolower(pathinfo($metadata['file_name'], PATHINFO_EXTENSION));
-        // S1: revalidation de l'extension par rapport à la config du type déclaré
         $type_config = $this->getTypeConfig($type);
         if (!in_array($ext, $type_config['extensions'])) {
             $this->jsonResponse(['success' => false, 'message' => 'Extension non autorisée pour le type ' . $type . ' : ' . $ext]);
         }
-        $original_name = date('YmdHis') . '_' . $safe_name . '.' . $ext;
+        $original_name = $this->generateServerFilename($ext);
         $target_dir    = $this->getTargetDir($type);
         $original_path = $target_dir['path'] . $original_name;
 
@@ -975,6 +1011,13 @@ class Media extends MX_Controller {
         $final_size = filesize($original_path);
         $relative_path = $target_dir['relative'] . $original_name;
 
+        $mime_check = $this->verifyMimeType($original_path, $ext, $type);
+        if (!$mime_check['valid']) {
+            @unlink($original_path);
+            $this->jsonResponse(['success' => false, 'message' => $mime_check['error']]);
+        }
+        $detected_mime = $mime_check['detected_mime'] ?? 'application/octet-stream';
+
         $response = [
             'success' => true,
             'message' => 'Upload terminé',
@@ -982,7 +1025,7 @@ class Media extends MX_Controller {
                 'original_file'   => $relative_path,
                 'file_size'       => $this->formatBytes($final_size),
                 'file_size_bytes' => $final_size,
-                'mime_type'       => mime_content_type($original_path) ?: 'application/octet-stream',
+                'mime_type'       => $detected_mime,
             ]
         ];
 
@@ -994,9 +1037,10 @@ class Media extends MX_Controller {
             $response['data']['job_id']      = $job_id;
             $response['data']['job_status']  = $job_id ? 'queued' : 'synchronous';
             $response['data']['form_suggestions'] = [
-                'titre'     => $analysis['title'] ?: $this->suggestTitle($metadata['file_name']),
-                'credits'   => $analysis['artist'] ?: 'Artiste inconnu',
-                'categorie' => $this->suggestAudioCategory($analysis)
+                'titre'       => $analysis['title'] ?: $this->suggestTitle($metadata['file_name']),
+                'description' => $analysis['title'] ? ($analysis['artist'] ?? '') : $this->suggestDescription($metadata['file_name']),
+                'credits'     => $analysis['artist'] ?: 'Artiste inconnu',
+                'categorie'   => $this->suggestAudioCategory($analysis)
             ];
         } elseif ($type === 'video') {
             $analysis   = $this->analyzeVideo($original_path);
@@ -1006,14 +1050,24 @@ class Media extends MX_Controller {
             $response['data']['job_id']      = $job_id;
             $response['data']['job_status']  = $job_id ? 'queued' : 'synchronous';
             $response['data']['form_suggestions'] = [
-                'titre'     => $analysis['title'] ?: $this->suggestTitle($metadata['file_name']),
-                'credits'   => $analysis['artist'] ?: 'Auteur inconnu',
-                'categorie' => $this->suggestVideoCategory($analysis)
+                'titre'       => $analysis['title'] ?: $this->suggestTitle($metadata['file_name']),
+                'description' => $analysis['title'] ? ($analysis['artist'] ?? '') : $this->suggestDescription($metadata['file_name']),
+                'credits'     => $analysis['artist'] ?: 'Auteur inconnu',
+                'categorie'   => $this->suggestVideoCategory($analysis)
             ];
         } elseif ($type === 'document') {
             $job_id = $this->enqueueProcessingJob('document', $original_path, $original_name, $relative_path);
             $response['data']['job_id']     = $job_id;
             $response['data']['job_status'] = $job_id ? 'queued' : 'synchronous';
+            $response['data']['form_suggestions'] = [
+                'titre'       => $this->suggestTitle($metadata['file_name']),
+                'description' => $this->suggestDescription($metadata['file_name']),
+            ];
+        } elseif ($type === 'image') {
+            $response['data']['form_suggestions'] = [
+                'titre'       => $this->suggestTitle($metadata['file_name']),
+                'description' => $this->suggestDescription($metadata['file_name']),
+            ];
         }
 
         $this->jsonResponse($response);
@@ -1210,7 +1264,7 @@ class Media extends MX_Controller {
     private function rateLimitCheck($action, $max, $window_seconds)
     {
         $dir = FCPATH . 'uploads/temp/ratelimit/';
-        if (!is_dir($dir)) @mkdir($dir, 0777, true);
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
 
         $identifier = (string)($this->session->userdata('user_id') ?: $this->input->ip_address());
         $window = (int)floor(time() / $window_seconds);
@@ -1275,7 +1329,14 @@ class Media extends MX_Controller {
         $meta = !empty($media['metadata_id3']) ? json_decode($media['metadata_id3'], true) : [];
 
         $type = $media['type'];
-        $placeholder = base_url('assets/images/' . $type . '-placeholder.jpg');
+        $placeholder_map = [
+            'audio'    => 'assets/backend/images/defaut-mignature-audio.jpeg',
+            'video'    => 'assets/backend/images/defaut-mignature-video.jpeg',
+            'image'    => 'assets/backend/images/default-avatar.jpg',
+            'document' => 'assets/backend/images/default-avatar-pdf-mignature.png',
+            'link'     => 'assets/backend/images/default-avatar.jpg',
+        ];
+        $placeholder = base_url($placeholder_map[$type] ?? 'assets/backend/images/default-avatar.jpg');
         $thumb = $placeholder;
         if (!empty($media['miniature'])) {
             $is_remote = (strpos($media['miniature'], 'http') === 0);
@@ -1368,7 +1429,7 @@ class Media extends MX_Controller {
 
         $filename = basename($media['fichier']);
         header('Content-Type: ' . ($media['mime_type'] ?? mime_content_type($path) ?: 'application/octet-stream'));
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Disposition: attachment; filename="' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '"');
         header('Content-Length: ' . filesize($path));
         readfile($path);
         exit;
@@ -1400,10 +1461,14 @@ class Media extends MX_Controller {
 
         $file_path = $dirs[$type] . $filename;
         if (!file_exists($file_path)) {
-            $root_path = realpath($root_dirs[$type]) . '/' . $filename;
-            if (file_exists($root_path)) {
-                $file_path = $root_path;
-            } else {
+            $resolved_root = realpath($root_dirs[$type]);
+            if ($resolved_root !== false) {
+                $root_path = $resolved_root . '/' . $filename;
+                if (file_exists($root_path)) {
+                    $file_path = $root_path;
+                }
+            }
+            if (!file_exists($file_path)) {
                 $base_name = pathinfo($filename, PATHINFO_FILENAME);
                 $glob = glob($fallback_dirs[$type] . $base_name . '*');
                 if (!empty($glob)) $file_path = $glob[0];
@@ -1484,7 +1549,7 @@ class Media extends MX_Controller {
 
         $ref_folder = FCPATH . 'attachments/Media/Thumbnails/Custom/';
         if (!is_dir($ref_folder)) {
-            if (!mkdir($ref_folder, 0777, true) && !is_dir($ref_folder)) {
+            if (!mkdir($ref_folder, 0755, true) && !is_dir($ref_folder)) {
                 $this->jsonResponse(['success' => false, 'message' => 'Erreur création dossier miniature']);
             }
         }
@@ -1815,7 +1880,16 @@ class Media extends MX_Controller {
     private function suggestTitle($filename)
     {
         $name = pathinfo($filename, PATHINFO_FILENAME);
-        return ucwords(trim(preg_replace('/[^a-zA-Z0-9]/', ' ', $name)));
+        $name = preg_replace('/[_\-]+/', ' ', $name);
+        $name = preg_replace('/[^\p{L}\p{N}\s\']+/u', ' ', $name);
+        $name = preg_replace('/\s+/', ' ', $name);
+        return trim($name);
+    }
+
+    private function suggestDescription($filename)
+    {
+        $title = $this->suggestTitle($filename);
+        return 'Description de ' . $title;
     }
 
     private function suggestAudioCategory($analysis)
@@ -1873,7 +1947,7 @@ class Media extends MX_Controller {
 
     public function checkServerLimits()
     {
-        if (!$this->session->userdata('logged_in')) { show_404(); return; }
+        is_admin();
         $limits = $this->media_config['server_limits'];
         $chunk  = $this->detectOptimalChunkSize();
 
@@ -1892,7 +1966,7 @@ class Media extends MX_Controller {
 
     public function updateAllSlugs()
     {
-        if (!$this->session->userdata('logged_in')) { show_404(); return; }
+        is_admin();
 
         $medias = $this->db->query("SELECT id_media, titre, type FROM galerie_medias WHERE est_actif = 1")->result_array();
         $updated = 0;
@@ -1905,5 +1979,75 @@ class Media extends MX_Controller {
         }
 
         echo "<br>Total: {$updated} slugs mis à jour.";
+    }
+
+    public function fetchLinkMeta()
+    {
+        $url = $this->input->post('url');
+        if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            $this->jsonResponse(['success' => false, 'message' => 'URL invalide']);
+        }
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; NufotecBot/1.0)',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_NOBODY         => true,
+        ]);
+        curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($http_code < 200 || $http_code >= 400) {
+            $this->jsonResponse(['success' => false, 'message' => 'URL inaccessible (HTTP ' . $http_code . ')']);
+        }
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; NufotecBot/1.0)',
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        $html = curl_exec($ch);
+        curl_close($ch);
+
+        if (!$html) {
+            $this->jsonResponse(['success' => false, 'message' => 'Impossible de récupérer le contenu']);
+        }
+
+        $title = null;
+        if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m)) {
+            $title = trim(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'));
+        }
+
+        $description = null;
+        if (preg_match('/<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']/is', $html, $m)) {
+            $description = trim(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'));
+        } elseif (preg_match('/<meta[^>]+content=["\'](.*?)["\'][^>]+name=["\']description["\']/is', $html, $m)) {
+            $description = trim(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'));
+        }
+
+        $og_image = null;
+        if (preg_match('/<meta[^>]+property=["\']og:image["\'][^>]+content=["\'](.*?)["\']/is', $html, $m)) {
+            $og_image = trim($m[1]);
+        } elseif (preg_match('/<meta[^>]+content=["\'](.*?)["\'][^>]+property=["\']og:image["\']/is', $html, $m)) {
+            $og_image = trim($m[1]);
+        }
+
+        $this->jsonResponse([
+            'success'     => true,
+            'title'       => $title,
+            'description' => $description,
+            'og_image'    => $og_image,
+        ]);
     }
 }

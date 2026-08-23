@@ -786,7 +786,7 @@ function googleTranslateElementInit() {
                     
                 <?php elseif ($type === 'audio' && !empty($fichier)): ?>
                     <div class="audio-player">
-                        <div class="audio-cover" style="background-image: url('<?= htmlspecialchars($media['cover_url'] ?? base_url('assets/images/audio-default.png')) ?>')"></div>
+                        <div class="audio-cover" style="background-image: url('<?= htmlspecialchars($media['cover_url'] ?? base_url('assets/backend/images/defaut-mignature-audio.jpeg')) ?>')"></div>
                         <div class="audio-title"><?= htmlspecialchars($media['titre']) ?></div>
                         <div class="audio-artist"><?= htmlspecialchars($media['artist'] ?? $media['credits'] ?? 'Artiste') ?></div>
                         <button class="btn-outline-secondary" style="margin-bottom: 1rem;" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
@@ -949,7 +949,7 @@ function googleTranslateElementInit() {
                         $relatedSlug = !empty($related['slug']) ? $related['slug'] : $related['id_media'];
                     ?>
                         <div class="related-item" onclick="window.location.href='<?= base_url('media/detail/'.$relatedSlug) ?>'">
-                            <div class="related-thumb" style="background-image: url('<?= htmlspecialchars($related['thumbnail_url'] ?? base_url('assets/images/default-thumbnail.jpg')) ?>')"></div>
+                            <div class="related-thumb" style="background-image: url('<?= htmlspecialchars($related['thumbnail_url'] ?? base_url('assets/backend/images/default-avatar.jpg')) ?>')"></div>
                             <div class="related-info">
                                 <p class="related-title-sm"><?= htmlspecialchars($related['titre']) ?></p>
                                 <div class="related-meta">

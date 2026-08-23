@@ -3,40 +3,10 @@
 <?php include VIEWPATH.'includes/backend/Topheader.php'; ?>
 
 <?php
-if (!function_exists('e')) {
-    function e($str) {
-        return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
-    }
-}
-if (!function_exists('format_duration')) {
-    function format_duration($seconds) {
-        if (empty($seconds) || $seconds <= 0) return '0:00';
-        $h = floor($seconds / 3600);
-        $m = floor(($seconds % 3600) / 60);
-        $s = $seconds % 60;
-        return $h > 0 ? sprintf('%d:%02d:%02d', $h, $m, $s) : sprintf('%d:%02d', $m, $s);
-    }
-}
-if (!function_exists('format_bytes')) {
-    function format_bytes($bytes, $decimals = 2) {
-        if (empty($bytes) || $bytes === 0) return '0 B';
-        $k = 1024; $sizes = ['B','KB','MB','GB','TB'];
-        $i = floor(log($bytes) / log($k));
-        return round($bytes / pow($k, $i), $decimals) . ' ' . $sizes[$i];
-    }
-}
-if (!function_exists('get_type_badge')) {
-    function get_type_badge($type) {
-        $map = [
-            'audio'    => ['label' => 'Audio', 'class' => 'success', 'icon' => 'bx bx-music'],
-            'video'    => ['label' => 'Vidéo', 'class' => 'danger', 'icon' => 'bx bx-video'],
-            'image'    => ['label' => 'Image', 'class' => 'primary', 'icon' => 'bx bx-image'],
-            'document' => ['label' => 'Document', 'class' => 'warning', 'icon' => 'bx bx-file'],
-            'link'     => ['label' => 'Lien', 'class' => 'info', 'icon' => 'bx bx-link'],
-        ];
-        return $map[$type] ?? ['label' => 'Média', 'class' => 'secondary', 'icon' => 'bx bx-file'];
-    }
-}
+header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+$this->load->helper('format');
 ?>
 
 <style>
@@ -443,8 +413,22 @@ if (!function_exists('get_type_badge')) {
 
 <?php include VIEWPATH.'includes/backend/Footer.php'; ?>
 
-<link rel="stylesheet" href="<?= base_url() ?>assets/backend/plugins/toastr/toastr.min.css">
-<script src="<?= base_url() ?>assets/backend/plugins/toastr/toastr.min.js"></script>
+<link rel="stylesheet" href="<?= base_url() ?>assets/backend/plugins/toastr/toastr.min.css?v=<?= filemtime(FCPATH.'assets/backend/plugins/toastr/toastr.min.css') ?>">
+<script src="<?= base_url() ?>assets/backend/plugins/toastr/toastr.min.js?v=<?= filemtime(FCPATH.'assets/backend/plugins/toastr/toastr.min.js') ?>"></script>
+<?php
+$flash_success = $this->session->flashdata('success');
+$flash_error   = $this->session->flashdata('error');
+$flash_warning = $this->session->flashdata('warning');
+?>
+<?php if ($flash_success): ?>
+<script>toastr.success(<?= json_encode($flash_success) ?>);</script>
+<?php endif; ?>
+<?php if ($flash_error): ?>
+<script>toastr.error(<?= json_encode($flash_error) ?>);</script>
+<?php endif; ?>
+<?php if ($flash_warning): ?>
+<script>toastr.warning(<?= json_encode($flash_warning) ?>);</script>
+<?php endif; ?>
 <script>
 let currentStep = 1;
 let selectedType = '';
@@ -587,9 +571,15 @@ $(document).ready(function() {
             $('#auto_detected_data').val(JSON.stringify(completeResp.data));
 
             if (completeResp.data.form_suggestions) {
+                console.log('form_suggestions:', completeResp.data.form_suggestions);
                 if (!document.getElementById('media_titre').value) {
                     $('#media_titre').val(completeResp.data.form_suggestions.titre);
                 }
+                if (!document.querySelector('textarea[name="description"]').value) {
+                    $('textarea[name="description"]').val(completeResp.data.form_suggestions.description || '');
+                }
+            } else {
+                console.log('No form_suggestions in response:', completeResp.data);
             }
 
             setTimeout(() => { goToStep(3); }, 500);
@@ -662,6 +652,34 @@ $(document).ready(function() {
         } catch (err) {
             toastr.error('Erreur upload miniature');
         }
+    });
+
+    // Auto-détecter le titre et la miniature depuis l'URL du lien
+    let linkMetaTimer = null;
+    $('#link_url').on('input', function() {
+        clearTimeout(linkMetaTimer);
+        const url = $(this).val().trim();
+        if (!url || !url.match(/^https?:\/\//)) return;
+        linkMetaTimer = setTimeout(async function() {
+            try {
+                const resp = await $.ajax({
+                    url: '<?= base_url("admin/media/fetchLinkMeta") ?>',
+                    method: 'POST',
+                    data: { url: url }
+                });
+                if (resp.success) {
+                    if (resp.title && !document.getElementById('media_titre').value) {
+                        $('#media_titre').val(resp.title);
+                    }
+                    if (resp.description && !document.querySelector('textarea[name="description"]').value) {
+                        $('textarea[name="description"]').val(resp.description);
+                    }
+                    if (resp.og_image) {
+                        $('input[name="miniature_externe"]').val(resp.og_image);
+                    }
+                }
+            } catch (err) { /* ignore */ }
+        }, 800);
     });
 
     // Live search par nom de fichier

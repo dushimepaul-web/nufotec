@@ -2104,7 +2104,7 @@ function createMediaCard($media, $lang) {
         $thumb_path = FCPATH . 'attachments/Video/Thumbnails/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_thumb.jpg';
         $thumbUrl = file_exists($thumb_path) 
             ? base_url('attachments/Video/Thumbnails/' . pathinfo($media['fichier'], PATHINFO_FILENAME) . '_thumb.jpg')
-            : base_url('assets/images/video-default.jpg');
+            : base_url('assets/backend/images/defaut-mignature-video.jpeg');
     } elseif ($type === 'audio' && !empty($media['fichier'])) {
         $base_name = pathinfo($media['fichier'], PATHINFO_FILENAME);
         $cover_path = FCPATH . 'attachments/Audio/Thumbnails/' . $base_name . '_cover.jpg';
@@ -2114,18 +2114,19 @@ function createMediaCard($media, $lang) {
         } elseif (file_exists($wave_path)) {
             $thumbUrl = base_url('attachments/Audio/Thumbnails/' . $base_name . '_waveform.jpg');
         } else {
-            $thumbUrl = base_url('assets/images/audio-default.png');
+            $thumbUrl = base_url('assets/backend/images/defaut-mignature-audio.jpeg');
         }
     } elseif ($type === 'image' && !empty($media['fichier_url'])) {
         $thumbUrl = $media['fichier_url'];
     } else {
         $defaults = [
-            'video' => base_url('assets/images/video-default.jpg'),
-            'audio' => base_url('attachments/Configurations/site_logo_20260320151223_69bd47b771f92.jpeg'),
-            'image' => base_url('assets/images/image-default.jpg'),
-            'document' => base_url('assets/images/document-default.jpg')
+            'video' => base_url('assets/backend/images/defaut-mignature-video.jpeg'),
+            'audio' => base_url('assets/backend/images/defaut-mignature-audio.jpeg'),
+            'image' => base_url('assets/backend/images/default-avatar.jpg'),
+            'document' => base_url('assets/backend/images/default-avatar-pdf-mignature.png'),
+            'link' => base_url('assets/backend/images/default-avatar.jpg'),
         ];
-        $thumbUrl = $defaults[$type] ?? base_url('assets/images/default-thumbnail.jpg');
+        $thumbUrl = $defaults[$type] ?? base_url('assets/backend/images/default-avatar.jpg');
     }
     
     $duration = $media['duration_formatted'] ?? '0:00';

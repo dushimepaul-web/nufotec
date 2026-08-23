@@ -1,39 +1,6 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
-if (!function_exists('e')) {
-    function e($str) {
-        return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
-    }
-}
-if (!function_exists('format_duration')) {
-    function format_duration($seconds) {
-        if (empty($seconds) || $seconds <= 0) return '0:00';
-        $h = floor($seconds / 3600);
-        $m = floor(($seconds % 3600) / 60);
-        $s = $seconds % 60;
-        return $h > 0 ? sprintf('%d:%02d:%02d', $h, $m, $s) : sprintf('%d:%02d', $m, $s);
-    }
-}
-if (!function_exists('format_bytes')) {
-    function format_bytes($bytes, $decimals = 2) {
-        if (empty($bytes) || $bytes === 0) return '0 B';
-        $k = 1024; $sizes = ['B','KB','MB','GB','TB'];
-        $i = floor(log($bytes) / log($k));
-        return round($bytes / pow($k, $i), $decimals) . ' ' . $sizes[$i];
-    }
-}
-if (!function_exists('get_type_badge')) {
-    function get_type_badge($type) {
-        $map = [
-            'audio'    => ['label' => 'Audio', 'class' => 'success', 'icon' => 'bx bx-music'],
-            'video'    => ['label' => 'Vidéo', 'class' => 'danger', 'icon' => 'bx bx-video'],
-            'image'    => ['label' => 'Image', 'class' => 'primary', 'icon' => 'bx bx-image'],
-            'document' => ['label' => 'Document', 'class' => 'warning', 'icon' => 'bx bx-file'],
-            'link'     => ['label' => 'Lien', 'class' => 'info', 'icon' => 'bx bx-link'],
-        ];
-        return $map[$type] ?? ['label' => 'Média', 'class' => 'secondary', 'icon' => 'bx bx-file'];
-    }
-}
+$this->load->helper('format');
 ?>
 
 <!-- Media Grid -->
@@ -55,24 +22,33 @@ if (!function_exists('get_type_badge')) {
                 <div class="card media-card border-0 shadow-sm h-100 position-relative">
                     <span class="type-badge badge bg-<?= $badge['class'] ?>"><i class="<?= $badge['icon'] ?> me-1"></i><?= $badge['label'] ?></span>
                     <div class="card-img-top d-flex align-items-center justify-content-center" style="height:160px;">
+                        <?php
+                        $type = $media['type'] ?? '';
+                        $default_thumb_map = [
+                            'audio'    => 'assets/backend/images/defaut-mignature-audio.jpeg',
+                            'video'    => 'assets/backend/images/defaut-mignature-video.jpeg',
+                            'image'    => 'assets/backend/images/default-avatar.jpg',
+                            'document' => 'assets/backend/images/default-avatar-pdf-mignature.png',
+                            'link'     => 'assets/backend/images/default-avatar.jpg',
+                        ];
+                        $default_thumb = base_url($default_thumb_map[$type] ?? 'assets/backend/images/default-avatar.jpg');
+                        ?>
                         <?php if (!empty($media['miniature'])): ?>
                             <?php
                             $miniature = $media['miniature'] ?? '';
                             $thumb_src = (strpos($miniature, 'http') === 0) ? $miniature : base_url($miniature);
-                            $type = $media['type'] ?? '';
-                            $placeholder = in_array($type, ['audio','video','image','document','link'])
-                                ? base_url('assets/images/' . $type . '-placeholder.jpg')
-                                : base_url('assets/images/default-thumbnail.jpg');
                             ?>
-                            <img src="<?= e($thumb_src) ?>" alt="<?= e($media['titre']) ?>" onerror="this.src='<?= $placeholder ?>'" style="width:100%;height:100%;object-fit:cover;">
-                        <?php elseif ($media['type'] === 'link' && !empty($media['lien'])): ?>
+                            <img src="<?= e($thumb_src) ?>" alt="<?= e($media['titre']) ?>" onerror="this.src='<?= $default_thumb ?>'" style="width:100%;height:100%;object-fit:cover;">
+                        <?php elseif ($type === 'document'): ?>
+                            <img src="<?= $default_thumb ?>" alt="Document" style="width:100%;height:100%;object-fit:cover;">
+                        <?php elseif ($type === 'link' && !empty($media['lien'])): ?>
                             <i class="bx bx-link fs-1 text-muted"></i>
                         <?php else: ?>
-                            <i class="<?= $badge['icon'] ?> fs-1 text-muted"></i>
+                            <img src="<?= $default_thumb ?>" alt="<?= e($media['titre']) ?>" style="width:100%;height:100%;object-fit:cover;">
                         <?php endif; ?>
                     </div>
                     <div class="card-body">
-                        <h6 class="card-title text-truncate mb-1"><?= e($media['titre'] ?? 'Sans titre') ?></h6>
+                        <h6 class="card-title mb-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"><?= e($media['titre'] ?? 'Sans titre') ?></h6>
                         <small class="text-muted d-block text-truncate"><?= e($media['credits'] ?? '') ?></small>
                         <div class="d-flex align-items-center gap-2 mt-2">
                             <?php if (in_array($media['type'], ['audio', 'video']) && !empty($media['duree'])): ?>

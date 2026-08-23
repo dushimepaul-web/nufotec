@@ -795,14 +795,14 @@ class Media extends Public_Controller{
             }
         }
         $defaults = [
-            'audio' => 'assets/images/audio-default.png',
-            'video' => 'assets/images/video-default.jpg',
-            'image' => 'assets/images/image-default.jpg',
-            'document' => 'assets/images/document-default.jpg',
-            'link' => 'assets/images/link-default.jpg',
-            'autre' => 'assets/images/default-thumbnail.jpg'
+            'audio' => 'assets/backend/images/defaut-mignature-audio.jpeg',
+            'video' => 'assets/backend/images/defaut-mignature-video.jpeg',
+            'image' => 'assets/backend/images/default-avatar.jpg',
+            'document' => 'assets/backend/images/default-avatar-pdf-mignature.png',
+            'link' => 'assets/backend/images/default-avatar.jpg',
+            'autre' => 'assets/backend/images/default-avatar.jpg'
         ];
-        return base_url($defaults[$media['type']] ?? 'assets/images/default-thumbnail.jpg');
+        return base_url($defaults[$media['type']] ?? 'assets/backend/images/default-avatar.jpg');
     }
 
     private function getCoverUrl($media)
@@ -817,7 +817,7 @@ class Media extends Public_Controller{
         if (!empty($media['miniature'])) {
             return base_url($media['miniature']);
         }
-        return base_url('assets/images/audio-default.png');
+        return base_url('assets/backend/images/defaut-mignature-audio.jpeg');
     }
 
     private function getCategoriesWithCount()
