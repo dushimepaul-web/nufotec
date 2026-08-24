@@ -374,6 +374,7 @@ $route['chatbot/start']                    = 'chatbot/Chatbot/start';
 $route['chatbot/send']                     = 'chatbot/Chatbot/send';
 $route['chatbot/request_human']            = 'chatbot/Chatbot/request_human';
 $route['chatbot/history/(:num)']           = 'chatbot/Chatbot/history/$1';
+$route['chatbot/upload']                   = 'chatbot/Chatbot/upload';
 $route['admin/chatbot/kb']                 = 'chatbot/admin/Kb/index';
 $route['admin/chatbot/kb/create']          = 'chatbot/admin/Kb/create';
 $route['admin/chatbot/kb/edit/(:num)']     = 'chatbot/admin/Kb/edit/$1';

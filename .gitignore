@@ -11,3 +11,12 @@ application/logs/*
 
 #env
 env.php
+
+# ML Service
+ml_service/venv/
+ml_service/app/models/*.joblib
+ml_service/app/models/*.pkl
+ml_service/.env
+ml_service/__pycache__/
+ml_service/app/__pycache__/
+ml_service/training/__pycache__/

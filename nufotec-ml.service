@@ -1,0 +1,33 @@
+[Unit]
+Description=NUFOTEC ML Service (FastAPI)
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/nufotec.com/ml_service
+ExecStart=/var/www/nufotec.com/ml_service/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001 --workers 1 --log-level info
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Sécurité
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/nufotec.com/ml_service/app/models
+ReadWritePaths=/var/www/nufotec.com/ml_service/data
+
+# Environment
+EnvironmentFile=/var/www/nufotec.com/ml_service/.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nufotec-ml
+
+[Install]
+WantedBy=multi-user.target

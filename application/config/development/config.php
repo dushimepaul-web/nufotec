@@ -470,6 +470,7 @@ $config['csrf_exclude_uris'] = array(
     'chatbot/send',
     'chatbot/request_human',
     'chatbot/history',
+    'chatbot/upload',
 );
 
 /*

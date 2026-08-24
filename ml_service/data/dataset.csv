@@ -1,0 +1,193 @@
+text,language,intent
+Muraho,rn,greeting
+Amakuru,rn,greeting
+Amakuru?,rn,greeting
+Bite neza,rn,greeting
+Mwiriwe,rn,greeting
+Mwaramutse,rn,greeting
+Murakoze cane,rn,greeting
+Ni amakuru,rn,greeting
+Amakuru yawe,rn,greeting
+Ndashaka kumenya igiciro c'uyu muti,rn,prix_produit
+Uwo muti ugurwa angahe?,rn,prix_produit
+Mbwira igiciro c'uyu muti,rn,prix_produit
+Igiciro cawe ni ikihe?,rn,prix_produit
+Igiciro cayi?,rn,prix_produit
+Ni angahe igiciro?,rn,prix_produit
+Ibiciro vy'imiti ni vyose vibihe?,rn,prix_produit
+Ndafise ikibazo,rn,consultation
+Ndarwaye,rn,symptome
+Ndumva ndwaye,rn,symptome
+Ndashaka umuganga,rn,consultation
+Ndashaka kubonana na muganga,rn,consultation
+Ndashaka consultation,rn,consultation
+Ndashaka kuvugana na docteur,rn,consultation
+Ndashaka gufata rendez-vous,rn,rendez_vous
+Ndashaka rendez-vous na muganga,rn,rendez_vous
+Ndumva ndababara mu nda,rn,symptome
+Ndwaye umutwe,rn,symptome
+Ndafise umuriro,rn,symptome
+Ndaye inda,rn,symptome
+Ndafise inkorora,rn,symptome
+Umuganga wanjye,rn,medecin
+Kwa muganga,rn,medecin
+Ndashaka kumenya uko nobonana na muganga,rn,consultation
+Nshaka kugura umuti,rn,commande
+Ndashaka gutumiza umuti,rn,commande
+Nshaka gutumiza,rn,commande
+Uri hehe?,rn,contact
+Nkorera hehe?,rn,contact
+Nshobora kukuganira,rn,contact
+Nshobora kugufasha,rn,support
+Ndabizi neza,rn,general_information
+Sinzi neza,rn,general_information
+Ndategeje neza,rn,general_information
+Yego ndashaka,rn,greeting
+Oya sinshobora,rn,greeting
+Ndafise indwara y'inda,rn,symptome
+Uburwayi bwanjye bukwiye,rn,symptome
+Umubiri wanjye,rn,symptome
+Ndashaka kumenya ibiciro vy'imiti,rn,prix_produit
+Muraho ndashaka kumenya igiciro,rn,prix_produit
+Ndafise ikibazo nshaka kuvugana na docteur,rn,consultation
+Ndarwaye umutwe ndashaka umuganga,rn,symptome
+Ndumva ndababara ndashaka consultation,rn,symptome
+Bonjour,fr,greeting
+Bonjour madame,fr,greeting
+Bonjour monsieur,fr,greeting
+Bonsoir,fr,greeting
+Salut,fr,greeting
+Comment allez-vous?,fr,greeting
+Comment vas-tu?,fr,greeting
+Ca va?,fr,greeting
+Comment allez vous?,fr,greeting
+Merci beaucoup,fr,greeting
+Je voudrais connaître le prix,fr,prix_produit
+Quel est le prix de ce médicament?,fr,prix_produit
+Combien coûte ce médicament?,fr,prix_produit
+C'est combien?,fr,prix_produit
+Quel est le tarif?,fr,prix_produit
+Je veux consulter un médecin,fr,consultation
+J'ai besoin d'un médecin,fr,consultation
+Je suis malade,fr,symptome
+J'ai mal à la tête,fr,symptome
+J'ai mal au ventre,fr,symptome
+J'ai de la fièvre,fr,symptome
+J'ai mal au dos,fr,symptome
+Comment prendre rendez-vous?,fr,rendez_vous
+Je voudrais prendre rendez-vous,fr,rendez_vous
+Où se trouve votre clinique?,fr,contact
+Où êtes-vous?,fr,contact
+Quels sont vos horaires?,fr,horaires
+À quelle heure ouvrez-vous?,fr,horaires
+Comment payer?,fr,paiement
+Quels moyens de paiement?,fr,paiement
+Livrez-vous?,fr,livraison
+Comment se passe la livraison?,fr,livraison
+Je veux acheter un produit,fr,commande
+Je voudrais commander,fr,commande
+Avez-vous ce produit?,fr,disponibilite_produit
+Est-ce disponible?,fr,disponibilite_produit
+Merci,fr,greeting
+Je vous remercie,fr,greeting
+Au revoir,fr,greeting
+Bonjour je voudrais connaître le prix du médicament,fr,prix_produit
+Je suis malade j'ai besoin de consultation,fr,consultation
+Hello,en,greeting
+Hi,en,greeting
+Good morning,en,greeting
+Good evening,en,greeting
+How are you?,en,greeting
+How are you doing?,en,greeting
+What is the price of this medicine?,en,prix_produit
+How much does this cost?,en,prix_produit
+What is the price?,en,prix_produit
+How much is it?,en,prix_produit
+I want to see a doctor,en,consultation
+I need a consultation,en,consultation
+I am sick,en,symptome
+I have a headache,en,symptome
+I have a stomachache,en,symptome
+I have fever,en,symptome
+How to make an appointment?,en,rendez_vous
+I want to book an appointment,en,rendez_vous
+Where is your clinic?,en,contact
+Where are you located?,en,contact
+What are your hours?,en,horaires
+When do you open?,en,horaires
+How to pay?,en,paiement
+What payment methods?,en,paiement
+Do you deliver?,en,livraison
+How does delivery work?,en,livraison
+I want to buy a product,en,commande
+Do you have this product?,en,disponibilite_produit
+Thank you,en,greeting
+Thanks a lot,en,greeting
+Goodbye,en,greeting
+I want to know the price of the medicine,en,prix_produit
+I would like to consult a doctor,en,consultation
+Ndashaka kumenya le prix y'umuti,rn,prix_produit
+Muraho nshaka consultation,rn,consultation
+Ndafise ikibazo nshaka kuvugana na docteur,rn,consultation
+Bonjour ndashaka kumenya igiciro,rn,prix_produit
+Je veux prendre rendez-vous na muganga,fr,rendez_vous
+Ndashaka consultation na muganga,rn,consultation
+Ndafise indwara ndashaka umuganga,rn,consultation
+Ndumva ndababara ndashaka kubonana na muganga,rn,symptome
+Ndashaka kumenya ibiciro vy'imiti,rn,prix_produit
+Mbwira igiciro c'uyu muti,rn,prix_produit
+Ndakeneye umuganga,rn,consultation
+Ndashaka gufata rendez-vous na muganga,rn,rendez_vous
+Ndafise umuriro ndashaka consultation,rn,symptome
+Ndwaye umutwe ndashaka umuganga,rn,symptome
+Ndarwaye ndashaka kubonana na muganga,rn,symptome
+Ndumva ndwaye ndashaka consultation,rn,symptome
+Ndashaka kumenya igiciro cayi,rn,prix_produit
+Igiciro c'uyu muti ni ikihe?,rn,prix_produit
+Umuti ugurwa angahe?,rn,prix_produit
+Ndashaka gutumiza umuti na muganga,rn,commande
+Nshaka kugura umuti rero,rn,commande
+Ndashaka kuvugana na muganga wanjye,rn,consultation
+Nshobora kugufasha ndafise ikibazo,rn,support
+Ndabizi neza igiciro,rn,general_information
+Sinzi neza uko bimeze,rn,general_information
+Murakoze cane niba munobasha kundufasha,rn,greeting
+Ndashaka kumenya uko ndabona imiti,rn,consultation
+Ibiciro vy'imiti ni vyose vibihe?,rn,prix_produit
+Umuganga wanjye uri hehe?,rn,contact
+Kwa muganga njya hehe?,rn,contact
+Nkorera hehe tugufashe?,rn,contact
+Ndashaka kumenya amakuru y'uburwayi bwanjye,rn,general_information
+Ndafise indwara y'inda ndashaka umuganga,rn,symptome
+Umubiri wanjye urwaye ndashaka consultation,rn,symptome
+Ndashaka kumenya uko nafasha abana banjye,rn,general_information
+Ndashaka kumenya amakuru y'imiti y'abana,rn,product_information
+Ndafise umuriro w'inda ndashaka consultation,rn,symptome
+Ndumva ndababara mu mutwe ndashaka umuganga,rn,symptome
+Ndwaye inda ndashaka kubonana na muganga,rn,symptome
+Ndafise inkorora ndashaka umuganga,rn,symptome
+Ndashaka kumenya igiciro c'imiti y'uburwayi,rn,prix_produit
+Igiciro c'imiti y'uburwayi ni ikihe?,rn,prix_produit
+Mbwira igiciro c'imiti y'uburwayi,rn,prix_produit
+Ndashaka gutumiza imiti y'uburwayi,rn,commande
+Nshaka kugura imiti y'uburwayi,rn,commande
+Ndashaka kubonana na muganga w'uburwayi,rn,consultation
+Ndashaka gufata rendez-vous na muganga w'uburwayi,rn,rendez_vous
+Ndafise uburwayi bw'inda ndashaka umuganga,rn,symptome
+Ndumva ndarwaye umubiri ndashaka consultation,rn,symptome
+Ndashaka kumenya amakuru y'uburwayi bw'inda,rn,general_information
+Ndafise indwara y'umutwe ndashaka umuganga,rn,symptome
+Ndashaka kubonana na muganga w'umutwe,rn,consultation
+Ndumva ndababara mu nda ndashaka consultation,rn,symptome
+Ndwaye umutwe ndashaka kubonana na muganga,rn,symptome
+Ndafise umuriro ndashaka umuganga,rn,symptome
+Ndashaka kumenya igiciro c'imiti y'umutwe,rn,prix_produit
+Igiciro c'imiti y'umutwe ni ikihe?,rn,prix_produit
+Mbwira igiciro c'imiti y'umutwe,rn,prix_produit
+Ndashaka gutumiza imiti y'umutwe,rn,commande
+Nshaka kugura imiti y'umutwe,rn,commande
+Ndashaka kubonana na muganga w'umutwe,rn,consultation
+Ndashaka gufata rendez-vous na muganga w'umutwe,rn,rendez_vous
+Ndafise uburwayi bw'umutwe ndashaka umuganga,rn,symptome
+Ndumva ndarwaye umutwe ndashaka consultation,rn,symptome
+Ndashaka kumenya amakuru y'uburwayi bw'umutwe,rn,general_information
