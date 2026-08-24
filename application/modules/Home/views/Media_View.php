@@ -244,6 +244,84 @@ function googleTranslateElementInit() {
             border-color: var(--accent-blue);
         }
 
+        /* Live Search Dropdown */
+        .search-container { position: relative; }
+        .search-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: var(--bg-card, #fff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.15);
+            max-height: 420px;
+            overflow-y: auto;
+            z-index: 1000;
+            min-width: 380px;
+        }
+        .search-dropdown.active { display: block; }
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            text-decoration: none;
+            color: inherit;
+            transition: background .15s;
+            border-bottom: 1px solid var(--border-color, #f0f0f0);
+        }
+        .search-item:last-child { border-bottom: none; }
+        .search-item:hover { background: var(--bg-hover, #f8f9fa); }
+        .search-item-thumb {
+            position: relative;
+            width: 72px;
+            height: 48px;
+            border-radius: 6px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #111;
+        }
+        .search-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .search-duration {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            background: rgba(0,0,0,.8);
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+        .search-item-info { flex: 1; min-width: 0; }
+        .search-item-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary, #1a1a2e);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .search-item-title i { margin-right: 4px; opacity: .5; }
+        .search-item-meta {
+            font-size: 11px;
+            color: var(--text-muted, #94a3b8);
+            margin-top: 2px;
+        }
+        .search-no-result {
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted, #94a3b8);
+        }
+        .search-no-result i { font-size: 24px; display: block; margin-bottom: 8px; }
+        .search-loading {
+            padding: 16px;
+            text-align: center;
+            color: var(--text-muted, #94a3b8);
+            font-size: 13px;
+        }
+
         /* Mobile Search */
         .search-toggle, .mobile-search-toggle {
             display: none;
@@ -1401,10 +1479,11 @@ function googleTranslateElementInit() {
     <button class="back-btn" onclick="closeMobileSearch()">
         <i class="bi bi-arrow-left"></i>
     </button>
-    <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form">
-        <input type="text" name="q" class="search-input" placeholder="Rechercher..." id="mobileSearchInput">
+    <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form" id="mobileSearchForm">
+        <input type="text" name="q" class="search-input" placeholder="Rechercher..." id="mobileSearchInput" autocomplete="off">
         <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
     </form>
+    <div class="search-dropdown" id="mobileSearchDropdown" style="position:fixed;left:16px;right:16px;top:70px;"></div>
 </div>
 
 <!-- Navbar Premium -->
@@ -1419,7 +1498,7 @@ function googleTranslateElementInit() {
                 $site_logo = $this->Model->get_setting('site_logo');
                 if (!empty($site_logo)): 
                 ?>
-                    <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="NUFOTEC" class="brand-logo">
+                    <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?>" class="brand-logo">
                 <?php endif; ?>
                 <span class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
                 <span class="brand-subname">Media</span>
@@ -1427,11 +1506,12 @@ function googleTranslateElementInit() {
         </div>
         
         <!-- Desktop Search -->
-        <div class="search-container">
-            <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form">
-                <input type="text" name="q" class="search-input" placeholder="Rechercher..." value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>">
+        <div class="search-container" id="desktopSearchContainer">
+            <form action="<?= base_url('media/apiSearch') ?>" method="GET" class="search-form" id="desktopSearchForm">
+                <input type="text" name="q" class="search-input" id="desktopSearchInput" placeholder="Rechercher..." value="<?= isset($search_query) ? htmlspecialchars($search_query) : '' ?>" autocomplete="off">
                 <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
             </form>
+            <div class="search-dropdown" id="desktopSearchDropdown"></div>
         </div>
         
         <div class="nav-icons">
@@ -1711,6 +1791,68 @@ function openMobileSearch() {
 function closeMobileSearch() {
     document.getElementById('mobileSearchOverlay').classList.remove('active');
 }
+
+/* ========== LIVE SEARCH ========== */
+(function() {
+    const liveSearchUrl = '<?= base_url("media/liveSearch") ?>';
+    let searchTimer = null;
+    let reqSeq = 0;
+
+    function setupLiveSearch(inputId, dropdownId, formId) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        const form = document.getElementById(formId);
+        if (!input || !dropdown) return;
+
+        input.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            const q = this.value.trim();
+            if (q.length < 2) {
+                dropdown.classList.remove('active');
+                dropdown.innerHTML = '';
+                return;
+            }
+            dropdown.innerHTML = '<div class="search-loading"><i class="bi bi-hourglass-split"></i> Recherche...</div>';
+            dropdown.classList.add('active');
+            const seq = ++reqSeq;
+            searchTimer = setTimeout(function() {
+                fetch(liveSearchUrl + '?q=' + encodeURIComponent(q))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (seq !== reqSeq) return;
+                        if (data.success && data.html) {
+                            dropdown.innerHTML = data.html;
+                            dropdown.classList.add('active');
+                        } else {
+                            dropdown.classList.remove('active');
+                        }
+                    })
+                    .catch(() => {
+                        if (seq === reqSeq) dropdown.classList.remove('active');
+                    });
+            }, 250);
+        });
+
+        input.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2 && dropdown.innerHTML) {
+                dropdown.classList.add('active');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        form.addEventListener('submit', function() {
+            dropdown.classList.remove('active');
+        });
+    }
+
+    setupLiveSearch('desktopSearchInput', 'desktopSearchDropdown', 'desktopSearchForm');
+    setupLiveSearch('mobileSearchInput', 'mobileSearchDropdown', 'mobileSearchForm');
+})();
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -2066,7 +2208,8 @@ function get_youtube_embed_url($url) {
 <script>
 function openTemoignageModal(title, embedUrl) {
     document.getElementById('temoignageModalTitle').innerText = title;
-    document.getElementById('temoignageIframe').src = embedUrl;
+    const separator = embedUrl.includes('?') ? '&' : '?';
+    document.getElementById('temoignageIframe').src = embedUrl + separator + 'autoplay=1&rel=0&modestbranding=1';
     var myModal = new bootstrap.Modal(document.getElementById('temoignageModal'));
     myModal.show();
 }

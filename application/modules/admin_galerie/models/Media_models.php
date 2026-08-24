@@ -120,8 +120,9 @@ class Media_models extends CI_Model {
     public function search($query, $type = null, $limit = 50)
     {
         $this->db->from($this->table);
-        $terms = $this->db->escape_str($query);
-        $this->db->where("MATCH(titre, description, credits) AGAINST('$terms*' IN BOOLEAN MODE)", null, false);
+        $safe_query = $this->db->escape_like_str($query);
+        $safe_query = preg_replace('/[^a-zA-Z0-9_ ]/', '', $safe_query);
+        $this->db->where("MATCH(titre, description, credits) AGAINST(? IN BOOLEAN MODE)", $safe_query . '*');
         if ($type) {
             $this->db->where('type', $type);
         }
@@ -144,14 +145,14 @@ class Media_models extends CI_Model {
     {
         $dir = FCPATH . 'uploads/temp/jobs/';
         if (!is_dir($dir)) {
-            if (!@mkdir($dir, 0777, true)) {
+            if (!@mkdir($dir, 0755, true)) {
                 return $dir;
             }
-            @chmod($dir, 0777);
+            @chmod($dir, 0755);
         }
         // Auto-réparation des permissions (ex: dossier créé par un autre utilisateur)
         if (!is_writable($dir)) {
-            @chmod($dir, 0777);
+            @chmod($dir, 0755);
         }
         return $dir;
     }

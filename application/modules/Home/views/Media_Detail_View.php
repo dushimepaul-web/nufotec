@@ -117,6 +117,37 @@
             margin-left: 0.5rem;
         }
 
+        /* Nav Right Group */
+        .nav-right-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Home Button */
+        .nav-home-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition-fast);
+            white-space: nowrap;
+        }
+        .nav-home-btn i { font-size: 15px; }
+        .nav-home-btn:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
         /* Language Selector */
         .lang-selector-custom { position: relative; margin-left: 8px; }
         .custom-language-btn {
@@ -524,6 +555,8 @@
             .brand-badge { display: none; }
             .navbar-brand img { height: 28px; }
             .brand-name { font-size: 1rem; }
+            .nav-home-btn span { display: none; }
+            .nav-home-btn { padding: 7px 10px; }
         }
         
         @media (max-width: 480px) {
@@ -687,21 +720,22 @@ function googleTranslateElementInit() {
             <?php 
             $site_logo = $this->Model->get_setting('site_logo');
             if (!empty($site_logo)): ?>
-                <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="NUFOTEC">
+                <img src="<?= base_url('attachments/Configurations/' . $site_logo) ?>" alt="<?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?>">
             <?php endif; ?>
-            <span class="brand-name">NUFOTEC</span>
+            <span class="brand-name"><?= htmlspecialchars($this->Model->get_setting('site_name', 'NUFOTEC')) ?></span>
             <span class="brand-badge">MEDIA</span>
         </a>
-        
-        <div class="d-flex gap-2 align-items-center">
-            <a href="<?= base_url('media') ?>" class="btn-outline-secondary" style="text-decoration: none;">
-                <i class="bi bi-house"></i> <span class="d-none d-sm-inline">Accueil</span>
+
+        <div class="nav-right-group">
+            <a href="<?= base_url('media') ?>" class="nav-home-btn">
+                <i class="bi bi-house-fill"></i>
+                <span>Accueil</span>
             </a>
-            
+
             <div class="lang-selector-custom">
                 <button class="custom-language-btn" id="customLanguageBtn">
                     <img src="https://flagcdn.com/w20/fr.png" alt="Français" id="currentLangFlag">
-                    <span id="currentLangLabel">Français</span>
+                    <span class="d-none d-sm-inline" id="currentLangLabel">FR</span>
                     <i class="bi bi-chevron-down"></i>
                 </button>
                 <div class="custom-language-dropdown" id="customLanguageDropdown">
@@ -792,7 +826,7 @@ function googleTranslateElementInit() {
                         <button class="btn-outline-secondary" style="margin-bottom: 1rem;" onclick="downloadMedia('<?= htmlspecialchars($mediaSlug) ?>')">
                             <i class="bi bi-download"></i> Télécharger
                         </button>
-                        <audio id="audioElement" src="<?= htmlspecialchars($fichier) ?>" preload="metadata"></audio>
+                        <audio id="audioElement" src="<?= htmlspecialchars($fichier) ?>" preload="auto" autoplay></audio>
                         <div class="audio-controls">
                             <button class="audio-btn" onclick="previousTrack()"><i class="bi bi-skip-backward-fill"></i></button>
                             <button class="audio-btn play-pause" id="playPauseBtn" onclick="togglePlay()"><i class="bi bi-play-fill"></i></button>
@@ -988,16 +1022,42 @@ const mediaId = <?= (int)($media['id_media'] ?? 0) ?>;
 const mediaSlug = '<?= htmlspecialchars($mediaSlug ?? '') ?>';
 const baseUrl = '<?= rtrim(base_url(), '/') ?>';
 
+// Playlist pour prev/next
+const playlist = <?= json_encode($playlist ?? [], JSON_UNESCAPED_UNICODE) ?>;
+let currentTrackIndex = -1;
+playlist.forEach((item, i) => {
+    if (String(item.slug || item.id_media) === String(mediaSlug)) currentTrackIndex = i;
+});
+
 // Audio Player
 let audioElement = document.getElementById('audioElement');
 let isPlaying = false;
 
 if (audioElement) {
     audioElement.addEventListener('timeupdate', updateProgress);
-    audioElement.addEventListener('ended', () => { isPlaying = false; updatePlayButton(); });
+    audioElement.addEventListener('ended', () => { isPlaying = false; updatePlayButton(); nextTrack(); });
     audioElement.addEventListener('loadedmetadata', () => {
         const totalTimeSpan = document.getElementById('totalTime');
         if (totalTimeSpan) totalTimeSpan.textContent = formatTime(audioElement.duration);
+    });
+    audioElement.addEventListener('canplay', function onCanPlay() {
+        audioElement.removeEventListener('canplay', onCanPlay);
+        audioElement.play().then(() => {
+            isPlaying = true;
+            updatePlayButton();
+        }).catch(() => {
+            // Autoplay bloqué par le navigateur — on attend un clic n'importe où
+            const unlock = () => {
+                audioElement.play().then(() => {
+                    isPlaying = true;
+                    updatePlayButton();
+                }).catch(() => {});
+                document.removeEventListener('click', unlock);
+                document.removeEventListener('touchstart', unlock);
+            };
+            document.addEventListener('click', unlock);
+            document.addEventListener('touchstart', unlock);
+        });
     });
 }
 
@@ -1037,8 +1097,19 @@ function seekAudio(e) {
     audioElement.currentTime = percent * audioElement.duration;
 }
 
-function previousTrack() { showToast('Fonctionnalité à venir', 'info'); }
-function nextTrack() { showToast('Fonctionnalité à venir', 'info'); }
+function previousTrack() {
+    if (playlist.length === 0) return;
+    const idx = currentTrackIndex > 0 ? currentTrackIndex - 1 : playlist.length - 1;
+    const item = playlist[idx];
+    if (item) window.location.href = baseUrl + '/media/detail/' + (item.slug || item.id_media);
+}
+
+function nextTrack() {
+    if (playlist.length === 0) return;
+    const idx = currentTrackIndex < playlist.length - 1 ? currentTrackIndex + 1 : 0;
+    const item = playlist[idx];
+    if (item) window.location.href = baseUrl + '/media/detail/' + (item.slug || item.id_media);
+}
 
 function downloadMedia(identifier) {
     const isNumeric = !isNaN(identifier) && !isNaN(parseFloat(identifier));

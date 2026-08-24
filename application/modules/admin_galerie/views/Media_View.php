@@ -433,6 +433,8 @@ $flash_warning = $this->session->flashdata('warning');
 let currentStep = 1;
 let selectedType = '';
 let uploadManager = null;
+const csrfToken = '<?= $this->security->get_csrf_hash() ?>';
+const csrfName = '<?= $this->security->get_csrf_token_name() ?>';
 
 $(document).ready(function() {
     // Type selection
@@ -450,8 +452,6 @@ $(document).ready(function() {
         if (selectedType === 'link') {
             $('#step2_file').removeClass('active');
             $('#step2_link').addClass('active');
-            $('#nextStep').hide();
-            $('#submitBtn').show();
         } else {
             $('#step2_link').removeClass('active');
             $('#step2_file').addClass('active');
@@ -459,10 +459,19 @@ $(document).ready(function() {
         }
     }
 
+    // Empêcher la soumission HTML5 tant que step3 n'est pas actif
+    $('#uploadForm').on('submit', function(e) {
+        if (currentStep !== 3) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+
     // Step navigation
     $('#nextStep').click(function() {
         if (currentStep === 1 && !selectedType) { toastr.error('Veuillez sélectionner un type de média'); return; }
-        if (currentStep === 2 && selectedType !== 'link') { goToStep(3); return; }
+        if (currentStep === 2) { goToStep(3); return; }
         goToStep(currentStep + 1);
     });
 
@@ -473,8 +482,8 @@ $(document).ready(function() {
         $('#step' + step).addClass('active');
         currentStep = step;
         $('#prevStep').toggle(step > 1);
-        $('#nextStep').toggle(step === 1 || (step === 2 && selectedType !== 'link'));
-        $('#submitBtn').toggle(step === 3 || (step === 2 && selectedType === 'link'));
+        $('#nextStep').toggle(step < 3);
+        $('#submitBtn').toggle(step === 3);
     }
 
     // File upload setup
@@ -665,7 +674,7 @@ $(document).ready(function() {
                 const resp = await $.ajax({
                     url: '<?= base_url("admin/media/fetchLinkMeta") ?>',
                     method: 'POST',
-                    data: { url: url }
+                    data: { url: url, [csrfName]: csrfToken }
                 });
                 if (resp.success) {
                     if (resp.title && !document.getElementById('media_titre').value) {
@@ -802,7 +811,9 @@ $(document).ready(function() {
             const id = $(this).data('id');
             const field = $(this).data('field');
             const value = this.checked ? 1 : 0;
-            $.post('<?= base_url("admin/media/toggleField") ?>', { id: id, field: field, value: value }, function(resp) {
+            const payload = { id: id, field: field, value: value };
+            payload[csrfName] = csrfToken;
+            $.post('<?= base_url("admin/media/toggleField") ?>', payload, function(resp) {
                 if (!resp.success) toastr.error('Erreur');
             }, 'json');
         });

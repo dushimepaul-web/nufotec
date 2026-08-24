@@ -241,7 +241,7 @@ class Media extends Public_Controller{
             $sql = "
                 SELECT {$select}, 0 as is_video_content, 'book' as sub_type_filter
                 FROM galerie_medias g
-                WHERE g.est_actif = 1 AND g.sous_type = 'book'
+                WHERE g.est_actif = 1 AND g.type = 'document'
                 ORDER BY g.created_at DESC
             ";
             return $this->db->query($sql)->result_array();
@@ -380,13 +380,22 @@ class Media extends Public_Controller{
         $recommended = $this->getRecommendedMedias($media, $user_id);
         $recommended = $this->formatMedias($recommended);
         $categories = $this->getCategoriesWithCount();
+
+        // Playlist pour prev/next (même type, triés par date)
+        $playlist = $this->db->query("
+            SELECT id_media, slug, type, titre
+            FROM galerie_medias
+            WHERE est_actif = 1 AND type = ?
+            ORDER BY created_at DESC
+        ", [$media['type']])->result_array();
         
         $data = [
             'media' => $media,
             'comments' => $comments,
             'recommended' => $recommended,
             'categories' => $categories,
-            'user' => $user
+            'user' => $user,
+            'playlist' => $playlist
         ];
         
         $this->load->view('Media_Detail_View', $data);
@@ -573,6 +582,113 @@ class Media extends Public_Controller{
         $data['current_type'] = null;
         
         $this->load->view('Media_View', $data);
+    }
+
+    /**
+     * Recherche live AJAX - retourne du HTML
+     */
+    public function liveSearch()
+    {
+        $query = trim((string) $this->input->get('q'));
+        $type  = $this->input->get('type');
+
+        if (empty($query) || mb_strlen($query) < 2) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => true, 'html' => '']);
+            return;
+        }
+
+        $like = '%' . $this->db->escape_like_str($query) . '%';
+
+        $sql = "
+            SELECT g.id_media, g.titre, g.slug, g.type, g.fichier, g.lien, g.miniature,
+                   g.date_media, g.taille, g.duree, g.credits, g.categorie,
+                   (SELECT COUNT(*) FROM media_views WHERE id_media = g.id_media) as views_count
+            FROM galerie_medias g
+            WHERE g.est_actif = 1
+              AND (g.titre LIKE ? OR g.credits LIKE ? OR g.description LIKE ? OR g.categorie LIKE ?)
+        ";
+        $params = [$like, $like, $like, $like];
+
+        if ($type && in_array($type, ['video', 'audio', 'image', 'document', 'link'])) {
+            $sql .= " AND g.type = ? ";
+            $params[] = $type;
+        }
+
+        $sql .= " ORDER BY CASE WHEN g.titre LIKE ? THEN 10 ELSE 1 END DESC, g.created_at DESC LIMIT 12";
+        $params[] = $like;
+
+        $medias = $this->db->query($sql, $params)->result_array();
+
+        $html = '';
+        if (!empty($medias)) {
+            foreach ($medias as $m) {
+                $html .= $this->_renderSearchItem($m);
+            }
+        } else {
+            $html = '<div class="search-no-result"><i class="bi bi-search"></i><p>Aucun résultat pour « ' . htmlspecialchars($query) . ' »</p></div>';
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true, 'html' => $html, 'count' => count($medias)]);
+        exit;
+    }
+
+    private function _renderSearchItem($media)
+    {
+        $type  = $media['type'] ?? 'link';
+        $title = htmlspecialchars($media['titre'] ?? 'Sans titre');
+        $channel = htmlspecialchars($media['credits'] ?? $media['categorie'] ?? 'NUFOTEC');
+        $views = number_format($media['views_count'] ?? 0);
+        $slug  = $media['slug'] ?? $media['id_media'];
+
+        if (!empty($media['miniature'])) {
+            $thumb = (strpos($media['miniature'], 'http') === 0)
+                ? $media['miniature']
+                : base_url($media['miniature']);
+        } else {
+            $defaults = [
+                'audio'    => 'assets/backend/images/defaut-mignature-audio.jpeg',
+                'video'    => 'assets/backend/images/defaut-mignature-video.jpeg',
+                'image'    => 'assets/backend/images/default-avatar.jpg',
+                'document' => 'assets/backend/images/default-avatar-pdf-mignature.png',
+                'link'     => 'assets/backend/images/default-avatar.jpg',
+            ];
+            $thumb = base_url($defaults[$type] ?? $defaults['link']);
+        }
+
+        $duration = '';
+        if (in_array($type, ['audio', 'video']) && !empty($media['duree'])) {
+            $d = (int) $media['duree'];
+            $h = floor($d / 3600);
+            $m = floor(($d % 3600) / 60);
+            $s = $d % 60;
+            $duration = $h > 0 ? sprintf('%d:%02d:%02d', $h, $m, $s) : sprintf('%d:%02d', $m, $s);
+            $duration = '<span class="search-duration">' . $duration . '</span>';
+        }
+
+        $typeIcon = [
+            'audio' => 'bi-music-note-beamed',
+            'video' => 'bi-play-btn-fill',
+            'image' => 'bi-image',
+            'document' => 'bi-file-earmark-text',
+            'link'  => 'bi-link-45deg',
+        ];
+        $icon = $typeIcon[$type] ?? 'bi-file';
+
+        $url = base_url('media/detail/' . $slug);
+
+        return '
+        <a href="' . $url . '" class="search-item">
+            <div class="search-item-thumb">
+                <img src="' . $thumb . '" alt="' . $title . '" loading="lazy">
+                ' . $duration . '
+            </div>
+            <div class="search-item-info">
+                <div class="search-item-title"><i class="bi ' . $icon . '"></i> ' . $title . '</div>
+                <div class="search-item-meta">' . $channel . ' &middot; ' . $views . ' vues</div>
+            </div>
+        </a>';
     }
 
     public function apiAddComment()

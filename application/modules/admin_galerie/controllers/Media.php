@@ -221,6 +221,15 @@ class Media extends MX_Controller {
         exit;
     }
 
+    private function verifyAjaxCsrf()
+    {
+        $token_name = $this->security->get_csrf_token_name();
+        $token = $this->input->post($token_name);
+        if (empty($token) || !$this->security->csrf_verify()) {
+            $this->jsonResponse(['success' => false, 'message' => 'Token CSRF invalide']);
+        }
+    }
+
     // ==================== SLUGS ====================
 
     private function generateSlug($title, $id = null)
@@ -588,6 +597,7 @@ class Media extends MX_Controller {
 
     public function ChangeStatus()
     {
+        $this->verifyAjaxCsrf();
         $id     = $this->input->post('id');
         $status = $this->input->post('est_actif');
         $rsp = $this->MediaModel->update(['id_media' => $id], ['est_actif' => $status]);
@@ -596,6 +606,7 @@ class Media extends MX_Controller {
 
     public function toggleField()
     {
+        $this->verifyAjaxCsrf();
         $id    = $this->input->post('id');
         $field = $this->input->post('field');
         $value = $this->input->post('value');
@@ -1132,6 +1143,11 @@ class Media extends MX_Controller {
             return;
         }
 
+        if (php_sapi_name() !== 'cli') {
+            show_404();
+            return;
+        }
+
         set_time_limit(0);
 
         $lock = FCPATH . 'uploads/temp/jobs/_worker.lock';
@@ -1271,11 +1287,26 @@ class Media extends MX_Controller {
         $key = md5($action . '|' . $identifier . '|' . $window);
         $file = $dir . $key . '.cnt';
 
-        $count = is_file($file) ? (int)@file_get_contents($file) : 0;
+        $fp = @fopen($file, 'c');
+        if (!$fp) return true;
+
+        if (!flock($fp, LOCK_EX)) {
+            fclose($fp);
+            return true;
+        }
+
+        $count = (int)@file_get_contents($file);
         if ($count >= $max) {
+            flock($fp, LOCK_UN);
+            fclose($fp);
             return false;
         }
-        @file_put_contents($file, $count + 1, LOCK_EX);
+
+        ftruncate($fp, 0);
+        rewind($fp);
+        fwrite($fp, (string)($count + 1));
+        flock($fp, LOCK_UN);
+        fclose($fp);
         return true;
     }
 
@@ -1539,7 +1570,12 @@ class Media extends MX_Controller {
             $this->jsonResponse(['success' => false, 'message' => 'Aucun fichier reçu']);
         }
 
-        $file      = $_FILES['thumbnail_file'];
+        $file = $_FILES['thumbnail_file'];
+        $max_thumb_size = 5 * 1024 * 1024;
+        if ($file['size'] > $max_thumb_size) {
+            $this->jsonResponse(['success' => false, 'message' => 'Fichier trop grand (max 5 Mo)']);
+        }
+
         $ext       = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $valid_ext = ['gif', 'jpg', 'png', 'jpeg', 'webp'];
 
@@ -1988,6 +2024,10 @@ class Media extends MX_Controller {
             $this->jsonResponse(['success' => false, 'message' => 'URL invalide']);
         }
 
+        if (!$this->isUrlSafe($url)) {
+            $this->jsonResponse(['success' => false, 'message' => 'URL non autorisée (accès interne interdit)']);
+        }
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL            => $url,
@@ -1996,7 +2036,7 @@ class Media extends MX_Controller {
             CURLOPT_TIMEOUT        => 10,
             CURLOPT_MAXREDIRS      => 3,
             CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; NufotecBot/1.0)',
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_NOBODY         => true,
         ]);
         curl_exec($ch);
@@ -2015,7 +2055,7 @@ class Media extends MX_Controller {
             CURLOPT_TIMEOUT        => 10,
             CURLOPT_MAXREDIRS      => 3,
             CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; NufotecBot/1.0)',
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => true,
         ]);
         $html = curl_exec($ch);
         curl_close($ch);
@@ -2049,5 +2089,29 @@ class Media extends MX_Controller {
             'description' => $description,
             'og_image'    => $og_image,
         ]);
+    }
+
+    private function isUrlSafe($url)
+    {
+        $parsed = parse_url($url);
+        if (!$parsed || empty($parsed['host'])) return false;
+
+        $host = strtolower($parsed['host']);
+        $ip = gethostbyname($host);
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        $blocked = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
+        if (in_array($host, $blocked)) return false;
+
+        if (preg_match('/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.)/', $ip)) {
+            return false;
+        }
+
+        if (in_array($parsed['scheme'] ?? '', ['file', 'ftp', 'gopher'])) return false;
+
+        return true;
     }
 }

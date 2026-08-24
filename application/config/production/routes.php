@@ -87,8 +87,8 @@ $route['commande_whatsapp/export_csv'] = 'Commande_whatsapp/export_csv';
 // ============================================
 // ROUTES PRODUITS
 // ============================================
-$route['Produits'] = 'Products/index';
-$route['produits'] = 'Products/index';
+$route['Produits'] = 'Home/Boutique/index';
+$route['produits'] = 'Home/Boutique/index';
 
 // ============================================
 // ROUTES DASHBOARD
@@ -126,6 +126,11 @@ $route['auth/clear_flash_data'] = 'Auth/clear_flash_data';
 // Routes pour les tests
 $route['auth/test_email'] = 'Auth/test_email';
 
+// Routes pour vérification email
+$route['auth/verify_email_page'] = 'Auth/verify_email_page';
+$route['auth/verify_email_code'] = 'Auth/verify_email_code';
+$route['auth/resend_verification_code'] = 'Auth/resend_verification_code';
+
 // ============================================
 // ALIAS AVEC MAJUSCULE (Compatibilité)
 // ============================================
@@ -137,6 +142,9 @@ $route['Auth/logout'] = 'Auth/logout';
 $route['Auth/verify_identity'] = 'Auth/verify_identity';
 $route['Auth/reset_password'] = 'Auth/reset_password';
 $route['Auth/clear_flash'] = 'Auth/clear_flash';
+$route['Auth/verify_email_page'] = 'Auth/verify_email_page';
+$route['Auth/verify_email_code'] = 'Auth/verify_email_code';
+$route['Auth/resend_verification_code'] = 'Auth/resend_verification_code';
 
 // ============================================
 // ALIAS SIMPLES (Sans préfixe auth)
@@ -160,23 +168,21 @@ $route['product/(:any)'] = 'Products/detail/$1';
 $route['products/(:any)'] = 'Products/detail/$1';
 $route['buyers/catalogue'] = 'Products/index';
 
-// ROUTES BOUTIQUE & PANIER (redirigées vers le contrôleur Products fonctionnel)
-$route['boutique'] = 'Products/index';
-$route['boutique/categorie/(:num)'] = 'Products/index';
-$route['boutique/categorie/(:num)/(:num)'] = 'Products/index';
-$route['boutique/detail/(:any)'] = 'Products/detail/$1';
-$route['boutique/recherche'] = 'Products/index';
-$route['boutique/ajax_get_products'] = 'Products/get_products_ajax';
+// ROUTES BOUTIQUE & PANIER
+$route['boutique'] = 'Home/boutique/index';
+$route['boutique/categorie/(:num)'] = 'Home/boutique/categorie/$1';
+$route['boutique/categorie/(:num)/(:num)'] = 'Home/boutique/categorie/$1/$2';
+$route['boutique/detail/(:any)'] = 'Home/boutique/detail/$1';
+$route['boutique/recherche'] = 'Home/boutique/recherche';
+$route['boutique/ajax_get_products'] = 'Home/Boutique/ajax_get_products';
 
 // ============================================
 // ROUTES MÉDECINS & CONSULTATIONS
 // ============================================
 $route['doctor'] = 'Consultations/PatientForm/medicin';
-$route['doctor/(:any)'] = 'Consultations/PatientForm/medicin';
 $route['patient-form'] = 'Consultations/PatientForm';
 $route['patient-form/index'] = 'Consultations/PatientForm/index';
 $route['patient-form/create'] = 'Consultations/PatientForm/create';
-$route['patient-form/whatsapp'] = 'Consultations/PatientForm/whatsapp';
 $route['swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
 $route['Swap-medecin'] = 'Consultations/PatientForm/changeDoctor';
 $route['consultations/get_countries'] = 'Consultations/PatientForm/get_countries';
@@ -214,7 +220,6 @@ $route['configurations/test_upload_path'] = 'Configurations/test_upload_path';
 // ROUTES MÉDIAS (VIDEO, AUDIO, AUTRE)
 // ============================================
 $route['media'] = 'Home/Media/index';
-$route['media/temoignages'] = 'Home/Media/temoignages';
 $route['media/search'] = 'Home/Media/search';
 $route['media/search/(:any)'] = 'Home/Media/search/$1';
 $route['media/view/(:any)'] = 'Home/Media/view/$1';
@@ -226,7 +231,6 @@ $route['media/player/(:any)'] = 'Home/Media/player/$1';
 $route['media/downloader'] = 'Home/Media/downloader';
 $route['media/downloader/(:any)'] = 'Home/Media/downloader/$1';
 $route['media/trending'] = 'Home/Media/trending';
-$route['Media/trending'] = 'Home/Media/trending';
 $route['media/news'] = 'Home/Media/news';
 
 // ROUTES API MÉDIAS
@@ -249,6 +253,8 @@ $route['media/getComments/(:any)'] = 'Home/Media/apiGetComments/$1';
 $route['media/getMedia/(:any)'] = 'Home/Media/apiGetMedia/$1';
 $route['media/getStats'] = 'Home/Media/apiGetStats';
 $route['media/searchAjax'] = 'Home/Media/apiSearch';
+$route['media/liveSearch'] = 'Home/Media/liveSearch';
+$route['media/temoignages'] = 'Home/Media/temoignages';
 
 // Backend Médias (Unifié) - préfixé admin/ pour ne pas écraser le frontend
 $route['admin/media'] = 'admin_galerie/Media/index';
@@ -268,6 +274,7 @@ $route['admin/media/checkServerLimits'] = 'admin_galerie/Media/checkServerLimits
 $route['admin/media/stream/(:any)/(:num)'] = 'admin_galerie/Media/stream/$1/$2';
 $route['admin/media/getJson/(:num)'] = 'admin_galerie/Media/getJson/$1';
 $route['admin/media/searchAjax'] = 'admin_galerie/Media/searchAjax';
+$route['admin/media/fetchLinkMeta'] = 'admin_galerie/Media/fetchLinkMeta';
 $route['cli/jobs/run'] = 'admin_galerie/Media/jobs';
 
 
@@ -371,7 +378,6 @@ $route['change-password'] = 'Configurations/Settings_medecin/change_password';
 $route['calendrier'] = 'Users/Medecin_Calendrier/index';
 $route['calendriersave'] = 'Users/Medecin_Calendrier/save';
 $route['users'] = 'Users/Users/index';
-$route['users/Medecins'] = 'Users/Medecins/index';
 $route['users-create'] = 'Users/Users/Create';
 $route['users-update'] = 'Users/Users/Update';
 $route['users-delete'] = 'Users/Users/Delete';
@@ -430,11 +436,10 @@ $route['api/mobile/search'] = 'Api/Mobile/search';
 $route['api/mobile/popular'] = 'Api/Mobile/popular';
 $route['api/mobile/recent'] = 'Api/Mobile/recent';
 $route['api/mobile/playlists'] = 'Api/Mobile/playlists';
-$route['api/mobile/temoignages'] = 'Api/Mobile/temoignages';
-$route['api/mobile/notifications'] = 'Api/Mobile/notifications';
 // application/config/routes.php
 $route['api/mobile/record-view'] = 'Api/Mobile/recordViewApi';
 $route['api/mobile/settings'] = 'Api/Mobile/settings';
+$route['api/mobile/notifications/register-token'] = 'Api/Mobile/register_fcm_token';
 
 
 
@@ -499,6 +504,7 @@ $route['search/ajax_search'] = 'Home/search/ajax_search';
 $route['Equipe'] = 'Equipe/index';
 $route['Partenaires'] = 'Partenaires/index';
 $route['Temoignages'] = 'Temoignages/index';
+$route['Services'] = 'Services/index';
 $route['Appels_action'] = 'Appels_action/index';
 $route['Chiffres_cles'] = 'Chiffres_cles/index';
 $route['Statistiques_reseaux'] = 'Statistiques_reseaux/index';
@@ -511,6 +517,8 @@ $route['Visionmission'] = 'Visionmission/index';
 $route['Consultations'] = 'Consultations/index';
 $route['Categories'] = 'Categories/index';
 $route['Commandes'] = 'Commandes/index';
+$route['Adresses'] = 'Adresses/index';
+$route['Investissement'] = 'Investissement/index';
 $route['Investissement_phases'] = 'Investissement_phases/index';
 $route['Investissement_phases/index'] = 'Investissement_phases/index';
 $route['Investissement_phases/Create'] = 'Investissement_phases/Create';
@@ -532,6 +540,26 @@ $route['Email_templates'] = 'Email_templates/index';
 $route['Publication'] = 'Publication/index';
 $route['Mode_payement'] = 'Mode_payement/index';
 $route['contact_us/Contact_Us'] = 'contact_us/Contact_Us/index';
+
+// ============================================
+// BLOG, ACTUALITÉS, MÉDIAS & BOUTIQUE (contrôleurs dans le module Home)
+// ============================================
+$route['blog'] = 'Home/Blog/index';
+$route['blog/index'] = 'Home/Blog/index';
+$route['blog/categorie/(:any)'] = 'Home/Blog/categorie/$1';
+$route['blog/article/(:any)'] = 'Home/Blog/article/$1';
+$route['actualite/(:any)'] = 'Home/Blog/article/$1';
+$route['media/detail/(:any)'] = 'Home/Media/detail/$1';
+$route['media/type/(:any)'] = 'Home/Media/type/$1';
+$route['boutique/index'] = 'Home/boutique/index';
+
+// ============================================
+// CHAT CONSULTATIONS (contrôleur dans le module Consultations)
+// ============================================
+$route['Consultation_chats'] = 'Consultations/Consultation_chats/index';
+$route['Consultation_chats/(:any)'] = 'Consultations/Consultation_chats/$1';
+$route['consultation_chats'] = 'Consultations/Consultation_chats/index';
+$route['consultation_chats/(:any)'] = 'Consultations/Consultation_chats/$1';
 
 // ============================================
 // ROUTE GÉNÉRIQUE POUR PAGES STATIQUES (DOIT ÊTRE LA DERNIÈRE)
