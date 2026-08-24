@@ -858,3 +858,5 @@
     }
 })();
 </script>
+
+<?php $this->load->view('chatbot/chatbot/Widget_View'); ?>

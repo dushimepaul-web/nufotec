@@ -366,8 +366,26 @@ $route['social-update'] = 'Social/Update';
 $route['social-delete'] = 'Social/Delete';
 $route['social/ChangeStatus'] = 'Social/ChangeStatus';
 $route['api/social'] = 'Social/api_get_active';
+// ============================================
+// CHATBOT MODULE
+// ============================================
+$route['chatbot']                          = 'chatbot/Chatbot/index';
+$route['chatbot/start']                    = 'chatbot/Chatbot/start';
+$route['chatbot/send']                     = 'chatbot/Chatbot/send';
+$route['chatbot/upload']                   = 'chatbot/Chatbot/upload';
+$route['chatbot/request_human']            = 'chatbot/Chatbot/request_human';
+$route['chatbot/history/(:num)']           = 'chatbot/Chatbot/history/$1';
+$route['admin/chatbot/kb']                 = 'chatbot/admin/Kb/index';
+$route['admin/chatbot/kb/create']          = 'chatbot/admin/Kb/create';
+$route['admin/chatbot/kb/edit/(:num)']     = 'chatbot/admin/Kb/edit/$1';
+$route['admin/chatbot/kb/delete/(:num)']   = 'chatbot/admin/Kb/delete/$1';
+$route['admin/chatbot/kb/regenerate_all_embeddings'] = 'chatbot/admin/Kb/regenerate_all_embeddings';
+$route['admin/chatbot/conversations']             = 'chatbot/admin/Conversations/index';
+$route['admin/chatbot/conversations/view/(:num)'] = 'chatbot/admin/Conversations/view/$1';
+$route['admin/chatbot/conversations/assign/(:num)'] = 'chatbot/admin/Conversations/assign/$1';
+$route['admin/chatbot/conversations/reply/(:num)']  = 'chatbot/admin/Conversations/reply/$1';
+$route['admin/chatbot/conversations/close/(:num)']  = 'chatbot/admin/Conversations/close/$1';
 $route['webhook'] = 'chatbot/Chatbot/webhook';
-$route['chatbot/admin'] = 'chatbot/admin/index';
 
 // ============================================
 // ROUTES CONFIGURATIONS & UTILISATEURS

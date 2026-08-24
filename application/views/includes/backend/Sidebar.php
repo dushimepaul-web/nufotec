@@ -214,7 +214,25 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 
                 <?php if (admin_view()): ?>
-            
+                <!-- SECTION: CHATBOT -->
+                <li class="nav-header">Chatbot</li>
+                <?php $chatbot_active = in_array($this->uri->segment(2), ['kb', 'conversations']); ?>
+                <li class="nav-item <?= $chatbot_active ? 'menu-open' : '' ?>">
+                    <a href="#" class="nav-link <?= $chatbot_active ? 'active' : '' ?>">
+                        <i class="nav-icon bi bi-robot"></i>
+                        <p>
+                            Chatbot
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item"><a href="<?= base_url('admin/chatbot/kb') ?>" class="nav-link <?= $this->uri->segment(2) == 'kb' ? 'active' : '' ?>"><i class="nav-icon bi bi-book"></i><p>Base de connaissances</p></a></li>
+                        <li class="nav-item"><a href="<?= base_url('admin/chatbot/conversations') ?>" class="nav-link <?= $this->uri->segment(2) == 'conversations' ? 'active' : '' ?>"><i class="nav-icon bi bi-chat-dots"></i><p>Conversations</p></a></li>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
+                <?php if (admin_view()): ?>
 
                 <!-- SECTION: ADMINISTRATION -->
                 <li class="nav-header">Administration</li>
