@@ -1,22 +1,6 @@
-*/logs/log-*.php
-!*/logs/index.html
-*/cache/*
-!*/cache/index.html
-!*/cache/.htaccess
-
-#codeigniter 3
-application/logs/*
-!application/logs/index.html
-!application/logs/.htaccess
-
-#env
-env.php
-
-# ML Service
-ml_service/venv/
-ml_service/app/models/*.joblib
-ml_service/app/models/*.pkl
-ml_service/.env
-ml_service/__pycache__/
-ml_service/app/__pycache__/
-ml_service/training/__pycache__/
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+pip.log
