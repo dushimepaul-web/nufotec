@@ -261,3 +261,11 @@ def test_admin_only(client, db):
     for path in (f"{ADMIN}/pages", f"{ADMIN}/messages", f"{ADMIN}/parametres", "/api/v1/admin/tableau-de-bord"):
         assert client.get(path, headers=h).status_code == 403
 
+
+
+def test_admin_reads_one_article_for_the_edit_form(client, admin_h):
+    created = client.post(f"{ADMIN}/actualites", headers=admin_h, json={"titre": "Brouillon à relire", "contenu": "<p>x</p>"})
+    aid = created.json()["data"]["id"]
+    r = client.get(f"{ADMIN}/actualites/{aid}", headers=admin_h)
+    assert r.status_code == 200 and r.json()["data"]["etat"] == "brouillon" and r.json()["data"]["contenu"] == "<p>x</p>"
+    assert client.get(f"{ADMIN}/actualites/999999", headers=admin_h).status_code == 404

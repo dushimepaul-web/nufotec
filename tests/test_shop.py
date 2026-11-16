@@ -226,3 +226,25 @@ def test_order_history_rows(db, client, product):
     numero = _order(client, product["slug"]).json()["data"]["commande"]["numero"]
     o = db.scalar(select(OrderRequest).where(OrderRequest.numero == numero))
     assert db.query(OrderHistory).filter(OrderHistory.order_id == o.id).count() == 1
+
+
+def test_admin_reads_one_product_for_the_edit_form(client, admin_h, product):
+    r = client.get(f"/api/v1/admin/produits/{product['uuid']}", headers=admin_h)
+    assert r.status_code == 200, r.text
+    data = r.json()["data"]
+    assert data["uuid"] == product["uuid"] and "publie" in data and "galerie" in data
+    assert client.get("/api/v1/admin/produits/inconnu", headers=admin_h).status_code == 404
+    assert client.get(f"/api/v1/admin/produits/{product['uuid']}").status_code == 401
+
+
+def test_admin_sees_inactive_categories_with_their_state(client, admin_h):
+    r = client.post("/api/v1/admin/produits/categories", headers=admin_h, json={"nom": "Catégorie cachée test", "actif": False})
+    assert r.status_code == 201, r.text
+    cid = r.json()["data"]["id"]
+    public = client.get("/api/v1/produits/categories").json()["data"]
+    flat = lambda tree: [c for n in tree for c in [n, *flat(n["sous_categories"])]]
+    assert all(c["id"] != cid for c in flat(public))
+    admin = flat(client.get("/api/v1/admin/produits/categories", headers=admin_h).json()["data"])
+    mine = next(c for c in admin if c["id"] == cid)
+    assert mine["actif"] is False
+    assert client.get("/api/v1/admin/produits/categories").status_code == 401

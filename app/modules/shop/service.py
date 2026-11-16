@@ -107,14 +107,17 @@ def product_out(p: Product, detail: bool = False) -> dict:
 
 # ───────────────────────── catalogue public ─────────────────────────
 
-def categories_tree(db: Session) -> list[dict]:
+def categories_tree(db: Session, include_inactive: bool = False) -> list[dict]:
+    """Arbre des catégories. Public : actives seulement ; administration : toutes, avec leur état."""
     counts = dict(db.execute(select(Product.category_id, func.count()).where(
         Product.is_active.is_(True), Product.deleted_at.is_(None)).group_by(Product.category_id)).all())
-    rows = list(db.scalars(select(ProductCategory).where(ProductCategory.is_active.is_(True))
-                           .order_by(ProductCategory.position, ProductCategory.name)))
+    query = select(ProductCategory).order_by(ProductCategory.position, ProductCategory.name)
+    if not include_inactive:
+        query = query.where(ProductCategory.is_active.is_(True))
+    rows = list(db.scalars(query))
     items = {c.id: {"id": c.id, "nom": c.name, "slug": c.slug, "code": c.code, "description": c.description,
                     "image": public_url(CATEGORIES_FOLDER, c.image, None), "produits": counts.get(c.id, 0),
-                    "sous_categories": []} for c in rows}
+                    "sous_categories": [], **({"actif": bool(c.is_active)} if include_inactive else {})} for c in rows}
     roots = []
     for c in rows:
         if c.parent_id and c.parent_id in items:

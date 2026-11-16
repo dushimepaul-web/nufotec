@@ -263,6 +263,17 @@ def admin_products(q: str | None = Query(None, max_length=100), supprimes: bool 
     return ok({"items": [_admin_product(p) for p in rows], "meta": meta})
 
 
+@admin.get("/produits/categories", response_model=Envelope[list[dict]],
+           summary="Toutes les catégories, inactives comprises (avec leur état)")
+def admin_categories(db: Session = DB, _: User = MANAGE):
+    return ok(service.categories_tree(db, include_inactive=True))
+
+
+@admin.get("/produits/{product_uuid}", response_model=Envelope[dict], summary="Un produit (formulaire de modification)")
+def admin_product(product_uuid: str, db: Session = DB, _: User = MANAGE):
+    return ok(_admin_product(_product(db, product_uuid)))
+
+
 @admin.post("/produits", status_code=status.HTTP_201_CREATED, response_model=Envelope[dict], summary="Nouveau produit")
 def admin_create(body: ProductIn, db: Session = DB, client: ClientInfo = CLIENT, actor: User = MANAGE):
     return ok(_admin_product(service.create_product(db, actor, body, client)), "Produit créé")

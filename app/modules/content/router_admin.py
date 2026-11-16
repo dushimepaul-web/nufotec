@@ -237,6 +237,11 @@ def list_articles(q: str | None = Query(None, max_length=100), page: PageParams 
     return ok({"items": [_article_admin(a) for a in rows], "meta": meta})
 
 
+@router.get("/actualites/{article_id}", response_model=Envelope[dict], summary="Un article (formulaire de modification)")
+def get_article(article_id: int, db: Session = DB, _: User = MANAGE):
+    return ok(_article_admin(_article(db, article_id)))
+
+
 @router.post("/actualites", status_code=status.HTTP_201_CREATED, response_model=Envelope[dict], summary="Nouvel article")
 def add_article(body: ArticleIn, db: Session = DB, _: User = MANAGE):
     a = _apply_article(db, Article(created_at=now(), vues=0), body)
