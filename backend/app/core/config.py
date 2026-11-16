@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     default_phone_region: str = "BI"
 
     # Fichiers : on écrit dans le dossier attachments du site PHP pour partager les mêmes fichiers.
-    uploads_dir: str = r"C:\wamp64\www\nufotec\attachments"
-    media_base_url: str = "http://localhost/nufotec/attachments"
+    uploads_dir: str = r"C:\wamp64\www\nufotec\backend\attachments"
+    media_base_url: str = "http://localhost/nufotec/backend/attachments"
     public_api_url: str = "http://127.0.0.1:8000"
 
     # Emails : "console" garde les emails en mémoire et les écrit dans le journal (dev/tests),

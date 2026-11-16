@@ -11,6 +11,7 @@ media_processing.log
 backups/
 
 # fichiers envoyés par les visiteurs (dossiers patients, preuves de paiement, photos…) : jamais dans git
-attachments/
+attachments/*
+!attachments/.htaccess
 # rapport généré par les tests
 route_coverage.txt

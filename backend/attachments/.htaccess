@@ -1,0 +1,7 @@
+# Fichiers publics du site (images, médias) servis par Apache.
+Require all granted
+Options -Indexes
+# aucun script exécuté depuis les fichiers envoyés
+<FilesMatch "\.(php|phtml|phar|py|pl|cgi|sh)$">
+  Require all denied
+</FilesMatch>

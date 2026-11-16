@@ -1,0 +1,3 @@
+# Dossier nufotec : rien n est servi par Apache ici, sauf backend/attachments (voir backend/attachments/.htaccess).
+# Protège .git, le code du backend et du frontend, node_modules.
+Require all denied

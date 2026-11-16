@@ -1,0 +1,3 @@
+# Le dossier backend/ ne doit jamais être servi par Apache (.env, code, sauvegardes).
+# Seul attachments/ (images, médias) est public : voir attachments/.htaccess.
+Require all denied
