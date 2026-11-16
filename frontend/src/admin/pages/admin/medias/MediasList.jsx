@@ -1,10 +1,11 @@
 // Médiathèque — GET /admin/medias + ajout de lien + téléversement par morceaux.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { API_URL, tokens } from '../../../lib/api'
 import { getUser } from '../../../lib/auth'
 import { can } from '../../../lib/permissions'
 import { formatDate } from '../../../lib/format'
+import { DEFAULT_CREDITS, readMp3Tags, titleFromFileName, todayISO, youtubeInfo } from '../../../lib/mediaMeta'
 import { ROUTES } from '../../../lib/routes'
 import useApi from '../../../lib/useApi'
 import DataTable from '../../../ui/DataTable'
@@ -16,10 +17,31 @@ const CATEGORIES = ['audio', 'video', 'image', 'fichier', 'link']
 const TRAITEMENTS = ['aucun', 'en_attente', 'en_cours', 'pret', 'erreur']
 
 function LinkForm({ onClose, onSaved }) {
-  const [form, setForm] = useState({ titre: '', url: '', description: '', credits: '', date: '', publie: true, site_web: true, whatsapp: false })
+  const [form, setForm] = useState({ titre: '', url: '', description: '', credits: DEFAULT_CREDITS, date: todayISO(), publie: true, site_web: true, whatsapp: false })
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [hint, setHint] = useState('')
+  // valeurs mises automatiquement : remplacées si l'admin ne les a pas modifiées, jamais sa saisie
+  const auto = useRef({ titre: '', credits: DEFAULT_CREDITS })
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  // lien YouTube collé : titre et chaîne de la vidéo remplis automatiquement
+  useEffect(() => {
+    let alive = true
+    const t = setTimeout(async () => {
+      const info = await youtubeInfo(form.url)
+      if (!alive || !info) return
+      const prev = { ...auto.current }
+      auto.current = { titre: info.title || prev.titre, credits: info.author || prev.credits }
+      setForm((f) => ({
+        ...f,
+        titre: info.title && (!f.titre.trim() || f.titre === prev.titre) ? info.title : f.titre,
+        credits: info.author && (!f.credits.trim() || f.credits === prev.credits) ? info.author : f.credits,
+      }))
+      setHint(info.title ? 'Titre et crédits repris de la vidéo YouTube : vous pouvez les modifier.' : '')
+    }, 500)
+    return () => { alive = false; clearTimeout(t) }
+  }, [form.url])
 
   const submit = async (e) => {
     e.preventDefault()
@@ -52,6 +74,7 @@ function LinkForm({ onClose, onSaved }) {
           <div className="col-12">
             <label className="form-label">URL *</label>
             <input className="form-control" value={form.url} placeholder="https://youtube.com/…" onChange={(e) => set('url', e.target.value)} />
+            {hint && <small className="text-success"><i className="bi bi-magic me-1"></i>{hint}</small>}
           </div>
           <div className="col-12">
             <label className="form-label">Description</label>
@@ -91,11 +114,33 @@ function LinkForm({ onClose, onSaved }) {
 
 function UploadForm({ onClose, onSaved }) {
   const [file, setFile] = useState(null)
-  const [meta, setMeta] = useState({ titre: '', description: '', credits: '', date: '', publie: true, site_web: true, whatsapp: false })
+  const [meta, setMeta] = useState({ titre: '', description: '', credits: DEFAULT_CREDITS, date: todayISO(), publie: true, site_web: true, whatsapp: false })
   const [progress, setProgress] = useState(0)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const set = (k, v) => setMeta((f) => ({ ...f, [k]: v }))
+  const [hint, setHint] = useState('')
+  // valeurs mises automatiquement : remplacées si l'admin ne les a pas modifiées, jamais sa saisie
+  const auto = useRef({ titre: '', credits: DEFAULT_CREDITS })
+
+  const pickFile = async (f) => {
+    setFile(f || null)
+    if (!f) return
+    const tags = await readMp3Tags(f).catch(() => ({}))
+    const titre = tags.title || titleFromFileName(f.name)
+    const prev = { ...auto.current }
+    // crédits : artiste du MP3, sinon NUFOTEC BURUNDI (tant que l'admin n'a pas écrit les siens)
+    const credits = tags.artist || DEFAULT_CREDITS
+    auto.current = { titre, credits }
+    setMeta((m) => ({
+      ...m,
+      titre: !m.titre.trim() || m.titre === prev.titre ? titre : m.titre,
+      credits: !m.credits.trim() || m.credits === prev.credits ? credits : m.credits,
+    }))
+    setHint(tags.title ? 'Titre et crédits lus dans le fichier MP3 : vous pouvez les modifier.'
+      : titre ? 'Titre repris du nom du fichier : vous pouvez le modifier.'
+        : 'Le nom du fichier n’est qu’un code : écrivez le titre.')
+  }
 
   const start = async () => {
     if (!file) return
@@ -140,12 +185,13 @@ function UploadForm({ onClose, onSaved }) {
       <div className="row g-3">
         <div className="col-12">
           <label className="form-label">Fichier *</label>
-          <input type="file" className="form-control" onChange={(e) => setFile(e.target.files[0])} />
+          <input type="file" className="form-control" onChange={(e) => pickFile(e.target.files[0])} />
           <small className="text-muted">Le type (audio, vidéo, image…) est détecté automatiquement.</small>
         </div>
         <div className="col-12">
           <label className="form-label">Titre *</label>
           <input className="form-control" value={meta.titre} onChange={(e) => set('titre', e.target.value)} />
+          {hint && <small className="text-success"><i className="bi bi-magic me-1"></i>{hint}</small>}
         </div>
         <div className="col-12">
           <label className="form-label">Description</label>
