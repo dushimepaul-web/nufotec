@@ -1,0 +1,37 @@
+/* Surcharge NiceAdmin aux couleurs NUFOTEC (vert #0f4c3a). */
+:root {
+  --primary: #0f4c3a;
+  --bs-primary: #0f4c3a;
+  --bs-primary-rgb: 15, 76, 58;
+  --bs-link-color: #0f4c3a;
+  --bs-link-hover-color: #0b5c45;
+}
+
+.btn-primary {
+  --bs-btn-bg: #0f4c3a;
+  --bs-btn-border-color: #0f4c3a;
+  --bs-btn-hover-bg: #0c5c47;
+  --bs-btn-hover-border-color: #0c5c47;
+  --bs-btn-active-bg: #0a4a39;
+  --bs-btn-active-border-color: #0a4a39;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #0f4c3a;
+  --bs-btn-border-color: #0f4c3a;
+  --bs-btn-hover-bg: #0f4c3a;
+  --bs-btn-hover-border-color: #0f4c3a;
+  --bs-btn-active-bg: #0f4c3a;
+  --bs-btn-active-border-color: #0f4c3a;
+}
+
+.sidebar-nav .nav-link.active,
+.sidebar-nav .nav-link:hover {
+  background: #e6f0ec;
+  color: #0f4c3a;
+}
+
+.header .nav-profile img,
+.header .logo img {
+  border-radius: 6px;
+}

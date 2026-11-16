@@ -1,0 +1,58 @@
+/* Fenêtre modale (compatible Bootstrap, sans JS). */
+.nmodal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 37, 41, 0.5);
+  z-index: 1090;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem;
+  overflow-y: auto;
+}
+
+.nmodal {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.nmodal-sm { max-width: 360px; }
+.nmodal-lg { max-width: 700px; }
+.nmodal-xl { max-width: 940px; }
+
+.nmodal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #eceef1;
+}
+
+.nmodal-head h5 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.nmodal-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #6c757d;
+  cursor: pointer;
+}
+
+.nmodal-close:hover { color: #212529; }
+
+.nmodal-body { padding: 1.25rem; }
+
+.nmodal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #eceef1;
+}
