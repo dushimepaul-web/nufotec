@@ -1,4 +1,4 @@
-"""Identifiant de requête et journal d'accès."""
+"""Identifiant de requête, langue de la réponse et journal d'accès."""
 
 import logging
 import re
@@ -9,6 +9,8 @@ from contextvars import ContextVar
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+from app.core.i18n import lang_var, resolve_language, translate
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
@@ -33,12 +35,15 @@ def setup_logging(level: str) -> None:
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
-    """Réutilise X-Request-ID s'il est fourni (et sûr), sinon en crée un ; le renvoie dans la réponse."""
+    """Réutilise X-Request-ID s'il est fourni (et sûr), sinon en crée un ; le renvoie dans la réponse.
+    Choisit la langue : ?lang=xx, sinon l'en-tête Accept-Language, sinon le français."""
 
     async def dispatch(self, request: Request, call_next):
         incoming = request.headers.get("x-request-id", "")
         rid = incoming if _SAFE_ID.match(incoming) else uuid.uuid4().hex
         token = request_id_var.set(rid)
+        lang = resolve_language(request.query_params.get("lang"), request.headers.get("accept-language"))
+        lang_token = lang_var.set(lang)
         start = time.perf_counter()
         try:
             try:
@@ -47,11 +52,13 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
                 # Erreur non gérée : le détail reste dans le journal, le client reçoit l'identifiant.
                 error_log.exception("Erreur non gérée sur %s %s", request.method, request.url.path)
                 response = JSONResponse(status_code=500, content={"success": False, "error": {
-                    "code": "INTERNAL_ERROR", "message": "Une erreur interne est survenue",
+                    "code": "INTERNAL_ERROR", "message": translate("Une erreur interne est survenue"),
                     "details": {"request_id": rid}}})
             response.headers["X-Request-ID"] = rid
+            response.headers["Content-Language"] = lang
             access_log.info("%s %s -> %s (%.0f ms)", request.method, request.url.path, response.status_code,
                             (time.perf_counter() - start) * 1000)
             return response
         finally:
             request_id_var.reset(token)
+            lang_var.reset(lang_token)

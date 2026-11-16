@@ -12,15 +12,22 @@ from datetime import datetime, timedelta
 
 import jwt
 from fastapi import BackgroundTasks
-from sqlalchemy import func, literal_column, or_, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.core import audit
 from app.core.client import ClientInfo
 from app.core.config import get_settings
-from app.core.mailer import reset_code_email, send_email, verification_email
+from app.core.helpers import minutes_ago as _minutes_ago
+from app.core.helpers import now as _now
+from app.core.helpers import phone_or_422 as _phone_or_422
+from app.core.helpers import to_local as _local
+from app.core.helpers import too_many as _too_many
+from app.core.helpers import users_by_phone as _users_by_phone
+from app.core.helpers import validation_error as _validation
+from app.core.mailer import deliver_pending, invitation_email, queue_email, reset_code_email, verification_email
 from app.core.passwords import password_problems
-from app.core.phone import InvalidPhone, looks_like_phone, normalize_phone, sql_clean_phone
+from app.core.phone import InvalidPhone, looks_like_phone, normalize_phone
 from app.core.responses import ApiError
 from app.core.security import (
     DUMMY_HASH,
@@ -32,7 +39,7 @@ from app.core.security import (
     verify_password,
 )
 from app.core.uploads import delete_file, save_image
-from app.models import Log, PasswordReset, Pays, Role, User, UserSession
+from app.models import Log, PasswordReset, Pays, PushDevice, Role, User, UserSession
 from app.modules.auth.schemas import RegisterIn, TokensOut
 
 DISABLED_MESSAGE = (
@@ -43,44 +50,11 @@ INVALID_CREDENTIALS = ApiError(401, "INVALID_CREDENTIALS", "Identifiants incorre
 
 # ───────────────────────── outils ─────────────────────────
 
-def _now() -> datetime:
-    # Heure locale sans fuseau, comme date('Y-m-d H:i:s') côté PHP et NOW() côté MySQL.
-    return datetime.now().replace(microsecond=0)
-
-
-def _local(dt: datetime) -> datetime:
-    return dt.astimezone().replace(tzinfo=None, microsecond=0)
-
-
-def _validation(field: str, message: str, code: str = "VALIDATION_ERROR") -> ApiError:
-    return ApiError(422, code, message, [{"field": field, "message": message}])
-
-
 def _check_password(password: str, user_email: str, names: tuple[str, ...], field: str = "password") -> None:
     problems = password_problems(password, user_email, names)
     if problems:
         message = "Mot de passe trop faible : " + ", ".join(problems)
         raise _validation(field, message, "WEAK_PASSWORD")
-
-
-def _phone_or_422(raw: str | None, field: str = "telephone") -> str | None:
-    if not raw or not raw.strip():
-        return None
-    try:
-        return normalize_phone(raw)
-    except InvalidPhone as e:
-        raise _validation(field, str(e)) from None
-
-
-def _users_by_phone(db: Session, e164: str, exclude_id: int | None = None) -> list[User]:
-    query = select(User).where(sql_clean_phone(User.telephone) == e164, User.deleted_at.is_(None))
-    if exclude_id:
-        query = query.where(User.id != exclude_id)
-    return list(db.scalars(query).unique())
-
-
-def _minutes_ago(minutes: int):
-    return func.date_sub(func.now(), literal_column(f"INTERVAL {int(minutes)} MINUTE"))
 
 
 def _count_logs(db: Session, action: str, since_minutes: int, **filters) -> int:
@@ -89,12 +63,6 @@ def _count_logs(db: Session, action: str, since_minutes: int, **filters) -> int:
     for column, value in filters.items():
         query = query.where(getattr(Log, column) == value)
     return db.scalar(query) or 0
-
-
-def _too_many(message: str, retry_after: int) -> ApiError:
-    retry_after = max(retry_after, 1)
-    return ApiError(429, "TOO_MANY_REQUESTS", message, {"retry_after_seconds": retry_after},
-                    {"Retry-After": str(retry_after)})
 
 
 def _device(user_agent: str) -> tuple[str, str | None, str | None]:
@@ -132,7 +100,7 @@ def _close(session: UserSession, reason: str) -> None:
     session.logout_reason = reason
 
 
-def _close_all(db: Session, user_id: int, reason: str, except_id: int | None = None) -> int:
+def close_all_sessions(db: Session, user_id: int, reason: str, except_id: int | None = None) -> int:
     query = update(UserSession).where(UserSession.user_id == user_id, UserSession.is_active.is_(True))
     if except_id:
         query = query.where(UserSession.id != except_id)
@@ -165,9 +133,9 @@ def register(db: Session, data: RegisterIn, client: ClientInfo, background: Back
     db.flush()
     audit.activity(db, user.id, "register", client, "Inscription via l'API",
                    {"type_utilisateur": user.type_utilisateur})
+    queue_verification_email(db, user, background)
     db.commit()
     db.refresh(user)
-    _queue_verification_email(user, background)
     return user
 
 
@@ -312,7 +280,7 @@ def logout(db: Session, session: UserSession, client: ClientInfo) -> None:
     db.commit()
 
 
-def list_sessions(db: Session, user: User, current: UserSession) -> list[dict]:
+def list_sessions(db: Session, user: User, current: UserSession | None) -> list[dict]:
     rows = db.scalars(
         select(UserSession)
         .where(UserSession.user_id == user.id, UserSession.is_active.is_(True),
@@ -322,7 +290,7 @@ def list_sessions(db: Session, user: User, current: UserSession) -> list[dict]:
     return [{
         "id": s.id, "device_type": s.device_type, "platform": s.platform, "browser": s.browser,
         "ip_address": s.ip_address, "login_time": s.login_time, "last_activity": s.last_activity,
-        "current": s.id == current.id,
+        "current": current is not None and s.id == current.id,
     } for s in rows]
 
 
@@ -336,7 +304,7 @@ def revoke_session(db: Session, user: User, session_id: int, client: ClientInfo)
 
 
 def revoke_other_sessions(db: Session, user: User, current: UserSession, client: ClientInfo) -> int:
-    count = _close_all(db, user.id, "manual", except_id=current.id)
+    count = close_all_sessions(db, user.id, "manual", except_id=current.id)
     audit.activity(db, user.id, "sessions_revoked", client, f"{count} autre(s) session(s) fermée(s)")
     db.commit()
     return count
@@ -355,7 +323,7 @@ def change_password(db: Session, user: User, current_session: UserSession, curre
     user.password = hash_password(new)
     user.updated_at = _now()
     # Les autres appareils sont déconnectés ; la session courante reste ouverte.
-    _close_all(db, user.id, "force", except_id=current_session.id)
+    close_all_sessions(db, user.id, "force", except_id=current_session.id)
     audit.activity(db, user.id, "password_changed", client, "Mot de passe modifié")
     db.commit()
 
@@ -376,22 +344,38 @@ def forgot_password(db: Session, email: str, client: ClientInfo, background: Bac
     if user is None or not user.is_active:
         db.commit()
         return
-    recent = db.scalar(select(func.count()).select_from(PasswordReset).where(
-        PasswordReset.user_id == user.id, PasswordReset.created_at > _minutes_ago(60)))
-    if recent >= s.email_codes_per_hour:
+    if reset_codes_last_hour(db, user.id) >= s.email_codes_per_hour:
         db.commit()
         return
 
-    # Un seul code valable à la fois.
+    issue_reset_code(db, user, client, background)
+    audit.activity(db, user.id, "password_reset_requested", client, "Code de réinitialisation envoyé")
+    db.commit()
+
+
+def issue_reset_code(db: Session, user: User, client: ClientInfo | None, background: BackgroundTasks,
+                     invitation: bool = False) -> None:
+    """Crée un code (un seul valable à la fois) et programme l'email. Ne fait pas le commit.
+    Invitation (compte créé par un admin) : code valable 72 h pour choisir son mot de passe."""
+    s = get_settings()
+    minutes = 72 * 60 if invitation else s.reset_code_minutes
     db.execute(update(PasswordReset).where(PasswordReset.user_id == user.id, PasswordReset.used_at.is_(None))
                .values(used_at=_now()))
     code = f"{secrets.randbelow(1_000_000):06d}"
-    db.add(PasswordReset(user_id=user.id, code_hash=_code_hash(user.id, code), ip_address=client.ip,
-                         expires_at=_now() + timedelta(minutes=s.reset_code_minutes), attempts=0))
-    audit.activity(db, user.id, "password_reset_requested", client, "Code de réinitialisation envoyé")
-    db.commit()
-    subject, text, html = reset_code_email(user.prenom, code, s.reset_code_minutes)
-    background.add_task(send_email, user.email, subject, text, html)
+    db.add(PasswordReset(user_id=user.id, code_hash=_code_hash(user.id, code),
+                         ip_address=client.ip if client else None,
+                         expires_at=_now() + timedelta(minutes=minutes), attempts=0))
+    if invitation:
+        subject, text, html = invitation_email(user.prenom, user.email, code)
+    else:
+        subject, text, html = reset_code_email(user.prenom, code, minutes)
+    queue_email(db, user.email, subject, text, html)
+    background.add_task(deliver_pending)
+
+
+def reset_codes_last_hour(db: Session, user_id: int) -> int:
+    return db.scalar(select(func.count()).select_from(PasswordReset).where(
+        PasswordReset.user_id == user_id, PasswordReset.created_at > _minutes_ago(60))) or 0
 
 
 def reset_password(db: Session, email: str, code: str, new_password: str, client: ClientInfo) -> None:
@@ -423,17 +407,19 @@ def reset_password(db: Session, email: str, code: str, new_password: str, client
     if user.email_verified_at is None:
         user.email_verified_at = _now()  # recevoir le code prouve que l'email lui appartient
     reset.used_at = _now()
-    _close_all(db, user.id, "force")
+    close_all_sessions(db, user.id, "force")
     audit.activity(db, user.id, "password_reset", client, "Mot de passe réinitialisé par code email")
     db.commit()
 
 
 # ───────────────────────── vérification d'email ─────────────────────────
 
-def _queue_verification_email(user: User, background: BackgroundTasks) -> None:
+def queue_verification_email(db: Session, user: User, background: BackgroundTasks) -> None:
+    """Met l'email en file (sans commit : il part avec la transaction de l'appelant)."""
     link = f"{get_settings().public_api_url.rstrip('/')}/api/v1/auth/verify-email/{user.email_verification_token}"
     subject, text, html = verification_email(user.prenom, link)
-    background.add_task(send_email, user.email, subject, text, html)
+    queue_email(db, user.email, subject, text, html)
+    background.add_task(deliver_pending)
 
 
 def resend_verification(db: Session, user: User, client: ClientInfo, background: BackgroundTasks) -> None:
@@ -443,8 +429,8 @@ def resend_verification(db: Session, user: User, client: ClientInfo, background:
         raise _too_many("Trop d'emails envoyés. Réessayez dans une heure.", 3600)
     user.email_verification_token = secrets.token_urlsafe(32)
     audit.security_log(db, "auth.verification_sent", client, user.email, user.id)
+    queue_verification_email(db, user, background)
     db.commit()
-    _queue_verification_email(user, background)
 
 
 def verify_email(db: Session, token: str, client: ClientInfo) -> User:
@@ -519,7 +505,30 @@ def delete_account(db: Session, user: User, password: str, reason: str | None, c
     user.email_verification_token = user.two_factor_secret = None
     user.two_factor_enabled = False
     user.last_login_ip = None
-    _close_all(db, user.id, "force")
+    close_all_sessions(db, user.id, "force")
     audit.activity(db, user.id, "account_deleted", client, reason or "Compte supprimé par l'utilisateur")
     db.commit()
     delete_file("Users", old_photo)
+
+
+# ───────────────────────── notifications push ─────────────────────────
+
+def register_push_device(db: Session, user: User, session: UserSession, data) -> PushDevice:
+    """Un jeton appartient à un seul appareil : s'il existait (autre compte, autre session), on le rattache."""
+    device = db.scalar(select(PushDevice).where(PushDevice.token == data.token))
+    if device is None:
+        device = PushDevice(token=data.token, created_at=_now())
+        db.add(device)
+    device.user_id, device.session_id = user.id, session.id
+    device.provider, device.platform, device.app_version = data.provider, data.platform, data.app_version
+    device.last_seen_at, device.revoked_at = _now(), None
+    db.commit()
+    return device
+
+
+def unregister_push_device(db: Session, user: User, token: str) -> None:
+    device = db.scalar(select(PushDevice).where(PushDevice.token == token.strip(), PushDevice.user_id == user.id))
+    if device is None:
+        raise ApiError(404, "NOT_FOUND", "Appareil introuvable")
+    device.revoked_at = _now()
+    db.commit()

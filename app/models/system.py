@@ -1,4 +1,4 @@
-"""Tables logs, user_activities, configurations (existantes) et password_resets (ajoutée par l'API)."""
+"""Tables logs, user_activities, parametres (existantes) et password_resets (ajoutée par l'API)."""
 
 from datetime import datetime
 
@@ -42,12 +42,15 @@ class UserActivity(Base):
     created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
 
 
-class Configuration(Base):
-    __tablename__ = "configurations"
+class Parametre(Base):
+    __tablename__ = "parametres"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     cle: Mapped[str] = mapped_column(String(100), unique=True)
     valeur: Mapped[str | None] = mapped_column(Text)
+    type: Mapped[str | None] = mapped_column(String(20))
+    categorie: Mapped[str | None] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(Text)
 
 
 class PasswordReset(Base):
@@ -63,3 +66,51 @@ class PasswordReset(Base):
     used_at: Mapped[datetime | None] = mapped_column(DateTime)
     ip_address: Mapped[str | None] = mapped_column(String(45))
     created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
+
+
+class EmailOutbox(Base):
+    """File d'attente des emails (sql/002_email_outbox.sql)."""
+
+    __tablename__ = "email_outbox"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    to_email: Mapped[str] = mapped_column(String(150))
+    subject: Mapped[str] = mapped_column(String(255))
+    text_body: Mapped[str | None] = mapped_column(Text)
+    html_body: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Enum("pending", "sent", "failed", native_enum=False), default="pending")
+    attempts: Mapped[int] = mapped_column(SmallInteger, default=0)
+    last_error: Mapped[str | None] = mapped_column(String(500))
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class IdempotencyKey(Base):
+    """Réponses mémorisées pour l'en-tête Idempotency-Key (sql/003_idempotency_keys.sql)."""
+
+    __tablename__ = "idempotency_keys"
+
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    request_hash: Mapped[str] = mapped_column(String(64))
+    status_code: Mapped[int | None] = mapped_column(SmallInteger)
+    response_body: Mapped[str | None] = mapped_column(Text)
+    content_type: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class PushDevice(Base):
+    """Appareil qui reçoit les notifications push (sql/004_push_devices.sql)."""
+
+    __tablename__ = "push_devices"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    session_id: Mapped[int | None] = mapped_column(ForeignKey("user_sessions.id"))
+    token: Mapped[str] = mapped_column(String(255), unique=True)
+    provider: Mapped[str] = mapped_column(Enum("expo", "fcm", native_enum=False), default="expo")
+    platform: Mapped[str | None] = mapped_column(Enum("android", "ios", "web", native_enum=False))
+    app_version: Mapped[str | None] = mapped_column(String(30))
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)

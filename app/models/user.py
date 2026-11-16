@@ -19,6 +19,7 @@ class Role(Base):
     slug: Mapped[str] = mapped_column(String(50))
     description: Mapped[str | None] = mapped_column(Text)
     niveau: Mapped[int | None] = mapped_column(Integer)
+    permissions: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
 
 

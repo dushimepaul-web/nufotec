@@ -20,3 +20,17 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+# Sessions ouvertes hors requête (envoi des emails, Idempotency-Key, push).
+# Remplaçable dans les tests pour rester dans la transaction annulée.
+_background_factory = SessionLocal
+
+
+def set_background_session_factory(factory) -> None:
+    global _background_factory
+    _background_factory = factory
+
+
+def background_session() -> Session:
+    return _background_factory()

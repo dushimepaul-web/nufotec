@@ -4,3 +4,13 @@ __pycache__/
 .env
 .pytest_cache/
 pip.log
+translations.log
+media_processing.log
+
+# sauvegardes ponctuelles de la base
+backups/
+
+# fichiers envoyés par les visiteurs (dossiers patients, preuves de paiement, photos…) : jamais dans git
+attachments/
+# rapport généré par les tests
+route_coverage.txt

@@ -1,8 +1,10 @@
-from datetime import date, datetime
+import re
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.core.types import DateTime
 from app.core.uploads import public_url
 
 # Les règles détaillées (lettre, chiffre, mots courants…) sont vérifiées dans le service,
@@ -121,25 +123,29 @@ class UserOut(BaseModel):
     is_active: bool
     email_verified: bool
     est_verifie: bool
-    last_login_at: datetime | None
-    created_at: datetime | None
+    last_login_at: DateTime | None
+    created_at: DateTime | None
     role: RoleOut
     pays: PaysOut | None
+    permissions: list[str] = Field(default_factory=list)
 
     @classmethod
     def of(cls, user) -> "UserOut":
-        computed = {"email_verified", "photo_url"}
+        from app.core.permissions import permissions_of
+
+        computed = {"email_verified", "photo_url", "permissions"}
         data = {k: getattr(user, k) for k in cls.model_fields if k not in computed}
         return cls(**data, email_verified=user.email_verified_at is not None,
-                   photo_url=public_url("Users", user.photo))
+                   photo_url=public_url("Users", user.photo),
+                   permissions=sorted(permissions_of(user)))
 
 
 class TokensOut(BaseModel):
     token_type: str = "Bearer"
     access_token: str
-    access_expires_at: datetime
+    access_expires_at: DateTime
     refresh_token: str
-    refresh_expires_at: datetime
+    refresh_expires_at: DateTime
 
 
 class AuthOut(BaseModel):
@@ -153,6 +159,35 @@ class SessionOut(BaseModel):
     platform: str | None
     browser: str | None
     ip_address: str | None
-    login_time: datetime
-    last_activity: datetime
+    login_time: DateTime
+    last_activity: DateTime
     current: bool
+
+
+class PushDeviceIn(BaseModel):
+    token: str = Field(min_length=10, max_length=255,
+                       description="Jeton Expo (ExponentPushToken[...]) ou FCM")
+    provider: Literal["expo", "fcm"] = "expo"
+    platform: Literal["android", "ios", "web"] | None = None
+    app_version: str | None = Field(default=None, max_length=30)
+
+    @field_validator("token")
+    @classmethod
+    def _token(cls, v: str) -> str:
+        v = v.strip()
+        if not re.fullmatch(r"(ExponentPushToken|ExpoPushToken)\[[A-Za-z0-9_-]+\]|[A-Za-z0-9:_-]{20,255}", v):
+            raise ValueError("Jeton push invalide")
+        return v
+
+
+class PushTokenIn(BaseModel):
+    token: str = Field(min_length=10, max_length=255)
+
+
+class PushDeviceOut(BaseModel):
+    id: int
+    provider: str
+    platform: str | None
+    app_version: str | None
+    created_at: DateTime
+    last_seen_at: DateTime

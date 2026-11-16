@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import model_validator
@@ -6,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=Path(__file__).resolve().parents[2] / ".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "Nufotec API"
     app_env: Literal["local", "test", "staging", "production"] = "local"
@@ -37,23 +38,64 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
     trusted_proxies: str = "127.0.0.1,::1"  # IP des proxys (nginx, Cloudflare…) autorisés à fixer X-Forwarded-For
 
+    # Fuseau des dates renvoyées (les dates de la base sont en heure locale du serveur)
+    app_timezone: str = "Africa/Bujumbura"
+
     # Téléphone : pays utilisé quand le numéro est saisi sans indicatif
     default_phone_region: str = "BI"
 
     # Fichiers : on écrit dans le dossier attachments du site PHP pour partager les mêmes fichiers.
-    uploads_dir: str = r"C:\wamp64\www\nufotec-backend\attachments"
-    media_base_url: str = "http://localhost/nufotec-backend/attachments"
+    uploads_dir: str = r"C:\wamp64\www\nufotec\attachments"
+    media_base_url: str = "http://localhost/nufotec/attachments"
     public_api_url: str = "http://127.0.0.1:8000"
 
     # Emails : "console" garde les emails en mémoire et les écrit dans le journal (dev/tests),
-    # "smtp" les envoie. Sans SMTP_* ici, on lit smtp_host/smtp_port/smtp_user/smtp_pass dans la table configurations.
+    # "smtp" les envoie. Sans SMTP_* ici, on lit smtp_host/smtp_port/smtp_user/smtp_pass dans la table parametres.
     mail_mode: Literal["console", "smtp"] = "console"
+    outbox_worker: bool = True  # tâche de fond qui renvoie les emails en échec (désactivée dans les tests)
     mail_from: str = "info@nufotec.com"
     mail_from_name: str = "Nufotec"
     smtp_host: str | None = None
     smtp_port: int | None = None
     smtp_user: str | None = None
     smtp_password: str | None = None
+
+    # Notifications push : "console" (dev/tests, rien n'est envoyé) ou "expo" (service Expo Push)
+    push_mode: Literal["console", "expo"] = "console"
+    expo_access_token: str | None = None  # facultatif : « Enhanced push security » d'Expo
+
+    # Fichiers privés (documents médicaux, preuves de paiement) : HORS du dossier web public.
+    private_dir: str = r"C:\wamp64\nufotec-private"
+    file_link_minutes: int = 5  # durée de validité des liens de téléchargement signés
+
+    # Consultations
+    jitsi_base_url: str = "https://meet.jit.si"
+    consultation_tva: float = 0.0          # TVA appliquée aux consultations (en %)
+    booking_min_lead_minutes: int = 60     # réserver au moins 1 h à l'avance
+    booking_max_days: int = 60             # et au plus 60 jours à l'avance
+    cancel_min_hours: int = 2              # annulation par le patient jusqu'à 2 h avant
+    join_before_minutes: int = 10          # le lien vidéo s'ouvre 10 min avant
+    join_after_minutes: int = 30           # et reste valable 30 min après la fin prévue
+    reminder_minutes: int = 60             # rappel 1 h avant
+    burundi_pays_id: int = 194             # pays « Burundi » dans la table pays (tarif résident en BIF)
+
+    # Chatbot / IA
+    ai_encryption_key: str | None = None   # Fernet : chiffre les clés d'API des fournisseurs
+    embeddings_backend: Literal["fastembed", "hash"] = "fastembed"  # "hash" : tests, sans modèle
+    embeddings_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    embeddings_cache_dir: str = r"C:\wamp64\nufotec-models"
+    chatbot_messages_per_minute: int = 10   # par conversation
+    chatbot_conversations_per_hour: int = 20  # par adresse IP
+    ai_timeout_seconds: int = 60
+
+    # Protections globales
+    rate_limit_ip_per_minute: int = 120     # requêtes par minute et par adresse IP (visiteur sans compte)
+    rate_limit_user_per_minute: int = 300   # requêtes par minute et par compte connecté
+    max_request_mb: int = 60                # taille maximale d'une requête (les envois de médias passent par morceaux)
+    deleted_accounts_purge_days: int = 30   # comptes supprimés par l'admin : anonymisables après ce délai (action manuelle)
+
+    # Idempotency-Key : durée de conservation des réponses
+    idempotency_hours: int = 24
 
     @property
     def is_production(self) -> bool:
