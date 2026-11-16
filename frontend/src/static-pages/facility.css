@@ -1,0 +1,36 @@
+/* Copie de src/modules/pages/NUFOTEC_PHYTOMED_INDUSTRIES_Facility_View.php (généré par scripts/convert_static_pages.py) */
+.flp-wrap{background:#fff}
+    .flp-hero{position:relative;background:#053d16;color:#fff;padding:54px 0 74px;overflow:hidden}
+    .flp-hero::before{content:"";position:absolute;top:-120px;right:-120px;width:380px;height:380px;border-radius:50%;background:rgba(212,160,23,.14);filter:blur(60px)}
+    .flp-hero .breadcrumb-ribbon{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem;letter-spacing:.4px;color:rgba(255,255,255,.72);margin-bottom:14px}
+    .flp-hero .breadcrumb-ribbon a{color:rgba(255,255,255,.82);text-decoration:none;transition:.2s}
+    .flp-hero .breadcrumb-ribbon a:hover{color:#c9a646}
+    .flp-hero .breadcrumb-ribbon i{font-size:.6rem;color:#c9a646}
+    .flp-hero h1{position:relative;z-index:2;font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.25;margin:0 0 10px}
+    .flp-hero h1 .flp-brace{color:#c9a646}
+    .flp-goldbar{width:74px;height:4px;background:#c9a646;border-radius:2px;margin-top:16px;position:relative;z-index:2}
+    .flp-body{padding:44px 0 70px}
+    .flp-report-head{background:#F5F9F6;border:1px solid #E3EDE6;border-radius:12px;padding:24px 28px;margin:0 0 10px}
+    .flp-report-head h2{margin:0 0 6px;font-family:'Poppins',sans-serif;font-weight:700;font-size:1.05rem;color:#053d16;line-height:1.45}
+    .flp-report-head .flp-en{display:block;font-size:.8rem;font-weight:600;letter-spacing:.8px;color:#c9a646;text-transform:uppercase;margin-bottom:16px}
+    .flp-legend{display:flex;flex-wrap:wrap;gap:10px}
+    .flp-chip{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #DCE9E1;border-radius:50px;padding:6px 14px;font-size:.8rem;color:#3d4f45}
+    .flp-chip b{background:#053d16;color:#c9a646;font-size:.72rem;padding:2px 8px;border-radius:50px;letter-spacing:.5px}
+    .flp-note{margin:14px 0 0;font-size:.82rem;font-style:italic;color:#6b7a70}
+    .flp-table-wrap{margin-top:26px;background:#fff;border:1px solid #E3EDE6;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(8,61,42,.06)}
+    .flp-scroll{overflow-x:auto}
+    .flp-table{width:100%;border-collapse:collapse;min-width:860px;font-size:.87rem}
+    .flp-table thead th{background:#053d16;color:#fff;font-weight:600;font-size:.74rem;letter-spacing:.8px;text-transform:uppercase;padding:12px 14px;text-align:left;white-space:nowrap;border-bottom:3px solid #c9a646}
+    .flp-table thead th.flp-num{text-align:right}
+    .flp-table tbody td{padding:10px 14px;border-bottom:1px solid #EDF3EF;color:#33403A;vertical-align:top}
+    .flp-table tbody td.flp-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .flp-table tbody tr.flp-section td{background:#FBF7EA;border-bottom:1px solid #EADFAE;font-weight:700;color:#053d16;font-size:.82rem;letter-spacing:1px;text-transform:uppercase;padding:11px 14px}
+    .flp-table tbody tr.flp-section td .flp-roman{color:#c9a646;margin-right:10px}
+    .flp-table tbody tr.flp-total td{background:#053d16;color:#fff;font-weight:700;font-size:.9rem;padding:13px 14px}
+    .flp-table tbody tr.flp-total td .flp-val{color:#c9a646}
+    .flp-table tbody tr.flp-total td.flp-num{color:#c9a646}
+    .flp-table tbody tr.flp-fence td{background:#F0F7F3;font-weight:600;color:#075a20}
+    .flp-tag{display:inline-block;background:#E8F2EC;color:#075a20;border:1px solid #C9DFD1;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.4px}
+    .flp-sub{color:#6b7a70;font-size:.8rem;font-style:italic}
+    .flp-foot-note{margin-top:16px;font-size:.85rem;color:#5b6f62;line-height:1.7}
+    @media(max-width:576px){.flp-table{min-width:720px}}

@@ -1,0 +1,126 @@
+/* Copie de src/modules/pages/Risk_Analysis_Mitigation_Strategies_View.php (généré par scripts/convert_static_pages.py) */
+/* ============================================================
+   PAGE : ANALYSE DES RISQUES ET STRATÉGIES D'ATTÉNUATION (statique)
+   NUFOTEC-PHYTOMED INDUSTRIES
+   ============================================================ */
+.rsk-page {
+    font-family: 'Poppins', sans-serif;
+    background: #fff;
+    color: #33403A;
+    overflow-x: hidden;
+}
+.rsk-page * { font-family: 'Poppins', sans-serif; }
+
+/* En-tête de page */
+.rsk-page-head {
+    position: relative;
+    background: #053d16;
+    padding: 84px 0 64px;
+    text-align: center;
+    overflow: hidden;
+}
+.rsk-page-head::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; right: -60px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: transparent;
+}
+.rsk-page-head .rsk-crumb {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22);
+    color: rgba(255,255,255,.85); font-size: .8rem; font-weight: 500;
+    padding: 7px 16px; border-radius: 50px; margin-bottom: 22px;
+}
+.rsk-page-head .rsk-crumb a { color: rgba(255,255,255,.85); text-decoration: none; }
+.rsk-page-head .rsk-crumb a:hover { color: #c9a646; }
+.rsk-page-title {
+    color: #fff;
+    font-size: clamp(1.8rem, 4vw, 2.9rem);
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+.rsk-page-title span { color: #c9a646; }
+
+/* Contenu */
+.rsk-content { max-width: 1180px; margin: 0 auto; padding: 72px 24px 96px; }
+.rsk-content p { font-size: 1.05rem; line-height: 1.95; color: #33403A; margin-bottom: 26px; text-align: justify; }
+.rsk-content p strong { color: #075a20; }
+
+/* Callout intro */
+.rsk-intro {
+    display: flex; align-items: flex-start; gap: 18px;
+    background: #EAF6EF; border-left: 5px solid #075a20;
+    border-radius: 18px; padding: 24px 30px; margin-bottom: 36px;
+}
+.rsk-intro i { color: #075a20; font-size: 1.8rem; margin-top: 3px; }
+.rsk-intro p { margin: 0; font-weight: 600; color: #053d16; line-height: 1.8; }
+
+/* Tableau */
+.rsk-table-wrap {
+    background: #fff;
+    border: 1px solid #E3EBE6;
+    border-radius: 18px;
+    box-shadow: 0 12px 32px rgba(8,61,42,.07);
+    overflow: hidden;
+}
+.rsk-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .95rem;
+}
+.rsk-table th {
+    background: #F1F7F3;
+    color: #053d16;
+    text-align: left;
+    font-size: .82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 16px 20px;
+    border-bottom: 2px solid #DCE8E0;
+}
+.rsk-table td {
+    padding: 18px 20px;
+    vertical-align: top;
+    line-height: 1.7;
+    color: #33403A;
+    border-bottom: 1px solid #EDF2EE;
+}
+.rsk-table tr:last-child td { border-bottom: none; }
+.rsk-table tbody tr { transition: background .25s ease; }
+.rsk-table tbody tr:hover { background: #F7FAF8; }
+.rsk-table .rsk-num {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: #EAF6EF; color: #075a20; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+}
+.rsk-table .rsk-risk { font-weight: 600; color: #053d16; }
+.rsk-table .rsk-mit {
+    display: flex; align-items: flex-start; gap: 8px;
+}
+.rsk-table .rsk-mit i { color: #c9a646; margin-top: 4px; font-size: .9rem; }
+.rsk-table td ul { list-style: none; margin: 0; padding: 0; }
+.rsk-table td ul li {
+    position: relative;
+    padding: 3px 0 3px 22px;
+    line-height: 1.65;
+}
+.rsk-table td ul li::before {
+    content: '\F26E';
+    font-family: 'bootstrap-icons';
+    position: absolute; left: 0; top: 5px;
+    color: #c9a646; font-size: .85rem;
+}
+
+@media (max-width: 767.98px) {
+    .rsk-page-head { padding: 64px 0 48px; }
+    .rsk-content { padding: 52px 18px 72px; }
+    .rsk-table-wrap { overflow-x: auto; }
+    .rsk-table { min-width: 700px; }
+}

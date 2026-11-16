@@ -1,0 +1,179 @@
+/* Copie de src/modules/pages/Esg_Sustainability_View.php (généré par scripts/convert_static_pages.py) */
+/* ============================================================
+   PAGE : ESG ET DURABILITÉ (statique)
+   NUFOTEC-PHYTOMED INDUSTRIES
+   ============================================================ */
+.esg-page {
+    font-family: 'Poppins', sans-serif;
+    background: #fff;
+    color: #33403A;
+    overflow-x: hidden;
+}
+.esg-page * { font-family: 'Poppins', sans-serif; }
+
+/* En-tête de page */
+.esg-page-head {
+    position: relative;
+    background: #053d16;
+    padding: 84px 0 64px;
+    text-align: center;
+    overflow: hidden;
+}
+.esg-page-head::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; right: -60px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: transparent;
+}
+.esg-page-head .esg-crumb {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22);
+    color: rgba(255,255,255,.85); font-size: .8rem; font-weight: 500;
+    padding: 7px 16px; border-radius: 50px; margin-bottom: 22px;
+}
+.esg-page-head .esg-crumb a { color: rgba(255,255,255,.85); text-decoration: none; }
+.esg-page-head .esg-crumb a:hover { color: #c9a646; }
+.esg-page-title {
+    color: #fff;
+    font-size: clamp(1.8rem, 4vw, 2.9rem);
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+.esg-page-title span { color: #c9a646; }
+
+/* Contenu */
+.esg-content { max-width: 1180px; margin: 0 auto; padding: 72px 24px 40px; }
+.esg-content p { font-size: 1.03rem; line-height: 1.95; color: #33403A; margin-bottom: 22px; text-align: justify; }
+.esg-content p strong { color: #075a20; }
+
+/* Blocs numérotés */
+.esg-block {
+    background: #fff;
+    border: 1px solid #E3EBE6;
+    border-radius: 24px;
+    box-shadow: 0 12px 32px rgba(8,61,42,.06);
+    padding: 44px 44px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+.esg-block-num {
+    position: absolute; top: 26px; right: 34px;
+    font-size: 4.2rem; font-weight: 800; line-height: 1;
+    color: #EAF6EF; z-index: 0;
+    font-family: 'Poppins', sans-serif;
+}
+.esg-block > * { position: relative; z-index: 1; }
+.esg-block-title { font-size: 1.45rem; font-weight: 800; color: #053d16; margin-bottom: 18px; }
+
+/* Listes */
+.esg-list { list-style: none; margin: 20px 0 0; padding: 0; }
+.esg-list li {
+    position: relative;
+    background: #F7FAF8;
+    border: 1px solid #E3EBE6;
+    border-radius: 14px;
+    padding: 15px 20px 15px 52px;
+    margin-bottom: 12px;
+    font-size: .98rem;
+    line-height: 1.7;
+    color: #33403A;
+    transition: all .25s ease;
+}
+.esg-list li:hover { border-color: #BBD8C6; background: #fff; box-shadow: 0 8px 20px rgba(11,93,59,.07); }
+.esg-list li::before {
+    content: '\F26E';
+    font-family: 'bootstrap-icons';
+    position: absolute; left: 20px; top: 17px;
+    width: 24px; height: 24px;
+    border-radius: 8px;
+    background: #EAF6EF; color: #075a20;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem;
+}
+.esg-list li strong { color: #053d16; }
+
+/* CTA callout */
+.esg-callout {
+    display: flex; align-items: flex-start; gap: 16px;
+    background: #EAF6EF; border-left: 5px solid #c9a646;
+    border-radius: 16px; padding: 22px 28px; margin-top: 26px;
+}
+.esg-callout i { color: #c9a646; font-size: 1.6rem; margin-top: 3px; }
+.esg-callout p { margin: 0; font-weight: 600; color: #053d16; line-height: 1.7; }
+
+/* Chips ISO */
+.esg-chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.esg-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid #DCE8E0; color: #053d16;
+    font-size: .9rem; font-weight: 600; padding: 10px 20px; border-radius: 50px;
+    transition: all .3s ease;
+}
+.esg-chip i { color: #c9a646; }
+.esg-chip:hover { background: #EAF6EF; border-color: #075a20; transform: translateY(-2px); }
+
+/* Licences */
+.esg-licenses {
+    list-style: none;
+    margin: 26px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.esg-licenses li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #F7FAF8;
+    border: 1px solid #E3EBE6;
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: .94rem;
+    line-height: 1.55;
+    color: #33403A;
+    transition: all .25s ease;
+}
+.esg-licenses li:hover { border-color: #BBD8C6; background: #fff; box-shadow: 0 8px 20px rgba(11,93,59,.08); }
+.esg-licenses li i { color: #075a20; font-size: 1.05rem; margin-top: 2px; }
+.esg-licenses li strong { color: #053d16; }
+
+/* Panneau final positionnement */
+.esg-position {
+    position: relative;
+    overflow: hidden;
+    background: #053d16;
+    border-radius: 24px;
+    padding: 52px 48px;
+    margin-bottom: 30px;
+}
+.esg-position::before {
+    content: '\F56F';
+    font-family: 'bootstrap-icons';
+    position: absolute; right: 26px; bottom: -30px; font-size: 150px;
+    color: rgba(255,255,255,.06);
+}
+.esg-position .esg-block-title { color: #fff; }
+.esg-position p { color: rgba(255,255,255,.9); }
+.esg-position p strong { color: #c9a646; }
+.esg-position .esg-tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #c9a646; color: #053d16;
+    font-size: .78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    padding: 8px 22px; border-radius: 50px; margin-bottom: 20px;
+}
+
+@media (max-width: 767.98px) {
+    .esg-page-head { padding: 64px 0 48px; }
+    .esg-content { padding: 52px 18px 24px; }
+    .esg-block { padding: 34px 24px; }
+    .esg-licenses { grid-template-columns: minmax(0, 1fr); }
+    .esg-position { padding: 38px 26px; }
+    .esg-block-num { font-size: 3.2rem; top: 20px; right: 22px; }
+}

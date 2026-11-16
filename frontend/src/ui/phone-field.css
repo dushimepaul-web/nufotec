@@ -1,0 +1,8 @@
+/* Téléphone : indicatif du pays choisi (drapeau + code) devant le numéro */
+.phonef { display: flex; align-items: stretch; }
+.phonef-code { display: flex; align-items: center; gap: 6px; padding: 0 12px; border: 1.5px solid #dbe5d8; border-right: 0; border-radius: 10px 0 0 10px;
+  background: var(--logo-green-soft); color: var(--logo-green-xdk); font-weight: 700; font-size: .95rem; white-space: nowrap; }
+.phonef input { flex: 1; min-width: 0; min-height: 44px; border: 1.5px solid #dbe5d8; border-radius: 10px; padding: 10px 12px;
+  font-size: .95rem; font-weight: 400; background: #fff; color: #1d2a20; }
+.phonef .phonef-code + input { border-radius: 0 10px 10px 0; }
+.phonef input:focus { outline: none; border-color: var(--logo-green); box-shadow: 0 0 0 3px rgba(11, 138, 48, .15); }

@@ -1,0 +1,21 @@
+/* Copie de src/modules/pages/Market_Industry_Outlook_View.php (généré par scripts/convert_static_pages.py) */
+.mko-wrap{background:#fff}
+    .mko-hero{position:relative;background:#053d16;color:#fff;padding:54px 0 74px;overflow:hidden}
+    .mko-hero::before{content:"";position:absolute;top:-120px;right:-120px;width:380px;height:380px;border-radius:50%;background:rgba(212,160,23,.14);filter:blur(60px)}
+    .mko-hero .breadcrumb-ribbon{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem;letter-spacing:.4px;color:rgba(255,255,255,.72);margin-bottom:14px}
+    .mko-hero .breadcrumb-ribbon a{color:rgba(255,255,255,.82);text-decoration:none;transition:.2s}
+    .mko-hero .breadcrumb-ribbon a:hover{color:#c9a646}
+    .mko-hero .breadcrumb-ribbon i{font-size:.6rem;color:#c9a646}
+    .mko-hero h1{position:relative;z-index:2;font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.25;margin:0 0 10px}
+    .mko-hero h1 .mko-brace{color:#c9a646}
+    .mko-goldbar{width:74px;height:4px;background:#c9a646;border-radius:2px;margin-top:16px;position:relative;z-index:2}
+    .mko-body{padding:52px 0 70px}
+    .mko-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .mko-card{position:relative;background:#fff;border:1px solid #E3EDE6;border-radius:14px;padding:32px 26px 26px;box-shadow:0 8px 24px rgba(8,61,42,.06);transition:.25s}
+    .mko-card:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(8,61,42,.13);border-color:#c9dfd1}
+    .mko-card .mko-ico{width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:#053d16;color:#c9a646;font-size:1.35rem;border-radius:14px;margin-bottom:18px;box-shadow:0 6px 16px rgba(8,61,42,.22)}
+    .mko-card h3{margin:0 0 12px;font-family:'Poppins',sans-serif;font-weight:600;font-size:1.1rem;color:#053d16;line-height:1.4}
+    .mko-card p{margin:0;color:#3d4f45;font-size:.92rem;line-height:1.8}
+    .mko-card p + p{margin-top:10px;padding-top:10px;border-top:1px dashed #E3EDE6}
+    .mko-tag{display:inline-block;background:#FBF7EA;color:#9a7a10;border:1px solid #EADFae;font-size:.72rem;font-weight:600;letter-spacing:.6px;padding:4px 12px;border-radius:50px;margin-bottom:14px}
+    @media(max-width:992px){.mko-grid{grid-template-columns:1fr}}
