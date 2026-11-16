@@ -1,0 +1,36 @@
+/* Copie de src/modules/pages/Research_Innovation_View.php (généré par scripts/convert_static_pages.py) */
+.rni-wrap{background:#fff}
+    .rni-hero{position:relative;background:#053d16;color:#fff;padding:54px 0 74px;overflow:hidden}
+    .rni-hero::before{content:"";position:absolute;top:-120px;right:-120px;width:380px;height:380px;border-radius:50%;background:rgba(212,160,23,.14);filter:blur(60px)}
+    .rni-hero .breadcrumb-ribbon{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem;letter-spacing:.4px;color:rgba(255,255,255,.72);margin-bottom:14px}
+    .rni-hero .breadcrumb-ribbon a{color:rgba(255,255,255,.82);text-decoration:none;transition:.2s}
+    .rni-hero .breadcrumb-ribbon a:hover{color:#c9a646}
+    .rni-hero .breadcrumb-ribbon i{font-size:.6rem;color:#c9a646}
+    .rni-hero h1{position:relative;z-index:2;font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.25;margin:0 0 10px}
+    .rni-hero h1 .rni-brace{color:#c9a646}
+    .rni-hero .rni-lead{position:relative;z-index:2;max-width:860px;font-size:.95rem;line-height:1.8;color:rgba(255,255,255,.85);margin:0}
+    .rni-goldbar{width:74px;height:4px;background:#c9a646;border-radius:2px;margin:16px 0 0;position:relative;z-index:2}
+    .rni-body{padding:52px 0 70px}
+    .rni-intro{background:#F5F9F6;border:1px solid #E3EDE6;border-left:5px solid #c9a646;border-radius:12px;padding:26px 30px;margin:0 0 44px}
+    .rni-intro p{margin:0;font-size:.98rem;line-height:1.85;color:#2c3e35}
+    .rni-sec-title{display:flex;align-items:center;gap:14px;margin:0 0 8px}
+    .rni-sec-title .rni-num{flex:0 0 auto;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:#053d16;color:#fff;font-weight:700;font-size:1.05rem;border-radius:12px;box-shadow:0 6px 16px rgba(8,61,42,.22)}
+    .rni-sec-title h2{margin:0;font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(1.25rem,2vw,1.6rem);color:#053d16}
+    .rni-sub{margin:0 0 30px;padding-left:60px;color:#5b6f62;font-size:.95rem}
+    .rni-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+    .rni-card{position:relative;background:#fff;border:1px solid #E3EDE6;border-radius:14px;padding:30px 26px 26px;box-shadow:0 8px 24px rgba(8,61,42,.06);transition:.25s}
+    .rni-card:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(8,61,42,.13);border-color:#c9dfd1}
+    .rni-card .rni-badge{position:absolute;top:-17px;left:26px;min-width:42px;height:42px;padding:0 8px;display:flex;align-items:center;justify-content:center;background:#c9a646;color:#053d16;font-weight:700;font-size:1rem;border-radius:10px;box-shadow:0 6px 14px rgba(212,160,23,.35)}
+    .rni-card h3{margin:6px 0 12px;padding-top:6px;font-family:'Poppins',sans-serif;font-weight:600;font-size:1.08rem;color:#053d16;line-height:1.4}
+    .rni-card .rni-txt{color:#3d4f45;font-size:.92rem;line-height:1.75;margin:0 0 12px}
+    .rni-list{margin:0;padding:0;list-style:none}
+    .rni-list li{position:relative;padding:7px 0 7px 28px;color:#3d4f45;font-size:.9rem;line-height:1.6}
+    .rni-list li::before{content:"\f058";font-family:"Font Awesome 6 Free";font-weight:900;position:absolute;left:2px;top:9px;font-size:.82rem;color:#c9a646}
+    .rni-note{margin:14px 0 0;padding:12px 16px;background:#FBF7EA;border-left:3px solid #c9a646;border-radius:8px;font-size:.88rem;line-height:1.7;color:#6b5d2e}
+    .rni-card--wide{grid-column:1 / -1}
+    .rni-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin:0 0 16px}
+    .rni-step{background:#F5F9F6;border:1px solid #E3EDE6;border-radius:10px;padding:14px 12px;text-align:center}
+    .rni-step .rni-step-n{font-size:.75rem;color:#c9a646;font-weight:700;letter-spacing:.6px}
+    .rni-step p{margin:6px 0 0;font-size:.78rem;line-height:1.5;color:#3d4f45}
+    @media(max-width:992px){.rni-grid{grid-template-columns:1fr}.rni-steps{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:576px){.rni-sub{padding-left:0}.rni-steps{grid-template-columns:1fr}}

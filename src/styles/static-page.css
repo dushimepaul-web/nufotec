@@ -1,0 +1,78 @@
+/* Pages statiques (copies des vues PHP) : habillage du site par-dessus les styles d'origine.
+   Mêmes codes que les autres pages : couleurs du logo, aucun dégradé, cartes blanches arrondies sur fond vert très clair,
+   titres Poppins vert foncé, textes Inter. Les classes sp-* sont ajoutées par scripts/convert_static_pages.py.
+   Sélecteurs préfixés par « .sp .static-page » pour passer devant les styles propres à chaque page. */
+.sp { --g: var(--logo-green-dk); --g-dk: var(--logo-green-xdk); --g-vivid: var(--logo-green); --g-soft: var(--logo-green-soft);
+  --line: #dbe5d8; --ink: #1d2a20; --ink-soft: #56645a; background: #f4fbf3; padding-bottom: 40px; }
+.static-page { overflow-x: clip; }
+.static-page li, .static-page li > *, .static-page p, .static-page td, .static-page h2, .static-page h3 { min-width: 0; overflow-wrap: anywhere; }
+
+/* fond, polices et couleurs de texte */
+.sp .static-page > * { background: transparent !important; color: var(--ink); font-family: 'Inter', system-ui, sans-serif; overflow-x: clip; }
+.sp .static-page > * * { font-family: inherit; }
+.sp .static-page h1, .sp .static-page h2, .sp .static-page h3, .sp .static-page h4, .sp .static-page .sp-title {
+  font-family: 'Poppins', 'Inter', sans-serif !important; color: var(--g-dk); letter-spacing: -0.01em; }
+.sp .static-page p, .sp .static-page li { color: var(--ink); line-height: 1.7; }
+.sp .static-page strong { color: var(--g-dk); }
+.sp .static-page a:not(.sp-btn) { color: var(--g); }
+.sp .static-page .sp-hide { display: none !important; }
+.sp .static-page .container { max-width: 1180px; }
+
+/* titres de section : trait doré sous le titre, comme les autres pages */
+.sp .static-page h2.sp-title::after { content: ''; display: block; width: 56px; height: 4px; border-radius: 2px; background: var(--logo-gold); margin-top: 10px; }
+
+/* cartes et blocs : blanc, arrondi, ombre légère */
+.sp .static-page .sp-card { background: #fff !important; border: 1px solid var(--line) !important; border-radius: 18px !important;
+  box-shadow: 0 6px 20px rgba(7, 90, 32, .06) !important; color: var(--ink); }
+/* espace intérieur : le texte ne touche jamais les bords de la carte (certains « blocs » PHP n'en avaient pas) */
+.sp .static-page .sp-card { padding: 22px 20px; }
+@media (min-width: 768px) { .sp .static-page .sp-card { padding: 30px 34px; } }
+.sp .static-page .sp-card .sp-card { padding: 18px 20px; box-shadow: none !important; }
+.sp .static-page .sp-card::before, .sp .static-page .sp-card::after { background: transparent !important; }
+.sp .static-page .sp-card:hover { border-color: var(--g-vivid) !important; }
+.sp .static-page .sp-card h2, .sp .static-page .sp-card h3, .sp .static-page .sp-card h4 { color: var(--g-dk) !important; }
+/* bloc « appel à l'action » : vert uni du logo, coins arrondis */
+.sp .static-page [class$="-cta-block"] { background: var(--g-dk) !important; border-radius: 24px; margin: 0 16px 24px; }
+.sp .static-page [class$="-cta-block"] h2, .sp .static-page [class$="-cta-head"] p { color: #fff !important; }
+
+/* notes, citations, introductions : fond doré clair, filet doré */
+.sp .static-page .sp-note { background: #faf4e1 !important; border: 0 !important; border-left: 4px solid var(--logo-gold) !important; border-radius: 12px !important;
+  color: #4a3d12 !important; box-shadow: none !important; }
+.sp .static-page .sp-note p, .sp .static-page .sp-note li { color: #4a3d12 !important; }
+
+/* pastilles d'icône : vert foncé, icône dorée */
+.sp .static-page .sp-ico { background: var(--g) !important; color: var(--logo-gold) !important; border-radius: 14px !important; border: 0 !important; box-shadow: none !important; }
+.sp .static-page .sp-ico i { color: var(--logo-gold) !important; }
+.sp .static-page i.bi-check-circle-fill { color: var(--g-vivid); }
+
+/* étiquettes, puces, badges */
+.sp .static-page .sp-tag { background: var(--g-soft) !important; color: var(--g-dk) !important; border: 0 !important; border-radius: 100px !important; font-weight: 700; }
+.sp .static-page .sp-tag i { color: var(--g-vivid) !important; }
+
+/* numéros (étapes, blocs, chiffres clés) : or du logo */
+.sp .static-page .sp-num { color: var(--logo-gold) !important; -webkit-text-fill-color: currentColor !important; background: transparent !important; }
+
+/* tableaux : en-tête vert foncé, lignes alternées, cadre arrondi défilant sur mobile */
+.sp .static-page .sp-table-wrap { border-radius: 16px !important; border: 1px solid var(--line) !important; box-shadow: 0 6px 20px rgba(7, 90, 32, .06) !important;
+  background: #fff !important; overflow-x: auto !important; }
+.sp .static-page table.sp-table { border-collapse: collapse !important; background: #fff !important; width: 100%; }
+.sp .static-page table.sp-table th { background: var(--g) !important; color: #fff !important; font-family: 'Poppins', 'Inter', sans-serif !important; font-weight: 700;
+  border: 0 !important; padding: 12px 14px !important; }
+.sp .static-page table.sp-table td { border: 0 !important; border-top: 1px solid var(--line) !important; padding: 11px 14px !important; color: var(--ink) !important; }
+.sp .static-page table.sp-table tbody tr:nth-child(even) td { background: #f7fbf6 !important; }
+.sp .static-page table.sp-table tbody tr:hover td { background: var(--g-soft) !important; }
+
+/* boutons : pilule verte, comme sur le reste du site */
+.sp .static-page .sp-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--g) !important; color: #fff !important; border: 0 !important;
+  border-radius: 100px !important; padding: 10px 20px !important; font-weight: 700; text-decoration: none !important; box-shadow: none !important; }
+.sp .static-page .sp-btn:hover { background: var(--g-dk) !important; color: #fff !important; }
+.sp .static-page [class$="-cta-block"] .sp-btn { background: var(--logo-gold) !important; color: var(--g-dk) !important; }
+
+/* téléphone : texte aligné à gauche (le texte justifié du PHP laisse de grands trous entre les mots) */
+@media (max-width: 767.98px) {
+  .sp .static-page p, .sp .static-page li { text-align: left !important; hyphens: auto; }
+}
+
+/* titre posé sur l'en-tête d'un tableau : bandeau vert foncé, texte blanc, icône dorée */
+.sp .static-page [class*="-table-title"] { background: var(--g-dk) !important; color: #fff !important; padding: 12px 16px !important; margin: 0 !important; }
+.sp .static-page [class*="-table-title"] i { color: var(--logo-gold) !important; }

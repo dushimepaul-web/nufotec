@@ -1,0 +1,116 @@
+/* Copie de src/modules/pages/Background_Strategic_Rationale_View.php (généré par scripts/convert_static_pages.py) */
+/* ============================================================
+   PAGE : CONTEXTE ET JUSTIFICATION STRATÉGIQUE (statique)
+   NUFOTEC-PHYTOMED INDUSTRIES
+   ============================================================ */
+.bgr-simple {
+    font-family: 'Poppins', sans-serif;
+    background: #fff;
+    color: #33403A;
+    overflow-x: hidden;
+}
+.bgr-simple * { font-family: 'Poppins', sans-serif; }
+
+/* En-tête de page */
+.bgr-page-head {
+    position: relative;
+    background: #053d16;
+    padding: 84px 0 64px;
+    text-align: center;
+    overflow: hidden;
+}
+.bgr-page-head::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; right: -60px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: transparent;
+}
+.bgr-page-head .bgr-crumb {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22);
+    color: rgba(255,255,255,.85); font-size: .8rem; font-weight: 500;
+    padding: 7px 16px; border-radius: 50px; margin-bottom: 22px;
+}
+.bgr-page-head .bgr-crumb a { color: rgba(255,255,255,.85); text-decoration: none; }
+.bgr-page-head .bgr-crumb a:hover { color: #c9a646; }
+.bgr-page-title {
+    color: #fff;
+    font-size: clamp(1.8rem, 4vw, 2.9rem);
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+.bgr-page-title span { color: #c9a646; }
+
+/* Contenu */
+.bgr-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 72px 24px 96px;
+}
+.bgr-content p {
+    font-size: 1.05rem;
+    line-height: 1.95;
+    color: #33403A;
+    margin-bottom: 26px;
+    text-align: justify;
+}
+.bgr-content p strong { color: #075a20; }
+
+.bgr-proc-list {
+    list-style: none;
+    margin: 34px 0 26px;
+    padding: 0;
+    counter-reset: bgr-proc;
+}
+.bgr-proc-list li {
+    position: relative;
+    background: #F7FAF8;
+    border: 1px solid #E3EBE6;
+    border-left: 5px solid #075a20;
+    border-radius: 16px;
+    padding: 22px 26px 22px 88px;
+    margin-bottom: 18px;
+    font-size: 1.02rem;
+    line-height: 1.85;
+    color: #33403A;
+    counter-increment: bgr-proc;
+}
+.bgr-proc-list li::before {
+    content: counter(bgr-proc);
+    position: absolute;
+    left: 22px; top: 50%;
+    transform: translateY(-50%);
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    background: #075a20;
+    color: #fff;
+    font-size: 1.35rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.bgr-proc-list li strong { color: #053d16; }
+
+.bgr-cool-note {
+    background: #EAF6EF;
+    border-left: 5px solid #c9a646;
+    border-radius: 16px;
+    padding: 24px 30px;
+    margin-top: 30px;
+    font-size: 1.02rem;
+    line-height: 1.85;
+    color: #053d16;
+}
+
+@media (max-width: 575.98px) {
+    .bgr-page-head { padding: 64px 0 48px; }
+    .bgr-content { padding: 52px 18px 72px; }
+    .bgr-proc-list li { padding-left: 20px; padding-top: 82px; }
+    .bgr-proc-list li::before { top: 20px; transform: none; }
+}

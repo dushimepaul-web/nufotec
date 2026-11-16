@@ -1,0 +1,31 @@
+/* Couleurs prises dans le logo NUFOTEC (anneau vert, lauriers dorés, ruban rouge, médaillon argent, fond crème).
+   Chargé après header.css et footer.css : l'en-tête et le pied de page prennent les mêmes couleurs que l'accueil. */
+:root {
+  --logo-green: #0b8a30;      /* anneau du logo */
+  --logo-green-dk: #075a20;   /* vert foncé (textes, fonds sombres) */
+  --logo-green-xdk: #053d16;  /* bandeaux très sombres */
+  --logo-green-soft: #e9f6e6; /* fond crème-vert du logo */
+  --logo-gold: #c9a646;       /* lauriers */
+  --logo-gold-lt: #e2cd7e;
+  --logo-red: #b3261e;        /* ruban */
+  --logo-silver: #b0b7af;     /* médaillon */
+
+  /* en-tête (header.css) */
+  --primary: var(--logo-green-dk);
+  --primary-dk: var(--logo-green-xdk);
+  --primary-lt: var(--logo-green);
+  --primary-ltr: var(--logo-green-soft);
+  --accent: var(--logo-gold);
+  --accent-hv: #b08f32;
+
+  /* pied de page (footer.css) */
+  --footer-bg: var(--logo-green-xdk);
+  --footer-bg-light: var(--logo-green-dk);
+  --footer-accent: var(--logo-gold);
+  --primary-light: var(--logo-green);
+}
+
+/* Pas de dégradés : couleurs unies (demande de l'utilisateur) */
+.nuf-brand-logo, .nuf-initials, .nuf-btn-cta { background: var(--primary); }
+.site-footer { background: var(--footer-bg); }
+.site-footer::before { background: var(--logo-gold); animation: none; }

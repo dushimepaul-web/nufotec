@@ -1,0 +1,100 @@
+/* Formulaires investisseur / courtier — couleurs du logo, aucun dégradé, mobile d'abord. Classes préfixées ap_ */
+.ap { --g: var(--logo-green-dk); --g-dk: var(--logo-green-xdk); --g-vivid: var(--logo-green); --g-soft: var(--logo-green-soft);
+  --line: #dbe5d8; --ink: #1d2a20; --ink-soft: #56645a; --wa: #1fa855; background: #f4fbf3; padding-bottom: 48px; overflow-x: clip; }
+.ap_wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+.ap_intro { background: #fff; border-radius: 16px; padding: 16px 18px; margin-top: -18px; position: relative; z-index: 2;
+  box-shadow: 0 6px 22px rgba(5, 61, 22, .08); display: flex; gap: 12px; align-items: flex-start; }
+.ap_intro > i { font-size: 1.6rem; color: var(--logo-gold); }
+.ap_intro b { display: block; color: var(--g-dk); }
+.ap_intro p { margin: 2px 0 0; color: var(--ink-soft); font-size: .9rem; }
+
+/* Étapes */
+.ap_steps { display: grid; grid-template-columns: repeat(3, 1fr); list-style: none; padding: 12px 6px; margin: 16px 0 14px; background: #fff; border-radius: 14px; }
+.ap_steps li { position: relative; text-align: center; }
+.ap_steps li + li::before { content: ''; position: absolute; top: 17px; right: 50%; width: 100%; height: 3px; background: var(--line); }
+.ap_steps li.done::before, .ap_steps li.active::before { background: var(--g-vivid); }
+.ap_steps button { position: relative; z-index: 1; border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
+.ap_steps button:disabled { cursor: default; }
+.ap_steps span { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;
+  background: #fff; border: 2px solid var(--line); color: var(--ink-soft); }
+.ap_steps li.active span { background: var(--g); border-color: var(--g); color: #fff; }
+.ap_steps li.done span { background: var(--g-vivid); border-color: var(--g-vivid); color: #fff; }
+.ap_steps em { font-style: normal; font-size: .72rem; font-weight: 600; color: var(--ink-soft); line-height: 1.2; padding: 0 2px; }
+.ap_steps li.active em { color: var(--g-dk); }
+
+/* Cartes et champs */
+.ap_card { background: #fff; border-radius: 16px; padding: 16px; display: grid; gap: 14px; }
+.ap_card h2 { font-family: 'Poppins', 'Inter', sans-serif; font-size: 1.12rem; font-weight: 700; color: var(--g-dk); margin: 0; }
+.ap_card h2 i { color: var(--logo-gold); margin-right: 6px; }
+.ap_card h3 { font-size: .9rem; font-weight: 700; color: var(--ink); margin: 6px 0 -4px; }
+.ap_field { display: flex; flex-direction: column; gap: 5px; font-size: .88rem; font-weight: 600; color: var(--ink); min-width: 0; }
+.ap_field > span em, .ap_confirm em { color: var(--logo-red); font-style: normal; }
+.ap_field small { font-weight: 400; color: var(--ink-soft); }
+.ap_field small.err, .ap_card > small.err { color: var(--logo-red); }
+.ap_field > input, .ap_field > select, .ap_field > textarea { min-height: 44px; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  font-size: .95rem; font-weight: 400; background: #fff; color: var(--ink); width: 100%; }
+.ap_field > input:focus, .ap_field > select:focus, .ap_field > textarea:focus { outline: none; border-color: var(--g-vivid); box-shadow: 0 0 0 3px rgba(11, 138, 48, .15); }
+.ap_row { display: grid; gap: 14px; }
+.ap_trap { position: absolute; left: -9999px; width: 1px; height: 1px; }
+.ap_alert { background: #fbecea; color: var(--logo-red); border-radius: 10px; padding: 10px 12px; font-size: .9rem; margin-bottom: 12px; }
+
+/* Cases à cocher */
+.ap_checks { display: grid; gap: 8px; }
+.ap_checks label, .ap_confirm { display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  cursor: pointer; font-size: .9rem; font-weight: 500; color: var(--ink); transition: border-color .15s, background .15s; }
+.ap_checks label:hover, .ap_confirm:hover { border-color: var(--g-vivid); }
+.ap_checks label.active, .ap_confirm.active { border-color: var(--g-vivid); background: var(--g-soft); }
+.ap_checks input, .ap_confirm input { position: absolute; opacity: 0; pointer-events: none; }
+.ap_checks i, .ap_confirm i { color: var(--ink-soft); font-size: 1.05rem; margin-top: 1px; }
+.ap_checks label.active i, .ap_confirm.active i { color: var(--g-vivid); }
+.ap_checks label:focus-within, .ap_confirm:focus-within { box-shadow: 0 0 0 3px rgba(11, 138, 48, .15); }
+.ap_confirm.error { border-color: var(--logo-red); background: #fdf3f2; }
+
+/* Récapitulatif */
+.ap_recap { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: .88rem; color: var(--ink); display: grid; gap: 4px; }
+.ap_recap b { color: var(--g-dk); }
+
+/* Boutons */
+.ap_nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.ap_nav .ap_btn { flex: 1; }
+.ap_btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 20px; border-radius: 100px;
+  border: 1.5px solid transparent; font-weight: 700; text-decoration: none; transition: background .2s, color .2s, border-color .2s; }
+.ap_btn.primary { background: var(--g); color: #fff; }
+.ap_btn.primary:hover { background: var(--g-dk); color: #fff; }
+.ap_btn.whatsapp { background: var(--wa); color: #fff; }
+.ap_btn.whatsapp:hover { background: #178a45; color: #fff; }
+.ap_btn.ghost { background: #fff; border-color: var(--line); color: var(--g); }
+.ap_btn.ghost:hover:not(:disabled) { border-color: var(--g); }
+.ap_btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Remerciement */
+.ap_done { background: #fff; border-radius: 18px; padding: 30px 18px; margin-top: 18px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.ap_done > i { font-size: 3.2rem; color: var(--wa); }
+.ap_done h2 { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; color: var(--g-dk); margin: 8px 0; font-size: 1.4rem; }
+.ap_done p { color: var(--ink-soft); max-width: 560px; }
+.ap_done-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 8px; }
+
+@media (min-width: 576px) {
+  .ap_row { grid-template-columns: 1fr 1fr; }
+  .ap_checks.cols-2 { grid-template-columns: 1fr 1fr; }
+  .ap_steps em { font-size: .8rem; }
+  .ap_nav .ap_btn { flex: 0 0 auto; min-width: 170px; }
+}
+@media (min-width: 768px) { .ap_card { padding: 22px 24px; } }
+
+/* Création du compte */
+.ap_account { border: 1.5px solid var(--logo-gold); border-radius: 14px; padding: 14px; display: grid; gap: 12px; background: #fffdf6; }
+.ap_account h2 { font-size: 1.02rem; }
+.ap_account-why { margin: -6px 0 0; color: var(--ink-soft); font-size: .86rem; }
+.ap_account-email { font-size: .88rem; color: var(--ink-soft); }
+.ap_account-email i { color: var(--g-vivid); margin-right: 4px; }
+.ap_account-email b { color: var(--ink); }
+.ap_account.signed { display: flex; gap: 12px; align-items: center; border-color: var(--g-vivid); background: var(--g-soft); }
+.ap_account.signed > i { font-size: 1.6rem; color: var(--g-vivid); }
+.ap_account.signed b { color: var(--g-dk); }
+.ap_account.signed p { margin: 0; font-size: .86rem; color: var(--ink-soft); }
+.ap_pw { display: flex; }
+.ap_pw input { flex: 1; min-width: 0; min-height: 44px; border: 1.5px solid var(--line); border-right: 0; border-radius: 10px 0 0 10px; padding: 10px 12px;
+  font-size: .95rem; font-weight: 400; }
+.ap_pw input:focus { outline: none; border-color: var(--g-vivid); }
+.ap_pw button { border: 1.5px solid var(--line); border-left: 0; border-radius: 0 10px 10px 0; background: #fff; color: var(--ink-soft); width: 46px; }

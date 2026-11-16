@@ -1,0 +1,57 @@
+/* Copie de src/modules/pages/Phased_Investment_Projection_View.php (généré par scripts/convert_static_pages.py) */
+.pip-wrap{background:#fff}
+    .pip-hero{position:relative;background:#053d16;color:#fff;padding:54px 0 74px;overflow:hidden}
+    .pip-hero::before{content:"";position:absolute;top:-120px;right:-120px;width:380px;height:380px;border-radius:50%;background:rgba(212,160,23,.14);filter:blur(60px)}
+    .pip-hero .breadcrumb-ribbon{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem;letter-spacing:.4px;color:rgba(255,255,255,.72);margin-bottom:14px}
+    .pip-hero .breadcrumb-ribbon a{color:rgba(255,255,255,.82);text-decoration:none;transition:.2s}
+    .pip-hero .breadcrumb-ribbon a:hover{color:#c9a646}
+    .pip-hero .breadcrumb-ribbon i{font-size:.6rem;color:#c9a646}
+    .pip-hero h1{position:relative;z-index:2;font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.25;margin:0 0 10px}
+    .pip-hero h1 .pip-brace{color:#c9a646}
+    .pip-hero .pip-tagline{position:relative;z-index:2;display:inline-flex;align-items:center;gap:10px;background:rgba(212,160,23,.14);border:1px solid rgba(212,160,23,.4);color:#e2cd7e;font-size:.82rem;font-weight:600;letter-spacing:.4px;padding:7px 16px;border-radius:50px;margin:0 0 16px}
+    .pip-hero .pip-tagline i{color:#c9a646}
+    .pip-goldbar{width:74px;height:4px;background:#c9a646;border-radius:2px;margin-top:16px;position:relative;z-index:2}
+    .pip-body{padding:48px 0 70px}
+    .pip-intro{background:#F5F9F6;border:1px solid #E3EDE6;border-radius:12px;padding:26px 30px;margin:0 0 34px}
+    .pip-intro p{margin:0 0 16px;font-size:.96rem;line-height:1.85;color:#2c3e35}
+    .pip-intro p:last-child{margin-bottom:0}
+    .pip-statbar{display:flex;flex-wrap:wrap;align-items:center;gap:22px;margin-bottom:18px}
+    .pip-stat{background:#053d16;color:#fff;border-radius:14px;padding:18px 26px;min-width:250px}
+    .pip-stat .pip-val{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.7rem;color:#e2cd7e;line-height:1.2}
+    .pip-stat .pip-lbl{font-size:.8rem;letter-spacing:.6px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-top:4px}
+    .pip-note{background:#FBF7EA;border:1px solid #EADFAE;border-left:5px solid #c9a646;border-radius:10px;padding:14px 18px;font-size:.9rem;line-height:1.7;color:#6b5d2e}
+    .pip-note strong{color:#053d16}
+    .pip-block{display:flex;gap:22px;margin:0 0 40px}
+    .pip-block .pip-num{flex:0 0 auto;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:#053d16;color:#c9a646;font-family:'Poppins',sans-serif;font-weight:700;font-size:1.15rem;border-radius:14px;box-shadow:0 6px 16px rgba(8,61,42,.22)}
+    .pip-block .pip-content{flex:1;min-width:0}
+    .pip-block h2{margin:4px 0 14px;font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(1.15rem,1.8vw,1.45rem);color:#053d16}
+    .pip-block p{color:#3d4f45;font-size:.93rem;line-height:1.8;margin:0 0 12px}
+    .pip-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:0 0 14px}
+    .pip-item{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #E3EDE6;border-radius:10px;padding:12px 14px;font-size:.87rem;line-height:1.6;color:#3d4f45;box-shadow:0 3px 10px rgba(8,61,42,.04)}
+    .pip-item i{color:#c9a646;margin-top:3px;font-size:.8rem}
+    .pip-equip{background:#fff;border:1px solid #E3EDE6;border-left:5px solid #075a20;border-radius:10px;padding:16px 18px;margin:0 0 12px;font-size:.9rem;line-height:1.75;color:#3d4f45}
+    .pip-lab{margin:0;padding:0;list-style:none;counter-reset:lab}
+    .pip-lab li{position:relative;padding:9px 0 9px 42px;color:#3d4f45;font-size:.9rem;line-height:1.65;border-bottom:1px dashed #EDF3EF}
+    .pip-lab li:last-child{border-bottom:none}
+    .pip-lab li::before{counter-increment:lab;content:counter(lab);position:absolute;left:0;top:7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#FBF7EA;border:1px solid #EADFAE;color:#9a7a10;font-size:.75rem;font-weight:700;border-radius:8px}
+    .pip-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 20px}
+    .pip-chip{display:flex;gap:10px;align-items:flex-start;background:#F5F9F6;border:1px solid #E3EDE6;border-radius:10px;padding:11px 14px;font-size:.85rem;line-height:1.55;color:#3d4f45}
+    .pip-chip i{color:#075a20;margin-top:3px;font-size:.72rem}
+    .pip-table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:.85rem;border:1px solid #E3EDE6;border-radius:10px;overflow:hidden}
+    .pip-table thead th{background:#053d16;color:#fff;text-align:left;font-size:.72rem;letter-spacing:.8px;text-transform:uppercase;padding:11px 14px}
+    .pip-table thead th:last-child{background:#075a20}
+    .pip-table tbody td{padding:9px 14px;border-top:1px solid #EDF3EF;color:#33403A;vertical-align:top}
+    .pip-table tbody td:last-child{font-weight:600;color:#075a20;white-space:nowrap}
+    .pip-table tbody tr:nth-child(even){background:#FAFCFB}
+    .pip-duo{display:grid;grid-template-columns: repeat(2, minmax(0, 1fr));gap:16px;margin:0 0 40px}
+    .pip-duo .pip-card{background:#F5F9F6;border:1px solid #E3EDE6;border-radius:12px;padding:22px 24px}
+    .pip-duo .pip-card h3{margin:0 0 12px;font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:#053d16}
+    .pip-list{margin:0;padding:0;list-style:none}
+    .pip-list li{position:relative;padding:7px 0 7px 28px;color:#3d4f45;font-size:.88rem;line-height:1.65}
+    .pip-list li::before{content:"\f058";font-family:"Font Awesome 6 Free";font-weight:900;position:absolute;left:2px;top:9px;font-size:.8rem;color:#c9a646}
+    .pip-list--dot li::before{content:"\f111";font-size:.5rem;top:15px;color:#075a20}
+    .pip-quote{position:relative;background:#053d16;border-radius:14px;padding:30px 34px;color:#fff;margin:0 0 40px;overflow:hidden}
+    .pip-quote::before{content:"\201C";position:absolute;top:-26px;left:18px;font-size:7rem;font-family:Georgia,serif;color:rgba(212,160,23,.25)}
+    .pip-quote p{margin:0;position:relative;z-index:2;font-family:'Poppins',sans-serif;font-size:clamp(1rem,1.6vw,1.25rem);font-weight:600;line-height:1.6}
+    .pip-quote p span{color:#e2cd7e}
+    @media(max-width:768px){.pip-grid,.pip-chips,.pip-duo{grid-template-columns:1fr}.pip-block{flex-direction:column;gap:12px}}

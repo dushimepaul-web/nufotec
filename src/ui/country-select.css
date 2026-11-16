@@ -1,0 +1,24 @@
+/* Champ pays avec recherche — couleurs du logo, aucun dégradé */
+.csel { position: relative; font-weight: 400; }
+.csel-field { position: relative; display: flex; align-items: center; }
+.csel-lead { position: absolute; left: 12px; display: flex; align-items: center; color: #56645a; pointer-events: none; }
+.csel-flag { width: 20px; height: 15px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); flex-shrink: 0; }
+.csel-flag-none { width: 20px; text-align: center; color: #56645a; flex-shrink: 0; }
+.csel .csel-field input { width: 100%; min-height: 44px; border: 1.5px solid #dbe5d8; border-radius: 10px; padding: 10px 76px 10px 42px;
+  font-size: .95rem; background: #fff; color: #1d2a20; cursor: pointer; }
+.csel.open .csel-field input { cursor: text; border-color: var(--logo-green); box-shadow: 0 0 0 3px rgba(11, 138, 48, .15); outline: none;
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.csel .csel-field input:focus { outline: none; }
+.csel-code { position: absolute; right: 34px; font-size: .8rem; color: #56645a; pointer-events: none; }
+.csel-chev { position: absolute; right: 12px; color: #56645a; cursor: pointer; transition: transform .2s; }
+.csel.open .csel-chev { transform: rotate(180deg); }
+.csel-list { position: absolute; left: 0; right: 0; top: 100%; z-index: 30; max-height: 240px; overflow-y: auto; margin: 0; padding: 4px 0;
+  list-style: none; background: #fff; border: 1.5px solid var(--logo-green); border-top: 0; border-radius: 0 0 10px 10px;
+  box-shadow: 0 12px 28px rgba(5, 61, 22, .16); }
+.csel-list li { display: flex; align-items: center; gap: 8px; padding: 9px 14px; cursor: pointer; font-size: .92rem; color: #1d2a20; }
+.csel-list li span { flex: 1; }
+.csel-list li small { color: #56645a; font-size: .78rem; }
+.csel-list li.active { background: var(--logo-green-soft); }
+.csel-list li.chosen { font-weight: 700; color: var(--logo-green-dk); }
+.csel-list li .bi-check2 { color: var(--logo-green); }
+.csel-list .csel-empty { color: #56645a; cursor: default; font-style: italic; }

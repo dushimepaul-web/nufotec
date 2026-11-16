@@ -1,0 +1,68 @@
+/* Boutique — couleurs du logo (theme-logo.css), aucun dégradé, mobile d'abord. Classes préfixées shop_ */
+.shop { --g: var(--logo-green-dk); --g-dk: var(--logo-green-xdk); --g-vivid: var(--logo-green); --g-soft: var(--logo-green-soft);
+  --line: #dbe5d8; --ink: #1d2a20; --ink-soft: #56645a; background: #f4fbf3; padding-bottom: 48px; overflow-x: clip; }
+.shop_wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+
+/* 1. Bandeau : le logo en arrière-plan sous un voile vert uni (comme le hero de l'accueil) */
+.shop_banner { position: relative; isolation: isolate; overflow: hidden; background: var(--g-dk); color: #fff;
+  padding: 26px 0 30px; border-bottom: 4px solid var(--logo-gold); }
+.shop_banner-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.shop_banner::before { content: ''; position: absolute; inset: 0; z-index: -1; background: rgba(4, 48, 18, .84); }
+.shop_crumbs { font-size: .82rem; color: rgba(255, 255, 255, .75); margin-bottom: 10px; }
+.shop_crumbs a { color: rgba(255, 255, 255, .9); text-decoration: none; }
+.shop_crumbs a:hover { color: var(--logo-gold-lt); }
+.shop_crumbs i { font-size: .7rem; margin: 0 4px; }
+.shop_banner h1 { color: #fff; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 0 0 6px; }
+.shop_banner h1 i { color: var(--logo-gold-lt); }
+.shop_banner p { color: rgba(255, 255, 255, .85); margin: 0; max-width: 620px; }
+
+/* 2. Recherche et filtres */
+.shop_filters { position: relative; z-index: 2; margin-top: -18px; background: #fff; border-radius: 14px; padding: 14px;
+  box-shadow: 0 6px 22px rgba(5, 61, 22, .08); display: grid; gap: 12px; }
+.shop_search { position: relative; display: flex; align-items: center; }
+.shop_search > i { position: absolute; left: 14px; color: var(--ink-soft); }
+.shop_search input { width: 100%; min-height: 46px; border: 1.5px solid var(--line); border-radius: 100px; padding: 0 44px 0 40px; font-size: .95rem; }
+.shop_search input:focus { outline: none; border-color: var(--g-vivid); box-shadow: 0 0 0 3px rgba(11, 138, 48, .15); }
+.shop_search input::-webkit-search-cancel-button { display: none; }
+.shop_search button { position: absolute; right: 6px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--g-soft); color: var(--g); }
+.shop_cats { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.shop_cats::-webkit-scrollbar { height: 0; }
+.shop_cats button { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: #fff;
+  color: var(--ink); border-radius: 100px; padding: 7px 14px; font-weight: 600; font-size: .86rem; }
+.shop_cats button span { color: var(--ink-soft); font-weight: 500; }
+.shop_cats button.active { background: var(--g); border-color: var(--g); color: #fff; }
+.shop_cats button.active span { color: var(--logo-gold-lt); }
+.shop_tools { display: flex; gap: 10px; }
+.shop_tools label { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: .75rem; font-weight: 600; color: var(--ink-soft); }
+.shop_tools select { min-height: 40px; border: 1.5px solid var(--line); border-radius: 10px; padding: 0 10px; background: #fff; color: var(--ink); font-size: .9rem; }
+.shop_tools label:last-child { flex: 0 0 96px; }
+
+/* 3. Grille */
+.shop_grid-section { margin-top: 18px; scroll-margin-top: 150px; }
+.shop_count { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--ink-soft); font-size: .9rem; margin: 0 0 12px; }
+.shop_count b { color: var(--ink); }
+.shop_count button { border: 0; background: none; color: var(--logo-red); font-weight: 600; padding: 0; text-decoration: underline; }
+.shop_empty { text-align: center; background: #fff; border-radius: 14px; padding: 40px 20px; }
+.shop_empty > i { font-size: 2.6rem; color: var(--g-vivid); }
+.shop_empty h3 { font-size: 1.15rem; font-weight: 700; color: var(--g-dk); margin: 10px 0 4px; }
+.shop_empty p { color: var(--ink-soft); margin-bottom: 16px; }
+.shop_btn { border: 0; border-radius: 100px; background: var(--g); color: #fff; font-weight: 600; padding: 10px 22px; }
+.shop_btn:hover { background: var(--g-dk); }
+
+/* 4. Pagination */
+.shop_pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 26px; flex-wrap: wrap; }
+.shop_pagination button { min-width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
+  color: var(--ink); font-weight: 600; }
+.shop_pagination button:hover:not(:disabled) { border-color: var(--g); color: var(--g); }
+.shop_pagination button.active { background: var(--g); border-color: var(--g); color: #fff; }
+.shop_pagination button:disabled { opacity: .4; }
+.shop_pagination .gap { color: var(--ink-soft); padding: 0 4px; }
+.shop_results-info { text-align: center; color: var(--ink-soft); font-size: .85rem; margin: 12px 0 0; }
+
+@media (min-width: 768px) {
+  .shop_banner { padding: 36px 0 44px; }
+  .shop_filters { grid-template-columns: 1fr auto; align-items: center; padding: 16px 18px; }
+  .shop_search { grid-column: 1 / -1; }
+  .shop_tools label { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 8px; }
+  .shop_tools label:last-child { flex: 0 0 auto; }
+}

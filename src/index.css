@@ -1,0 +1,2 @@
+/* Styles globaux propres à l'app React (le reste vient des fichiers repris du site PHP dans src/styles) */
+main { min-height: 40vh; }

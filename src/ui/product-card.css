@@ -1,0 +1,37 @@
+/* Carte produit façon site de commerce (Jumia) : blanche, compacte, toute cliquable, bouton au survol.
+   Couleurs du logo (theme-logo.css), aucun dégradé. */
+.pcard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 768px) { .pcard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
+@media (min-width: 992px) { .pcard-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.pcard { position: relative; display: flex; flex-direction: column; background: #fff; border-radius: 6px; overflow: hidden;
+  text-decoration: none; color: #1d2a20; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); transition: box-shadow .2s, transform .2s; }
+.pcard:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .14); transform: translateY(-2px); color: #1d2a20; }
+.pcard-img { position: relative; aspect-ratio: 1/1; background: #fff; }
+.pcard-img img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+.pcard-badge { position: absolute; top: 8px; z-index: 1; font-size: .72rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+.pcard-badge.star { right: 8px; background: var(--logo-gold); color: var(--logo-green-xdk); }
+.pcard-badge.new { left: 8px; background: var(--logo-red); color: #fff; }
+.pcard-info { display: flex; flex-direction: column; flex: 1; padding: 8px 10px 12px; }
+.pcard-name { font-family: 'Inter', sans-serif; font-size: .86rem; font-weight: 400; line-height: 1.35; color: #1d2a20; margin: 0 0 6px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.7em; }
+.pcard-price { font-size: 1.05rem; font-weight: 700; color: #1d2a20; line-height: 1.2; }
+.pcard-sub { display: flex; justify-content: space-between; gap: 6px; font-size: .78rem; color: #8a948d; margin-top: 2px; min-height: 1.2em; }
+.pcard-sub .out { color: var(--logo-red); font-weight: 600; }
+.pcard-cta { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px;
+  border-radius: 4px; background: var(--logo-green-dk); color: #fff; font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .02em; }
+.pcard:hover .pcard-cta { background: var(--logo-green-xdk); }
+/* Ordinateur : comme Jumia, le bouton n'apparaît qu'au survol de la carte */
+@media (hover: hover) and (min-width: 992px) {
+  .pcard-cta { opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; }
+  .pcard:hover .pcard-cta, .pcard:focus-visible .pcard-cta { opacity: 1; transform: none; }
+}
+
+/* Chargement */
+.pcard-skeleton { pointer-events: none; }
+.pcard-skeleton .pcard-img, .pcard-skeleton .sk { background: #eef2ec; animation: pcard-pulse 1.2s ease-in-out infinite; }
+.pcard-skeleton .sk { display: block; border-radius: 4px; height: 12px; margin-bottom: 8px; }
+.pcard-skeleton .sk-line.short { width: 60%; }
+.pcard-skeleton .sk-price { width: 45%; height: 16px; margin-top: 6px; }
+@keyframes pcard-pulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .pcard-skeleton .pcard-img, .pcard-skeleton .sk { animation: none; } }
