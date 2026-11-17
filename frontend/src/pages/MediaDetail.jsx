@@ -117,7 +117,8 @@ function DocumentViewer({ m }) {
 }
 
 function Player({ m, next, onPrev }) {
-  const stream = `${API_URL}/medias/${m.slug}/flux?qualite=${m.version_legere_disponible ? 'legere' : 'originale'}`
+  // Fichier servi directement par nginx (rapide) ; repli sur l'API /flux si l'URL directe est absente
+  const stream = m.flux_url || `${API_URL}/medias/${m.slug}/flux?qualite=${m.version_legere_disponible ? 'legere' : 'originale'}`
   if (m.youtube_id) {
     return (
       <div className="mdd_frame">

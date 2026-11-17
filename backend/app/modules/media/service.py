@@ -130,6 +130,8 @@ def media_out(m: Media, stats: dict | None = None, detail: bool = False) -> dict
             "lisible": m.type in ("audio", "video") and bool(m.fichier),
             "telechargeable": m.type != "link" and bool(m.fichier),
             "apercu": m.type in ("document", "image") and bool(m.fichier),
+            # URL directe servie par nginx (rapide) au lieu de l'endpoint Python /flux
+            "flux_url": file_url(m.version_legere if _light_exists(m) else m.fichier),
         })
     return data
 
