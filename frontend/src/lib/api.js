@@ -1,6 +1,7 @@
 // Client de l'API Nufotec (FastAPI) — voir nufotec-api/docs/FRONTEND.md
 // Toutes les réponses : { success, message, data } ou { success:false, error:{ code, message, details } }.
 import axios from 'axios'
+import { installResilience } from '../shared/network'
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1'
 
@@ -27,15 +28,13 @@ export class ApiError extends Error {
   }
 }
 
-const http = axios.create({ baseURL: API_URL, timeout: 20000, headers: { 'Accept-Language': 'fr' } })
+const http = axios.create({ baseURL: API_URL, timeout: 30000, headers: { 'Accept-Language': 'fr' } })
+// Connexions lentes ou coupées : nouvelles tentatives, clé anti-doublon stable, état du réseau (voir shared/network.js)
+installResilience(http)
 
 http.interceptors.request.use((config) => {
   const t = tokens.get()
   if (t?.access_token) config.headers.Authorization = `Bearer ${t.access_token}`
-  // Évite les doublons si le réseau coupe pendant une création / modification
-  if (['post', 'put', 'patch', 'delete'].includes(config.method) && !config.headers['Idempotency-Key']) {
-    config.headers['Idempotency-Key'] = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
-  }
   return config
 })
 
@@ -64,14 +63,16 @@ http.interceptors.response.use(
 )
 
 /** Renvoie directement `data` (et `message` sur demande). */
-async function call(method, url, { params, data, headers } = {}) {
-  const res = await http.request({ method, url, params, data, headers })
+async function call(method, url, { params, data, headers, key, noRetry } = {}) {
+  const h = { ...(headers ?? {}), ...(key ? { 'Idempotency-Key': key } : {}) }
+  const res = await http.request({ method, url, params, data, headers: h, noRetry })
   return res.data?.data
 }
 
 export const api = {
   get: (url, params) => call('get', url, { params }),
-  post: (url, data) => call('post', url, { data }),
+  /** opts.key : Idempotency-Key imposée (renvoi plus tard d'une demande mise en attente) */
+  post: (url, data, opts) => call('post', url, { data, ...(opts ?? {}) }),
   put: (url, data) => call('put', url, { data }),
   patch: (url, data) => call('patch', url, { data }),
   delete: (url) => call('delete', url),

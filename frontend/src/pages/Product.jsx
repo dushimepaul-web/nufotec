@@ -6,7 +6,9 @@ import { Link, useParams } from 'react-router-dom'
 import api from '../lib/api'
 import { PRODUCT_FALLBACK, fallback, formatDate, formatPrice, formatUsd } from '../lib/format'
 import { ROUTES } from '../lib/routes'
-import { usePageMeta } from '../lib/site'
+import { usePageMeta, useSite } from '../lib/site'
+import { isNetworkFailure, localWhatsAppUrl, openIn } from '../lib/whatsapp'
+import { keyFor, queue } from '../shared/outbox'
 import useApi from '../lib/useApi'
 import { LIMITS, cleanCity, cleanName, cleanQuantity, cleanText, trimAll } from '../lib/sanitize'
 import { BURUNDI_ID, DEFAULT_COUNTRIES, fullPhone } from '../lib/phone'
@@ -46,6 +48,7 @@ async function openFromApi(getUrl) {
 
 
 function OrderModal({ product, open, onClose }) {
+  const { settings } = useSite()
   const countries = useApi(open ? '/pays' : null)
   const countryList = countries.data ?? DEFAULT_COUNTRIES
   const empty = { nom_complet: '', telephone: '', pays_id: BURUNDI_ID, ville: 'Bujumbura', adresse: '', quantite: 1, remarques: '', site_web: '' }
@@ -69,18 +72,33 @@ function OrderModal({ product, open, onClose }) {
     // L'onglet WhatsApp est ouvert PENDANT le clic (sinon le navigateur le bloque), puis dirigé vers le lien
     // renvoyé par l'API une fois la commande enregistrée : WhatsApp s'ouvre directement avec le message prêt.
     const tab = window.open('', '_blank')
+    const url = `/produits/${product.slug}/commander`
+    const body = {
+      ...trimAll(form), telephone: fullPhone(form.telephone, country), pays_id: Number(form.pays_id),
+      quantite: Number(form.quantite) || 1, remarques: form.remarques || null,
+    }
+    const key = keyFor(url, body)
     try {
-      const data = await api.post(`/produits/${product.slug}/commander`, {
-        ...trimAll(form), telephone: fullPhone(form.telephone, country), pays_id: Number(form.pays_id),
-        quantite: Number(form.quantite) || 1, remarques: form.remarques || null,
-      })
+      const data = await api.post(url, body, { key })
       setState({ sending: false, error: null, done: { ...data, opened: true } })
       setForm(empty)
-      if (tab) tab.location.href = data.whatsapp.url
       // Nouvel onglet bloqué (navigateur, téléphone) : la page elle-même va sur WhatsApp — l'appli s'ouvre directement.
       // La commande est déjà enregistrée, rien n'est perdu.
-      else window.location.assign(data.whatsapp.url)
+      openIn(tab, data.whatsapp.url)
     } catch (err) {
+      if (isNetworkFailure(err)) {
+        // Connexion coupée : la commande part sur WhatsApp et sera enregistrée automatiquement au retour du réseau
+        queue(url, body, key, `Commande : ${product.titre}`)
+        const wa = localWhatsAppUrl(settings, [
+          `Bonjour NUFOTEC BURUNDI, je souhaite commander :`, `• ${product.titre} × ${body.quantite}`, '',
+          `Nom : ${body.nom_complet}`, `Téléphone : ${body.telephone}`, `Pays : ${country?.pays ?? ''}`,
+          `Ville : ${body.ville || ''}`, body.adresse ? `Adresse : ${body.adresse}` : null, body.remarques ? `Remarques : ${body.remarques}` : null,
+        ])
+        setState({ sending: false, error: null, done: { whatsapp: { url: wa }, opened: true, queued: true } })
+        setForm(empty)
+        openIn(tab, wa)
+        return
+      }
       tab?.close()
       setState({ sending: false, error: err, done: null })
     }
@@ -97,7 +115,7 @@ function OrderModal({ product, open, onClose }) {
   }))
 
   return (
-    <Modal open={open} onClose={close} size="lg" icon="bi-whatsapp" title={done ? 'Commande enregistrée' : 'Finaliser votre commande'}>
+    <Modal open={open} onClose={close} size="lg" icon="bi-whatsapp" title={done ? (done.queued ? 'Commande envoyée sur WhatsApp' : 'Commande enregistrée') : 'Finaliser votre commande'}>
       <div className="pd_order-product">
         <img src={product.image || PRODUCT_FALLBACK} alt="" onError={fallback(PRODUCT_FALLBACK)} />
         <div>
@@ -109,8 +127,9 @@ function OrderModal({ product, open, onClose }) {
       {done ? (
         <div className="pd_order-done">
           <i className="bi bi-check-circle"></i>
-          <h4>Merci, votre commande est enregistrée</h4>
+          <h4>{done.queued ? 'Merci, votre commande est prête' : 'Merci, votre commande est enregistrée'}</h4>
           {done.commande?.numero && <p>Numéro de commande : <b>{done.commande.numero}</b></p>}
+          {done.queued && <p className="pd_queued"><i className="bi bi-cloud-arrow-up"></i> Connexion trop faible : votre commande est gardée sur votre téléphone et sera enregistrée automatiquement dès le retour du réseau.</p>}
           <p>{done.opened
             ? "WhatsApp s'est ouvert avec votre message déjà prêt : appuyez sur Envoyer. Un conseiller vous répond pour confirmer le prix, la livraison et le paiement."
             : 'Dernière étape : envoyez-la sur WhatsApp. Le message est déjà prêt, un conseiller vous répond pour confirmer le prix, la livraison et le paiement.'}</p>

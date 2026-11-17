@@ -6,6 +6,7 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 import { getUser, refreshUser } from '../lib/auth'
 import Spinner from '../ui/Spinner'
+import NetworkBanner from '../../shared/NetworkBanner'
 
 const YEAR = new Date().getFullYear()
 
@@ -45,6 +46,7 @@ export default function Shell({ nav, brand = 'NUFOTEC' }) {
       <a href="#" className="back-to-top d-flex align-items-center justify-content-center" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
         <i className="bi bi-arrow-up-short"></i>
       </a>
+      <NetworkBanner />
     </>
   )
 }

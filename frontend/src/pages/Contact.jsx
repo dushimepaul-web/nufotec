@@ -4,6 +4,8 @@
 // (navigateur et API), WhatsApp ouvert directement avec le message prêt, carte chargée seulement à la demande.
 import { useEffect, useState } from 'react'
 import api from '../lib/api'
+import { isNetworkFailure, localWhatsAppUrl, openIn } from '../lib/whatsapp'
+import { keyFor, queue } from '../shared/outbox'
 import { BURUNDI_ID, DEFAULT_COUNTRIES, fullPhone } from '../lib/phone'
 import { cleanCity, cleanName, cleanText } from '../lib/sanitize'
 import { usePageMeta, useSite } from '../lib/site'
@@ -98,19 +100,32 @@ export default function Contact() {
     setState({ sending: true, error: null, done: null })
     // L'onglet WhatsApp est ouvert PENDANT le clic (sinon le navigateur le bloque), puis dirigé vers le lien prêt
     const tab = window.open('', '_blank')
+    const body = {
+      nom: form.nom.trim(), email: form.email.trim().toLowerCase(), telephone: fullPhone(form.telephone, country),
+      pays_id: Number(form.pays_id), lieu: form.lieu.trim() || null, sujet: form.sujet.trim(),
+      message: form.message.trim(), site_web: form.site_web,
+    }
+    const key = keyFor('/contact', body)
+    const reset = () => { setForm(empty); setConsent(false); setTried(false) }
     try {
-      const data = await api.post('/contact', {
-        nom: form.nom.trim(), email: form.email.trim().toLowerCase(), telephone: fullPhone(form.telephone, country),
-        pays_id: Number(form.pays_id), lieu: form.lieu.trim() || null, sujet: form.sujet.trim(),
-        message: form.message.trim(), site_web: form.site_web,
-      })
+      const data = await api.post('/contact', body, { key })
       const url = data?.whatsapp?.url
       setState({ sending: false, error: null, done: { name: form.nom.trim().split(' ')[0], url } })
-      setForm(empty)
-      setConsent(false)
-      setTried(false)
-      if (url) { if (tab) tab.location.href = url; else window.location.assign(url) } else tab?.close()
+      reset()
+      if (url) openIn(tab, url); else tab?.close()
     } catch (err) {
+      if (isNetworkFailure(err)) {
+        // Connexion coupée : le message part quand même sur WhatsApp et sera enregistré au retour du réseau
+        queue('/contact', body, key, 'Message de contact')
+        const url = localWhatsAppUrl(settings, [
+          `Bonjour NUFOTEC BURUNDI, je suis ${body.nom}.`, `Sujet : ${body.sujet}`, body.message, '',
+          `Pays : ${country?.pays ?? ''}`, `Téléphone : ${body.telephone}`, `E-mail : ${body.email}`,
+        ])
+        setState({ sending: false, error: null, done: { name: form.nom.trim().split(' ')[0], url, queued: true } })
+        reset()
+        openIn(tab, url)
+        return
+      }
       tab?.close()
       setState({ sending: false, error: err, done: null })
     }
@@ -174,7 +189,9 @@ export default function Contact() {
             <div className="ct_done">
               <div className="ct_done-ico"><i className="bi bi-send-check"></i></div>
               <h2>Merci {done.name} !</h2>
-              <p>Votre message est bien reçu : notre équipe vous répond sous 24 heures.</p>
+              {done.queued
+                ? <p className="ct_queued"><i className="bi bi-cloud-arrow-up"></i> Connexion trop faible : votre message est gardé sur votre téléphone et sera enregistré automatiquement dès le retour du réseau.</p>
+                : <p>Votre message est bien reçu : notre équipe vous répond sous 24 heures.</p>}
               {done.url && (
                 <>
                   <p className="ct_muted">WhatsApp s'est ouvert avec votre message déjà prêt : appuyez sur Envoyer pour une réponse plus rapide.</p>

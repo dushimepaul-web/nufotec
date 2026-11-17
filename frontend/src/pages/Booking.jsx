@@ -10,7 +10,9 @@ import { formatSlot, isoDay } from '../lib/format'
 import { BURUNDI_ID, DEFAULT_COUNTRIES, fullPhone } from '../lib/phone'
 import { ROUTES } from '../lib/routes'
 import { LIMITS, cleanName, cleanText } from '../lib/sanitize'
-import { usePageMeta } from '../lib/site'
+import { usePageMeta, useSite } from '../lib/site'
+import { isNetworkFailure, localWhatsAppUrl, openIn } from '../lib/whatsapp'
+import { keyFor, queue } from '../shared/outbox'
 import useApi from '../lib/useApi'
 import CountrySelect from '../ui/CountrySelect'
 import PageBanner from '../ui/PageBanner'
@@ -80,6 +82,7 @@ function FileZone({ label, hint, files, onAdd, onRemove, icon }) {
 
 export default function Booking() {
   const { uuid } = useParams()
+  const { settings } = useSite()
   const doctor = useApi(`/medecins/${uuid}`, undefined, [uuid])
   const countries = useApi('/pays')
   const modes = useApi('/modes-paiement')
@@ -161,13 +164,35 @@ export default function Booking() {
     // Onglet WhatsApp ouvert PENDANT le clic (sinon bloqué), dirigé ensuite vers le lien préparé par l'API
     const tab = window.open('', '_blank')
     try {
-      const data = await api.post('/consultations/demande', {
+      const body = {
         medecin_uuid: uuid, debut: form.debut, nom_complet: form.nom_complet.trim(), whatsapp: fullPhone(form.whatsapp, country),
         pays_residence_id: Number(form.pays_id), age: Number(form.age), taille: form.taille, poids: form.poids,
         symptomes: form.symptomes.trim(), duree_symptomes: form.duree_symptomes || null,
         consultation_precedente: form.consultation_precedente === 'oui',
         mode_paiement_id: form.mode_paiement_id ? Number(form.mode_paiement_id) : null, site_web: form.site_web || null,
-      })
+      }
+      const key = keyFor('/consultations/demande', body)
+      let data
+      try {
+        data = await api.post('/consultations/demande', body, { key })
+      } catch (err) {
+        if (!isNetworkFailure(err)) throw err
+        // Connexion coupée : la demande part sur WhatsApp et sera enregistrée automatiquement au retour du réseau.
+        // Les fichiers ne peuvent pas attendre sur le téléphone : le visiteur les joint dans WhatsApp.
+        queue('/consultations/demande', body, key, `Rendez-vous : ${doctorName(d)}`)
+        const files = [...allFiles, ...(proof && form.mode_paiement_id ? [proof] : [])].map((f) => f.name)
+        const url = localWhatsAppUrl(settings, [
+          `Bonjour NUFOTEC BURUNDI, je demande une consultation avec ${doctorName(d)}.`,
+          `Créneau souhaité : ${formatSlot(form.debut)}`, '',
+          `Nom : ${body.nom_complet}`, `WhatsApp : ${body.whatsapp}`, `Pays : ${country?.pays ?? ''}`,
+          `Âge : ${body.age} ans · Taille : ${body.taille} · Poids : ${body.poids}`, '',
+          `Symptômes : ${body.symptomes}`, files.length > 0 && `Documents (je les joins ici) : ${files.join(', ')}`,
+        ])
+        setDone({ queued: true, debut: form.debut, failed: files, whatsapp_medecin: { url } })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        openIn(tab, url)
+        return
+      }
       // Documents et preuve : le code temporaire renvoyé par l'API remplace le compte
       const failed = []
       for (const f of allFiles) {
@@ -185,8 +210,7 @@ export default function Booking() {
       }
       setDone({ ...data, failed })
       window.scrollTo({ top: 0, behavior: 'smooth' })
-      if (tab) tab.location.href = data.whatsapp_medecin.url
-      else window.location.assign(data.whatsapp_medecin.url)
+      openIn(tab, data.whatsapp_medecin.url)
     } catch (err) {
       tab?.close()
       const fields = {}
@@ -238,11 +262,19 @@ export default function Booking() {
           /* CONFIRMATION */
           <section className="bk_done">
             <i className="bi bi-check-circle"></i>
-            <h2>Merci, votre demande est enregistrée</h2>
-            <p>Numéro de suivi : <b>{done.numero}</b></p>
-            <p>WhatsApp s'est ouvert avec votre demande déjà rédigée pour <b>{doctorName(d)}</b> : appuyez sur Envoyer.
-              L'expert vous répond pour confirmer le rendez-vous ({formatSlot(done.debut ?? form.debut)}).</p>
-            {done.failed?.length > 0 && <p className="bk_warn"><i className="bi bi-exclamation-triangle"></i> Non envoyés : {done.failed.join(', ')}. Vous pourrez les transmettre sur WhatsApp.</p>}
+            <h2>{done.queued ? 'Merci, votre demande est prête' : 'Merci, votre demande est enregistrée'}</h2>
+            {done.numero && <p>Numéro de suivi : <b>{done.numero}</b></p>}
+            {done.queued ? (
+              <>
+                <p>WhatsApp s'est ouvert avec votre demande déjà rédigée pour <b>{doctorName(d)}</b> : appuyez sur Envoyer.
+                  NUFOTEC BURUNDI vous répond pour confirmer le rendez-vous ({formatSlot(done.debut ?? form.debut)}).</p>
+                <p className="bk_queued"><i className="bi bi-cloud-arrow-up"></i> Connexion trop faible : votre demande est gardée sur votre téléphone et sera enregistrée automatiquement dès le retour du réseau.</p>
+              </>
+            ) : (
+              <p>WhatsApp s'est ouvert avec votre demande déjà rédigée pour <b>{doctorName(d)}</b> : appuyez sur Envoyer.
+                L'expert vous répond pour confirmer le rendez-vous ({formatSlot(done.debut ?? form.debut)}).</p>
+            )}
+            {done.failed?.length > 0 && <p className="bk_warn"><i className="bi bi-exclamation-triangle"></i> {done.queued ? 'À joindre dans WhatsApp' : 'Non envoyés'} : {done.failed.join(', ')}.{done.queued ? '' : ' Vous pourrez les transmettre sur WhatsApp.'}</p>}
             <div className="bk_done-actions">
               <a href={done.whatsapp_medecin.url} target="_blank" rel="noopener noreferrer" className="bk_btn whatsapp lg"><i className="bi bi-whatsapp"></i> Rouvrir WhatsApp</a>
               <Link to={ROUTES.home} className="bk_btn ghost lg">Retour à l'accueil</Link>

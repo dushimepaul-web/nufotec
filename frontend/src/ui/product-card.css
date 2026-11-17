@@ -7,8 +7,9 @@
 .pcard { position: relative; display: flex; flex-direction: column; background: #fff; border-radius: 6px; overflow: hidden;
   text-decoration: none; color: #1d2a20; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); transition: box-shadow .2s, transform .2s; }
 .pcard:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .14); transform: translateY(-2px); color: #1d2a20; }
-.pcard-img { position: relative; aspect-ratio: 1/1; background: #fff; }
-.pcard-img img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+/* cadre carré fixe : une image haute (portrait) ne peut plus l'agrandir et décaler la suite de la carte */
+.pcard-img { position: relative; aspect-ratio: 1/1; background: #fff; overflow: hidden; }
+.pcard-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 8px; }
 .pcard-badge { position: absolute; top: 8px; z-index: 1; font-size: .72rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
 .pcard-badge.star { right: 8px; background: var(--logo-gold); color: var(--logo-green-xdk); }
 .pcard-badge.new { left: 8px; background: var(--logo-red); color: #fff; }
@@ -16,9 +17,10 @@
 .pcard-name { font-family: 'Inter', sans-serif; font-size: .86rem; font-weight: 400; line-height: 1.35; color: #1d2a20; margin: 0 0 6px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.7em; }
 .pcard-price { font-size: 1.05rem; font-weight: 700; color: #1d2a20; line-height: 1.2; }
-.pcard-sub { display: flex; justify-content: space-between; gap: 6px; font-size: .78rem; color: #8a948d; margin-top: 2px; min-height: 1.2em; }
+.pcard-sub { display: flex; justify-content: space-between; gap: 6px; font-size: .78rem; color: #8a948d; margin: 2px 0 10px; min-height: 1.2em; }
 .pcard-sub .out { color: var(--logo-red); font-weight: 600; }
-.pcard-cta { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px;
+/* bouton collé en bas de la carte : même hauteur sur toutes les cartes d'une rangée */
+.pcard-cta { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px;
   border-radius: 4px; background: var(--logo-green-dk); color: #fff; font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .02em; }
 .pcard:hover .pcard-cta { background: var(--logo-green-xdk); }
 /* Ordinateur : comme Jumia, le bouton n'apparaît qu'au survol de la carte */

@@ -1,0 +1,20 @@
+/* Bandeau d'état de la connexion — couleurs du logo, aucun dégradé ; au-dessus de la barre du bas sur mobile. */
+.nufnet { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 3000; display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 24px); width: max-content; padding: 10px 16px; border-radius: 14px; font: 500 .88rem/1.4 'Inter', system-ui, sans-serif;
+  color: #fff; background: #1d2a20; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); animation: nufnet-in .2s ease-out; }
+.nufnet i { font-size: 1.15rem; flex-shrink: 0; }
+.nufnet b { font-weight: 700; }
+.nufnet button { border: 0; border-radius: 100px; padding: 5px 12px; background: #c9a646; color: #053d16; font-weight: 700; font-size: .8rem; white-space: nowrap; }
+.nufnet-offline { background: #b3261e; }
+.nufnet-unreachable { background: #7a5f17; }
+.nufnet-slow { background: #075a20; }
+.nufnet-back { background: #0b8a30; }
+.nufnet-pending { background: #053d16; }
+@keyframes nufnet-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+@media (min-width: 992px) { .nufnet { bottom: 24px; } }
+@media (prefers-reduced-motion: reduce) { .nufnet { animation: none; } }
+
+/* Note « demande gardée sur le téléphone » dans les écrans de confirmation (contact, commande, rendez-vous) */
+.ct_queued, .pd_queued, .bk_queued { display: flex; gap: 10px; align-items: flex-start; text-align: left; margin: 12px auto; max-width: 520px;
+  padding: 12px 14px; border-radius: 12px; background: #fbf5e3; border: 1px solid #e8d79f; color: #5c4710; font-size: .9rem; line-height: 1.5; }
+.ct_queued i, .pd_queued i, .bk_queued i { color: #c9a646; font-size: 1.2rem; flex-shrink: 0; }

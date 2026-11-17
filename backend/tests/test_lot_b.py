@@ -171,3 +171,11 @@ def test_journal_admin_only(client, db):
 def test_dates_in_free_dicts_have_timezone(client, admin_h):
     pages = client.get("/api/v1/admin/contenu/pages", headers=admin_h).json()["data"]
     assert pages[0]["modifiee_le"].endswith("+02:00")
+
+
+def test_json_is_gzipped_but_media_streams_are_not(client):
+    r = client.get("/api/v1/produits", params={"per_page": 12}, headers={"Accept-Encoding": "gzip"})
+    assert r.status_code == 200 and r.headers.get("content-encoding") == "gzip"
+    from app.core.compression import RAW_PATHS
+    assert RAW_PATHS.search("/api/v1/medias/une-emission/flux") and RAW_PATHS.search("/api/v1/medias/x/apercu")
+    assert not RAW_PATHS.search("/api/v1/medias/x")

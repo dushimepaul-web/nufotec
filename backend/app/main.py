@@ -10,6 +10,7 @@ from sqlalchemy import text
 
 from app.core.config import get_settings
 from app.core.database import engine
+from app.core.compression import SelectiveGZipMiddleware
 from app.core.idempotency import IdempotencyMiddleware
 from app.core.observability import RequestContextMiddleware, setup_logging
 from app.core.protection import ProtectionMiddleware
@@ -114,6 +115,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID", "Retry-After", "Idempotent-Replayed", "Content-Language"],
 )
+# Compression gzip (connexions lentes), à l'extérieur de tout le reste ; jamais pour les fichiers médias
+app.add_middleware(SelectiveGZipMiddleware)
 register_error_handlers(app)
 
 api = APIRouter(prefix="/api/v1")
