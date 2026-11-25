@@ -117,7 +117,7 @@ function OrderModal({ product, open, onClose }) {
   return (
     <Modal open={open} onClose={close} size="lg" icon="bi-whatsapp" title={done ? (done.queued ? 'Commande envoyée sur WhatsApp' : 'Commande enregistrée') : 'Finaliser votre commande'}>
       <div className="pd_order-product">
-        <img src={product.image || PRODUCT_FALLBACK} alt="" onError={fallback(PRODUCT_FALLBACK)} />
+        <img loading="lazy" decoding="async" src={product.image || PRODUCT_FALLBACK} alt="" onError={fallback(PRODUCT_FALLBACK)} />
         <div>
           <b>{product.titre}</b>
           <span>{formatPrice(product)}</span>
@@ -210,7 +210,7 @@ function ShareModal({ product, open, onClose }) {
   return (
     <Modal open={open} onClose={onClose} icon="bi-share" title="Partager ce produit">
       <div className="pd_share-head">
-        <img src={product.image || PRODUCT_FALLBACK} alt="" onError={fallback(PRODUCT_FALLBACK)} />
+        <img loading="lazy" decoding="async" src={product.image || PRODUCT_FALLBACK} alt="" onError={fallback(PRODUCT_FALLBACK)} />
         <b>{product.titre}</b>
         <span>{formatPrice(product)}</span>
       </div>
@@ -308,7 +308,7 @@ export default function Product() {
               <div className="pd_thumbs">
                 {images.map((src, i) => (
                   <button key={src} type="button" className={i === active ? 'active' : ''} onClick={() => setActive(i)} aria-label={`Image ${i + 1}`}>
-                    <img src={src} alt="" onError={fallback(PRODUCT_FALLBACK)} />
+                    <img loading="lazy" decoding="async" src={src} alt="" onError={fallback(PRODUCT_FALLBACK)} />
                   </button>
                 ))}
               </div>
@@ -398,7 +398,7 @@ export default function Product() {
       <OrderModal product={product} open={modal === 'order'} onClose={() => setModal(null)} />
       <ShareModal product={product} open={modal === 'share'} onClose={() => setModal(null)} />
       <Modal open={modal === 'zoom'} onClose={() => setModal(null)} size="xl" dark>
-        <img className="pd_zoom-img" src={images[active]} alt={product.titre} onError={fallback(PRODUCT_FALLBACK)} />
+        <img loading="lazy" decoding="async" className="pd_zoom-img" src={images[active]} alt={product.titre} onError={fallback(PRODUCT_FALLBACK)} />
       </Modal>
     </div>
   )

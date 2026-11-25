@@ -103,7 +103,7 @@ function ParametresForm({ settings, reload }) {
 
                     {p.type === 'image' ? (
                       <div className="d-flex align-items-center gap-2">
-                        {p.valeur_affichee && <img src={p.valeur_affichee} alt="" width="48" height="48" className="rounded object-fit-cover" />}
+                        {p.valeur_affichee && <img loading="lazy" decoding="async" src={p.valeur_affichee} alt="" width="48" height="48" className="rounded object-fit-cover" />}
                         <input type="file" accept="image/*" className="form-control form-control-sm"
                                onChange={(e) => uploadImage(p.cle, e.target.files[0])} />
                       </div>

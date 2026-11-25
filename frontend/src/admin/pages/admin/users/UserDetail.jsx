@@ -167,7 +167,7 @@ export default function UserDetail() {
             <div className="card">
               <div className="card-body d-flex flex-wrap align-items-center gap-3">
                 {u.photo_url
-                  ? <img src={u.photo_url} alt="" width="56" height="56" className="rounded-circle object-fit-cover" />
+                  ? <img loading="lazy" decoding="async" src={u.photo_url} alt="" width="56" height="56" className="rounded-circle object-fit-cover" />
                   : <div className="rounded-circle d-flex align-items-center justify-content-center bg-success text-white" style={{ width: 56, height: 56 }}>{[u.prenom, u.nom].filter(Boolean).map((s) => s[0]).join('')}</div>}
                 <div className="me-auto">
                   <h4 className="mb-1">{[u.prenom, u.nom].filter(Boolean).join(' ') || '—'}</h4>

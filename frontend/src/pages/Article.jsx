@@ -54,7 +54,7 @@ export default function Article() {
         <main className="nw_main">
           {/* 2. ARTICLE */}
           <article className="nw_article">
-            {a.image && <img className="nw_article-img" src={a.image} alt={a.titre} />}
+            {a.image && <img loading="lazy" decoding="async" className="nw_article-img" src={a.image} alt={a.titre} />}
             {a.resume && <p className="nw_lead">{a.resume}</p>}
             <div className="nw_content" dangerouslySetInnerHTML={{ __html: a.contenu || '' }}></div>
             {a.tags?.length > 0 && (

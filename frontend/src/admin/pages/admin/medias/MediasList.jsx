@@ -270,7 +270,7 @@ export default function MediasList() {
       key: 'titre', label: 'Titre',
       render: (m) => (
         <div className="d-flex align-items-center gap-2">
-          {m.miniature && <img src={m.miniature} alt="" width="40" height="40" className="rounded object-fit-cover" />}
+          {m.miniature && <img loading="lazy" decoding="async" src={m.miniature} alt="" width="40" height="40" className="rounded object-fit-cover" />}
           <div>
             <Link to={`${ROUTES.medias}/${m.uuid}`} className="fw-semibold">{m.titre}</Link>
             <div className="text-muted small text-capitalize">{m.categorie}</div>

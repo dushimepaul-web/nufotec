@@ -29,7 +29,7 @@ export default function Actualites() {
       label: 'Titre',
       render: (a) => (
         <div className="d-flex align-items-center gap-2">
-          {a.image && <img src={a.image} alt="" width="36" height="36" className="rounded object-fit-cover" />}
+          {a.image && <img loading="lazy" decoding="async" src={a.image} alt="" width="36" height="36" className="rounded object-fit-cover" />}
           <div>
             <div className="fw-semibold">
               <Link to={ROUTES.actualite(a.id)}>{a.titre}</Link>

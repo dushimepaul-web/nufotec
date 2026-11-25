@@ -35,7 +35,7 @@ const COLUMNS = [
     key: 'nom', label: 'Partenaire',
     render: (p) => (
       <div className="d-flex align-items-center gap-2">
-        {p.logo && <img src={p.logo} alt="" width="32" height="32" className="rounded object-fit-cover" />}
+        {p.logo && <img loading="lazy" decoding="async" src={p.logo} alt="" width="32" height="32" className="rounded object-fit-cover" />}
         <span className="fw-semibold">{p.nom}</span>
       </div>
     ),

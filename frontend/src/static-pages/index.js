@@ -1,4 +1,4 @@
-// Pages statiques (copies des vues PHP) : adresse -> chargement à la demande. Généré, ne pas modifier à la main.
+// Pages statiques (copies des vues PHP) : adresse -> chargement à la demande. À modifier ici directement.
 export const STATIC_PAGES = {
   "/background-strategic-rationale": { key: "strategic", title: "Contexte et justification stratégique", load: () => import('./strategic.js') },
   "/corporate-structure-governance": { key: "governance", title: "Structure et gouvernance d'entreprise", load: () => import('./governance.js') },

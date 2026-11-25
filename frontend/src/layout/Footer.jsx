@@ -49,7 +49,7 @@ export default function Footer() {
         {/* Marque */}
         <div className="nfoot-brand">
           <Link to={ROUTES.home} className="nfoot-id">
-            <img src={settings.site_logo || '/logo.jpeg'} alt={settings.site_name} className="nfoot-logo" />
+            <img loading="lazy" decoding="async" src={settings.site_logo || '/logo.jpeg'} alt={settings.site_name} className="nfoot-logo" />
             <span>
               <b>{settings.site_name}</b>
               <small>{slogan}</small>

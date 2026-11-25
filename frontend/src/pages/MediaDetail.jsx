@@ -294,7 +294,7 @@ function MediaView({ slug }) {
           <h1 className="mdd_title">{m.titre}</h1>
           <div className="mdd_bar">
             <div className="mdd_channel">
-              <img src="/logo.jpeg" alt="" />
+              <img loading="lazy" decoding="async" src="/logo.jpeg" alt="" />
               <div><b>NUFOTEC BURUNDI</b><small><i className={`bi ${ICON[m.categorie] ?? 'bi-play'}`}></i> {m.credits && m.credits !== 'Artiste inconnu' ? m.credits : 'Médiathèque'}</small></div>
             </div>
             <div className="mdd_actions">

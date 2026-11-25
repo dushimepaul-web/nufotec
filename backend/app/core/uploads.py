@@ -10,6 +10,7 @@ from pathlib import Path
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.core.config import get_settings
+from app.core.images import make_webp, webp_path
 from app.core.responses import ApiError
 
 Image.MAX_IMAGE_PIXELS = 40_000_000  # protège contre les « bombes de décompression »
@@ -49,6 +50,7 @@ def save_image(raw: bytes, folder: str, owner_id: int, max_bytes: int, max_side:
         img.save(target_dir / name, "PNG", optimize=True)
     else:
         img.save(target_dir / name, "JPEG", quality=88, optimize=True)
+    make_webp(target_dir / name)  # version légère servie par Apache aux navigateurs qui l'acceptent
     return name
 
 
@@ -57,6 +59,7 @@ def delete_file(folder: str, name: str | None, keep: tuple[str, ...] = ("default
         return
     path = Path(get_settings().uploads_dir) / folder / name
     path.unlink(missing_ok=True)
+    webp_path(path).unlink(missing_ok=True)
 
 
 def public_url(folder: str, name: str | None, default: str | None = "default-avatar.png") -> str | None:

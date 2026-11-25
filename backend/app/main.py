@@ -70,6 +70,26 @@ def _nightly_rag_sync() -> None:
         db.close()
 
 
+_last_image_pass: str | None = None
+
+
+def _nightly_images() -> None:
+    """Une fois par nuit (après 3 h) : versions WebP des nouvelles images, dont celles déposées par le site PHP."""
+    global _last_image_pass
+    from pathlib import Path
+
+    from app.core.helpers import now
+    from app.core.images import optimize_folder
+
+    current = now()
+    today = current.strftime("%Y-%m-%d")
+    if current.hour < 3 or _last_image_pass == today:
+        return
+    _last_image_pass = today
+    stats = optimize_folder(Path(settings.uploads_dir))
+    log.info("Images WebP : %s créée(s) sur %s image(s) en %s s", stats["creees"], stats["images"], stats["secondes"])
+
+
 async def _outbox_loop() -> None:
     """Toutes les minutes : rappels de consultation, puis envoi des emails dus (avec nouvelles tentatives)."""
     from app.core.mailer import deliver_pending
@@ -78,6 +98,7 @@ async def _outbox_loop() -> None:
         try:
             await run_in_threadpool(_send_reminders)
             await run_in_threadpool(_nightly_rag_sync)
+            await run_in_threadpool(_nightly_images)
             await run_in_threadpool(deliver_pending, 50)
         except Exception:
             log.exception("Tâche de fond (rappels, emails)")

@@ -236,7 +236,7 @@ function ProduitFormFields({ initial, uuid, isEdit, detail }) {
                     <div className="d-flex flex-wrap gap-2 mb-3">
                       {galerie.map((g) => (
                         <div key={g.id} className="position-relative">
-                          <img src={g.url} alt="" width="56" height="56" className="rounded object-fit-cover" />
+                          <img loading="lazy" decoding="async" src={g.url} alt="" width="56" height="56" className="rounded object-fit-cover" />
                           <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0 p-0" style={{ width: 20, height: 20, lineHeight: 1 }}
                                   onClick={() => removeGallery(g.id)}>
                             <i className="bi bi-x" style={{ fontSize: 14 }}></i>

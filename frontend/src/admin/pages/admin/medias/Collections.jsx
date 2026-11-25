@@ -108,7 +108,7 @@ export default function Collections() {
       key: 'titre', label: 'Collection',
       render: (c) => (
         <div className="d-flex align-items-center gap-2">
-          {c.couverture && <img src={c.couverture} alt="" width="40" height="40" className="rounded object-fit-cover" />}
+          {c.couverture && <img loading="lazy" decoding="async" src={c.couverture} alt="" width="40" height="40" className="rounded object-fit-cover" />}
           <span className="fw-semibold">{c.titre}</span>
         </div>
       ),

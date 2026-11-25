@@ -2,12 +2,20 @@
 
 # Adresses de l'application (React) : /admin, /medecin et /login -> admin.html ; le reste -> index.html
 RewriteEngine On
+
+# Images WebP : img/photo.jpg.webp servie à la place de img/photo.jpg si le navigateur l'accepte
+RewriteCond %{HTTP_ACCEPT} image/webp
+RewriteCond %{REQUEST_FILENAME} \.(jpe?g|png)$ [NC]
+RewriteCond %{REQUEST_FILENAME}.webp -f
+RewriteRule ^(.+)$ $1.webp [T=image/webp,L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(admin|medecin|login)(/.*)?$ admin.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.html [L]
 
 Options -Indexes
+AddType image/webp .webp
 
 <IfModule mod_headers.c>
   # Sécurité : pas d'affichage dans une iframe d'un autre site, pas de devinette du type de fichier
@@ -28,6 +36,9 @@ Options -Indexes
   </FilesMatch>
   <FilesMatch "\.(jpe?g|png|webp|svg|ico)$">
     Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+  <FilesMatch "\.(jpe?g|png|webp)$">
+    Header append Vary Accept
   </FilesMatch>
 </IfModule>
 

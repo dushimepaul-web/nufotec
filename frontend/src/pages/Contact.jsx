@@ -146,7 +146,7 @@ export default function Contact() {
         {/* 2. COLONNE INFOS */}
         <aside className="ct_info">
           <div className="ct_brand">
-            <img src="/logo.jpeg" alt="" />
+            <img loading="lazy" decoding="async" src="/logo.jpeg" alt="" />
             <div><h2>{settings.site_name || 'NUFOTEC BURUNDI'}</h2><span>{settings.span_site_name || 'Natural Health'}</span></div>
           </div>
           <p className="ct_addr"><i className="bi bi-geo-alt-fill"></i> {address}</p>
@@ -275,7 +275,7 @@ export default function Contact() {
                       title={`Localisation : ${address}`}></iframe>
             ) : (
               <button type="button" className="ct_map-cover" onClick={() => setMapOn(true)}>
-                <img src="/logo.jpeg" alt="" />
+                <img loading="lazy" decoding="async" src="/logo.jpeg" alt="" />
                 <span><i className="bi bi-map"></i> Afficher la carte</span>
               </button>
             )}

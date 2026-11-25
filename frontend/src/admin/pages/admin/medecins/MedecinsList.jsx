@@ -27,7 +27,7 @@ export default function MedecinsList() {
       render: (m) => (
         <>
           <div className="d-flex align-items-center gap-2">
-            {m.photo_url && <img src={m.photo_url} alt="" width="32" height="32" className="rounded-circle object-fit-cover" />}
+            {m.photo_url && <img loading="lazy" decoding="async" src={m.photo_url} alt="" width="32" height="32" className="rounded-circle object-fit-cover" />}
             <div>
               <div className="fw-semibold">
                 <Link to={ROUTES.medecin(m.uuid)}>{[m.prenom, m.nom].filter(Boolean).join(' ')}</Link>

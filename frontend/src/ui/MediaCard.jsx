@@ -20,7 +20,7 @@ export function Thumb({ m }) {
   if (m.categorie === 'audio') {
     return (
       <div className="md_ph md_ph-audio">
-        <div className="md_disc"><img src="/logo.jpeg" alt="" /></div>
+        <div className="md_disc"><img loading="lazy" decoding="async" src="/logo.jpeg" alt="" /></div>
         <div className="md_wave" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i}></i>)}</div>
         <span className="md_ph-label"><i className="bi bi-headphones"></i> AUDIO</span>
       </div>
@@ -31,14 +31,14 @@ export function Thumb({ m }) {
     return (
       <div className={`md_ph md_ph-doc md_doc-${tone}`}>
         <div className="md_sheet"><i className={`bi ${icon}`}></i><b>{label}</b></div>
-        <img className="md_ph-logo" src="/logo.jpeg" alt="" />
+        <img loading="lazy" decoding="async" className="md_ph-logo" src="/logo.jpeg" alt="" />
       </div>
     )
   }
   if (m.categorie === 'video') {
     return (
       <div className="md_ph md_ph-video">
-        <img className="md_ph-mark" src="/logo.jpeg" alt="" />
+        <img loading="lazy" decoding="async" className="md_ph-mark" src="/logo.jpeg" alt="" />
         <i className="bi bi-play-circle-fill md_ph-big"></i>
         <span className="md_ph-label"><i className="bi bi-camera-video"></i> VIDÉO</span>
       </div>
@@ -46,7 +46,7 @@ export function Thumb({ m }) {
   }
   return (
     <div className="md_ph md_ph-video">
-      <img className="md_ph-mark" src="/logo.jpeg" alt="" />
+      <img loading="lazy" decoding="async" className="md_ph-mark" src="/logo.jpeg" alt="" />
       <i className={`bi ${ICON[m.categorie] ?? 'bi-link-45deg'} md_ph-big`}></i>
       <span className="md_ph-label">{m.categorie === 'image' ? 'IMAGE' : 'LIEN'}</span>
     </div>

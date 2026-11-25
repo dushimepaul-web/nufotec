@@ -315,7 +315,7 @@ export default function Account() {
           {/* MENU LATÉRAL */}
           <aside className="ac_side">
             <div className="ac_me">
-              {user.photo_url ? <img src={user.photo_url} alt="" /> : <div className="ac_avatar">{initials(user)}</div>}
+              {user.photo_url ? <img loading="lazy" decoding="async" src={user.photo_url} alt="" /> : <div className="ac_avatar">{initials(user)}</div>}
               <div><b>{[user.prenom, user.nom].filter(Boolean).join(' ')}</b><span>{user.email}</span></div>
             </div>
             <nav className="ac_menu" aria-label="Rubriques de mon compte">

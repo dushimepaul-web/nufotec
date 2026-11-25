@@ -148,6 +148,9 @@ transition est refusée (409 `INVALID_TRANSITION`) et chaque changement est hist
   disque ou une autre machine. Restauration : `gunzip -c fichier.sql.gz | mysql --default-character-set=utf8mb4 nufotec_db`.
 - **ETag / 304** : les réponses publiques (GET sans compte) portent une empreinte ; si rien n'a changé, l'API
   répond 304 sans corps. Avec la compression gzip, c'est l'essentiel du gain sur les connexions lentes.
+- **Images WebP** : chaque image envoyée reçoit une version `photo.jpg.webp` (≤ 200 Ko, ≤ 1920 px), servie par Apache
+  sous la même adresse aux navigateurs qui l'acceptent ; l'original n'est jamais modifié. Pour les images existantes :
+  `python -m tools.optimize_images` (une fois) ; l'API refait la passe chaque nuit après 3 h (images du site PHP).
 - **Apache** : `attachments/.htaccess` met en cache images et médias (30 jours) ; `frontend/public/.htaccess`
   (copié dans `dist/`) met en cache les fichiers du site, compresse et ajoute les en-têtes de sécurité.
 
