@@ -35,7 +35,7 @@ export default function PublicLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <Footer />
+      {pathname !== '/medias' && <Footer />}
       <NetworkBanner />
     </>
   )

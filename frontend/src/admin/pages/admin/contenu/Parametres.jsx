@@ -13,6 +13,21 @@ const toEdit = (p) => {
   return String(p.valeur_affichee)
 }
 
+/** Nom lisible des groupes (la clé technique reste la même en base). */
+const CATEGORY_LABELS = {
+  home: 'Accueil',
+  media: 'Médias',
+  seo: 'Référencement (SEO)',
+  system: 'Système',
+  ui: 'Interface',
+  contact: 'Contact',
+  general: 'Général',
+  agf_identity: 'Identité AGF',
+  agf_facility: 'Site industriel AGF',
+  agf_finance: 'Finance AGF',
+  chatbot: 'Chatbot',
+}
+
 const groupBy = (list) => {
   const groups = new Map()
   for (const p of list) {
@@ -92,13 +107,13 @@ function ParametresForm({ settings, reload }) {
         {groups.map(([cat, params]) => (
           <div className="card mb-3" key={cat}>
             <div className="card-body">
-              <h5 className="card-title text-capitalize">{cat}</h5>
+              <h5 className="card-title">{CATEGORY_LABELS[cat] || cat}</h5>
               <div className="row g-3">
                 {params.map((p) => (
                   <div className={p.type === 'json' || p.type === 'texte' ? 'col-12' : 'col-md-6'} key={p.cle}>
                     <label className="form-label">
-                      {p.cle}
-                      {p.description && <span className="text-muted small"> — {p.description}</span>}
+                      {p.description || p.cle}
+                      <span className="text-muted small"> ({p.cle})</span>
                     </label>
 
                     {p.type === 'image' ? (

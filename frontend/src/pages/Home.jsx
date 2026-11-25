@@ -182,7 +182,8 @@ export default function Home() {
       <section className="hv2_section">
         <div className="hv2_wrap hv2_pres">
           <div className="hv2_pres-media" data-aos="fade-up">
-            <img loading="lazy" decoding="async" src={IMG.vision} alt="Laboratoire NUFOTEC-PHYTOMED Industries" />
+            <img loading="lazy" decoding="async" src={settings.image_vision_2026 || IMG.vision}
+                 alt="Laboratoire NUFOTEC-PHYTOMED Industries" onError={fallback(IMG.vision)} />
             <div className="hv2_floating">
               <div className="hv2_floating-ico"><i className="bi bi-shield-check"></i></div>
               <div><b>Normes ISO et GMP</b><span>Recherche et innovation</span></div>

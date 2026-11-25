@@ -8,12 +8,11 @@ import { CATEGORIES, ICON } from '../lib/media'
 import { ROUTES } from '../lib/routes'
 import { cleanSearch } from '../lib/sanitize'
 import { usePageMeta } from '../lib/site'
-import useApi from '../lib/useApi'
+import useApi, { useApiAll } from '../lib/useApi'
 import MediaCard, { CardSkeleton } from '../ui/MediaCard'
 import Modal from '../ui/Modal'
 import '../styles/media.css'
 
-const PER_PAGE = 12
 const SECTIONS = [
   ['', 'bi-house-door', 'Accueil'],
   ['tendances', 'bi-fire', 'Tendances'],
@@ -21,16 +20,6 @@ const SECTIONS = [
   ['temoignages', 'bi-chat-quote', 'Témoignages'],
 ]
 const SORTS = [['recent', 'Les plus récents'], ['populaire', 'Les plus vus'], ['mieux_notes', 'Les mieux notés']]
-
-function pageList(current, total) {
-  const pages = []
-  const start = Math.max(1, current - 2)
-  const end = Math.min(total, current + 2)
-  if (start > 1) pages.push(1, ...(start > 2 ? ['…'] : []))
-  for (let i = start; i <= end; i++) pages.push(i)
-  if (end < total) pages.push(...(end < total - 1 ? ['…'] : []), total)
-  return pages
-}
 
 function Empty({ icon = 'bi-play-circle', title, children }) {
   return (
@@ -109,7 +98,6 @@ export default function Media() {
   const categorie = params.get('categorie') ?? ''
   const q = params.get('q') ?? ''
   const tri = params.get('tri') ?? 'recent'
-  const page = Number(params.get('page')) || 1
   const [search, setSearch] = useState(q)
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState('')
@@ -133,8 +121,8 @@ export default function Media() {
   }, [search])
 
   const isLibrary = rubrique === '' || rubrique === 'tendances'
-  const query = { page, per_page: PER_PAGE, tri: rubrique === 'tendances' ? 'tendance' : tri, ...(q ? { q } : {}), ...(categorie ? { categorie } : {}) }
-  const medias = useApi(isLibrary ? '/medias' : null, query)
+  const query = { tri: rubrique === 'tendances' ? 'tendance' : tri, ...(q ? { q } : {}), ...(categorie ? { categorie } : {}) }
+  const medias = useApiAll(isLibrary ? '/medias' : null, query)
   const cats = useApi('/medias/categories')
   const counts = Object.fromEntries((cats.data ?? []).map((c) => [c.categorie, c.medias]))
   const visibleCats = CATEGORIES.filter(([k]) => k !== 'link' || counts.link > 0 || categorie === 'link')
@@ -142,7 +130,6 @@ export default function Media() {
   const meta = medias.data?.meta
 
   const choose = (changes) => { setMenuOpen(false); if ('rubrique' in changes && changes.rubrique !== '') setSearch(''); update(changes) }
-  const goToPage = (p) => { update({ page: p }, true); document.getElementById('md-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
   const clear = () => { setSearch(''); update({ q: '', categorie: '' }) }
   const section = SECTIONS.find(([k]) => k === rubrique) ?? SECTIONS[0]
   const catLabel = CATEGORIES.find(([k]) => k === categorie)?.[2]
@@ -215,16 +202,6 @@ export default function Media() {
             <div className="md_grid">
               {medias.loading ? Array.from({ length: 8 }, (_, i) => <CardSkeleton key={i} />) : items.map((m) => <MediaCard key={m.uuid} m={m} notify={setToast} />)}
             </div>
-          )}
-
-          {isLibrary && meta && meta.pages > 1 && !medias.loading && (
-            <nav className="md_pages" aria-label="Pagination">
-              <button type="button" disabled={page <= 1} onClick={() => goToPage(page - 1)} aria-label="Page précédente"><i className="bi bi-chevron-left"></i></button>
-              {pageList(page, meta.pages).map((p, i) => p === '…'
-                ? <span key={`d${i}`}>…</span>
-                : <button key={p} type="button" className={p === page ? 'active' : ''} aria-current={p === page ? 'page' : undefined} onClick={() => goToPage(p)}>{p}</button>)}
-              <button type="button" disabled={page >= meta.pages} onClick={() => goToPage(page + 1)} aria-label="Page suivante"><i className="bi bi-chevron-right"></i></button>
-            </nav>
           )}
         </main>
       </div>
