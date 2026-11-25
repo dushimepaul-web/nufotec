@@ -151,6 +151,11 @@ transition est refusée (409 `INVALID_TRANSITION`) et chaque changement est hist
 - **Images WebP** : chaque image envoyée reçoit une version `photo.jpg.webp` (≤ 200 Ko, ≤ 1920 px), servie par Apache
   sous la même adresse aux navigateurs qui l'acceptent ; l'original n'est jamais modifié. Pour les images existantes :
   `python -m tools.optimize_images` (une fois) ; l'API refait la passe chaque nuit après 3 h (images du site PHP).
+- **Accueil en une requête** : `GET /api/v1/accueil` renvoie paramètres, réseaux sociaux, témoignages, catégories de
+  médias, médias récents et produits, dans les mêmes formats que leurs adresses habituelles (l'app mobile l'appelle
+  au démarrage au lieu de six requêtes).
+- **Vignettes 400 px** : chaque image a aussi une version `photo.jpg.400.webp` (10 à 25 Ko), servie par Apache à
+  l'adresse `photo.jpg?w=400` aux clients qui acceptent le WebP (listes de l'app mobile).
 - **Apache** : `attachments/.htaccess` met en cache images et médias (30 jours) ; `frontend/public/.htaccess`
   (copié dans `dist/`) met en cache les fichiers du site, compresse et ajoute les en-têtes de sécurité.
 

@@ -10,6 +10,12 @@ Options -Indexes
 # à la place de photo.jpg, sous la même adresse. Créées par l'API (tools.optimize_images, et chaque nuit).
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # Vignette 400 px (listes de l'app mobile) : photo.jpg?w=400 -> photo.jpg.400.webp si elle existe
+  RewriteCond %{QUERY_STRING} (^|&)w=400(&|$)
+  RewriteCond %{HTTP_ACCEPT} image/webp
+  RewriteCond %{REQUEST_FILENAME} \.(jpe?g|png)$ [NC]
+  RewriteCond %{REQUEST_FILENAME}.400.webp -f
+  RewriteRule ^(.+)$ $1.400.webp [T=image/webp,L]
   RewriteCond %{HTTP_ACCEPT} image/webp
   RewriteCond %{REQUEST_FILENAME} \.(jpe?g|png)$ [NC]
   RewriteCond %{REQUEST_FILENAME}.webp -f
