@@ -1,5 +1,5 @@
-// Pages statiques (Investissement, Corporate) : copies à l'identique des vues PHP de src/modules/pages, générées par
-// scripts/convert_static_pages.py dans src/static-pages. Chaque page est chargée à la demande. Les liens internes
+// Pages statiques (Investissement, Corporate) : copies à l'identique des anciennes vues PHP, rangées dans
+// src/static-pages. Chaque page est chargée à la demande. Les liens internes
 // restent dans l'application (pas de rechargement). Adresse inconnue : page « en préparation ».
 import AOS from 'aos'
 import { useEffect, useRef, useState } from 'react'

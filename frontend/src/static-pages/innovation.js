@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Research_Innovation_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Research_Innovation_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './innovation.css'
 
 export const title = "Recherche & Innovation"

@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Strategic_Partnerships_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Strategic_Partnerships_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './partnerships.css'
 
 export const title = "Partenariats stratégiques"

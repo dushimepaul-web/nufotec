@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Market_Industry_Outlook_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Market_Industry_Outlook_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './market.css'
 
 export const title = "Aperçu du marché & du secteur"

@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Corporate_Structure_Governance_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Corporate_Structure_Governance_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './governance.css'
 
 export const title = "Structure et gouvernance d'entreprise"

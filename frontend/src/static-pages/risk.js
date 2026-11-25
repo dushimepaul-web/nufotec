@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Risk_Analysis_Mitigation_Strategies_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Risk_Analysis_Mitigation_Strategies_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './risk.css'
 
 export const title = "Analyse des risques et stratégies d'atténuation"

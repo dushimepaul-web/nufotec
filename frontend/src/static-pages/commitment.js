@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Our_Investor_Partner_Commitment_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Our_Investor_Partner_Commitment_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './commitment.css'
 
 export const title = "Notre engagement envers les investisseurs & partenaires"

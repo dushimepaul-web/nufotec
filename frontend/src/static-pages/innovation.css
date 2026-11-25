@@ -1,4 +1,4 @@
-/* Copie de src/modules/pages/Research_Innovation_View.php (généré par scripts/convert_static_pages.py) */
+/* Copie de l'ancienne vue PHP Research_Innovation_View.php (supprimée du dépôt) ; à modifier ici directement. */
 .rni-wrap{background:#fff}
     .rni-hero{position:relative;background:#053d16;color:#fff;padding:54px 0 74px;overflow:hidden}
     .rni-hero::before{content:"";position:absolute;top:-120px;right:-120px;width:380px;height:380px;border-radius:50%;background:rgba(212,160,23,.14);filter:blur(60px)}

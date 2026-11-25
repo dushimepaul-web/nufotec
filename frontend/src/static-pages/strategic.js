@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Background_Strategic_Rationale_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Background_Strategic_Rationale_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './strategic.css'
 
 export const title = "Contexte et justification stratégique"
