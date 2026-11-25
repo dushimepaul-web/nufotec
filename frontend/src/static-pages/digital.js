@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Market_Expansion_Platform_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Market_Expansion_Platform_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './digital.css'
 
 export const title = "Plateforme de croissance digitale & d'expansion commerciale"

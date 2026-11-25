@@ -33,7 +33,7 @@ export default function ProduitsList() {
       label: 'Produit',
       render: (p) => (
         <div className="d-flex align-items-center gap-2">
-          {p.image && <img src={p.image} alt="" width="36" height="36" className="rounded object-fit-cover" onError={(e) => { e.currentTarget.src = FALLBACK }} />}
+          {p.image && <img loading="lazy" decoding="async" src={p.image} alt="" width="36" height="36" className="rounded object-fit-cover" onError={(e) => { e.currentTarget.src = FALLBACK }} />}
           <div>
             <div className="fw-semibold">
               <Link to={ROUTES.produit(p.uuid)}>{p.titre}</Link>

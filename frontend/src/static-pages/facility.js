@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/NUFOTEC_PHYTOMED_INDUSTRIES_Facility_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP NUFOTEC_PHYTOMED_INDUSTRIES_Facility_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './facility.css'
 
 export const title = "Installation NUFOTEC-PHYTOMED INDUSTRIES"

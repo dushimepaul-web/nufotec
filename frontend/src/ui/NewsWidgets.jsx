@@ -8,7 +8,7 @@ import useApi from '../lib/useApi'
 
 export function NewsThumb({ src, alt = '' }) {
   const [broken, setBroken] = useState(false)
-  if (!src || broken) return <div className="nw_thumb-ph"><img src="/logo.jpeg" alt="" /></div>
+  if (!src || broken) return <div className="nw_thumb-ph"><img loading="lazy" decoding="async" src="/logo.jpeg" alt="" /></div>
   return <img src={src} alt={alt} loading="lazy" onError={() => setBroken(true)} />
 }
 

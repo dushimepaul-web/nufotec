@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Commission_Fee_Payment_to_Brokers_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Commission_Fee_Payment_to_Brokers_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './commission.css'
 
 export const title = "Paiement des commissions aux courtiers"

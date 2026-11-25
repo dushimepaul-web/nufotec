@@ -128,7 +128,7 @@ export default function MediaDetail() {
           <div className="col-12">
             <div className="card">
               <div className="card-body d-flex flex-wrap align-items-center gap-3">
-                {m.miniature && <img src={m.miniature} alt="" width="64" height="64" className="rounded object-fit-cover" />}
+                {m.miniature && <img loading="lazy" decoding="async" src={m.miniature} alt="" width="64" height="64" className="rounded object-fit-cover" />}
                 <div className="me-auto">
                   <h4 className="mb-1">{m.titre}</h4>
                   <div className="text-muted small text-capitalize">{m.categorie} · {formatDate(m.date || m.created_at)}</div>

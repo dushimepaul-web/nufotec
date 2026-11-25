@@ -1,24 +1,28 @@
+import { lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import PublicLayout from './layout/PublicLayout'
 import { ROUTES } from './lib/routes'
 import { SiteProvider } from './lib/site'
-import Account from './pages/Account'
-import Article from './pages/Article'
-import Blog from './pages/Blog'
-import Booking from './pages/Booking'
-import Contact from './pages/Contact'
-import Faq from './pages/Faq'
-import Broker from './pages/Broker'
-import Doctors from './pages/Doctors'
 import Home from './pages/Home'
-import Investor from './pages/Investor'
-import Login from './pages/Login'
-import Media from './pages/Media'
-import MediaDetail from './pages/MediaDetail'
-import Presentation from './pages/Presentation'
-import Product from './pages/Product'
-import Shop from './pages/Shop'
-import StaticPage from './pages/StaticPage'
+
+// Pages chargées à la demande : la page d'accueil s'ouvre sans télécharger tout le site (connexions lentes).
+// Le chargement s'affiche dans PublicLayout (Suspense autour de <Outlet />).
+const Account = lazy(() => import('./pages/Account'))
+const Article = lazy(() => import('./pages/Article'))
+const Blog = lazy(() => import('./pages/Blog'))
+const Booking = lazy(() => import('./pages/Booking'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Faq = lazy(() => import('./pages/Faq'))
+const Broker = lazy(() => import('./pages/Broker'))
+const Doctors = lazy(() => import('./pages/Doctors'))
+const Investor = lazy(() => import('./pages/Investor'))
+const Login = lazy(() => import('./pages/Login'))
+const Media = lazy(() => import('./pages/Media'))
+const MediaDetail = lazy(() => import('./pages/MediaDetail'))
+const Presentation = lazy(() => import('./pages/Presentation'))
+const Product = lazy(() => import('./pages/Product'))
+const Shop = lazy(() => import('./pages/Shop'))
+const StaticPage = lazy(() => import('./pages/StaticPage'))
 
 export default function App() {
   return (

@@ -141,7 +141,7 @@ export default function Presentation() {
       <section className="pr_section" id="pr-qui-sommes-nous">
         <div className="pr_wrap pr_who">
           <div className="pr_who-img" data-aos="fade-right">
-            <img src={imgWho} alt="Laboratoire moderne NUFOTEC-PHYTOMED Industries" onError={(e) => { e.currentTarget.src = '/logo.jpeg' }} />
+            <img loading="lazy" decoding="async" src={imgWho} alt="Laboratoire moderne NUFOTEC-PHYTOMED Industries" onError={(e) => { e.currentTarget.src = '/logo.jpeg' }} />
           </div>
           <div className="pr_who-text" data-aos="fade-left">
             <span className="pr_badge">Qui sommes-nous ?</span>
@@ -259,7 +259,7 @@ export default function Presentation() {
       <section className="pr_section">
         <div className="pr_wrap pr_why">
           <div className="pr_who-img" data-aos="fade-right">
-            <img src={imgWhy} alt="Équipe médicale et scientifique NUFOTEC" onError={(e) => { e.currentTarget.src = '/logo.jpeg' }} />
+            <img loading="lazy" decoding="async" src={imgWhy} alt="Équipe médicale et scientifique NUFOTEC" onError={(e) => { e.currentTarget.src = '/logo.jpeg' }} />
           </div>
           <div data-aos="fade-left">
             <span className="pr_badge">Notre différence</span>

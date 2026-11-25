@@ -13,7 +13,7 @@ const COLUMNS = [
     key: 'titre', label: 'Témoignage',
     render: (t) => (
       <div className="d-flex align-items-center gap-2">
-        {t.miniature && <img src={t.miniature} alt="" width="40" height="40" className="rounded object-fit-cover" />}
+        {t.miniature && <img loading="lazy" decoding="async" src={t.miniature} alt="" width="40" height="40" className="rounded object-fit-cover" />}
         <span className="fw-semibold">{t.titre}</span>
       </div>
     ),

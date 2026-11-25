@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
@@ -10,11 +11,12 @@ from sqlalchemy import text
 
 from app.core.config import get_settings
 from app.core.database import engine
+from app.core.caching import ETagMiddleware
 from app.core.compression import SelectiveGZipMiddleware
 from app.core.idempotency import IdempotencyMiddleware
 from app.core.observability import RequestContextMiddleware, setup_logging
 from app.core.protection import ProtectionMiddleware
-from app.core.responses import ok, register_error_handlers
+from app.core.responses import error_response, ok, register_error_handlers
 from app.modules.account import router as account_router
 from app.modules.auth.router import router as auth_router
 from app.modules.chatbot import router as chatbot
@@ -68,6 +70,26 @@ def _nightly_rag_sync() -> None:
         db.close()
 
 
+_last_image_pass: str | None = None
+
+
+def _nightly_images() -> None:
+    """Une fois par nuit (après 3 h) : versions WebP des nouvelles images, dont celles déposées par le site PHP."""
+    global _last_image_pass
+    from pathlib import Path
+
+    from app.core.helpers import now
+    from app.core.images import optimize_folder
+
+    current = now()
+    today = current.strftime("%Y-%m-%d")
+    if current.hour < 3 or _last_image_pass == today:
+        return
+    _last_image_pass = today
+    stats = optimize_folder(Path(settings.uploads_dir))
+    log.info("Images WebP : %s créée(s) sur %s image(s) en %s s", stats["creees"], stats["images"], stats["secondes"])
+
+
 async def _outbox_loop() -> None:
     """Toutes les minutes : rappels de consultation, puis envoi des emails dus (avec nouvelles tentatives)."""
     from app.core.mailer import deliver_pending
@@ -76,6 +98,7 @@ async def _outbox_loop() -> None:
         try:
             await run_in_threadpool(_send_reminders)
             await run_in_threadpool(_nightly_rag_sync)
+            await run_in_threadpool(_nightly_images)
             await run_in_threadpool(deliver_pending, 50)
         except Exception:
             log.exception("Tâche de fond (rappels, emails)")
@@ -103,7 +126,9 @@ app = FastAPI(
 )
 
 # Ordre d'exécution : CORS → contexte (langue, request id, erreurs 500) → protections (en-têtes, taille, débit)
-# → Idempotency-Key → routes. (add_middleware place chaque nouveau middleware à l'extérieur des précédents.)
+# → Idempotency-Key → ETag (304 si rien n'a changé) → routes.
+# (add_middleware place chaque nouveau middleware à l'extérieur des précédents.)
+app.add_middleware(ETagMiddleware)
 app.add_middleware(IdempotencyMiddleware)
 app.add_middleware(ProtectionMiddleware)
 app.add_middleware(RequestContextMiddleware)
@@ -122,11 +147,27 @@ register_error_handlers(app)
 api = APIRouter(prefix="/api/v1")
 
 
+@api.get("/health/live", tags=["Système"], summary="L'API tourne (sans interroger la base)")
+def health_live():
+    """Pour le superviseur (NSSM, systemd, Docker) : redémarrer l'API seulement si elle ne répond plus du tout."""
+    return ok({"status": "ok"})
+
+
 @api.get("/health", tags=["Système"], summary="État de l'API et de la base")
 def health():
-    with engine.connect() as conn:
-        conn.execute(text("SELECT 1"))
-    return ok({"status": "ok", "database": "ok", "env": settings.app_env})
+    """Pour la surveillance (Uptime Kuma, UptimeRobot…) : 200 si tout va bien, 503 si la base est injoignable."""
+    start = time.perf_counter()
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        log.exception("Contrôle de santé : base de données injoignable")
+        return error_response(503, "SERVICE_UNAVAILABLE", "Service momentanément indisponible, réessayez dans un instant",
+                              {"database": "error"}, {"Retry-After": "5"})
+    data = {"status": "ok", "database": "ok", "database_ms": round((time.perf_counter() - start) * 1000, 1)}
+    if not settings.is_production:  # l'environnement n'est pas divulgué en production
+        data["env"] = settings.app_env
+    return ok(data)
 
 
 api.include_router(auth_router)

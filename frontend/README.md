@@ -24,7 +24,7 @@ Le projet a deux points d'entrée :
   Code dans `src/admin/` (repris de l'ancien projet `nufotec-admin-app`), styles NiceAdmin chargés seulement ici.
 
 En développement (`npm run dev`), ces adresses servent `admin.html` automatiquement (voir `vite.config.js`).
-En production, le serveur web doit faire la même chose, par exemple avec Apache (`.htaccess` dans `dist/`) :
+En production, le serveur web doit faire la même chose. Avec Apache, c'est fait par `public/.htaccess`, copié dans `dist/` à chaque `npm run build` (il ajoute aussi le cache, la compression et les en-têtes de sécurité) :
 
 ```apache
 RewriteEngine On
@@ -33,3 +33,13 @@ RewriteRule ^(admin|medecin|login)(/.*)?$ /admin.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ /index.html [L]
 ```
+
+## Rapidité
+
+- **Pages à la demande** : seule la page d'accueil est dans le fichier principal ; les autres se chargent à l'ouverture.
+- **Images** : `loading="lazy"` sur toutes les images hors du haut de page ; les drapeaux des menus de langues ne se
+  chargent qu'à la première ouverture d'un menu. Versions WebP de `public/` : `python -m tools.optimize_images --dossier ..\frontend\public`
+  (depuis `backend/`).
+- **Icônes** : `src/styles/icons/` contient une petite police (~20 Ko) avec les icônes utilisées par le code ; la police
+  complète (131 Ko) n'est téléchargée que si une page affiche une autre icône (choisie dans l'administration).
+  Après avoir ajouté des icônes `bi-…` au code : `pip install fonttools brotli` puis `python scripts/build_icons.py`.

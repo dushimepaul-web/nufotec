@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Phased_Investment_Projection_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Phased_Investment_Projection_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './projection.css'
 
 export const title = "Projection d'investissement par phase"

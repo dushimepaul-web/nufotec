@@ -102,7 +102,7 @@ function FormModal({ open, initial, fields, imageField, base, title, onClose, on
             <div className="col-12">
               <label className="form-label">{imageField.label || 'Image'}</label>
               {initial?.[imageField.previewKey] && (
-                <img src={initial[imageField.previewKey]} alt="" width="48" height="48" className="rounded object-fit-cover d-block mb-2" />
+                <img loading="lazy" decoding="async" src={initial[imageField.previewKey]} alt="" width="48" height="48" className="rounded object-fit-cover d-block mb-2" />
               )}
               <input type="file" accept="image/*" className="form-control form-control-sm"
                      onChange={(e) => setImage(e.target.files[0])} />

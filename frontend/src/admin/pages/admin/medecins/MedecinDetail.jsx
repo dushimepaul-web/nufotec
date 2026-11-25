@@ -146,7 +146,7 @@ export default function MedecinDetail() {
             <div className="card">
               <div className="card-body">
                 <div className="d-flex flex-wrap align-items-center gap-3">
-                  <img src={m.photo_url || DOCTOR_FALLBACK} alt="" width="72" height="72"
+                  <img loading="lazy" decoding="async" src={m.photo_url || DOCTOR_FALLBACK} alt="" width="72" height="72"
                        className="rounded-circle object-fit-cover" />
                   <div className="me-auto">
                     <h4 className="mb-1">{[m.prenom, m.nom].filter(Boolean).join(' ')}</h4>

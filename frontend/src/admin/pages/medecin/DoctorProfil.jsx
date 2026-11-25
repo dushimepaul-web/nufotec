@@ -61,7 +61,7 @@ function ProfilForm({ m, reload }) {
             <div className="card">
               <div className="card-body d-flex flex-wrap align-items-center gap-3">
                 {m.photo_url
-                  ? <img src={m.photo_url} alt="" width="64" height="64" className="rounded-circle object-fit-cover" />
+                  ? <img loading="lazy" decoding="async" src={m.photo_url} alt="" width="64" height="64" className="rounded-circle object-fit-cover" />
                   : <div className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style={{ width: 64, height: 64 }}>{[m.prenom, m.nom].filter(Boolean).map((s) => s[0]).join('')}</div>}
                 <div className="me-auto">
                   <h4 className="mb-1">{[m.prenom, m.nom].filter(Boolean).join(' ')}</h4>

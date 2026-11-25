@@ -78,6 +78,8 @@ export default function Header() {
   const [panelOpen, setPanelOpen] = useState(false)
   const [openSub, setOpenSub] = useState(null)
   const [langOpen, setLangOpen] = useState(false)
+  // Drapeaux des menus de langues : téléchargés seulement après la première ouverture d'un menu (~40 images de moins)
+  const [flagsShown, setFlagsShown] = useState(false)
   const [searchShow, setSearchShow] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null) // null = fermé, 'loading', 'error' ou les résultats
@@ -251,7 +253,7 @@ export default function Header() {
             {/* Langues (ordinateur) */}
             <div className="nuf-lang d-none d-lg-block" id="nufLangWrap" ref={langRef}>
               <button className={`nuf-lang-btn${langOpen ? ' open' : ''}`} id="nufLangBtn" type="button"
-                      onClick={(e) => { e.stopPropagation(); setLangOpen((v) => !v) }}>
+                      onClick={(e) => { e.stopPropagation(); setFlagsShown(true); setLangOpen((v) => !v) }}>
                 <img src={flagUrl(currentLang[1])} alt="" id="nufLangFlag" />
                 <span id="nufLangLabel">{currentLang[2]}</span>
                 <i className="bi bi-chevron-down"></i>
@@ -260,14 +262,14 @@ export default function Header() {
                 <div className="nuf-lang-label">Langues principales</div>
                 {MAIN_LANGUAGES.map(([code, flag, , label]) => (
                   <button key={code} type="button" className={`nuf-lang-opt${code === lang ? ' active' : ''}`} onClick={() => chooseLang(code)}>
-                    <img src={flagUrl(flag)} alt="" /> {label}
+                    <img loading="lazy" decoding="async" src={flagsShown ? flagUrl(flag) : undefined} alt="" /> {label}
                   </button>
                 ))}
                 <div className="nuf-lang-sep"></div>
                 <div className="nuf-lang-label">Autres langues</div>
                 {OTHER_LANGUAGES.map(([code, flag, , label]) => (
                   <button key={code} type="button" className={`nuf-lang-opt${code === lang ? ' active' : ''}`} onClick={() => chooseLang(code)}>
-                    <img src={flagUrl(flag)} alt="" /> {label}
+                    <img loading="lazy" decoding="async" src={flagsShown ? flagUrl(flag) : undefined} alt="" /> {label}
                   </button>
                 ))}
               </div>
@@ -306,7 +308,7 @@ export default function Header() {
             <i className="bi bi-x-lg"></i>
           </button>
           <div className="nuf-panel-user">
-            {user?.photo_url ? <img src={user.photo_url} alt="Avatar" className="nuf-panel-avatar" />
+            {user?.photo_url ? <img loading="lazy" decoding="async" src={user.photo_url} alt="Avatar" className="nuf-panel-avatar" />
               : user ? <div className="nuf-panel-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials(user)}</div>
                 : (
                   <div className="nuf-panel-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '2px solid var(--accent)' }}>
@@ -338,14 +340,14 @@ export default function Header() {
             <div className="nuf-panel-sec-title"><i className="bi bi-globe"></i> Langue</div>
             <ul className="nuf-panel-list">
               <li>
-                <button type="button" className={`nuf-panel-link${openSub === 'mob-lang' ? ' open' : ''}`} onClick={() => toggleSub('mob-lang')}>
+                <button type="button" className={`nuf-panel-link${openSub === 'mob-lang' ? ' open' : ''}`} onClick={() => { setFlagsShown(true); toggleSub('mob-lang') }}>
                   <i className="bi bi-translate"></i><span>Changer de langue</span><i className="bi bi-chevron-right ch"></i>
                 </button>
                 <div className={`nuf-sub${openSub === 'mob-lang' ? ' open' : ''}`} id="nuf-sub-mob-lang"
                      ref={(el) => { subRefs.current['mob-lang'] = el }} style={{ ...subStyle('mob-lang'), overflowY: 'auto' }}>
                   {ALL_LANGUAGES.map(([code, flag, , label]) => (
                     <button key={code} type="button" className="nuf-sub-item" onClick={() => chooseLang(code)}>
-                      <img src={flagUrl(flag)} alt="" /> {label}
+                      <img loading="lazy" decoding="async" src={flagsShown ? flagUrl(flag) : undefined} alt="" /> {label}
                     </button>
                   ))}
                 </div>

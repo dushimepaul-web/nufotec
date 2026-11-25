@@ -241,7 +241,7 @@ export default function Booking() {
 
   const expertCard = (
     <div className="bk_expert">
-      <img src={d.photo_url || DOCTOR_FALLBACK} alt="" onError={(e) => { e.currentTarget.src = DOCTOR_FALLBACK }} />
+      <img loading="lazy" decoding="async" src={d.photo_url || DOCTOR_FALLBACK} alt="" onError={(e) => { e.currentTarget.src = DOCTOR_FALLBACK }} />
       <div>
         <b>{doctorName(d)}</b>
         <span>{d.specialite || 'Santé générale'}</span>

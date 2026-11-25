@@ -1,6 +1,6 @@
 /* Pages statiques (copies des vues PHP) : habillage du site par-dessus les styles d'origine.
    Mêmes codes que les autres pages : couleurs du logo, aucun dégradé, cartes blanches arrondies sur fond vert très clair,
-   titres Poppins vert foncé, textes Inter. Les classes sp-* sont ajoutées par scripts/convert_static_pages.py.
+   titres Poppins vert foncé, textes Inter. Les classes sp-* sont celles des pages de src/static-pages.
    Sélecteurs préfixés par « .sp .static-page » pour passer devant les styles propres à chaque page. */
 .sp { --g: var(--logo-green-dk); --g-dk: var(--logo-green-xdk); --g-vivid: var(--logo-green); --g-soft: var(--logo-green-soft);
   --line: #dbe5d8; --ink: #1d2a20; --ink-soft: #56645a; background: #f4fbf3; padding-bottom: 40px; }

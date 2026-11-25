@@ -1,4 +1,4 @@
-// Copie de src/modules/pages/Vision_Mission_View.php : généré par scripts/convert_static_pages.py, ne pas modifier à la main.
+// Copie de l'ancienne vue PHP Vision_Mission_View.php (supprimée du dépôt) ; à modifier ici directement.
 import './vision.css'
 
 export const title = "Vision, mission et objectifs"

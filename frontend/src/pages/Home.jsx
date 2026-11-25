@@ -145,7 +145,7 @@ export default function Home() {
     <div className="hv2">
       {/* HERO — le logo NUFOTEC en arrière-plan plein écran, voile vert uni (aucun dégradé), texte par-dessus */}
       <section className="hv2_hero2">
-        <img className="hv2_hero2-bg" src={settings.site_logo || '/logo.jpeg'} alt=""
+        <img className="hv2_hero2-bg" fetchPriority="high" src={settings.site_logo || '/logo.jpeg'} alt=""
              onError={(e) => { e.currentTarget.src = '/logo.jpeg' }} />
         <div className="hv2_wrap hv2_hero2-inner">
           <div className="hv2_hero2-grid">
@@ -182,7 +182,7 @@ export default function Home() {
       <section className="hv2_section">
         <div className="hv2_wrap hv2_pres">
           <div className="hv2_pres-media" data-aos="fade-up">
-            <img src={IMG.vision} alt="Laboratoire NUFOTEC-PHYTOMED Industries" />
+            <img loading="lazy" decoding="async" src={IMG.vision} alt="Laboratoire NUFOTEC-PHYTOMED Industries" />
             <div className="hv2_floating">
               <div className="hv2_floating-ico"><i className="bi bi-shield-check"></i></div>
               <div><b>Normes ISO et GMP</b><span>Recherche et innovation</span></div>
@@ -242,7 +242,7 @@ export default function Home() {
             <Link to={ROUTES.doctors} className="hv2_btn primary"><i className="bi bi-calendar-plus"></i> Prendre rendez-vous</Link>
           </div>
           <div className="hv2_tele-media" data-aos="fade-up" data-aos-delay="100">
-            <img src={settings.image_sante_connectee || IMG.sante} alt="Téléconsultation NUFOTEC" onError={fallback(IMG.sante)} />
+            <img loading="lazy" decoding="async" src={settings.image_sante_connectee || IMG.sante} alt="Téléconsultation NUFOTEC" onError={fallback(IMG.sante)} />
             <div className="hv2_floating">
               <div className="hv2_floating-ico"><i className="bi bi-star"></i></div>
               <div><b>98,4 %</b><span>Satisfaction patients</span></div>

@@ -79,7 +79,7 @@ function DoctorCard({ d, onDetails }) {
     <article className="doc_card">
       <div className="doc_head">
         <div className="doc_avatar">
-          <img src={d.photo_url || DOCTOR_FALLBACK} alt="" onError={(e) => { e.currentTarget.src = DOCTOR_FALLBACK }} />
+          <img loading="lazy" decoding="async" src={d.photo_url || DOCTOR_FALLBACK} alt="" onError={(e) => { e.currentTarget.src = DOCTOR_FALLBACK }} />
           <span className={`doc_status${d.disponible_maintenant ? ' on' : ''}`} title={d.disponible_maintenant ? 'Disponible maintenant' : 'Sur rendez-vous'}></span>
         </div>
         <div className="doc_id">
@@ -121,7 +121,7 @@ function DoctorModal({ doctor, onClose }) {
       {doctor && (
         <div className="doc_detail">
           <div className="doc_detail-head">
-            <img src={d.photo_url || DOCTOR_FALLBACK} alt="" onError={(e) => { e.currentTarget.src = DOCTOR_FALLBACK }} />
+            <img loading="lazy" decoding="async" src={d.photo_url || DOCTOR_FALLBACK} alt="" onError={(e) => { e.currentTarget.src = DOCTOR_FALLBACK }} />
             <div>
               <h2>{doctorName(d)}</h2>
               <p>{d.specialite || 'Santé générale'}</p>

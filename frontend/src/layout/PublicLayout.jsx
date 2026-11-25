@@ -1,5 +1,5 @@
 // Mise en page des pages publiques : en-tête + contenu + pied de page
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
@@ -31,7 +31,9 @@ export default function PublicLayout() {
     <>
       <Header />
       <main>
-        <Outlet />
+        <Suspense fallback={<div className="d-flex justify-content-center py-5" role="status" aria-label="Chargement"><div className="spinner-border text-success" /></div>}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
       <NetworkBanner />
