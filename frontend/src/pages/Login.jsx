@@ -125,7 +125,16 @@ export default function Login() {
   const country = countryList.find((c) => c.id === Number(reg.pays_id))
   const already = getUser()
 
-  const finish = (data) => { saveSession(data); navigate(next, { replace: true }) }
+  // Les comptes du personnel (admin, médecin, rôles personnalisés) vont dans leur interface,
+  // jamais dans l'espace client — même s'ils se connectent depuis la page publique.
+  const finish = (data) => {
+    saveSession(data)
+    const role = data.user?.role?.slug
+    if (role === 'medecin') return navigate('/medecin', { replace: true })
+    const staff = role === 'admin'
+      || (role && role !== 'user' && role !== 'patient' && (data.user?.permissions?.length ?? 0) > 0)
+    navigate(staff ? '/admin' : next, { replace: true })
+  }
   const setR = (k, v) => { setReg((r) => ({ ...r, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined, _form: undefined })) }
 
   const submitLogin = async (e) => {
