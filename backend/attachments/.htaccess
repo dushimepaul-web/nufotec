@@ -5,3 +5,23 @@ Options -Indexes
 <FilesMatch "\.(php|phtml|phar|py|pl|cgi|sh)$">
   Require all denied
 </FilesMatch>
+
+# Rapidité : images, audios et vidéos gardés en cache par le navigateur (les noms de fichiers sont uniques :
+# un fichier remplacé porte un nouveau nom). Le site ne retélécharge pas ce qu'il a déjà.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/gif "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType audio/mpeg "access plus 30 days"
+  ExpiresByType video/mp4 "access plus 30 days"
+</IfModule>
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>
+# Compression des fichiers texte (les images et médias sont déjà compressés)
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE image/svg+xml text/plain application/json
+</IfModule>

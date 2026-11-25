@@ -89,6 +89,21 @@ def register_error_handlers(app: FastAPI) -> None:
         ]
         return _error(422, "VALIDATION_ERROR", "Données invalides", details)
 
+    # Base de données injoignable, surchargée ou verrouillée : erreur passagère. On répond 503 avec Retry-After
+    # (le site et l'app retentent seuls) au lieu d'une erreur 500 générique.
+    from sqlalchemy import exc as sa_exc
+
+    @app.exception_handler(sa_exc.OperationalError)
+    @app.exception_handler(sa_exc.InterfaceError)
+    @app.exception_handler(sa_exc.TimeoutError)
+    async def _database_unavailable(request: Request, exc: Exception):
+        import logging
+
+        logging.getLogger("nufotec.errors").error("Base de données indisponible sur %s %s : %s",
+                                                  request.method, request.url.path, str(exc).splitlines()[0][:300])
+        return _error(503, "SERVICE_UNAVAILABLE", "Service momentanément indisponible, réessayez dans un instant",
+                      None, {"Retry-After": "5"})
+
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException):
         code = _HTTP_CODES.get(exc.status_code, "HTTP_ERROR")

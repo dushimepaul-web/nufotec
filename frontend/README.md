@@ -24,7 +24,7 @@ Le projet a deux points d'entrée :
   Code dans `src/admin/` (repris de l'ancien projet `nufotec-admin-app`), styles NiceAdmin chargés seulement ici.
 
 En développement (`npm run dev`), ces adresses servent `admin.html` automatiquement (voir `vite.config.js`).
-En production, le serveur web doit faire la même chose, par exemple avec Apache (`.htaccess` dans `dist/`) :
+En production, le serveur web doit faire la même chose. Avec Apache, c'est fait par `public/.htaccess`, copié dans `dist/` à chaque `npm run build` (il ajoute aussi le cache, la compression et les en-têtes de sécurité) :
 
 ```apache
 RewriteEngine On

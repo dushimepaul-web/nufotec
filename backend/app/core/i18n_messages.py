@@ -114,6 +114,8 @@ EN: dict[str, str] = {
     "Cette requête est déjà en cours de traitement, réessayez dans un instant":
         "This request is already being processed, try again in a moment",
     "Une erreur interne est survenue": "An internal error occurred",
+    "Service momentanément indisponible, réessayez dans un instant":
+        "Service temporarily unavailable, try again in a moment",
     "Ressource introuvable": "Resource not found",
     "Méthode non autorisée": "Method not allowed",
 }

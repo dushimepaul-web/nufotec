@@ -47,7 +47,7 @@ Les documents médicaux sont rangés dans `PRIVATE_DIR` (par défaut `C:\wamp64\
 ```
 
 - Documentation Swagger : http://127.0.0.1:8000/docs
-- Santé : http://127.0.0.1:8000/api/v1/health
+- Santé : http://127.0.0.1:8000/api/v1/health (base comprise : 200 ou 503) et `/api/v1/health/live` (l'API seule)
 
 ## Tests
 
@@ -131,6 +131,25 @@ transition est refusée (409 `INVALID_TRANSITION`) et chaque changement est hist
 - **Paiement** : aucun paiement en ligne. Le patient téléverse sa preuve dans l'app ; les autres échanges se font
   sur WhatsApp. Les comptes affichés (Lumicash, EcoCash…) se gèrent dans `/admin/modes-paiement`.
 - Toutes les dates de l'API portent le fuseau du Burundi (+02:00), y compris dans les réponses libres.
+
+## Disponibilité et rapidité
+
+- **Base lente ou arrêtée** : délais limités (`DB_CONNECT_TIMEOUT`, `DB_READ_TIMEOUT`, `DB_POOL_TIMEOUT`), connexions
+  coupées remplacées automatiquement (`pool_pre_ping`). L'API répond alors **503 `SERVICE_UNAVAILABLE`** avec
+  `Retry-After: 5` au lieu de rester bloquée ; le site et l'app retentent seuls.
+- **Surveillance** : `GET /api/v1/health` (200 si la base répond, 503 sinon, avec le temps de réponse de la base) pour
+  un outil comme Uptime Kuma ou UptimeRobot ; `GET /api/v1/health/live` pour le superviseur qui redémarre l'API.
+- **Redémarrage automatique** : lancer l'API comme service (NSSM sous Windows, systemd sous Linux) avec plusieurs
+  processus : `uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 4`. Les rappels et emails ne partent
+  qu'une fois même avec plusieurs processus (`SKIP LOCKED`).
+  La limite de débit, elle, est comptée par processus (4 processus : limite réelle ×4) : diviser
+  `RATE_LIMIT_*` d'autant, ou la partager avec Redis.
+- **Sauvegardes** : `python -m tools.backup_db --prive` chaque nuit (Planificateur de tâches), puis copie sur un autre
+  disque ou une autre machine. Restauration : `gunzip -c fichier.sql.gz | mysql --default-character-set=utf8mb4 nufotec_db`.
+- **ETag / 304** : les réponses publiques (GET sans compte) portent une empreinte ; si rien n'a changé, l'API
+  répond 304 sans corps. Avec la compression gzip, c'est l'essentiel du gain sur les connexions lentes.
+- **Apache** : `attachments/.htaccess` met en cache images et médias (30 jours) ; `frontend/public/.htaccess`
+  (copié dans `dist/`) met en cache les fichiers du site, compresse et ajoute les en-têtes de sécurité.
 
 ## Sécurité du module Auth
 

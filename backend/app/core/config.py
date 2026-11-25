@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     database_url: str = "mysql+pymysql://root:@127.0.0.1:3306/nufotec_db?charset=utf8mb4"
+    # Connexions à MySQL : une base lente ou arrêtée ne doit jamais bloquer l'API indéfiniment.
+    db_pool_size: int = 10            # connexions gardées ouvertes
+    db_max_overflow: int = 20         # connexions supplémentaires en cas de pic
+    db_pool_timeout: int = 10         # secondes d'attente d'une connexion libre, puis 503
+    db_connect_timeout: int = 5       # secondes pour joindre MySQL
+    db_read_timeout: int = 60         # secondes au plus pour une requête SQL
 
     # Jetons
     jwt_secret: str
@@ -121,6 +127,8 @@ class Settings(BaseSettings):
                 problems.append("CORS_ORIGINS ne peut pas être * en production")
             if self.mail_mode != "smtp":
                 problems.append("MAIL_MODE doit être smtp en production")
+            if "://root:@" in self.database_url or "://root@" in self.database_url:
+                problems.append("DATABASE_URL : utilisez un compte MySQL dédié avec mot de passe, pas root sans mot de passe")
         if problems:
             raise ValueError("Configuration invalide : " + " ; ".join(problems))
         return self
