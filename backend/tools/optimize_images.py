@@ -21,7 +21,7 @@ def main() -> None:
     for folder in args.dossier or [get_settings().uploads_dir]:
         s = optimize_folder(Path(folder), force=args.tout_refaire)
         gain = 100 - 100 * s["apres"] / s["avant"] if s["avant"] else 0
-        print(f"{folder} : {s['images']} image(s), {s['creees']} WebP créée(s), {s['inutiles']} sans gain ; "
+        print(f"{folder} : {s['images']} image(s), {s['creees']} WebP créée(s), {s['inutiles']} sans gain, {s['vignettes']} vignette(s) 400 px ; "
               f"{s['avant'] / 1024 / 1024:.1f} Mo -> {s['apres'] / 1024 / 1024:.1f} Mo (-{gain:.0f} %) "
               f"en {s['secondes']} s")
 

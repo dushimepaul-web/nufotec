@@ -22,6 +22,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.chatbot import router as chatbot
 from app.modules.content import router_admin as content_admin
 from app.modules.content import router_public as content_public
+from app.modules.home import router as home
 from app.modules.investors import router as investors
 from app.modules.media import router as media
 from app.modules.shop import router as shop
@@ -87,7 +88,8 @@ def _nightly_images() -> None:
         return
     _last_image_pass = today
     stats = optimize_folder(Path(settings.uploads_dir))
-    log.info("Images WebP : %s créée(s) sur %s image(s) en %s s", stats["creees"], stats["images"], stats["secondes"])
+    log.info("Images WebP : %s créée(s), %s vignette(s), sur %s image(s) en %s s", stats["creees"], stats["vignettes"],
+             stats["images"], stats["secondes"])
 
 
 async def _outbox_loop() -> None:
@@ -192,6 +194,7 @@ api.include_router(media.listener)
 api.include_router(media.public)
 api.include_router(media.admin)
 api.include_router(content_public.router)
+api.include_router(home.router)
 api.include_router(content_admin.router)
 api.include_router(content_admin.dashboard_router)
 api.include_router(account_router.router)
